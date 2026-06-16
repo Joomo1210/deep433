@@ -549,7 +549,10 @@ export default function FootballPredictor() {
                                 <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{f.away}</span>
                                 <span style={{ fontSize: 16 }}>{TEAM_FLAGS[f.away] || "🏳️"}</span>
                               </div>
-                              <div style={{ fontSize: 10, color: "#555", minWidth: 60, textAlign: "right" }}>{f.group}</div>
+                              {f.result 
+  ? <div style={{ fontSize: 11, fontWeight: 900, color: "#f59e0b", background: "#1a1400", border: "1px solid #f59e0b44", borderRadius: 6, padding: "2px 8px" }}>FT {f.result}</div>
+  : <div style={{ fontSize: 10, color: "#555", minWidth: 60, textAlign: "right" }}>{f.group}</div>
+}
                             </div>
                           ))}
                         </div>
