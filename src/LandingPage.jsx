@@ -175,7 +175,6 @@ export default function LandingPage({ onGetStarted }) {
           World Cup 2026 is live. Every match is a chance to outsmart the AI and prove you know football better.
         </p>
         <button className="cta-btn" style={{ fontSize: 18, padding: "18px 48px" }} onClick={onGetStarted}>⚡ Join Free — World Cup 2026</button>
-        <div style={{ fontSize: 12, color: "#444", marginTop: 14 }}>No card required · Takes 30 seconds</div>
       </section>
 
       {/* FOOTER */}
