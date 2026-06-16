@@ -22,78 +22,78 @@ const LEAGUES = [
 ];
 
 const WC_FIXTURES = [
-  { date: "Thu 11 Jun", home: "Mexico", away: "South Africa", group: "Group A", venue: "Mexico City", result: "2-0" },
-  { date: "Fri 12 Jun", home: "Korea Republic", away: "Czechia", group: "Group A", venue: "Guadalajara", result: "2-1" },
-  { date: "Fri 12 Jun", home: "Canada", away: "Bosnia and Herzegovina", group: "Group B", venue: "Toronto", result: "1-1" },
-  { date: "Sat 13 Jun", home: "USA", away: "Paraguay", group: "Group D", venue: "Los Angeles", result: "4-1" },
-  { date: "Sat 13 Jun", home: "Qatar", away: "Switzerland", group: "Group B", venue: "San Francisco", result: "1-1" },
-  { date: "Sat 13 Jun", home: "Brazil", away: "Morocco", group: "Group C", venue: "New Jersey", result: "1-1" },
-  { date: "Sun 14 Jun", home: "Haiti", away: "Scotland", group: "Group C", venue: "Boston", result: "0-1" },
-  { date: "Sun 14 Jun", home: "Australia", away: "Türkiye", group: "Group D", venue: "Vancouver", result: "2-0" },
-  { date: "Sun 14 Jun", home: "Germany", away: "Curaçao", group: "Group E", venue: "Houston", result: "7-1" },
-  { date: "Sun 14 Jun", home: "Netherlands", away: "Japan", group: "Group F", venue: "Dallas", result: "2-2" },
-  { date: "Mon 15 Jun", home: "Côte d'Ivoire", away: "Ecuador", group: "Group E", venue: "Philadelphia", result: "1-0" },
-  { date: "Mon 15 Jun", home: "Sweden", away: "Tunisia", group: "Group F", venue: "Monterrey", result: "5-1" },
-  { date: "Mon 15 Jun", home: "Spain", away: "Cabo Verde", group: "Group H", venue: "Atlanta", result: "0-0" },
-  { date: "Mon 15 Jun", home: "Belgium", away: "Egypt", group: "Group G", venue: "Seattle", result: "1-1" },
-  { date: "Mon 15 Jun", home: "Saudi Arabia", away: "Uruguay", group: "Group H", venue: "Miami", result: "1-1" },
-  { date: "Tue 16 Jun", home: "IR Iran", away: "New Zealand", group: "Group G", venue: "Los Angeles", result: "2-2" },
-  { date: "Tue 16 Jun", home: "France", away: "Senegal", group: "Group I", venue: "New Jersey" },
-  { date: "Tue 16 Jun", home: "Iraq", away: "Norway", group: "Group I", venue: "Boston" },
-  { date: "Wed 17 Jun", home: "Argentina", away: "Algeria", group: "Group J", venue: "Kansas City" },
-  { date: "Wed 17 Jun", home: "Austria", away: "Jordan", group: "Group J", venue: "San Francisco" },
-  { date: "Wed 17 Jun", home: "Portugal", away: "Congo DR", group: "Group K", venue: "Houston" },
-  { date: "Wed 17 Jun", home: "England", away: "Croatia", group: "Group L", venue: "Dallas" },
-  { date: "Thu 18 Jun", home: "Ghana", away: "Panama", group: "Group L", venue: "Toronto" },
-  { date: "Thu 18 Jun", home: "Uzbekistan", away: "Colombia", group: "Group K", venue: "Mexico City" },
-  { date: "Thu 18 Jun", home: "Czechia", away: "South Africa", group: "Group A", venue: "Atlanta" },
-  { date: "Thu 18 Jun", home: "Switzerland", away: "Bosnia and Herzegovina", group: "Group B", venue: "Los Angeles" },
-  { date: "Thu 18 Jun", home: "Canada", away: "Qatar", group: "Group B", venue: "Vancouver" },
-  { date: "Fri 19 Jun", home: "Mexico", away: "Korea Republic", group: "Group A", venue: "Guadalajara" },
-  { date: "Fri 19 Jun", home: "USA", away: "Australia", group: "Group D", venue: "Seattle" },
-  { date: "Fri 19 Jun", home: "Scotland", away: "Morocco", group: "Group C", venue: "Boston" },
-  { date: "Sat 20 Jun", home: "Brazil", away: "Haiti", group: "Group C", venue: "Philadelphia" },
-  { date: "Sat 20 Jun", home: "Türkiye", away: "Paraguay", group: "Group D", venue: "San Francisco" },
-  { date: "Sat 20 Jun", home: "Netherlands", away: "Sweden", group: "Group F", venue: "Houston" },
-  { date: "Sat 20 Jun", home: "Germany", away: "Côte d'Ivoire", group: "Group E", venue: "Toronto" },
-  { date: "Sun 21 Jun", home: "Ecuador", away: "Curaçao", group: "Group E", venue: "Kansas City" },
-  { date: "Sun 21 Jun", home: "Tunisia", away: "Japan", group: "Group F", venue: "Monterrey" },
-  { date: "Sun 21 Jun", home: "Spain", away: "Saudi Arabia", group: "Group H", venue: "Atlanta" },
-  { date: "Sun 21 Jun", home: "Belgium", away: "IR Iran", group: "Group G", venue: "Los Angeles" },
-  { date: "Sun 21 Jun", home: "Uruguay", away: "Cabo Verde", group: "Group H", venue: "Miami" },
-  { date: "Mon 22 Jun", home: "New Zealand", away: "Egypt", group: "Group G", venue: "Vancouver" },
-  { date: "Mon 22 Jun", home: "Argentina", away: "Austria", group: "Group J", venue: "Dallas" },
-  { date: "Mon 22 Jun", home: "France", away: "Iraq", group: "Group I", venue: "Philadelphia" },
-  { date: "Tue 23 Jun", home: "Norway", away: "Senegal", group: "Group I", venue: "New Jersey" },
-  { date: "Tue 23 Jun", home: "Jordan", away: "Algeria", group: "Group J", venue: "San Francisco" },
-  { date: "Tue 23 Jun", home: "Portugal", away: "Uzbekistan", group: "Group K", venue: "Houston" },
-  { date: "Tue 23 Jun", home: "England", away: "Ghana", group: "Group L", venue: "Boston" },
-  { date: "Wed 24 Jun", home: "Panama", away: "Croatia", group: "Group L", venue: "Toronto" },
-  { date: "Wed 24 Jun", home: "Colombia", away: "Congo DR", group: "Group K", venue: "Guadalajara" },
-  { date: "Wed 24 Jun", home: "Switzerland", away: "Canada", group: "Group B", venue: "Vancouver" },
-  { date: "Wed 24 Jun", home: "Bosnia and Herzegovina", away: "Qatar", group: "Group B", venue: "Seattle" },
-  { date: "Wed 24 Jun", home: "Scotland", away: "Brazil", group: "Group C", venue: "Miami" },
-  { date: "Wed 24 Jun", home: "Morocco", away: "Haiti", group: "Group C", venue: "Atlanta" },
-  { date: "Thu 25 Jun", home: "Czechia", away: "Mexico", group: "Group A", venue: "Mexico City" },
-  { date: "Thu 25 Jun", home: "South Africa", away: "Korea Republic", group: "Group A", venue: "Monterrey" },
-  { date: "Thu 25 Jun", home: "Curaçao", away: "Côte d'Ivoire", group: "Group E", venue: "Philadelphia" },
-  { date: "Thu 25 Jun", home: "Ecuador", away: "Germany", group: "Group E", venue: "New Jersey" },
-  { date: "Fri 26 Jun", home: "Japan", away: "Sweden", group: "Group F", venue: "Dallas" },
-  { date: "Fri 26 Jun", home: "Tunisia", away: "Netherlands", group: "Group F", venue: "Kansas City" },
-  { date: "Fri 26 Jun", home: "Türkiye", away: "USA", group: "Group D", venue: "Los Angeles" },
-  { date: "Fri 26 Jun", home: "Paraguay", away: "Australia", group: "Group D", venue: "San Francisco" },
-  { date: "Fri 26 Jun", home: "Norway", away: "France", group: "Group I", venue: "Boston" },
-  { date: "Fri 26 Jun", home: "Senegal", away: "Iraq", group: "Group I", venue: "Toronto" },
-  { date: "Sat 27 Jun", home: "Cabo Verde", away: "Saudi Arabia", group: "Group H", venue: "Houston" },
-  { date: "Sat 27 Jun", home: "Uruguay", away: "Spain", group: "Group H", venue: "Guadalajara" },
-  { date: "Sat 27 Jun", home: "Egypt", away: "IR Iran", group: "Group G", venue: "Seattle" },
-  { date: "Sat 27 Jun", home: "New Zealand", away: "Belgium", group: "Group G", venue: "Vancouver" },
-  { date: "Sat 27 Jun", home: "Panama", away: "England", group: "Group L", venue: "New Jersey" },
-  { date: "Sat 27 Jun", home: "Croatia", away: "Ghana", group: "Group L", venue: "Philadelphia" },
-  { date: "Sun 28 Jun", home: "Colombia", away: "Portugal", group: "Group K", venue: "Miami" },
-  { date: "Sun 28 Jun", home: "Congo DR", away: "Uzbekistan", group: "Group K", venue: "Atlanta" },
-  { date: "Sun 28 Jun", home: "Algeria", away: "Austria", group: "Group J", venue: "Kansas City" },
-  { date: "Sun 28 Jun", home: "Jordan", away: "Argentina", group: "Group J", venue: "Dallas" },
+  { date: "Thu 11 Jun", kickoff: "2026-06-11T20:00:00Z", home: "Mexico", away: "South Africa", group: "Group A", venue: "Mexico City", result: "2-0" },
+  { date: "Fri 12 Jun", kickoff: "2026-06-12T20:00:00Z", home: "Korea Republic", away: "Czechia", group: "Group A", venue: "Guadalajara", result: "2-1" },
+  { date: "Fri 12 Jun", kickoff: "2026-06-12T23:00:00Z", home: "Canada", away: "Bosnia and Herzegovina", group: "Group B", venue: "Toronto", result: "1-1" },
+  { date: "Sat 13 Jun", kickoff: "2026-06-13T20:00:00Z", home: "USA", away: "Paraguay", group: "Group D", venue: "Los Angeles", result: "4-1" },
+  { date: "Sat 13 Jun", kickoff: "2026-06-13T23:00:00Z", home: "Qatar", away: "Switzerland", group: "Group B", venue: "San Francisco", result: "1-1" },
+  { date: "Sat 13 Jun", kickoff: "2026-06-14T02:00:00Z", home: "Brazil", away: "Morocco", group: "Group C", venue: "New Jersey", result: "1-1" },
+  { date: "Sun 14 Jun", kickoff: "2026-06-14T18:00:00Z", home: "Haiti", away: "Scotland", group: "Group C", venue: "Boston", result: "0-1" },
+  { date: "Sun 14 Jun", kickoff: "2026-06-14T21:00:00Z", home: "Australia", away: "Türkiye", group: "Group D", venue: "Vancouver", result: "2-0" },
+  { date: "Sun 14 Jun", kickoff: "2026-06-15T00:00:00Z", home: "Germany", away: "Curaçao", group: "Group E", venue: "Houston", result: "7-1" },
+  { date: "Sun 14 Jun", kickoff: "2026-06-15T03:00:00Z", home: "Netherlands", away: "Japan", group: "Group F", venue: "Dallas", result: "2-2" },
+  { date: "Mon 15 Jun", kickoff: "2026-06-15T18:00:00Z", home: "Côte d'Ivoire", away: "Ecuador", group: "Group E", venue: "Philadelphia", result: "1-0" },
+  { date: "Mon 15 Jun", kickoff: "2026-06-15T21:00:00Z", home: "Sweden", away: "Tunisia", group: "Group F", venue: "Monterrey", result: "5-1" },
+  { date: "Mon 15 Jun", kickoff: "2026-06-16T00:00:00Z", home: "Spain", away: "Cabo Verde", group: "Group H", venue: "Atlanta", result: "0-0" },
+  { date: "Mon 15 Jun", kickoff: "2026-06-16T01:00:00Z", home: "Belgium", away: "Egypt", group: "Group G", venue: "Seattle", result: "1-1" },
+  { date: "Mon 15 Jun", kickoff: "2026-06-16T02:00:00Z", home: "Saudi Arabia", away: "Uruguay", group: "Group H", venue: "Miami", result: "1-1" },
+  { date: "Tue 16 Jun", kickoff: "2026-06-16T18:00:00Z", home: "IR Iran", away: "New Zealand", group: "Group G", venue: "Los Angeles", result: "2-2" },
+  { date: "Tue 16 Jun", kickoff: "2026-06-16T20:00:00Z", home: "France", away: "Senegal", group: "Group I", venue: "New Jersey" },
+  { date: "Tue 16 Jun", kickoff: "2026-06-16T23:00:00Z", home: "Iraq", away: "Norway", group: "Group I", venue: "Boston" },
+  { date: "Wed 17 Jun", kickoff: "2026-06-17T02:00:00Z", home: "Argentina", away: "Algeria", group: "Group J", venue: "Kansas City" },
+  { date: "Wed 17 Jun", kickoff: "2026-06-17T05:00:00Z", home: "Austria", away: "Jordan", group: "Group J", venue: "San Francisco" },
+  { date: "Wed 17 Jun", kickoff: "2026-06-17T18:00:00Z", home: "Portugal", away: "Congo DR", group: "Group K", venue: "Houston" },
+  { date: "Wed 17 Jun", kickoff: "2026-06-17T21:00:00Z", home: "England", away: "Croatia", group: "Group L", venue: "Dallas" },
+  { date: "Thu 18 Jun", kickoff: "2026-06-18T00:00:00Z", home: "Ghana", away: "Panama", group: "Group L", venue: "Toronto" },
+  { date: "Thu 18 Jun", kickoff: "2026-06-18T03:00:00Z", home: "Uzbekistan", away: "Colombia", group: "Group K", venue: "Mexico City" },
+  { date: "Thu 18 Jun", kickoff: "2026-06-18T17:00:00Z", home: "Czechia", away: "South Africa", group: "Group A", venue: "Atlanta" },
+  { date: "Thu 18 Jun", kickoff: "2026-06-18T20:00:00Z", home: "Switzerland", away: "Bosnia and Herzegovina", group: "Group B", venue: "Los Angeles" },
+  { date: "Thu 18 Jun", kickoff: "2026-06-18T23:00:00Z", home: "Canada", away: "Qatar", group: "Group B", venue: "Vancouver" },
+  { date: "Fri 19 Jun", kickoff: "2026-06-19T02:00:00Z", home: "Mexico", away: "Korea Republic", group: "Group A", venue: "Guadalajara" },
+  { date: "Fri 19 Jun", kickoff: "2026-06-19T20:00:00Z", home: "USA", away: "Australia", group: "Group D", venue: "Seattle" },
+  { date: "Fri 19 Jun", kickoff: "2026-06-19T23:00:00Z", home: "Scotland", away: "Morocco", group: "Group C", venue: "Boston" },
+  { date: "Sat 20 Jun", kickoff: "2026-06-20T01:30:00Z", home: "Brazil", away: "Haiti", group: "Group C", venue: "Philadelphia" },
+  { date: "Sat 20 Jun", kickoff: "2026-06-20T04:00:00Z", home: "Türkiye", away: "Paraguay", group: "Group D", venue: "San Francisco" },
+  { date: "Sat 20 Jun", kickoff: "2026-06-20T18:00:00Z", home: "Netherlands", away: "Sweden", group: "Group F", venue: "Houston" },
+  { date: "Sat 20 Jun", kickoff: "2026-06-20T21:00:00Z", home: "Germany", away: "Côte d'Ivoire", group: "Group E", venue: "Toronto" },
+  { date: "Sun 21 Jun", kickoff: "2026-06-21T01:00:00Z", home: "Ecuador", away: "Curaçao", group: "Group E", venue: "Kansas City" },
+  { date: "Sun 21 Jun", kickoff: "2026-06-21T05:00:00Z", home: "Tunisia", away: "Japan", group: "Group F", venue: "Monterrey" },
+  { date: "Sun 21 Jun", kickoff: "2026-06-21T17:00:00Z", home: "Spain", away: "Saudi Arabia", group: "Group H", venue: "Atlanta" },
+  { date: "Sun 21 Jun", kickoff: "2026-06-21T20:00:00Z", home: "Belgium", away: "IR Iran", group: "Group G", venue: "Los Angeles" },
+  { date: "Sun 21 Jun", kickoff: "2026-06-21T23:00:00Z", home: "Uruguay", away: "Cabo Verde", group: "Group H", venue: "Miami" },
+  { date: "Mon 22 Jun", kickoff: "2026-06-22T02:00:00Z", home: "New Zealand", away: "Egypt", group: "Group G", venue: "Vancouver" },
+  { date: "Mon 22 Jun", kickoff: "2026-06-22T18:00:00Z", home: "Argentina", away: "Austria", group: "Group J", venue: "Dallas" },
+  { date: "Mon 22 Jun", kickoff: "2026-06-22T22:00:00Z", home: "France", away: "Iraq", group: "Group I", venue: "Philadelphia" },
+  { date: "Tue 23 Jun", kickoff: "2026-06-23T01:00:00Z", home: "Norway", away: "Senegal", group: "Group I", venue: "New Jersey" },
+  { date: "Tue 23 Jun", kickoff: "2026-06-23T04:00:00Z", home: "Jordan", away: "Algeria", group: "Group J", venue: "San Francisco" },
+  { date: "Tue 23 Jun", kickoff: "2026-06-23T18:00:00Z", home: "Portugal", away: "Uzbekistan", group: "Group K", venue: "Houston" },
+  { date: "Tue 23 Jun", kickoff: "2026-06-23T21:00:00Z", home: "England", away: "Ghana", group: "Group L", venue: "Boston" },
+  { date: "Wed 24 Jun", kickoff: "2026-06-24T00:00:00Z", home: "Panama", away: "Croatia", group: "Group L", venue: "Toronto" },
+  { date: "Wed 24 Jun", kickoff: "2026-06-24T03:00:00Z", home: "Colombia", away: "Congo DR", group: "Group K", venue: "Guadalajara" },
+  { date: "Wed 24 Jun", kickoff: "2026-06-24T20:00:00Z", home: "Switzerland", away: "Canada", group: "Group B", venue: "Vancouver" },
+  { date: "Wed 24 Jun", kickoff: "2026-06-24T20:00:00Z", home: "Bosnia and Herzegovina", away: "Qatar", group: "Group B", venue: "Seattle" },
+  { date: "Wed 24 Jun", kickoff: "2026-06-24T23:00:00Z", home: "Scotland", away: "Brazil", group: "Group C", venue: "Miami" },
+  { date: "Wed 24 Jun", kickoff: "2026-06-24T23:00:00Z", home: "Morocco", away: "Haiti", group: "Group C", venue: "Atlanta" },
+  { date: "Thu 25 Jun", kickoff: "2026-06-25T02:00:00Z", home: "Czechia", away: "Mexico", group: "Group A", venue: "Mexico City" },
+  { date: "Thu 25 Jun", kickoff: "2026-06-25T02:00:00Z", home: "South Africa", away: "Korea Republic", group: "Group A", venue: "Monterrey" },
+  { date: "Thu 25 Jun", kickoff: "2026-06-25T21:00:00Z", home: "Curaçao", away: "Côte d'Ivoire", group: "Group E", venue: "Philadelphia" },
+  { date: "Thu 25 Jun", kickoff: "2026-06-25T21:00:00Z", home: "Ecuador", away: "Germany", group: "Group E", venue: "New Jersey" },
+  { date: "Fri 26 Jun", kickoff: "2026-06-26T00:00:00Z", home: "Japan", away: "Sweden", group: "Group F", venue: "Dallas" },
+  { date: "Fri 26 Jun", kickoff: "2026-06-26T00:00:00Z", home: "Tunisia", away: "Netherlands", group: "Group F", venue: "Kansas City" },
+  { date: "Fri 26 Jun", kickoff: "2026-06-26T03:00:00Z", home: "Türkiye", away: "USA", group: "Group D", venue: "Los Angeles" },
+  { date: "Fri 26 Jun", kickoff: "2026-06-26T03:00:00Z", home: "Paraguay", away: "Australia", group: "Group D", venue: "San Francisco" },
+  { date: "Fri 26 Jun", kickoff: "2026-06-26T20:00:00Z", home: "Norway", away: "France", group: "Group I", venue: "Boston" },
+  { date: "Fri 26 Jun", kickoff: "2026-06-26T20:00:00Z", home: "Senegal", away: "Iraq", group: "Group I", venue: "Toronto" },
+  { date: "Sat 27 Jun", kickoff: "2026-06-27T01:00:00Z", home: "Cabo Verde", away: "Saudi Arabia", group: "Group H", venue: "Houston" },
+  { date: "Sat 27 Jun", kickoff: "2026-06-27T01:00:00Z", home: "Uruguay", away: "Spain", group: "Group H", venue: "Guadalajara" },
+  { date: "Sat 27 Jun", kickoff: "2026-06-27T04:00:00Z", home: "Egypt", away: "IR Iran", group: "Group G", venue: "Seattle" },
+  { date: "Sat 27 Jun", kickoff: "2026-06-27T04:00:00Z", home: "New Zealand", away: "Belgium", group: "Group G", venue: "Vancouver" },
+  { date: "Sat 27 Jun", kickoff: "2026-06-27T22:00:00Z", home: "Panama", away: "England", group: "Group L", venue: "New Jersey" },
+  { date: "Sat 27 Jun", kickoff: "2026-06-27T22:00:00Z", home: "Croatia", away: "Ghana", group: "Group L", venue: "Philadelphia" },
+  { date: "Sun 28 Jun", kickoff: "2026-06-28T00:30:00Z", home: "Colombia", away: "Portugal", group: "Group K", venue: "Miami" },
+  { date: "Sun 28 Jun", kickoff: "2026-06-28T00:30:00Z", home: "Congo DR", away: "Uzbekistan", group: "Group K", venue: "Atlanta" },
+  { date: "Sun 28 Jun", kickoff: "2026-06-28T03:00:00Z", home: "Algeria", away: "Austria", group: "Group J", venue: "Kansas City" },
+  { date: "Sun 28 Jun", kickoff: "2026-06-28T03:00:00Z", home: "Jordan", away: "Argentina", group: "Group J", venue: "Dallas" },
 ];
 
 const BADGE_DEFS = [
@@ -399,6 +399,23 @@ export default function FootballPredictor() {
     setLoggingIdx(null); setLogScore("");
   };
 
+  const isLocked = (homeTeam, awayTeam) => {
+    const fixture = WC_FIXTURES.find(f => f.home === homeTeam && f.away === awayTeam);
+    if (!fixture || !fixture.kickoff) return false;
+    return new Date() >= new Date(fixture.kickoff);
+  };
+
+  const deletePredict = async (id) => {
+    await supabase.from("predictions").delete().eq("id", id);
+    setHistory(prev => prev.filter(h => h.id !== id));
+  };
+
+  const editPredict = async (id, newScore) => {
+    await supabase.from("predictions").update({ user_prediction: newScore }).eq("id", id);
+    setHistory(prev => prev.map(h => h.id === id ? { ...h, user_prediction: newScore } : h));
+    setLoggingIdx(null); setLogScore("");
+  };
+
   const shareText = result && userPrediction ? `⚽ DEEP433 — YOU vs AI\n${leagueLabel}: ${homeTeam} vs ${awayTeam}\n\nMy prediction: ${userPrediction}\nAI prediction: ${result.scoreline}\n\n"${result.verdict?.slice(0, 100)}..."\n\nChallenge the AI at deep433.com` : "";
   const copyShare = () => { navigator.clipboard.writeText(shareText).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }); };
 
@@ -539,20 +556,17 @@ export default function FootballPredictor() {
                         <div key={date}>
                           <div style={{ fontSize: 10, color: "#444", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6, marginTop: 4 }}>{date}</div>
                           {fixtures.map((f, i) => (
-                          <div key={i} className={`fixture-row${homeTeam === f.home && awayTeam === f.away ? " selected" : ""}${f.result ? " played" : ""}`} onClick={() => !f.result && selectFixture(f)} style={{ marginBottom: 5, opacity: f.result ? 0.6 : 1, cursor: f.result ? "default" : "pointer" }}>
+                            <div key={i} className={`fixture-row${homeTeam === f.home && awayTeam === f.away ? " selected" : ""}`} onClick={() => selectFixture(f)} style={{ marginBottom: 5 }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
-                               
+                                <span style={{ fontSize: 16 }}>{TEAM_FLAGS[f.home] || "🏳️"}</span>
                                 <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{f.home}</span>
                               </div>
                               <div style={{ fontSize: 11, color: "#555", fontWeight: 700 }}>vs</div>
                               <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, justifyContent: "flex-end" }}>
                                 <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{f.away}</span>
-                               
+                                <span style={{ fontSize: 16 }}>{TEAM_FLAGS[f.away] || "🏳️"}</span>
                               </div>
-                              {f.result 
-  ? <div style={{ fontSize: 11, fontWeight: 900, color: "#f59e0b", background: "#1a1400", border: "1px solid #f59e0b44", borderRadius: 6, padding: "2px 8px" }}>FT {f.result}</div>
-  : <div style={{ fontSize: 10, color: "#555", minWidth: 60, textAlign: "right" }}>{f.group}</div>
-}
+                              <div style={{ fontSize: 10, color: "#555", minWidth: 60, textAlign: "right" }}>{f.group}</div>
                             </div>
                           ))}
                         </div>
@@ -777,15 +791,34 @@ export default function FootballPredictor() {
                       {h.result === "user" ? "🏆 You beat the AI!" : h.result === "ai" ? "🤖 AI wins this one" : "🤝 It's a tie"}
                     </div>
                   )}
-                  {!h.actual_score && loggingIdx !== h.id && (
-                    <button onClick={() => setLoggingIdx(h.id)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "6px 12px", width: "100%" }}>+ Log real score to see who won</button>
-                  )}
-                  {!h.actual_score && loggingIdx === h.id && (
-                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                      <input className="log-input" placeholder="e.g. 2-1" value={logScore} onChange={e => setLogScore(e.target.value)} />
-                      <button onClick={() => logResult(h.id, logScore)} style={{ background: "#4ade80", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "7px 14px" }}>Save</button>
-                      <button onClick={() => setLoggingIdx(null)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "7px 10px" }}>Cancel</button>
-                    </div>
+                  {isLocked(h.home_team, h.away_team) ? (
+                    <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 700, textAlign: "center", padding: "6px", marginTop: 4 }}>🔒 Locked — match kicked off</div>
+                  ) : (
+                    <>
+                      {loggingIdx !== h.id && loggingIdx !== "edit-" + h.id && (
+                        <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                          {!h.actual_score && (
+                            <button onClick={() => setLoggingIdx(h.id)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "6px 12px", flex: 2 }}>+ Log score</button>
+                          )}
+                          <button onClick={() => { setLoggingIdx("edit-" + h.id); setLogScore(h.user_prediction); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#60a5fa", cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "6px 12px", flex: 1 }}>✏️ Edit</button>
+                          <button onClick={() => deletePredict(h.id)} style={{ background: "none", border: "1px solid #f8717133", borderRadius: 6, color: "#f87171", cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "6px 12px", flex: 1 }}>🗑️ Delete</button>
+                        </div>
+                      )}
+                      {!h.actual_score && loggingIdx === h.id && (
+                        <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 4 }}>
+                          <input className="log-input" placeholder="e.g. 2-1" value={logScore} onChange={e => setLogScore(e.target.value)} />
+                          <button onClick={() => logResult(h.id, logScore)} style={{ background: "#4ade80", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "7px 14px" }}>Save</button>
+                          <button onClick={() => setLoggingIdx(null)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "7px 10px" }}>Cancel</button>
+                        </div>
+                      )}
+                      {loggingIdx === "edit-" + h.id && (
+                        <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 4 }}>
+                          <input className="log-input" placeholder="e.g. 2-1" value={logScore} onChange={e => setLogScore(e.target.value)} />
+                          <button onClick={() => editPredict(h.id, logScore)} style={{ background: "#60a5fa", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "7px 14px" }}>Save</button>
+                          <button onClick={() => setLoggingIdx(null)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "7px 10px" }}>Cancel</button>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               );
