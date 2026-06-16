@@ -307,6 +307,7 @@ export default function FootballPredictor() {
   const [selectedLeague, setSelectedLeague] = useState("wc2026");
   const [step, setStep] = useState(1);
   const [fixtureSearch, setFixtureSearch] = useState("");
+  const [historySearch, setHistorySearch] = useState("");
 
   const isWorldCup = selectedLeague === "wc2026";
   const leagueLabel = LEAGUES.find(l => l.id === selectedLeague)?.short || "World Cup 2026";
@@ -759,9 +760,10 @@ export default function FootballPredictor() {
 
         {tab === "history" && (
           <>
-            <div style={{ fontSize: 11, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Prediction History</div>
+            <div style={{ fontSize: 11, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Prediction History</div>
+            <input className="search-input" placeholder="🔍 Search by team..." value={historySearch} onChange={e => setHistorySearch(e.target.value)} />
             {history.length === 0 && <div style={{ textAlign: "center", color: "#444", fontSize: 14, padding: "40px 0" }}>No predictions yet — go predict a match!</div>}
-            {history.map((h) => {
+            {history.filter(h => !historySearch.trim() || h.home_team.toLowerCase().includes(historySearch.toLowerCase()) || h.away_team.toLowerCase().includes(historySearch.toLowerCase())).map((h) => {
               const wc = resultColor(h.result);
               return (
                 <div key={h.id} className="history-row">
