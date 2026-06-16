@@ -557,7 +557,7 @@ export default function FootballPredictor() {
                         <div key={date}>
                           <div style={{ fontSize: 10, color: "#444", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6, marginTop: 4 }}>{date}</div>
                           {fixtures.map((f, i) => (
-                            <div key={i} className={`fixture-row${homeTeam === f.home && awayTeam === f.away ? " selected" : ""}`} onClick={() => !f.result && selectFixture(f)} style={{ marginBottom: 5, opacity: f.result ? 0.4 : 1, cursor: f.result ? "default" : "pointer" }}>
+                            <div key={i} className={`fixture-row${homeTeam === f.home && awayTeam === f.away ? " selected" : ""}`} onClick={() => !(f.result || isLocked(f.home, f.away)) && selectFixture(f)} style={{ marginBottom: 5, opacity: (f.result || isLocked(f.home, f.away)) ? 0.4 : 1, cursor: (f.result || isLocked(f.home, f.away)) ? "default" : "pointer" }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
                                 <span style={{ fontSize: 16 }}>{TEAM_FLAGS[f.home] || "🏳️"}</span>
                                 <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{f.home}</span>
