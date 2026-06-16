@@ -181,7 +181,7 @@ export default function LandingPage({ onGetStarted }) {
       {/* FOOTER */}
       <footer style={{ borderTop: "1px solid #2a1f4a", padding: "32px 24px", textAlign: "center" }}>
         <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 22, color: "#4ade80", letterSpacing: 2, marginBottom: 8 }}>⚽ DEEP433</div>
-        <div style={{ fontSize: 12, color: "#444" }}>YOU vs AI · FIFA World Cup 2026 · deep433.com</div>
+        <div style={{ fontSize: 12, color: "#444" }}>YOU vs AI, brought to you by deep433.com</div>
       </footer>
     </div>
   );
