@@ -541,13 +541,13 @@ export default function FootballPredictor() {
                           {fixtures.map((f, i) => (
                           <div key={i} className={`fixture-row${homeTeam === f.home && awayTeam === f.away ? " selected" : ""}${f.result ? " played" : ""}`} onClick={() => !f.result && selectFixture(f)} style={{ marginBottom: 5, opacity: f.result ? 0.6 : 1, cursor: f.result ? "default" : "pointer" }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
-                                <span style={{ fontSize: 16 }}>{TEAM_FLAGS[f.home] || "🏳️"}</span>
+                               
                                 <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{f.home}</span>
                               </div>
                               <div style={{ fontSize: 11, color: "#555", fontWeight: 700 }}>vs</div>
                               <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, justifyContent: "flex-end" }}>
                                 <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{f.away}</span>
-                                <span style={{ fontSize: 16 }}>{TEAM_FLAGS[f.away] || "🏳️"}</span>
+                               
                               </div>
                               {f.result 
   ? <div style={{ fontSize: 11, fontWeight: 900, color: "#f59e0b", background: "#1a1400", border: "1px solid #f59e0b44", borderRadius: 6, padding: "2px 8px" }}>FT {f.result}</div>
