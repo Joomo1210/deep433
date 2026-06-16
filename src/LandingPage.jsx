@@ -76,7 +76,6 @@ export default function LandingPage({ onGetStarted }) {
               <button className="cta-btn" onClick={onGetStarted}>⚡ Join the League Free</button>
               <button className="ghost-btn" onClick={onGetStarted}>Sign In</button>
             </div>
-            <div style={{ fontSize: 12, color: "#444", marginTop: 12 }}>No card required · 30 seconds to set up</div>
           </div>
 
           {/* Right — Fixture Hub preview */}
