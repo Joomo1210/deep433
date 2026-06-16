@@ -93,6 +93,9 @@ export default function LandingPage({ onGetStarted }) {
                 { home: "England", away: "Croatia", yours: "2-1", ai: "1-1", pts: "+5pts", win: true },
                 { home: "France", away: "Senegal", yours: "2-0", ai: "2-1", pts: "+2pts", win: true },
                 { home: "Brazil", away: "Morocco", yours: "1-0", ai: "2-0", pts: null, win: false },
+                { home: "Germany", away: "Curaçao", yours: "7-1", ai: "3-0", pts: "+5pts", win: true },
+                { home: "USA", away: "Paraguay", yours: "4-1", ai: "2-0", pts: "+2pts", win: true },
+                { home: "Sweden", away: "Tunisia", yours: "5-1", ai: "2-0", pts: "+2pts", win: true },
               ].map((f, i) => (
                 <div key={i} className="score-card" style={{ marginBottom: 10 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
