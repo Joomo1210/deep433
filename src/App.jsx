@@ -129,8 +129,6 @@ const TEAM_FLAGS = {
 };
 
 function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation }) {
-  const homeFlag = TEAM_FLAGS[homeTeam] || "🏳️";
-  const awayFlag = TEAM_FLAGS[awayTeam] || "🏳️";
   const parseFormation = (f) => { if (!f) return [4,3,3]; return f.split("-").map(Number); };
   const hForm = parseFormation(homeFormation);
   const aForm = parseFormation(awayFormation);
@@ -559,13 +557,11 @@ export default function FootballPredictor() {
                           {fixtures.map((f, i) => (
                             <div key={i} className={`fixture-row${homeTeam === f.home && awayTeam === f.away ? " selected" : ""}`} onClick={() => !(f.result || isLocked(f.home, f.away)) && selectFixture(f)} style={{ marginBottom: 5, opacity: (f.result || isLocked(f.home, f.away)) ? 0.4 : 1, cursor: (f.result || isLocked(f.home, f.away)) ? "default" : "pointer" }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
-                                <span style={{ fontSize: 16 }}>{TEAM_FLAGS[f.home] || "🏳️"}</span>
                                 <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{f.home}</span>
                               </div>
                               <div style={{ fontSize: 11, color: "#555", fontWeight: 700 }}>vs</div>
                               <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, justifyContent: "flex-end" }}>
                                 <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{f.away}</span>
-                                <span style={{ fontSize: 16 }}>{TEAM_FLAGS[f.away] || "🏳️"}</span>
                               </div>
                               <div style={{ fontSize: 10, color: "#555", minWidth: 60, textAlign: "right" }}>{f.group}</div>
                             </div>

@@ -13,14 +13,13 @@ export const TEAM_FLAGS = {
   "England": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "Ghana": "🇬🇭", "Panama": "🇵🇦", "Croatia": "🇭🇷",
 };
 
-function Shield({ cx, cy, flag, number, color, border }) {
+function Shield({ cx, cy, number, color, border }) {
   return (
     <g>
       <path
         d={`M${cx-13},${cy-16} Q${cx},${cy-20} ${cx+13},${cy-16} L${cx+13},${cy+8} Q${cx},${cy+20} ${cx-13},${cy+8} Z`}
         fill={color} stroke={border} strokeWidth="2"
       />
-      <text x={cx} y={cy-2} textAnchor="middle" fontSize="14" dominantBaseline="middle">{flag}</text>
       <text x={cx} y={cy+14} textAnchor="middle" fontFamily="Inter,sans-serif" fontSize="10" fontWeight="700" fill="#ffffff">{number}</text>
     </g>
   );
@@ -85,17 +84,17 @@ export default function PitchView({ homeTeam, awayTeam, homeFormation, awayForma
       <text x="340" y="422" textAnchor="middle" fontFamily="Inter,sans-serif" fontSize="26" fontWeight="900" fill="rgba(255,255,255,0.04)">DEEP433</text>
 
       {/* Team labels */}
-      <text x="340" y="20" textAnchor="middle" fontFamily="Inter,sans-serif" fontSize="12" fontWeight="700" fill="rgba(255,255,255,0.65)">{homeFlag} {homeTeam} · {homeFormation || "4-3-3"}</text>
-      <text x="340" y="816" textAnchor="middle" fontFamily="Inter,sans-serif" fontSize="12" fontWeight="700" fill="rgba(255,255,255,0.65)">{awayFlag} {awayTeam} · {awayFormation || "4-4-2"}</text>
+      <text x="340" y="20" textAnchor="middle" fontFamily="Inter,sans-serif" fontSize="12" fontWeight="700" fill="rgba(255,255,255,0.65)">{homeTeam} · {homeFormation || "4-3-3"}</text>
+      <text x="340" y="816" textAnchor="middle" fontFamily="Inter,sans-serif" fontSize="12" fontWeight="700" fill="rgba(255,255,255,0.65)">{awayTeam} · {awayFormation || "4-4-2"}</text>
 
       {/* Home players */}
       {homePositions.map((pos, i) => (
-        <Shield key={`h${i}`} cx={pos.x} cy={pos.y} flag={homeFlag} number={homeNum++} color="#0f3460" border="#4ade80"/>
+        <Shield key={`h${i}`} cx={pos.x} cy={pos.y} number={homeNum++} color="#0f3460" border="#4ade80"/>
       ))}
 
       {/* Away players */}
       {awayPositions.map((pos, i) => (
-        <Shield key={`a${i}`} cx={pos.x} cy={pos.y} flag={awayFlag} number={awayNum++} color="#3d0000" border="#f59e0b"/>
+        <Shield key={`a${i}`} cx={pos.x} cy={pos.y} number={awayNum++} color="#3d0000" border="#f59e0b"/>
       ))}
     </svg>
   );
