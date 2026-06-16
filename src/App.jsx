@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import LandingPage from "./LandingPage";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -129,6 +130,8 @@ const TEAM_FLAGS = {
 };
 
 function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation }) {
+  const homeFlag = TEAM_FLAGS[homeTeam] || "🏳️";
+  const awayFlag = TEAM_FLAGS[awayTeam] || "🏳️";
   const parseFormation = (f) => { if (!f) return [4,3,3]; return f.split("-").map(Number); };
   const hForm = parseFormation(homeFormation);
   const aForm = parseFormation(awayFormation);
@@ -289,6 +292,7 @@ function AuthScreen() {
 export default function FootballPredictor() {
   const [session, setSession] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [showLanding, setShowLanding] = useState(true);
   const [tab, setTab] = useState("predict");
   const [homeTeam, setHomeTeam] = useState("");
   const [awayTeam, setAwayTeam] = useState("");
@@ -443,7 +447,10 @@ export default function FootballPredictor() {
     </div>
   );
 
-  if (!session) return <AuthScreen />;
+  if (!session) {
+    if (showLanding) return <LandingPage onGetStarted={() => setShowLanding(false)} />;
+    return <AuthScreen />;
+  }
 
   return (
     <div style={{ minHeight: "100vh", background: "#0a0a0f", color: "#f0f0f0", fontFamily: "'Inter','Helvetica Neue',sans-serif" }}>
@@ -555,13 +562,15 @@ export default function FootballPredictor() {
                         <div key={date}>
                           <div style={{ fontSize: 10, color: "#444", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6, marginTop: 4 }}>{date}</div>
                           {fixtures.map((f, i) => (
-                            <div key={i} className={`fixture-row${homeTeam === f.home && awayTeam === f.away ? " selected" : ""}`} onClick={() => !(f.result || isLocked(f.home, f.away)) && selectFixture(f)} style={{ marginBottom: 5, opacity: (f.result || isLocked(f.home, f.away)) ? 0.4 : 1, cursor: (f.result || isLocked(f.home, f.away)) ? "default" : "pointer" }}>
+                            <div key={i} className={`fixture-row${homeTeam === f.home && awayTeam === f.away ? " selected" : ""}`} onClick={() => !f.result && selectFixture(f)} style={{ marginBottom: 5, opacity: f.result ? 0.4 : 1, cursor: f.result ? "default" : "pointer" }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
+                                <span style={{ fontSize: 16 }}>{TEAM_FLAGS[f.home] || "🏳️"}</span>
                                 <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{f.home}</span>
                               </div>
                               <div style={{ fontSize: 11, color: "#555", fontWeight: 700 }}>vs</div>
                               <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, justifyContent: "flex-end" }}>
                                 <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{f.away}</span>
+                                <span style={{ fontSize: 16 }}>{TEAM_FLAGS[f.away] || "🏳️"}</span>
                               </div>
                               <div style={{ fontSize: 10, color: "#555", minWidth: 60, textAlign: "right" }}>{f.group}</div>
                             </div>
