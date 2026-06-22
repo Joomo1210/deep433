@@ -71,7 +71,7 @@ export default function LandingPage({ onGetStarted }) {
       <section style={{ padding: "120px 24px 60px", maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#1a0a2e", border: "1px solid #7c3aed44", borderRadius: 40, padding: "6px 16px", marginBottom: 28 }}>
           <span className="pulse" style={{ width: 8, height: 8, borderRadius: "50%", background: "#4ade80", display: "inline-block" }}/>
-          <span style={{ fontSize: 12, fontWeight: 700, color: "#4ade80", letterSpacing: 1 }}>WORLD CUP 2026 · LIVE COVERAGE</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: "#4ade80", letterSpacing: 1 }}>LIVE COVERAGE · EVERY MATCHDAY</span>
         </div>
 
         <div className="hero-title" style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 64, lineHeight: 1.0, marginBottom: 24 }}>
@@ -125,7 +125,7 @@ export default function LandingPage({ onGetStarted }) {
       {loaded && posts.length === 0 && (
         <section style={{ padding: "0 24px 80px", maxWidth: 700, margin: "0 auto", textAlign: "center" }}>
           <div style={{ border: "1px dashed #2a1f4a", borderRadius: 16, padding: 48, color: "#666" }}>
-            First breakdown drops once the Round of 32 kicks off. Check back soon.
+            First breakdown drops once matchday kicks off. Check back soon.
           </div>
         </section>
       )}
