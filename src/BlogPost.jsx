@@ -6,6 +6,39 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY
 );
 
+const TEAM_FLAGS = {
+  "Mexico": "🇲🇽", "South Africa": "🇿🇦", "Korea Republic": "🇰🇷", "Czechia": "🇨🇿",
+  "Canada": "🇨🇦", "Bosnia and Herzegovina": "🇧🇦", "USA": "🇺🇸", "Paraguay": "🇵🇾",
+  "Qatar": "🇶🇦", "Switzerland": "🇨🇭", "Brazil": "🇧🇷", "Morocco": "🇲🇦",
+  "Haiti": "🇭🇹", "Scotland": "🏴", "Australia": "🇦🇺", "Türkiye": "🇹🇷",
+  "Germany": "🇩🇪", "Curaçao": "🇨🇼", "Netherlands": "🇳🇱", "Japan": "🇯🇵",
+  "Côte d'Ivoire": "🇨🇮", "Ecuador": "🇪🇨", "Sweden": "🇸🇪", "Tunisia": "🇹🇳",
+  "Spain": "🇪🇸", "Cabo Verde": "🇨🇻", "Belgium": "🇧🇪", "Egypt": "🇪🇬",
+  "Saudi Arabia": "🇸🇦", "Uruguay": "🇺🇾", "IR Iran": "🇮🇷", "New Zealand": "🇳🇿",
+  "France": "🇫🇷", "Senegal": "🇸🇳", "Iraq": "🇮🇶", "Norway": "🇳🇴",
+  "Argentina": "🇦🇷", "Algeria": "🇩🇿", "Austria": "🇦🇹", "Jordan": "🇯🇴",
+  "Portugal": "🇵🇹", "Congo DR": "🇨🇩", "England": "🏴", "Croatia": "🇭🇷",
+  "Ghana": "🇬🇭", "Panama": "🇵🇦", "Uzbekistan": "🇺🇿", "Colombia": "🇨🇴",
+};
+
+function withFlags(matchLabel) {
+  if (!matchLabel) return matchLabel;
+  const parts = matchLabel.split(/\s+vs\s+/i);
+  if (parts.length !== 2) return matchLabel;
+  const [home, away] = parts;
+  const homeFlag = TEAM_FLAGS[home.trim()] || '';
+  const awayFlag = TEAM_FLAGS[away.trim()] || '';
+  return (
+    <>
+      {homeFlag && <span style={{ marginRight: 8 }}>{homeFlag}</span>}
+      {home}
+      <span style={{ margin: '0 8px', opacity: 0.5 }}>vs</span>
+      {away}
+      {awayFlag && <span style={{ marginLeft: 8 }}>{awayFlag}</span>}
+    </>
+  );
+}
+
 export default function BlogPost() {
   const slug = window.location.pathname.split('/blog/')[1];
   const [post, setPost] = useState(null);
@@ -68,10 +101,11 @@ export default function BlogPost() {
         <span>{post.read_minutes || 4} MIN READ</span>
         {post.competition && <span>{post.competition.toUpperCase()}</span>}
       </div>
+      {post.match_label && <div style={matchTag}>{withFlags(post.match_label)}</div>}
 
       {/* Scoreboard */}
       <div style={scoreboard}>
-        <div style={scoreboardHead}>Predictions Board — {post.match_label} · what's your call?</div>
+        <div style={scoreboardHead}>Predictions Board — {withFlags(post.match_label)} · what's your call?</div>
         <div style={scoreRow}>
           <ScoreCell color="#3D7EFF" label="Pundit Take" value={featuredPundit.predicted_score} note={featuredPundit.take}>
             {featuredPundit.pundit_name && (
@@ -167,6 +201,7 @@ const eyebrow = { maxWidth: 760, margin: '40px auto 0', padding: '0 24px', color
 const h1 = { maxWidth: 760, margin: '14px auto 0', padding: '0 24px', fontSize: 38, lineHeight: 1.1, fontWeight: 900 };
 const sub = { maxWidth: 760, margin: '14px auto 0', padding: '0 24px', color: '#7E9485', fontSize: 17, lineHeight: 1.5 };
 const meta = { maxWidth: 760, margin: '24px auto 0', padding: '0 24px', display: 'flex', gap: 18, fontSize: 12, color: '#7E9485', fontFamily: 'monospace' };
+const matchTag = { maxWidth: 760, margin: '16px auto 0', padding: '0 24px', fontSize: 22, fontWeight: 700 };
 const scoreboard = { maxWidth: 760, margin: '44px auto 0', padding: '0 24px' };
 const scoreboardHead = { fontSize: 11, letterSpacing: 1, color: '#7E9485', padding: '14px 0', borderTop: '1px solid #173A28', borderBottom: '1px solid #173A28', textTransform: 'uppercase' };
 const scoreRow = { display: 'flex', border: '1px solid #173A28', borderTop: 'none' };
