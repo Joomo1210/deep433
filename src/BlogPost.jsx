@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -8,24 +7,34 @@ const supabase = createClient(
 );
 
 export default function BlogPost() {
-const slug = window.location.pathname.split('/blog/')[1];
+  const slug = window.location.pathname.split('/blog/')[1];
   const [post, setPost] = useState(null);
-  const [status, setStatus] = useState('loading'); // loading | ready | not_found | error
+  const [pundits, setPundits] = useState([]);
+  const [fans, setFans] = useState([]);
+  const [status, setStatus] = useState('loading');
 
   useEffect(() => {
     async function load() {
-      const { data, error } = await supabase
+      const { data: postData, error } = await supabase
         .from('blog_posts')
         .select('*')
         .eq('slug', slug)
         .eq('published', true)
         .single();
 
-      if (error || !data) {
+      if (error || !postData) {
         setStatus('not_found');
         return;
       }
-      setPost(data);
+      setPost(postData);
+
+      const [{ data: punditData }, { data: fanData }] = await Promise.all([
+        supabase.from('blog_pundit_takes').select('*').eq('post_id', postData.id).order('created_at'),
+        supabase.from('blog_fan_takes').select('*').eq('post_id', postData.id).order('created_at'),
+      ]);
+
+      setPundits(punditData || []);
+      setFans(fanData || []);
       setStatus('ready');
     }
     load();
@@ -34,8 +43,16 @@ const slug = window.location.pathname.split('/blog/')[1];
   if (status === 'loading') return <Centered>Loading…</Centered>;
   if (status === 'not_found') return <Centered>Post not found.</Centered>;
 
+  const featuredPundit = pundits.find(p => p.is_featured) || pundits[0] || {
+    pundit_name: post.pundit_name, take: post.pundit_take, predicted_score: post.pundit_predicted_score, source_url: post.pundit_source_url,
+  };
+  const featuredFan = fans.find(f => f.is_featured) || fans[0] || {
+    fan_handle: post.fan_handle, take: post.fan_take, predicted_score: post.fan_predicted_score,
+  };
+  const morePundits = pundits.filter(p => p !== featuredPundit && !p.is_featured);
+  const moreFans = fans.filter(f => f !== featuredFan && !f.is_featured);
+
   const isSettled = !!post.final_score;
-  const kickoffPassed = post.match_date && new Date(post.match_date) < new Date();
 
   return (
     <div style={page}>
@@ -54,26 +71,18 @@ const slug = window.location.pathname.split('/blog/')[1];
 
       {/* Scoreboard */}
       <div style={scoreboard}>
-        <div style={scoreboardHead}>
-          Predictions Board — {post.match_label} · who actually calls it?
-        </div>
+        <div style={scoreboardHead}>Predictions Board — {post.match_label} · what's your call?</div>
         <div style={scoreRow}>
-          <ScoreCell color="#3D7EFF" label="Pundit Take" value={post.pundit_predicted_score} note={post.pundit_take}>
-            {post.pundit_name && (
+          <ScoreCell color="#3D7EFF" label="Pundit Take" value={featuredPundit.predicted_score} note={featuredPundit.take}>
+            {featuredPundit.pundit_name && (
               <Attribution color="#3D7EFF">
-                — {post.pundit_name}{post.pundit_source_url && (
-                  <> · <a href={post.pundit_source_url} target="_blank" rel="noreferrer" style={{ color: 'inherit' }}>Source</a></>
-                )}
+                — {featuredPundit.pundit_name}{featuredPundit.source_url && <> · <a href={featuredPundit.source_url} target="_blank" rel="noreferrer" style={{ color: 'inherit' }}>Source</a></>}
               </Attribution>
             )}
           </ScoreCell>
 
-          <ScoreCell color="#FF5A2D" label="Fan Take" value={post.fan_predicted_score} note={post.fan_take}>
-            {post.fan_handle && (
-              <Attribution color="#FF5A2D">
-                — {post.fan_handle}{post.fan_predicted_score && ` · predicted ${post.fan_predicted_score}`}
-              </Attribution>
-            )}
+          <ScoreCell color="#FF5A2D" label="Fan Take" value={featuredFan.predicted_score} note={featuredFan.take}>
+            {featuredFan.fan_handle && <Attribution color="#FF5A2D">— {featuredFan.fan_handle}</Attribution>}
           </ScoreCell>
 
           <ScoreCell color="#C8FF4D" label="AI's Guess" value={post.ai_predicted_score} note={post.ai_note}>
@@ -83,12 +92,25 @@ const slug = window.location.pathname.split('/blog/')[1];
           <ScoreCell
             color="#F1F4EC"
             label="Final Score"
-            value={isSettled ? post.final_score : 'Pending'}
-            note={isSettled ? 'This is the only one that actually settled it.' : null}
+            value={isSettled ? post.final_score : '— : —'}
+            note={isSettled ? "This is the one that actually settles it." : null}
             pending={!isSettled}
           />
         </div>
       </div>
+
+      {/* More voices */}
+      {(morePundits.length > 0 || moreFans.length > 0) && (
+        <div style={moreVoices}>
+          <div style={moreVoicesHead}>More voices on this one</div>
+          {morePundits.map(p => (
+            <VoiceRow key={p.id} color="#3D7EFF" name={p.pundit_name} take={p.take} score={p.predicted_score} />
+          ))}
+          {moreFans.map(f => (
+            <VoiceRow key={f.id} color="#FF5A2D" name={f.fan_handle} take={f.take} score={f.predicted_score} />
+          ))}
+        </div>
+      )}
 
       {/* Body */}
       <div style={articleBody}>
@@ -97,14 +119,22 @@ const slug = window.location.pathname.split('/blog/')[1];
         ))}
       </div>
 
-      {/* CTA */}
       <div style={cta}>
         <div style={ctaText}>
-          {kickoffPassed && !isSettled ? 'Check back for the result' : 'Make your own call before kickoff'}
-          <span style={ctaSub}>Predict the score. Beat the AI. Beat the pundits.</span>
+          Have your say before kickoff
+          <span style={ctaSub}>Predict the score. See how it compares.</span>
         </div>
         <div style={ctaBtn}>Predict Now →</div>
       </div>
+    </div>
+  );
+}
+
+function VoiceRow({ color, name, take, score }) {
+  return (
+    <div style={voiceRow}>
+      <div style={{ ...voiceRowName, color }}>{name}{score && <span style={{ color: '#7E9485', fontWeight: 400 }}> · predicted {score}</span>}</div>
+      {take && <div style={voiceRowTake}>{take}</div>}
     </div>
   );
 }
@@ -113,7 +143,7 @@ function ScoreCell({ color, label, value, note, pending, children }) {
   return (
     <div style={{ flex: 1, padding: '24px 20px', borderRight: '1px solid #173A28', opacity: pending ? 0.6 : 1 }}>
       <div style={{ fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color, marginBottom: 10 }}>{label}</div>
-      <div style={{ fontFamily: 'inherit', fontWeight: 700, fontSize: 24 }}>{value || '—'}</div>
+      <div style={{ fontWeight: 700, fontSize: 24 }}>{value || '—'}</div>
       {note && <div style={{ fontSize: 13, color: '#7E9485', marginTop: 8, lineHeight: 1.4 }}>{note}</div>}
       {children}
       {pending && <span style={pendingTag}>Updates after kickoff</span>}
@@ -126,10 +156,9 @@ function Attribution({ color, children }) {
 }
 
 function Centered({ children }) {
-  return <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7E9485' }}>{children}</div>;
+  return <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7E9485', background: '#0B1F17' }}>{children}</div>;
 }
 
-// Styles
 const page = { background: '#0B1F17', color: '#F1F4EC', minHeight: '100vh', fontFamily: 'sans-serif' };
 const topbar = { maxWidth: 760, margin: '0 auto', display: 'flex', justifyContent: 'space-between', padding: '48px 24px 24px', borderBottom: '1px solid #173A28' };
 const logo = { fontWeight: 900, fontSize: 18 };
@@ -141,8 +170,13 @@ const meta = { maxWidth: 760, margin: '24px auto 0', padding: '0 24px', display:
 const scoreboard = { maxWidth: 760, margin: '44px auto 0', padding: '0 24px' };
 const scoreboardHead = { fontSize: 11, letterSpacing: 1, color: '#7E9485', padding: '14px 0', borderTop: '1px solid #173A28', borderBottom: '1px solid #173A28', textTransform: 'uppercase' };
 const scoreRow = { display: 'flex', border: '1px solid #173A28', borderTop: 'none' };
+const moreVoices = { maxWidth: 760, margin: '28px auto 0', padding: '0 24px' };
+const moreVoicesHead = { fontSize: 11, letterSpacing: 1, color: '#7E9485', textTransform: 'uppercase', marginBottom: 12, fontFamily: 'monospace' };
+const voiceRow = { borderTop: '1px solid #173A28', padding: '12px 0' };
+const voiceRowName = { fontSize: 13, fontWeight: 700, marginBottom: 4 };
+const voiceRowTake = { fontSize: 14, color: '#D6DED2', lineHeight: 1.5 };
 const articleBody = { maxWidth: 760, margin: '48px auto 0', padding: '0 24px 100px', fontSize: 17, lineHeight: 1.7 };
-const pStyle = { marginBottom: 20, color: '#D8E0D6' };
+const pStyle = { marginBottom: 20, color: '#D6DED2' };
 const cta = { maxWidth: 760, margin: '0 auto 100px', padding: '24px', border: '1px solid #C8FF4D', borderRadius: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' };
 const ctaText = { fontWeight: 900, fontSize: 16 };
 const ctaSub = { display: 'block', fontSize: 12, color: '#7E9485', fontWeight: 400, marginTop: 6 };
