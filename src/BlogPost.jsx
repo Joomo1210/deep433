@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -8,7 +8,7 @@ const supabase = createClient(
 );
 
 export default function BlogPost() {
-  const { slug } = useParams();
+const slug = window.location.pathname.split('/blog/')[1];
   const [post, setPost] = useState(null);
   const [status, setStatus] = useState('loading'); // loading | ready | not_found | error
 
