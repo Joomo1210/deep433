@@ -80,8 +80,8 @@ export default function LandingPage({ onGetStarted }) {
           <span style={{ color: "#4ade80" }}>What's your call?</span>
         </div>
 
-        <p style={{ fontSize: 17, color: "#888", lineHeight: 1.7, maxWidth: 540, margin: "0 auto 36px" }}>
-          Every matchday, we put the official line next to what fans are actually saying — then throw in an AI guess for good measure. Read it, argue with it, then go predict the score yourself.
+        <p style={{ fontSize: 19, color: "#888", lineHeight: 1.7, maxWidth: 580, margin: "0 auto 36px" }}>
+          Every matchday, we put what the pundits are saying next to what fans are actually saying, then throw in an AI guess for good measure. Read it, argue with it, then go predict the score yourself.
         </p>
 
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
