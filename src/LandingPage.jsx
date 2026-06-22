@@ -134,7 +134,7 @@ export default function LandingPage({ onGetStarted }) {
       <section style={{ padding: "0 24px 100px", maxWidth: 1000, margin: "0 auto" }}>
         <div className="predict-strip">
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: "#4ade80", textTransform: "uppercase", marginBottom: 8 }}>You vs AI</div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: "#4ade80", textTransform: "uppercase", marginBottom: 8 }}>Your Turn</div>
             <div style={{ fontSize: 22, fontWeight: 800 }}>Done reading? Make your own prediction.</div>
             <div style={{ fontSize: 14, color: "#888", marginTop: 6 }}>Lock in a scoreline, see how it compares to the AI's guess, climb the leaderboard.</div>
           </div>
