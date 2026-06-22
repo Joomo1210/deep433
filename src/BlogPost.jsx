@@ -158,7 +158,7 @@ export default function BlogPost() {
           Have your say before kickoff
           <span style={ctaSub}>Predict the score. See how it compares.</span>
         </div>
-        <div style={ctaBtn}>Predict Now →</div>
+        <a href="/" style={ctaBtn}>Predict Now →</a>
       </div>
     </div>
   );
@@ -215,5 +215,5 @@ const pStyle = { marginBottom: 20, color: '#D6DED2' };
 const cta = { maxWidth: 760, margin: '0 auto 100px', padding: '24px', border: '1px solid #C8FF4D', borderRadius: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' };
 const ctaText = { fontWeight: 900, fontSize: 16 };
 const ctaSub = { display: 'block', fontSize: 12, color: '#7E9485', fontWeight: 400, marginTop: 6 };
-const ctaBtn = { fontSize: 12, background: '#C8FF4D', color: '#0B1F17', padding: '12px 20px', borderRadius: 3, whiteSpace: 'nowrap' };
+const ctaBtn = { fontSize: 12, background: '#C8FF4D', color: '#0B1F17', padding: '12px 20px', borderRadius: 3, whiteSpace: 'nowrap', textDecoration: 'none', fontWeight: 700, display: 'inline-block' };
 const pendingTag = { display: 'inline-block', fontSize: 10, color: '#7E9485', border: '1px solid #173A28', padding: '3px 8px', borderRadius: 20, marginTop: 8 };
