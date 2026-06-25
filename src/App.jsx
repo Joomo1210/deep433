@@ -402,11 +402,22 @@ export default function FootballPredictor() {
     setLoggingIdx(null); setLogScore("");
   };
 
-  const isLocked = (homeTeam, awayTeam) => {
-    const fixture = WC_FIXTURES.find(f => f.home === homeTeam && f.away === awayTeam);
-    if (!fixture || !fixture.kickoff) return false;
-    return new Date() >= new Date(fixture.kickoff);
-  };
+ const normalize = (s) =>
+  (s || "")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "");
+
+const isLocked = (homeTeam, awayTeam) => {
+  const h = normalize(homeTeam);
+  const a = normalize(awayTeam);
+  const fixture = WC_FIXTURES.find(f =>
+    (normalize(f.home) === h && normalize(f.away) === a) ||
+    (normalize(f.home) === a && normalize(f.away) === h)
+  );
+  if (!fixture || !fixture.kickoff) return false;
+  return new Date() >= new Date(fixture.kickoff);
+};
 
   const deletePredict = async (id) => {
     await supabase.from("predictions").delete().eq("id", id);
