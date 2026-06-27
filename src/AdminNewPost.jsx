@@ -128,9 +128,9 @@ export default function AdminNewPost() {
   }
 
   return (
-    <div style={{ maxWidth: 680, margin: '0 auto', padding: '48px 24px 100px', fontFamily: 'sans-serif' }}>
-      <h1>New Post</h1>
-      <p style={{ color: '#7E9485', marginBottom: 32 }}>
+    <div style={{ minHeight: '100vh', background: '#0B1F17', maxWidth: 680, margin: '0 auto', padding: '48px 24px 100px', fontFamily: 'sans-serif', color: '#F1F4EC' }}>
+      <h1 style={{ fontSize: 32, fontWeight: 900 }}>New Post</h1>
+      <p style={{ color: '#9CA89C', marginBottom: 32, fontSize: 15, lineHeight: 1.5 }}>
         Add as many pundits and fans as you like — pick one of each to feature in the scoreboard. The rest show below as more voices.
       </p>
 
@@ -213,8 +213,8 @@ const addBtn = { background: 'none', border: '1px dashed #173A28', color: '#7E94
 
 function Section({ title, color = '#F1F4EC', children }) {
   return (
-    <div style={{ border: '1px solid #173A28', borderRadius: 4, padding: 22, marginBottom: 20 }}>
-      <div style={{ color, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 16, paddingBottom: 10, borderBottom: '1px solid #173A28' }}>
+    <div style={{ border: '1px solid #2A4A3A', borderRadius: 6, padding: 24, marginBottom: 24, background: '#0E2419' }}>
+      <div style={{ color, fontSize: 14, letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700, marginBottom: 18, paddingBottom: 12, borderBottom: '1px solid #2A4A3A' }}>
         {title}
       </div>
       {children}
@@ -228,14 +228,14 @@ function Row2({ children }) {
 
 function Field({ label, value, onChange, placeholder, textarea, type = 'text' }) {
   return (
-    <div style={{ marginBottom: 14 }}>
-      <label style={{ display: 'block', fontSize: 11, color: '#7E9485', marginBottom: 6, textTransform: 'uppercase' }}>{label}</label>
+    <div style={{ marginBottom: 16 }}>
+      <label style={{ display: 'block', fontSize: 13, color: '#9CA89C', marginBottom: 8, textTransform: 'uppercase', fontWeight: 600, letterSpacing: 0.5 }}>{label}</label>
       {textarea ? (
         <textarea
           value={value}
           onChange={e => onChange(e.target.value)}
           placeholder={placeholder}
-          style={{ width: '100%', minHeight: 70, padding: 10, background: '#0B1F17', color: '#F1F4EC', border: '1px solid #173A28', borderRadius: 3 }}
+          style={{ width: '100%', minHeight: 80, padding: 12, background: '#0E2419', color: '#F1F4EC', border: '1px solid #2A4A3A', borderRadius: 4, fontSize: 15, lineHeight: 1.5 }}
         />
       ) : (
         <input
@@ -243,7 +243,7 @@ function Field({ label, value, onChange, placeholder, textarea, type = 'text' })
           value={value}
           onChange={e => onChange(e.target.value)}
           placeholder={placeholder}
-          style={{ width: '100%', padding: 10, background: '#0B1F17', color: '#F1F4EC', border: '1px solid #173A28', borderRadius: 3 }}
+          style={{ width: '100%', padding: 12, background: '#0E2419', color: '#F1F4EC', border: '1px solid #2A4A3A', borderRadius: 4, fontSize: 15 }}
         />
       )}
     </div>
