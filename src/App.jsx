@@ -394,6 +394,24 @@ export default function FootballPredictor() {
     return () => clearInterval(interval);
   }, [session, selectedLeague]);
 
+  // Auto-fill final scores: whenever live data updates, check history for finished
+  // matches that don't have a logged result yet, and fill it in automatically.
+  useEffect(() => {
+    if (!liveData.length || !history.length) return;
+
+    history.forEach(h => {
+      if (h.actual_score) return; // already logged
+
+      const live = findLiveFixture(h.home_team, h.away_team);
+      if (!live || live.status !== "finished") return;
+      if (live.score.home == null || live.score.away == null) return;
+
+      const score = `${live.score.home}-${live.score.away}`;
+      logResult(h.id, score);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveData, history]);
+
   const loadHistory = async (userId) => {
     const { data } = await supabase.from("predictions").select("*").eq("user_id", userId).order("created_at", { ascending: false });
     if (data) setHistory(data);
