@@ -437,8 +437,21 @@ export default function FootballPredictor() {
     setFixtureSearch("");
   };
 
+  const hasExistingPrediction = (homeTeam, awayTeam) => {
+    const h = normalize(homeTeam);
+    const a = normalize(awayTeam);
+    return history.some(item =>
+      (normalize(item.home_team) === h && normalize(item.away_team) === a) ||
+      (normalize(item.home_team) === a && normalize(item.away_team) === h)
+    );
+  };
+
   const goToStep2 = () => {
     if (!homeTeam || !awayTeam) { setError("Enter both team names."); return; }
+    if (hasExistingPrediction(homeTeam, awayTeam)) {
+      setError("You've already predicted this match — check History to edit it.");
+      return;
+    }
     const status = getMatchStatus(homeTeam, awayTeam);
     if (status === "live") { setError("This match is already in progress — predictions are closed."); return; }
     if (status === "finished") { setError("This match has finished — predictions are closed."); return; }
