@@ -83,9 +83,9 @@ function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineu
     const rows = [1, ...formation];
     const positions = [];
     rows.forEach((count, rowIdx) => {
-      const xPct = side === "home" ? 5 + (rowIdx / (rows.length - 1)) * 44 : 95 - (rowIdx / (rows.length - 1)) * 44;
+      const xPct = side === "home" ? 5 + (rowIdx / (rows.length - 1)) * 38 : 95 - (rowIdx / (rows.length - 1)) * 38;
       for (let i = 0; i < count; i++) {
-        const yPct = count === 1 ? 50 : 10 + (i / (count - 1)) * 80;
+        const yPct = count === 1 ? 50 : 14 + (i / (count - 1)) * 72;
         positions.push({ x: xPct, y: yPct });
       }
     });
@@ -107,7 +107,7 @@ function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineu
         {name ? num : flag}
       </div>
       {name ? (
-        <div style={{ fontSize: 6.5, fontWeight: 800, color: "#ffffff", background: "rgba(0,0,0,0.78)", padding: "1.5px 5px", borderRadius: 4, whiteSpace: "nowrap", maxWidth: 56, overflow: "hidden", textOverflow: "ellipsis", border: `1px solid ${border}55` }}>
+        <div style={{ fontSize: 6, fontWeight: 800, color: "#ffffff", background: "rgba(0,0,0,0.78)", padding: "1.5px 4px", borderRadius: 4, whiteSpace: "nowrap", maxWidth: 42, overflow: "hidden", textOverflow: "ellipsis", border: `1px solid ${border}55` }}>
           {surname(name)}
         </div>
       ) : (
