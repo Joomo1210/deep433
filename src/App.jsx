@@ -79,13 +79,17 @@ function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineu
   const hForm = parseFormation(homeFormation);
   const aForm = parseFormation(awayFormation);
 
+  // Vertical pitch: home team attacks upward from the bottom goal,
+  // away team attacks downward from the top goal, meeting at halfway.
   const getPlayerPositions = (formation, side) => {
-    const rows = [1, ...formation];
+    const rows = [1, ...formation]; // GK first, then outfield rows
     const positions = [];
     rows.forEach((count, rowIdx) => {
-      const xPct = side === "home" ? 5 + (rowIdx / (rows.length - 1)) * 38 : 95 - (rowIdx / (rows.length - 1)) * 38;
+      const yPct = side === "home"
+        ? 8 + (rowIdx / (rows.length - 1)) * 40    // top goal (8%) down to just above halfway (48%)
+        : 92 - (rowIdx / (rows.length - 1)) * 40;   // bottom goal (92%) up to just below halfway (52%)
       for (let i = 0; i < count; i++) {
-        const yPct = count === 1 ? 50 : 14 + (i / (count - 1)) * 72;
+        const xPct = count === 1 ? 50 : 14 + (i / (count - 1)) * 72;
         positions.push({ x: xPct, y: yPct });
       }
     });
@@ -103,15 +107,15 @@ function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineu
 
   const PlayerPin = ({ x, y, flag, num, color, border, name }) => (
     <div style={{ position: "absolute", left: `${x}%`, top: `${y}%`, transform: "translate(-50%, -50%)", display: "flex", flexDirection: "column", alignItems: "center", zIndex: 2, gap: 2 }}>
-      <div style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)", background: color, border: `1.5px solid ${border}`, width: 22, height: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: name ? 9 : 11, fontWeight: 800, color: "#ffffff" }}>
+      <div style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)", background: color, border: `1.5px solid ${border}`, width: 24, height: 26, display: "flex", alignItems: "center", justifyContent: "center", fontSize: name ? 10 : 12, fontWeight: 800, color: "#ffffff" }}>
         {name ? num : flag}
       </div>
       {name ? (
-        <div style={{ fontSize: 6, fontWeight: 800, color: "#ffffff", background: "rgba(0,0,0,0.78)", padding: "1.5px 4px", borderRadius: 4, whiteSpace: "nowrap", maxWidth: 42, overflow: "hidden", textOverflow: "ellipsis", border: `1px solid ${border}55` }}>
+        <div style={{ fontSize: 7, fontWeight: 800, color: "#ffffff", background: "rgba(0,0,0,0.78)", padding: "1.5px 5px", borderRadius: 4, whiteSpace: "nowrap", maxWidth: 64, overflow: "hidden", textOverflow: "ellipsis", border: `1px solid ${border}55` }}>
           {surname(name)}
         </div>
       ) : (
-        <div style={{ fontSize: 7, fontWeight: 700, color: border, textShadow: "0 0 4px rgba(0,0,0,0.9)" }}>{num}</div>
+        <div style={{ fontSize: 8, fontWeight: 700, color: border, textShadow: "0 0 4px rgba(0,0,0,0.9)" }}>{num}</div>
       )}
     </div>
   );
@@ -119,63 +123,50 @@ function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineu
   return (
     <div style={{ width: "100%", position: "relative", borderRadius: 10, overflow: "hidden" }}>
       {lineupSource && (
-        <div style={{ position: "absolute", top: 4, left: "50%", transform: "translateX(-50%)", zIndex: 5, fontSize: 8, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: lineupSource === "confirmed" ? "#22c55e22" : "#f59e0b22", color: lineupSource === "confirmed" ? "#4ade80" : "#f59e0b", border: `1px solid ${lineupSource === "confirmed" ? "#22c55e44" : "#f59e0b44"}` }}>
+        <div style={{ position: "absolute", top: 6, left: "50%", transform: "translateX(-50%)", zIndex: 6, fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 10, background: lineupSource === "confirmed" ? "#22c55e22" : "#f59e0b22", color: lineupSource === "confirmed" ? "#4ade80" : "#f59e0b", border: `1px solid ${lineupSource === "confirmed" ? "#22c55e44" : "#f59e0b44"}` }}>
           {lineupSource === "confirmed" ? "✓ CONFIRMED LINEUP" : "LIKELY LINEUP"}
         </div>
       )}
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 50, zIndex: 3, pointerEvents: "none", background: "radial-gradient(ellipse at 15% 0%, rgba(255,255,200,0.3) 0%, transparent 55%), radial-gradient(ellipse at 85% 0%, rgba(255,255,200,0.3) 0%, transparent 55%)" }}/>
-      <div style={{ height: 50, position: "relative", overflow: "hidden", background: "linear-gradient(180deg, #0d0d1a 0%, #1a1228 50%, #251530 100%)" }}>
-        {[8,25,75,92].map((l,i) => <div key={i} style={{ position: "absolute", left: `${l}%`, top: 0, width: 2, height: 38, background: "linear-gradient(180deg,#fffde0,#888)", boxShadow: "0 0 16px 6px rgba(255,253,200,0.35)" }}/>)}
-        {Array.from({length:60}).map((_,i) => <div key={i} style={{ position:"absolute", left:`${1+Math.random()*98}%`, top:`${20+Math.random()*65}%`, width:3, height:3, borderRadius:"50%", background:`hsl(${Math.random()*360},55%,58%)`, opacity:0.45 }}/>)}
+
+      <div style={{ textAlign: "center", padding: "8px 8px 4px", background: "#0d0d18" }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: "#4ade80" }}>{homeFlag} {homeTeam} · {homeFormation || "4-3-3"}</span>
       </div>
-      <div style={{ position:"absolute", left:0, top:50, bottom:0, width:11, background:"#111", zIndex:4, display:"flex", alignItems:"center", justifyContent:"center", writingMode:"vertical-rl" }}>
-        <span style={{fontSize:5,fontWeight:900,color:"#4ade80",letterSpacing:1}}>DEEP433</span>
-      </div>
-      <div style={{ position:"absolute", right:0, top:50, bottom:0, width:11, background:"#111", zIndex:4, display:"flex", alignItems:"center", justifyContent:"center", writingMode:"vertical-rl" }}>
-        <span style={{fontSize:5,fontWeight:900,color:"#f59e0b",letterSpacing:1}}>deep433.com</span>
-      </div>
-      <div style={{ perspective:"550px", perspectiveOrigin:"50% 0%", padding:"0 11px 8px" }}>
-        <div style={{ transform:"rotateX(26deg)", transformOrigin:"top center", borderRadius:"0 0 8px 8px", overflow:"hidden", boxShadow:"0 25px 50px rgba(0,0,0,0.8)" }}>
-          <div style={{ position:"relative", width:"100%", paddingBottom:"58%", background:"repeating-linear-gradient(90deg,#1a7a1a 0px,#1a7a1a 30px,#1f8c1f 30px,#1f8c1f 60px)" }}>
-            <svg style={{position:"absolute",top:0,left:0,width:"100%",height:"100%"}} viewBox="0 0 100 58" preserveAspectRatio="none">
-              <rect x="2" y="2" width="96" height="54" fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="0.5"/>
-              <line x1="50" y1="2" x2="50" y2="56" stroke="rgba(255,255,255,0.75)" strokeWidth="0.5"/>
-              <circle cx="50" cy="29" r="9" fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="0.5"/>
-              <circle cx="50" cy="29" r="0.8" fill="rgba(255,255,255,0.75)"/>
-              <rect x="2" y="15" width="13" height="28" fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="0.5"/>
-              <rect x="2" y="21" width="6" height="16" fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="0.5"/>
-              <rect x="85" y="15" width="13" height="28" fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="0.5"/>
-              <rect x="92" y="21" width="6" height="16" fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="0.5"/>
-              <rect x="0" y="24" width="2" height="10" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="0.4"/>
-              <rect x="98" y="24" width="2" height="10" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="0.4"/>
-            </svg>
-            <div style={{position:"absolute",top:"2%",left:"2%",right:"2%",height:"6%",background:"#111",display:"flex",overflow:"hidden",borderRadius:1}}>
-              {["DEEP433","deep433.com","YOU vs AI","WORLD CUP 2026","DEEP433","deep433.com"].map((t,i)=>(
-                <div key={i} style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",borderRight:"1px solid #222"}}>
-                  <span style={{fontSize:4,fontWeight:900,color:i%2===0?"#4ade80":"#f59e0b",whiteSpace:"nowrap"}}>{t}</span>
-                </div>
-              ))}
+
+      <div style={{ position: "relative", width: "100%", paddingBottom: "150%", background: "repeating-linear-gradient(180deg,#1a7a1a 0px,#1a7a1a 30px,#1f8c1f 30px,#1f8c1f 60px)" }}>
+        <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }} viewBox="0 0 100 150" preserveAspectRatio="none">
+          <rect x="2" y="2" width="96" height="146" fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="0.5"/>
+          <line x1="2" y1="75" x2="98" y2="75" stroke="rgba(255,255,255,0.75)" strokeWidth="0.5"/>
+          <circle cx="50" cy="75" r="11" fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="0.5"/>
+          <circle cx="50" cy="75" r="0.8" fill="rgba(255,255,255,0.75)"/>
+          {/* Top goal box (away team's goal) */}
+          <rect x="22" y="2" width="56" height="16" fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="0.5"/>
+          <rect x="36" y="2" width="28" height="7" fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="0.5"/>
+          {/* Bottom goal box (home team's goal) */}
+          <rect x="22" y="132" width="56" height="16" fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="0.5"/>
+          <rect x="36" y="141" width="28" height="7" fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="0.5"/>
+        </svg>
+
+        <div style={{ position: "absolute", top: "1.5%", left: "2%", right: "2%", height: "3.5%", background: "#111", display: "flex", overflow: "hidden", borderRadius: 1, zIndex: 1 }}>
+          {["DEEP433", "deep433.com", "YOU vs AI"].map((t, i) => (
+            <div key={i} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", borderRight: "1px solid #222" }}>
+              <span style={{ fontSize: 4, fontWeight: 900, color: i % 2 === 0 ? "#4ade80" : "#f59e0b", whiteSpace: "nowrap" }}>{t}</span>
             </div>
-            <div style={{position:"absolute",bottom:"2%",left:"2%",right:"2%",height:"6%",background:"#111",display:"flex",overflow:"hidden",borderRadius:1}}>
-              {["DEEP433","deep433.com","YOU vs AI","WORLD CUP 2026","DEEP433","deep433.com"].map((t,i)=>(
-                <div key={i} style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",borderRight:"1px solid #222"}}>
-                  <span style={{fontSize:4,fontWeight:900,color:i%2===0?"#f59e0b":"#4ade80",whiteSpace:"nowrap"}}>{t}</span>
-                </div>
-              ))}
-            </div>
-            {[[2.5,3],[97,3],[2.5,93],[97,93]].map(([x,y],i)=>(
-              <div key={i} style={{position:"absolute",left:`${x}%`,top:`${y}%`,width:1.5,height:"7%",background:i<2?"#f59e0b":"#4ade80"}}>
-                <div style={{width:5,height:3,background:i<2?"#f59e0b":"#4ade80",marginLeft:1.5}}/>
-              </div>
-            ))}
-            {homePlayers.map((p,i)=><PlayerPin key={"h"+i} x={p.x} y={p.y} flag={homeFlag} num={i+1} color="#0f3460" border="#4ade80" name={homeLineupNames?.[i]}/>)}
-            {awayPlayers.map((p,i)=><PlayerPin key={"a"+i} x={p.x} y={p.y} flag={awayFlag} num={i+1} color="#3d0000" border="#f59e0b" name={awayLineupNames?.[i]}/>)}
-          </div>
+          ))}
         </div>
+        <div style={{ position: "absolute", bottom: "1.5%", left: "2%", right: "2%", height: "3.5%", background: "#111", display: "flex", overflow: "hidden", borderRadius: 1, zIndex: 1 }}>
+          {["DEEP433", "deep433.com", "WORLD CUP 2026"].map((t, i) => (
+            <div key={i} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", borderRight: "1px solid #222" }}>
+              <span style={{ fontSize: 4, fontWeight: 900, color: i % 2 === 0 ? "#f59e0b" : "#4ade80", whiteSpace: "nowrap" }}>{t}</span>
+            </div>
+          ))}
+        </div>
+
+        {homePlayers.map((p, i) => <PlayerPin key={"h" + i} x={p.x} y={p.y} flag={homeFlag} num={i + 1} color="#0f3460" border="#4ade80" name={homeLineupNames?.[i]} />)}
+        {awayPlayers.map((p, i) => <PlayerPin key={"a" + i} x={p.x} y={p.y} flag={awayFlag} num={i + 1} color="#3d0000" border="#f59e0b" name={awayLineupNames?.[i]} />)}
       </div>
-      <div style={{display:"flex",justifyContent:"space-between",padding:"6px 14px",background:"#0d0d18"}}>
-        <span style={{fontSize:11,fontWeight:700,color:"#4ade80"}}>{homeFlag} {homeTeam} · {homeFormation||"4-3-3"}</span>
-        <span style={{fontSize:11,fontWeight:700,color:"#f59e0b"}}>{awayTeam} {awayFlag} · {awayFormation||"4-3-3"}</span>
+
+      <div style={{ textAlign: "center", padding: "4px 8px 8px", background: "#0d0d18" }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: "#f59e0b" }}>{awayFlag} {awayTeam} · {awayFormation || "4-3-3"}</span>
       </div>
     </div>
   );
