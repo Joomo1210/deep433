@@ -73,6 +73,21 @@ const SQUADS = {
     ? `VERIFIED SQUADS — you MUST only pick players from these lists:\n${homeTeam} squad (manager: ${homeSquad.manager}): ${homeSquad.players}\n${awayTeam} squad (manager: ${awaySquad.manager}): ${awaySquad.players}\nDo NOT invent players. Do NOT use players from other teams. Only use names exactly as listed above.`
     : `CRITICAL: Only use real players who genuinely represent that national team. Verify every player nationality before including them.`;
 
+  // Tournaments played at neutral venues — no team gets home advantage
+  const NEUTRAL_VENUE_COMPETITIONS = [
+    "world cup", "euro", "european championship", "copa america",
+    "afcon", "africa cup of nations", "nations league finals",
+    "champions league final", "club world cup",
+  ];
+
+  const isNeutralVenue = NEUTRAL_VENUE_COMPETITIONS.some(comp =>
+    (league || "").toLowerCase().includes(comp)
+  );
+
+  const venueInstruction = isNeutralVenue
+    ? `This match is played at a NEUTRAL VENUE as part of a tournament. Neither team has home advantage. Do NOT mention "home crowd," "home support," "at home," or any home-field advantage anywhere in your analysis or verdict. Refer to "${homeTeam}" and "${awayTeam}" by name only, never as "the hosts" or "the home side."`
+    : `This is a domestic league/cup fixture. ${homeTeam} are playing at their home ground with their usual home advantage — this is a legitimate factor to mention.`;
+
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -83,10 +98,10 @@ const SQUADS = {
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 1200,
-      system: `You are a brutally honest expert football analyst. Respond with ONLY a raw JSON object. No markdown. No backticks. Just JSON. ${squadInstructions}`,
+      system: `You are a brutally honest expert football analyst. Respond with ONLY a raw JSON object. No markdown. No backticks. Just JSON. ${squadInstructions} ${venueInstruction}`,
       messages: [{
         role: 'user',
-        content: `Predict this ${league} match. Home: ${homeTeam}, Away: ${awayTeam}. Return ONLY this JSON: {"scoreline":"2-1","homeGoals":2,"awayGoals":1,"outcome":"Home Win","confidence":"Medium","homeLineup":["GK","RB","CB","CB","LB","CM","CM","CM","RW","ST","LW"],"awayLineup":["GK","RB","CB","CB","LB","CM","CM","CM","RW","ST","LW"],"homeFormation":"4-3-3","awayFormation":"4-2-3-1","keyBattle":"Description","homeKeyPlayer":"Name","awayKeyPlayer":"Name","verdict":"2-3 sentence brutal honest verdict.","wildcard":"One surprise factor."} Use only players from the verified squads provided.`
+        content: `Predict this ${league} match. Team 1: ${homeTeam}, Team 2: ${awayTeam}. ${isNeutralVenue ? "Remember: neutral venue, no home advantage for either side." : `${homeTeam} play at home.`} Return ONLY this JSON: {"scoreline":"2-1","homeGoals":2,"awayGoals":1,"outcome":"Home Win","confidence":"Medium","homeLineup":["GK","RB","CB","CB","LB","CM","CM","CM","RW","ST","LW"],"awayLineup":["GK","RB","CB","CB","LB","CM","CM","CM","RW","ST","LW"],"homeFormation":"4-3-3","awayFormation":"4-2-3-1","keyBattle":"Description","homeKeyPlayer":"Name","awayKeyPlayer":"Name","verdict":"2-3 sentence brutal honest verdict.","wildcard":"One surprise factor."} Use only players from the verified squads provided.`
       }],
     }),
   });
