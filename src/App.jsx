@@ -438,6 +438,7 @@ export default function FootballPredictor() {
       const { data: saved } = await supabase.from("predictions").insert({
         user_id: session.user.id, home_team: homeTeam, away_team: awayTeam,
         user_prediction: up, ai_prediction: aiPrediction, ai_verdict: parsed.verdict,
+        ai_data: parsed,
       }).select().single();
       if (saved) setHistory(prev => [saved, ...prev]);
     } catch (e) { setError(e.message || "Something went wrong. Try again."); }
@@ -491,6 +492,7 @@ export default function FootballPredictor() {
   }, {});
 
   const [confirmedLineup, setConfirmedLineup] = useState(null);
+  const [viewingPitch, setViewingPitch] = useState(null);
 
   // Once a prediction reveals (step 3), try fetching the real confirmed lineup.
   // Falls back silently to the AI's predicted lineup if not yet announced.
@@ -853,9 +855,14 @@ export default function FootballPredictor() {
               const matchStatus = getMatchStatus(h.home_team, h.away_team);
               return (
                 <div key={h.id} className="history-row">
-                  <div style={{ marginBottom: 10 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", marginBottom: 2 }}>{h.home_team} vs {h.away_team}</div>
-                    <div style={{ fontSize: 11, color: "#555" }}>{new Date(h.created_at).toLocaleDateString("en-GB")}</div>
+                  <div style={{ marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", marginBottom: 2 }}>{h.home_team} vs {h.away_team}</div>
+                      <div style={{ fontSize: 11, color: "#555" }}>{new Date(h.created_at).toLocaleDateString("en-GB")}</div>
+                    </div>
+                    {h.ai_data && (
+                      <button onClick={() => setViewingPitch(h)} style={{ background: "none", border: "1px solid #4ade8044", borderRadius: 6, color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "5px 10px", whiteSpace: "nowrap" }}>⚽ View Pitch</button>
+                    )}
                   </div>
                   <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
                     <div style={{ flex: 1, textAlign: "center", background: "#13131f", borderRadius: 8, padding: "8px 4px" }}>
@@ -920,6 +927,29 @@ export default function FootballPredictor() {
           </>
         )}
       </div>
+
+      {viewingPitch && (
+        <div
+          onClick={() => setViewingPitch(null)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <div style={{ fontSize: 13, color: "#888", fontWeight: 700 }}>{viewingPitch.home_team} vs {viewingPitch.away_team}</div>
+              <button onClick={() => setViewingPitch(null)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 13, padding: "4px 10px" }}>✕ Close</button>
+            </div>
+            <PitchView
+              homeTeam={viewingPitch.home_team}
+              awayTeam={viewingPitch.away_team}
+              homeFormation={viewingPitch.ai_data?.homeFormation}
+              awayFormation={viewingPitch.ai_data?.awayFormation}
+              homeLineupNames={viewingPitch.ai_data?.homeLineup}
+              awayLineupNames={viewingPitch.ai_data?.awayLineup}
+              lineupSource="predicted"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
