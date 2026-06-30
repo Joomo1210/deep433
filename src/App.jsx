@@ -72,7 +72,7 @@ const TEAM_FLAGS = {
   "Ghana": "🇬🇭", "Panama": "🇵🇦", "Uzbekistan": "🇺🇿", "Colombia": "🇨🇴",
 };
 
-function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation }) {
+function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineupNames, awayLineupNames, lineupSource }) {
   const homeFlag = TEAM_FLAGS[homeTeam] || "🏳️";
   const awayFlag = TEAM_FLAGS[awayTeam] || "🏳️";
   const parseFormation = (f) => { if (!f) return [4,3,3]; return f.split("-").map(Number); };
@@ -95,15 +95,30 @@ function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation }) {
   const homePlayers = getPlayerPositions(hForm, "home");
   const awayPlayers = getPlayerPositions(aForm, "away");
 
-  const PlayerPin = ({ x, y, flag, num, color, border }) => (
+  const surname = (fullName) => {
+    if (!fullName) return "";
+    const parts = fullName.trim().split(" ");
+    return parts[parts.length - 1];
+  };
+
+  const PlayerPin = ({ x, y, flag, num, color, border, name }) => (
     <div style={{ position: "absolute", left: `${x}%`, top: `${y}%`, transform: "translate(-50%, -50%)", display: "flex", flexDirection: "column", alignItems: "center", zIndex: 2 }}>
-      <div style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)", background: color, border: `1.5px solid ${border}`, width: 22, height: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>{flag}</div>
-      <div style={{ fontSize: 7, fontWeight: 700, color: border, marginTop: 1, textShadow: "0 0 4px rgba(0,0,0,0.9)" }}>{num}</div>
+      <div style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)", background: color, border: `1.5px solid ${border}`, width: 22, height: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: name ? 9 : 11, fontWeight: 800, color: border }}>
+        {name ? num : flag}
+      </div>
+      <div style={{ fontSize: name ? 6.5 : 7, fontWeight: 700, color: border, marginTop: 1, textShadow: "0 0 4px rgba(0,0,0,0.9)", whiteSpace: "nowrap", maxWidth: 38, overflow: "hidden", textOverflow: "ellipsis" }}>
+        {name ? surname(name) : num}
+      </div>
     </div>
   );
 
   return (
     <div style={{ width: "100%", position: "relative", borderRadius: 10, overflow: "hidden" }}>
+      {lineupSource && (
+        <div style={{ position: "absolute", top: 4, left: "50%", transform: "translateX(-50%)", zIndex: 5, fontSize: 8, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: lineupSource === "confirmed" ? "#22c55e22" : "#f59e0b22", color: lineupSource === "confirmed" ? "#4ade80" : "#f59e0b", border: `1px solid ${lineupSource === "confirmed" ? "#22c55e44" : "#f59e0b44"}` }}>
+          {lineupSource === "confirmed" ? "✓ CONFIRMED LINEUP" : "LIKELY LINEUP"}
+        </div>
+      )}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 50, zIndex: 3, pointerEvents: "none", background: "radial-gradient(ellipse at 15% 0%, rgba(255,255,200,0.3) 0%, transparent 55%), radial-gradient(ellipse at 85% 0%, rgba(255,255,200,0.3) 0%, transparent 55%)" }}/>
       <div style={{ height: 50, position: "relative", overflow: "hidden", background: "linear-gradient(180deg, #0d0d1a 0%, #1a1228 50%, #251530 100%)" }}>
         {[8,25,75,92].map((l,i) => <div key={i} style={{ position: "absolute", left: `${l}%`, top: 0, width: 2, height: 38, background: "linear-gradient(180deg,#fffde0,#888)", boxShadow: "0 0 16px 6px rgba(255,253,200,0.35)" }}/>)}
@@ -149,8 +164,8 @@ function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation }) {
                 <div style={{width:5,height:3,background:i<2?"#f59e0b":"#4ade80",marginLeft:1.5}}/>
               </div>
             ))}
-            {homePlayers.map((p,i)=><PlayerPin key={"h"+i} x={p.x} y={p.y} flag={homeFlag} num={i+1} color="#0f3460" border="#4ade80"/>)}
-            {awayPlayers.map((p,i)=><PlayerPin key={"a"+i} x={p.x} y={p.y} flag={awayFlag} num={i+1} color="#3d0000" border="#f59e0b"/>)}
+            {homePlayers.map((p,i)=><PlayerPin key={"h"+i} x={p.x} y={p.y} flag={homeFlag} num={i+1} color="#0f3460" border="#4ade80" name={homeLineupNames?.[i]}/>)}
+            {awayPlayers.map((p,i)=><PlayerPin key={"a"+i} x={p.x} y={p.y} flag={awayFlag} num={i+1} color="#3d0000" border="#f59e0b" name={awayLineupNames?.[i]}/>)}
           </div>
         </div>
       </div>
@@ -471,6 +486,21 @@ export default function FootballPredictor() {
     return acc;
   }, {});
 
+  const [confirmedLineup, setConfirmedLineup] = useState(null);
+
+  // Once a prediction reveals (step 3), try fetching the real confirmed lineup.
+  // Falls back silently to the AI's predicted lineup if not yet announced.
+  useEffect(() => {
+    if (step !== 3 || !result) return;
+    setConfirmedLineup(null);
+
+    const today = new Date().toISOString().split("T")[0];
+    fetch(`/api/match-lineup?leagueId=${selectedLeague}&date=${today}&home=${encodeURIComponent(homeTeam)}&away=${encodeURIComponent(awayTeam)}`)
+      .then(r => r.json())
+      .then(data => { if (data.available) setConfirmedLineup(data); })
+      .catch(() => {});
+  }, [step, result, homeTeam, awayTeam, selectedLeague]);
+
   const TABS = [
     { id: "predict", label: "⚡ Predict" },
     { id: "standings", label: "🏆 You vs AI" },
@@ -659,7 +689,15 @@ export default function FootballPredictor() {
 
             {step === 3 && result && !loading && (
               <>
-                <PitchView homeTeam={homeTeam} awayTeam={awayTeam} homeFormation={result.homeFormation} awayFormation={result.awayFormation} />
+                <PitchView
+                  homeTeam={homeTeam}
+                  awayTeam={awayTeam}
+                  homeFormation={confirmedLineup?.home?.formation || result.homeFormation}
+                  awayFormation={confirmedLineup?.away?.formation || result.awayFormation}
+                  homeLineupNames={confirmedLineup ? confirmedLineup.home.players.map(p => p.name) : result.homeLineup}
+                  awayLineupNames={confirmedLineup ? confirmedLineup.away.players.map(p => p.name) : result.awayLineup}
+                  lineupSource={confirmedLineup ? "confirmed" : "predicted"}
+                />
 
                 <div className="reveal-box">
                   <div style={{ fontSize: 11, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 16, textAlign: "center" }}>{homeTeam} vs {awayTeam} · {leagueLabel}</div>
