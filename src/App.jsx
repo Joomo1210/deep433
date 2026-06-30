@@ -85,7 +85,7 @@ function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineu
     rows.forEach((count, rowIdx) => {
       const xPct = side === "home" ? 5 + (rowIdx / (rows.length - 1)) * 44 : 95 - (rowIdx / (rows.length - 1)) * 44;
       for (let i = 0; i < count; i++) {
-        const yPct = count === 1 ? 50 : 15 + (i / (count - 1)) * 70;
+        const yPct = count === 1 ? 50 : 10 + (i / (count - 1)) * 80;
         positions.push({ x: xPct, y: yPct });
       }
     });
@@ -102,13 +102,17 @@ function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineu
   };
 
   const PlayerPin = ({ x, y, flag, num, color, border, name }) => (
-    <div style={{ position: "absolute", left: `${x}%`, top: `${y}%`, transform: "translate(-50%, -50%)", display: "flex", flexDirection: "column", alignItems: "center", zIndex: 2 }}>
-      <div style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)", background: color, border: `1.5px solid ${border}`, width: 22, height: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: name ? 9 : 11, fontWeight: 800, color: border }}>
+    <div style={{ position: "absolute", left: `${x}%`, top: `${y}%`, transform: "translate(-50%, -50%)", display: "flex", flexDirection: "column", alignItems: "center", zIndex: 2, gap: 2 }}>
+      <div style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)", background: color, border: `1.5px solid ${border}`, width: 22, height: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: name ? 9 : 11, fontWeight: 800, color: "#ffffff" }}>
         {name ? num : flag}
       </div>
-      <div style={{ fontSize: name ? 6.5 : 7, fontWeight: 700, color: border, marginTop: 1, textShadow: "0 0 4px rgba(0,0,0,0.9)", whiteSpace: "nowrap", maxWidth: 38, overflow: "hidden", textOverflow: "ellipsis" }}>
-        {name ? surname(name) : num}
-      </div>
+      {name ? (
+        <div style={{ fontSize: 6.5, fontWeight: 800, color: "#ffffff", background: "rgba(0,0,0,0.78)", padding: "1.5px 5px", borderRadius: 4, whiteSpace: "nowrap", maxWidth: 56, overflow: "hidden", textOverflow: "ellipsis", border: `1px solid ${border}55` }}>
+          {surname(name)}
+        </div>
+      ) : (
+        <div style={{ fontSize: 7, fontWeight: 700, color: border, textShadow: "0 0 4px rgba(0,0,0,0.9)" }}>{num}</div>
+      )}
     </div>
   );
 
