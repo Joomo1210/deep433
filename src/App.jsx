@@ -115,7 +115,7 @@ function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineu
 
   const PlayerRow = ({ row, border, flag, isAway }) => (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, marginBottom: 8 }}>
-      <div style={{ fontSize: 8, fontWeight: 700, color: border, letterSpacing: 1, textTransform: "uppercase", opacity: 0.8 }}>{row.label}</div>
+      <div style={{ fontSize: 8, fontWeight: 700, color: isAway ? "#ffffff" : border, letterSpacing: 1, textTransform: "uppercase", opacity: 0.8 }}>{row.label}</div>
       <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 5 }}>
         {row.names.map((name, i) => (
           <div key={i} style={{ background: "rgba(0,0,0,0.82)", border: "1px solid " + border + "66", borderRadius: 4, padding: "4px 10px", fontSize: 14, fontWeight: 700, color: isAway ? "#a855f7" : "#ffffff", whiteSpace: "nowrap" }}>
@@ -154,7 +154,7 @@ function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineu
       <div style={{ background: "repeating-linear-gradient(180deg,#1f8c1f 0px,#1f8c1f 28px,#1a7a1a 28px,#1a7a1a 56px)", padding: "8px 14px 12px" }}>
         {[...awayRows].reverse().map((row, i) => <PlayerRow key={i} row={row} border="#a855f7" flag={awayFlag} isAway={true} />)}
         <div style={{ textAlign: "center", marginTop: 12 }}>
-          <span style={{ fontSize: 12, fontWeight: 800, color: "#a855f7", background: "rgba(0,0,0,0.65)", padding: "4px 12px", borderRadius: 6 }}>{awayFlag} {awayTeam} · {awayFormation || "4-3-3"}</span>
+          <span style={{ fontSize: 12, fontWeight: 800, color: "#ffffff", background: "rgba(0,0,0,0.65)", padding: "4px 12px", borderRadius: 6 }}>{awayFlag} {awayTeam} · {awayFormation || "4-3-3"}</span>
         </div>
       </div>
     </div>
