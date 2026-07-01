@@ -113,12 +113,12 @@ function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineu
   const homeRows = splitIntoRows(homeLineupNames, hForm);
   const awayRows = splitIntoRows(awayLineupNames, aForm);
 
-  const PlayerRow = ({ row, border, flag }) => (
+  const PlayerRow = ({ row, border, flag, isAway }) => (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, marginBottom: 8 }}>
-      <div style={{ fontSize: 7, fontWeight: 700, color: border, letterSpacing: 1, textTransform: "uppercase", opacity: 0.8 }}>{row.label}</div>
+      <div style={{ fontSize: 8, fontWeight: 700, color: border, letterSpacing: 1, textTransform: "uppercase", opacity: 0.8 }}>{row.label}</div>
       <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 5 }}>
         {row.names.map((name, i) => (
-          <div key={i} style={{ background: "rgba(0,0,0,0.72)", border: "1px solid " + border + "55", borderRadius: 4, padding: "3px 8px", fontSize: 10, fontWeight: 700, color: "#fff", whiteSpace: "nowrap" }}>
+          <div key={i} style={{ background: "rgba(0,0,0,0.82)", border: "1px solid " + border + "66", borderRadius: 4, padding: "4px 10px", fontSize: 14, fontWeight: 700, color: isAway ? "#a855f7" : "#ffffff", whiteSpace: "nowrap" }}>
             {name ? surname(name) : flag}
           </div>
         ))}
@@ -140,7 +140,7 @@ function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineu
         <div style={{ textAlign: "center", marginBottom: 12 }}>
           <span style={{ fontSize: 12, fontWeight: 800, color: "#4ade80", background: "rgba(0,0,0,0.65)", padding: "4px 12px", borderRadius: 6 }}>{homeFlag} {homeTeam} · {homeFormation || "4-3-3"}</span>
         </div>
-        {homeRows.map((row, i) => <PlayerRow key={i} row={row} border="#4ade80" flag={homeFlag} />)}
+        {homeRows.map((row, i) => <PlayerRow key={i} row={row} border="#4ade80" flag={homeFlag} isAway={false} />)}
       </div>
 
       <div style={{ background: "#0d0d18", display: "flex", alignItems: "center", gap: 8, padding: "5px 14px" }}>
@@ -152,9 +152,9 @@ function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineu
       </div>
 
       <div style={{ background: "repeating-linear-gradient(180deg,#1f8c1f 0px,#1f8c1f 28px,#1a7a1a 28px,#1a7a1a 56px)", padding: "8px 14px 12px" }}>
-        {[...awayRows].reverse().map((row, i) => <PlayerRow key={i} row={row} border="#f59e0b" flag={awayFlag} />)}
+        {[...awayRows].reverse().map((row, i) => <PlayerRow key={i} row={row} border="#a855f7" flag={awayFlag} isAway={true} />)}
         <div style={{ textAlign: "center", marginTop: 12 }}>
-          <span style={{ fontSize: 12, fontWeight: 800, color: "#f59e0b", background: "rgba(0,0,0,0.65)", padding: "4px 12px", borderRadius: 6 }}>{awayFlag} {awayTeam} · {awayFormation || "4-3-3"}</span>
+          <span style={{ fontSize: 12, fontWeight: 800, color: "#a855f7", background: "rgba(0,0,0,0.65)", padding: "4px 12px", borderRadius: 6 }}>{awayFlag} {awayTeam} · {awayFormation || "4-3-3"}</span>
         </div>
       </div>
     </div>
@@ -467,19 +467,37 @@ export default function FootballPredictor() {
   }, {});
 
   const [confirmedLineup, setConfirmedLineup] = useState(null);
+  const [lineupFetching, setLineupFetching] = useState(false);
   const [viewingPitch, setViewingPitch] = useState(null);
 
+  const fetchConfirmedLineup = async (home, away, league) => {
+    setLineupFetching(true);
+    // Try today and yesterday/tomorrow to handle UTC date boundary edge cases
+    const now = new Date();
+    const dates = [
+      new Date(now.getTime() - 86400000).toISOString().split("T")[0],
+      now.toISOString().split("T")[0],
+      new Date(now.getTime() + 86400000).toISOString().split("T")[0],
+    ];
+    for (const date of dates) {
+      try {
+        const res = await fetch(`/api/match-lineup?leagueId=${league}&date=${date}&home=${encodeURIComponent(home)}&away=${encodeURIComponent(away)}`);
+        const data = await res.json();
+        if (data.available) {
+          setConfirmedLineup(data);
+          setLineupFetching(false);
+          return;
+        }
+      } catch {}
+    }
+    setLineupFetching(false);
+  };
+
   // Once a prediction reveals (step 3), try fetching the real confirmed lineup.
-  // Falls back silently to the AI's predicted lineup if not yet announced.
   useEffect(() => {
     if (step !== 3 || !result) return;
     setConfirmedLineup(null);
-
-    const today = new Date().toISOString().split("T")[0];
-    fetch(`/api/match-lineup?leagueId=${selectedLeague}&date=${today}&home=${encodeURIComponent(homeTeam)}&away=${encodeURIComponent(awayTeam)}`)
-      .then(r => r.json())
-      .then(data => { if (data.available) setConfirmedLineup(data); })
-      .catch(() => {});
+    fetchConfirmedLineup(homeTeam, awayTeam, selectedLeague);
   }, [step, result, homeTeam, awayTeam, selectedLeague]);
 
   const TABS = [
@@ -679,6 +697,15 @@ export default function FootballPredictor() {
                   awayLineupNames={confirmedLineup ? confirmedLineup.away.players.map(p => p.name) : result.awayLineup}
                   lineupSource={confirmedLineup ? "confirmed" : "predicted"}
                 />
+                {!confirmedLineup && (
+                  <button
+                    onClick={() => fetchConfirmedLineup(homeTeam, awayTeam, selectedLeague)}
+                    disabled={lineupFetching}
+                    style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 8, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "8px 16px", width: "100%", marginTop: 4 }}
+                  >
+                    {lineupFetching ? "Checking for confirmed lineup..." : "🔄 Refresh Lineup"}
+                  </button>
+                )}
 
                 <div className="reveal-box">
                   <div style={{ fontSize: 11, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 16, textAlign: "center" }}>{homeTeam} vs {awayTeam} · {leagueLabel}</div>
