@@ -31,9 +31,9 @@ const WC_FIXTURES = [
   { date: "Tue 30 Jun", kickoff: "2026-06-30T21:00:00Z", home: "France", away: "Sweden", group: "Round of 32", venue: "MetLife Stadium" },
   { date: "Wed 1 Jul", kickoff: "2026-07-01T01:00:00Z", home: "Mexico", away: "Ecuador", group: "Round of 32", venue: "Estadio Azteca" },
   { date: "Wed 1 Jul", kickoff: "2026-07-01T16:00:00Z", home: "England", away: "Congo DR", group: "Round of 32", venue: "Mercedes-Benz Stadium" },
+  { date: "Thu 2 Jul", kickoff: "2026-07-01T23:00:00Z", home: "Portugal", away: "Croatia", group: "Round of 32", venue: "Toronto Stadium" },
   { date: "Thu 2 Jul", kickoff: "2026-07-02T00:00:00Z", home: "USA", away: "Bosnia and Herzegovina", group: "Round of 32", venue: "Levi's Stadium" },
   { date: "Thu 2 Jul", kickoff: "2026-07-02T19:00:00Z", home: "Spain", away: "Austria", group: "Round of 32", venue: "SoFi Stadium" },
-  { date: "Fri 3 Jul", kickoff: "2026-07-02T23:00:00Z", home: "Portugal", away: "Croatia", group: "Round of 32", venue: "Toronto Stadium" },
   { date: "Fri 3 Jul", kickoff: "2026-07-03T03:00:00Z", home: "Switzerland", away: "Algeria", group: "Round of 32", venue: "BC Place" },
   { date: "Fri 3 Jul", kickoff: "2026-07-03T18:00:00Z", home: "Australia", away: "Egypt", group: "Round of 32", venue: "AT&T Stadium" },
   { date: "Fri 3 Jul", kickoff: "2026-07-03T22:00:00Z", home: "Argentina", away: "Cabo Verde", group: "Round of 32", venue: "Hard Rock Stadium" },
@@ -649,7 +649,10 @@ export default function FootballPredictor() {
                         <div key={date}>
                           <div style={{ fontSize: 10, color: "#444", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6, marginTop: 4 }}>{date}</div>
                           {fixtures.map((f, i) => (
-                            <div key={i} className={`fixture-row${homeTeam === f.home && awayTeam === f.away ? " selected" : ""}`} onClick={() => !f.result && selectFixture(f)} style={{ marginBottom: 5, opacity: f.result ? 0.4 : 1, cursor: f.result ? "default" : "pointer" }}>
+                            <div key={i} className={`fixture-row${homeTeam === f.home && awayTeam === f.away ? " selected" : ""}`} onClick={() => {
+                              const status = getMatchStatus(f.home, f.away);
+                              if (status === "upcoming" || status === "unknown") selectFixture(f);
+                            }} style={{ marginBottom: 5, opacity: (getMatchStatus(f.home, f.away) === "finished" || getMatchStatus(f.home, f.away) === "live") ? 0.4 : 1, cursor: (getMatchStatus(f.home, f.away) === "finished" || getMatchStatus(f.home, f.away) === "live") ? "default" : "pointer" }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
                                 <span style={{ fontSize: 16 }}>{TEAM_FLAGS[f.home] || "🏳️"}</span>
                                 <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{f.home}</span>
