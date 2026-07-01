@@ -1,18 +1,21 @@
 // /api/match-lineup.js
-// Fetches real starting lineup + formation for ONE specific match, once announced.
-// Usage: /api/match-lineup?leagueId=wc2026&date=2026-06-28&home=South%20Africa&away=Canada
-//
-// Lineups are usually only published 20-60 minutes before kickoff — until then,
-// this will return { available: false } and the frontend should keep showing flags.
+// Fetches confirmed starting lineup for one specific match using API-Football.
+// Lineups available 20-40 minutes before kickoff.
+// Usage: /api/match-lineup?leagueId=wc2026&date=2026-07-01&home=England&away=Congo%20DR
 
 const LEAGUE_MAP = {
-  wc2026:      "WC",
-  pl:          "PL",
-  laliga:      "PD",
-  seriea:      "SA",
-  bundesliga:  "BL1",
-  ligue1:      "FL1",
-  ucl:         "CL",
+  wc2026:      { id: 1,   season: 2026 },
+  pl:          { id: 39,  season: 2025 },
+  laliga:      { id: 140, season: 2025 },
+  seriea:      { id: 135, season: 2025 },
+  bundesliga:  { id: 78,  season: 2025 },
+  ligue1:      { id: 61,  season: 2025 },
+  ucl:         { id: 2,   season: 2025 },
+  uel:         { id: 3,   season: 2025 },
+  facup:       { id: 45,  season: 2025 },
+  copadelrey:  { id: 143, season: 2025 },
+  afcon:       { id: 6,   season: 2025 },
+  copamerica:  { id: 9,   season: 2024 },
 };
 
 function normalize(s) {
@@ -29,60 +32,84 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "leagueId, date, home and away are required" });
   }
 
-  const competitionCode = LEAGUE_MAP[leagueId];
-  if (!competitionCode) {
-    return res.status(400).json({ available: false, error: `League "${leagueId}" not supported` });
+  const league = LEAGUE_MAP[leagueId];
+  if (!league) {
+    return res.status(200).json({ available: false, error: `League "${leagueId}" not supported` });
   }
 
-  const apiKey = process.env.FOOTBALL_DATA_API_KEY;
+  const apiKey = process.env.API_FOOTBALL_KEY;
   if (!apiKey) {
-    return res.status(500).json({ error: "FOOTBALL_DATA_API_KEY not configured" });
+    return res.status(500).json({ error: "API_FOOTBALL_KEY not configured" });
   }
 
   try {
-    // Step 1: find the match ID for this fixture on this date
-    const listUrl = `https://api.football-data.org/v4/competitions/${competitionCode}/matches?dateFrom=${date}&dateTo=${date}`;
-    const listRes = await fetch(listUrl, { headers: { "X-Auth-Token": apiKey } });
-    if (!listRes.ok) {
-      return res.status(listRes.status).json({ available: false, error: "Could not fetch fixture list" });
-    }
-    const listData = await listRes.json();
+    // Step 1: find the fixture ID for this match on this date
+    const fixturesUrl = `https://v3.football.api-sports.io/fixtures?league=${league.id}&season=${league.season}&date=${date}`;
+    const fixturesRes = await fetch(fixturesUrl, {
+      headers: { "x-apisports-key": apiKey },
+    });
 
+    if (!fixturesRes.ok) {
+      return res.status(200).json({ available: false, reason: "Could not fetch fixture list" });
+    }
+
+    const fixturesData = await fixturesRes.json();
     const h = normalize(home);
     const a = normalize(away);
-    const match = (listData.matches || []).find(m =>
-      (normalize(m.homeTeam?.name) === h && normalize(m.awayTeam?.name) === a) ||
-      (normalize(m.homeTeam?.name) === a && normalize(m.awayTeam?.name) === h)
+
+    const match = (fixturesData.response || []).find(f =>
+      (normalize(f.teams?.home?.name) === h && normalize(f.teams?.away?.name) === a) ||
+      (normalize(f.teams?.home?.name) === a && normalize(f.teams?.away?.name) === h)
     );
 
     if (!match) {
       return res.status(200).json({ available: false, reason: "Match not found for that date" });
     }
 
-    // Step 2: fetch the single match endpoint, which includes lineup data when published
-    const matchUrl = `https://api.football-data.org/v4/matches/${match.id}`;
-    const matchRes = await fetch(matchUrl, { headers: { "X-Auth-Token": apiKey } });
-    if (!matchRes.ok) {
-      return res.status(200).json({ available: false, reason: "Could not fetch match detail" });
+    const fixtureId = match.fixture?.id;
+
+    // Step 2: fetch lineups for this specific fixture
+    const lineupUrl = `https://v3.football.api-sports.io/fixtures/lineups?fixture=${fixtureId}`;
+    const lineupRes = await fetch(lineupUrl, {
+      headers: { "x-apisports-key": apiKey },
+    });
+
+    if (!lineupRes.ok) {
+      return res.status(200).json({ available: false, reason: "Could not fetch lineup data" });
     }
-    const matchData = await matchRes.json();
 
-    const homeLineup = matchData.homeTeam?.lineup;
-    const awayLineup = matchData.awayTeam?.lineup;
+    const lineupData = await lineupRes.json();
+    const lineups = lineupData.response || [];
 
-    if (!homeLineup?.length || !awayLineup?.length) {
+    if (!lineups.length) {
+      return res.status(200).json({ available: false, reason: "Lineups not yet announced" });
+    }
+
+    // Map home/away lineups — API returns them in home/away order matching the fixture
+    const homeLineup = lineups.find(l => normalize(l.team?.name) === h) || lineups[0];
+    const awayLineup = lineups.find(l => normalize(l.team?.name) === a) || lineups[1];
+
+    if (!homeLineup?.startXI?.length || !awayLineup?.startXI?.length) {
       return res.status(200).json({ available: false, reason: "Lineups not yet announced" });
     }
 
     return res.status(200).json({
       available: true,
       home: {
-        formation: matchData.homeTeam?.formation || null,
-        players: homeLineup.map(p => ({ name: p.name, position: p.position, shirtNumber: p.shirtNumber })),
+        formation: homeLineup.formation || null,
+        players: homeLineup.startXI.map(p => ({
+          name: p.player?.name,
+          number: p.player?.number,
+          position: p.player?.pos,
+        })),
       },
       away: {
-        formation: matchData.awayTeam?.formation || null,
-        players: awayLineup.map(p => ({ name: p.name, position: p.position, shirtNumber: p.shirtNumber })),
+        formation: awayLineup.formation || null,
+        players: awayLineup.startXI.map(p => ({
+          name: p.player?.name,
+          number: p.player?.number,
+          position: p.player?.pos,
+        })),
       },
     });
   } catch (err) {
