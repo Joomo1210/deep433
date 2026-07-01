@@ -77,9 +77,18 @@ const TEAM_FLAGS = {
   "Ghana": "🇬🇭", "Panama": "🇵🇦", "Uzbekistan": "🇺🇿", "Colombia": "🇨🇴",
 };
 
+
 function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineupNames, awayLineupNames, lineupSource }) {
   const homeFlag = TEAM_FLAGS[homeTeam] || "🏳️";
   const awayFlag = TEAM_FLAGS[awayTeam] || "🏳️";
+
+  const parseFormation = (f) => {
+    if (!f) return [4, 3, 3];
+    return f.split("-").map(Number);
+  };
+
+  const hForm = parseFormation(homeFormation);
+  const aForm = parseFormation(awayFormation);
 
   const surname = (fullName) => {
     if (!fullName) return "";
@@ -87,109 +96,68 @@ function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineu
     return parts[parts.length - 1];
   };
 
-  // Arrange 11 players in a clean arc within their half
-  // Returns array of {x, y} as percentages of the pitch container
-  const getArcPositions = (side) => {
-    const positions = [];
-    const n = 11;
-    // Arc spans from 15% to 85% horizontally, centred at 50%
-    // Home team arc in top half (y: 10%-45%), away in bottom half (y: 55%-90%)
-    const yCenter = side === "home" ? 27 : 73;
-    const ySpread = 16; // how tall the arc is
-    for (let i = 0; i < n; i++) {
-      const t = n === 1 ? 0.5 : i / (n - 1); // 0 to 1
-      const x = 10 + t * 80; // 10% to 90%
-      // Sine curve: peaks in the middle, dips at the edges
-      const arcOffset = Math.sin(t * Math.PI) * ySpread;
-      const y = side === "home"
-        ? yCenter + arcOffset        // arc curves downward into pitch for home
-        : yCenter - arcOffset;       // arc curves upward into pitch for away
-      positions.push({ x, y });
-    }
-    return positions;
+  const splitIntoRows = (names, formation) => {
+    if (!names || !names.length) return [];
+    const rows = [1, ...formation];
+    const result = [];
+    let idx = 0;
+    rows.forEach((count, rowIdx) => {
+      const rowNames = names.slice(idx, idx + count);
+      const label = rowIdx === 0 ? "GK" : rowIdx === rows.length - 1 ? "ATT" : rowIdx === 1 ? "DEF" : "MID";
+      result.push({ label, names: rowNames });
+      idx += count;
+    });
+    return result;
   };
 
-  const homePlayers = getArcPositions("home");
-  const awayPlayers = getArcPositions("away");
+  const homeRows = splitIntoRows(homeLineupNames, hForm);
+  const awayRows = splitIntoRows(awayLineupNames, aForm);
 
-  const PlayerPin = ({ x, y, num, border, name, flag }) => (
-    <div style={{ position: "absolute", left: `${x}%`, top: `${y}%`, transform: "translate(-50%, -50%)", display: "flex", flexDirection: "column", alignItems: "center", zIndex: 2, gap: 2 }}>
-      <div style={{ width: 22, height: 24, clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)", background: border === "#4ade80" ? "#0f3460" : "#3d0000", border: `1.5px solid ${border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, color: "#fff" }}>
-        {num}
-      </div>
-      <div style={{ fontSize: 6.5, fontWeight: 800, color: "#fff", background: "rgba(0,0,0,0.82)", padding: "1.5px 5px", borderRadius: 4, whiteSpace: "nowrap", maxWidth: 52, overflow: "hidden", textOverflow: "ellipsis", border: `1px solid ${border}55`, textAlign: "center" }}>
-        {name ? surname(name) : flag}
+  const PlayerRow = ({ row, border, flag }) => (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, marginBottom: 8 }}>
+      <div style={{ fontSize: 7, fontWeight: 700, color: border, letterSpacing: 1, textTransform: "uppercase", opacity: 0.8 }}>{row.label}</div>
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 5 }}>
+        {row.names.map((name, i) => (
+          <div key={i} style={{ background: "rgba(0,0,0,0.72)", border: "1px solid " + border + "55", borderRadius: 4, padding: "3px 8px", fontSize: 10, fontWeight: 700, color: "#fff", whiteSpace: "nowrap" }}>
+            {name ? surname(name) : flag}
+          </div>
+        ))}
       </div>
     </div>
   );
 
   return (
-    <div style={{ width: "100%", position: "relative", borderRadius: 10, overflow: "hidden" }}>
+    <div style={{ width: "100%", borderRadius: 10, overflow: "hidden" }}>
       {lineupSource && (
-        <div style={{ position: "absolute", top: 6, left: "50%", transform: "translateX(-50%)", zIndex: 6, fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 10, background: lineupSource === "confirmed" ? "#22c55e22" : "#f59e0b22", color: lineupSource === "confirmed" ? "#4ade80" : "#f59e0b", border: `1px solid ${lineupSource === "confirmed" ? "#22c55e44" : "#f59e0b44"}`, whiteSpace: "nowrap" }}>
-          {lineupSource === "confirmed" ? "✓ CONFIRMED LINEUP" : "LIKELY LINEUP"}
+        <div style={{ textAlign: "center", padding: "6px", background: "#0d0d18" }}>
+          <span style={{ fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 10, background: lineupSource === "confirmed" ? "#22c55e22" : "#f59e0b22", color: lineupSource === "confirmed" ? "#4ade80" : "#f59e0b", border: "1px solid " + (lineupSource === "confirmed" ? "#22c55e44" : "#f59e0b44") }}>
+            {lineupSource === "confirmed" ? "✓ CONFIRMED LINEUP" : "LIKELY LINEUP"}
+          </span>
         </div>
       )}
 
-      {/* Home team label — top */}
-      <div style={{ textAlign: "center", padding: "8px 8px 4px", background: "#0d0d18" }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: "#4ade80" }}>{homeFlag} {homeTeam} · {homeFormation || "4-3-3"}</span>
+      <div style={{ background: "repeating-linear-gradient(180deg,#1a7a1a 0px,#1a7a1a 28px,#1f8c1f 28px,#1f8c1f 56px)", padding: "12px 14px 8px" }}>
+        <div style={{ textAlign: "center", marginBottom: 12 }}>
+          <span style={{ fontSize: 12, fontWeight: 800, color: "#4ade80", background: "rgba(0,0,0,0.65)", padding: "4px 12px", borderRadius: 6 }}>{homeFlag} {homeTeam} · {homeFormation || "4-3-3"}</span>
+        </div>
+        {homeRows.map((row, i) => <PlayerRow key={i} row={row} border="#4ade80" flag={homeFlag} />)}
       </div>
 
-      {/* Pitch */}
-      <div style={{ position: "relative", width: "100%", paddingBottom: "145%", background: "repeating-linear-gradient(180deg,#1a7a1a 0px,#1a7a1a 28px,#1f8c1f 28px,#1f8c1f 56px)" }}>
-        <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }} viewBox="0 0 100 145" preserveAspectRatio="none">
-          {/* Pitch outline */}
-          <rect x="2" y="2" width="96" height="141" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="0.6"/>
-          {/* Halfway line */}
-          <line x1="2" y1="72.5" x2="98" y2="72.5" stroke="rgba(255,255,255,0.6)" strokeWidth="0.6"/>
-          {/* Centre circle */}
-          <circle cx="50" cy="72.5" r="11" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="0.6"/>
-          <circle cx="50" cy="72.5" r="0.8" fill="rgba(255,255,255,0.6)"/>
-          {/* Top penalty box (home goal) */}
-          <rect x="22" y="2" width="56" height="18" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="0.5"/>
-          <rect x="36" y="2" width="28" height="8" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="0.5"/>
-          {/* Bottom penalty box (away goal) */}
-          <rect x="22" y="125" width="56" height="18" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="0.5"/>
-          <rect x="36" y="137" width="28" height="8" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="0.5"/>
-          {/* Halfway line label */}
-          <text x="50" y="70" textAnchor="middle" fontSize="3" fill="rgba(255,255,255,0.25)" fontFamily="sans-serif">HALFWAY</text>
-        </svg>
-
-        {/* Scoreboard strip — top */}
-        <div style={{ position: "absolute", top: "1%", left: "2%", right: "2%", height: "3%", background: "#111", display: "flex", overflow: "hidden", borderRadius: 1, zIndex: 1 }}>
-          {["DEEP433", "deep433.com", "YOU vs AI"].map((t, i) => (
-            <div key={i} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", borderRight: "1px solid #222" }}>
-              <span style={{ fontSize: 4, fontWeight: 900, color: i % 2 === 0 ? "#4ade80" : "#f59e0b", whiteSpace: "nowrap" }}>{t}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Scoreboard strip — bottom */}
-        <div style={{ position: "absolute", bottom: "1%", left: "2%", right: "2%", height: "3%", background: "#111", display: "flex", overflow: "hidden", borderRadius: 1, zIndex: 1 }}>
-          {["DEEP433", "deep433.com", "WORLD CUP 2026"].map((t, i) => (
-            <div key={i} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", borderRight: "1px solid #222" }}>
-              <span style={{ fontSize: 4, fontWeight: 900, color: i % 2 === 0 ? "#f59e0b" : "#4ade80", whiteSpace: "nowrap" }}>{t}</span>
-            </div>
-          ))}
-        </div>
-
-        {homePlayers.map((p, i) => (
-          <PlayerPin key={"h" + i} x={p.x} y={p.y} num={i + 1} border="#4ade80" name={homeLineupNames?.[i]} flag={homeFlag} />
-        ))}
-        {awayPlayers.map((p, i) => (
-          <PlayerPin key={"a" + i} x={p.x} y={p.y} num={i + 1} border="#f59e0b" name={awayLineupNames?.[i]} flag={awayFlag} />
-        ))}
+      <div style={{ background: "#0d0d18", display: "flex", alignItems: "center", gap: 8, padding: "5px 14px" }}>
+        <div style={{ flex: 1, height: 1, background: "#1e1e30" }} />
+        <div style={{ fontSize: 8, color: "#333", fontWeight: 700, letterSpacing: 1 }}>HALFWAY</div>
+        <div style={{ flex: 1, height: 1, background: "#1e1e30" }} />
       </div>
 
-      {/* Away team label — bottom */}
-      <div style={{ textAlign: "center", padding: "4px 8px 8px", background: "#0d0d18" }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: "#f59e0b" }}>{awayFlag} {awayTeam} · {awayFormation || "4-3-3"}</span>
+      <div style={{ background: "repeating-linear-gradient(180deg,#1f8c1f 0px,#1f8c1f 28px,#1a7a1a 28px,#1a7a1a 56px)", padding: "8px 14px 12px" }}>
+        {[...awayRows].reverse().map((row, i) => <PlayerRow key={i} row={row} border="#f59e0b" flag={awayFlag} />)}
+        <div style={{ textAlign: "center", marginTop: 12 }}>
+          <span style={{ fontSize: 12, fontWeight: 800, color: "#f59e0b", background: "rgba(0,0,0,0.65)", padding: "4px 12px", borderRadius: 6 }}>{awayFlag} {awayTeam} · {awayFormation || "4-3-3"}</span>
+        </div>
       </div>
     </div>
   );
 }
-
 
 function AuthScreen() {
   const [mode, setMode] = useState("login");
