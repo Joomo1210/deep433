@@ -72,6 +72,28 @@ const TEAM_FLAGS = {
   "Ghana": "🇬🇭", "Panama": "🇵🇦", "Uzbekistan": "🇺🇿", "Colombia": "🇨🇴",
 };
 
+function computeStats(history) {
+  const verified = history.filter(h => h.actual_score);
+  const userCorrect = verified.filter(h => h.user_prediction === h.actual_score).length;
+  const aiCorrect = verified.filter(h => h.ai_prediction === h.actual_score).length;
+  const beatAI = verified.filter(h => h.result === "user").length;
+  return { total: history.length, verified: verified.length, userCorrect, aiCorrect, beatAI };
+}
+
+const BADGE_DEFS = [
+  { icon: "⚽", name: "Sunday League Scout", desc: "First prediction made", color: "#888", condition: (s) => s.total >= 1 },
+  { icon: "🤖", name: "AI Beater", desc: "Beat the AI once", color: "#60a5fa", condition: (s) => s.beatAI >= 1 },
+  { icon: "🎯", name: "Sharp Eye", desc: "Beat the AI 3 times", color: "#a78bfa", condition: (s) => s.beatAI >= 3 },
+  { icon: "🔥", name: "On Fire", desc: "Beat the AI 5 times", color: "#f97316", condition: (s) => s.beatAI >= 5 },
+  { icon: "🧠", name: "Analyst", desc: "Beat the AI 10 times", color: "#4ade80", condition: (s) => s.beatAI >= 10 },
+  { icon: "👑", name: "AI Destroyer", desc: "Beat the AI 20 times", color: "#fbbf24", condition: (s) => s.beatAI >= 20 },
+];
+
+function getRank(stats) {
+  const earned = BADGE_DEFS.filter(b => b.condition(stats));
+  return earned.length > 0 ? earned[earned.length - 1] : null;
+}
+
 function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineupNames, awayLineupNames, lineupSource }) {
   const homeFlag = TEAM_FLAGS[homeTeam] || "🏳️";
   const awayFlag = TEAM_FLAGS[awayTeam] || "🏳️";
