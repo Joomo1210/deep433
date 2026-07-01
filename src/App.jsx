@@ -31,9 +31,9 @@ const WC_FIXTURES = [
   { date: "Tue 30 Jun", kickoff: "2026-06-30T21:00:00Z", home: "France", away: "Sweden", group: "Round of 32", venue: "MetLife Stadium" },
   { date: "Wed 1 Jul", kickoff: "2026-07-01T01:00:00Z", home: "Mexico", away: "Ecuador", group: "Round of 32", venue: "Estadio Azteca" },
   { date: "Wed 1 Jul", kickoff: "2026-07-01T16:00:00Z", home: "England", away: "Congo DR", group: "Round of 32", venue: "Mercedes-Benz Stadium" },
-   { date: "Thu 2 Jul", kickoff: "2026-07-02T00:00:00Z", home: "USA", away: "Bosnia and Herzegovina", group: "Round of 32", venue: "Levi's Stadium" },
+  { date: "Thu 2 Jul", kickoff: "2026-07-01T23:00:00Z", home: "Portugal", away: "Croatia", group: "Round of 32", venue: "Toronto Stadium" },
+  { date: "Thu 2 Jul", kickoff: "2026-07-02T00:00:00Z", home: "USA", away: "Bosnia and Herzegovina", group: "Round of 32", venue: "Levi's Stadium" },
   { date: "Thu 2 Jul", kickoff: "2026-07-02T19:00:00Z", home: "Spain", away: "Austria", group: "Round of 32", venue: "SoFi Stadium" },
-  { date: "Fri 3 Jul", kickoff: "2026-07-02T23:00:00Z", home: "Portugal", away: "Croatia", group: "Round of 32", venue: "Toronto Stadium" },
   { date: "Fri 3 Jul", kickoff: "2026-07-03T03:00:00Z", home: "Switzerland", away: "Algeria", group: "Round of 32", venue: "BC Place" },
   { date: "Fri 3 Jul", kickoff: "2026-07-03T18:00:00Z", home: "Australia", away: "Egypt", group: "Round of 32", venue: "AT&T Stadium" },
   { date: "Fri 3 Jul", kickoff: "2026-07-03T22:00:00Z", home: "Argentina", away: "Cabo Verde", group: "Round of 32", venue: "Hard Rock Stadium" },
@@ -64,17 +64,16 @@ function computeStats(history) {
 
 const TEAM_FLAGS = {
   "Mexico": "🇲🇽", "South Africa": "🇿🇦", "Korea Republic": "🇰🇷", "Czechia": "🇨🇿",
-  "Canada": "🇨🇦", "United States": "🇺🇸",
-"Bosnia-Herzegovina": "🇧🇦",  "Paraguay": "🇵🇾",
+  "Canada": "🇨🇦", "Bosnia and Herzegovina": "🇧🇦", "USA": "🇺🇸", "Paraguay": "🇵🇾",
   "Qatar": "🇶🇦", "Switzerland": "🇨🇭", "Brazil": "🇧🇷", "Morocco": "🇲🇦",
-  "Haiti": "🇭🇹", "Scotland": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "Australia": "🇦🇺", "Türkiye": "🇹🇷",
+  "Haiti": "🇭🇹", "Scotland": "🏴 SCO", "Australia": "🇦🇺", "Türkiye": "🇹🇷",
   "Germany": "🇩🇪", "Curaçao": "🇨🇼", "Netherlands": "🇳🇱", "Japan": "🇯🇵",
   "Côte d'Ivoire": "🇨🇮", "Ecuador": "🇪🇨", "Sweden": "🇸🇪", "Tunisia": "🇹🇳",
   "Spain": "🇪🇸", "Cabo Verde": "🇨🇻", "Belgium": "🇧🇪", "Egypt": "🇪🇬",
   "Saudi Arabia": "🇸🇦", "Uruguay": "🇺🇾", "IR Iran": "🇮🇷", "New Zealand": "🇳🇿",
   "France": "🇫🇷", "Senegal": "🇸🇳", "Iraq": "🇮🇶", "Norway": "🇳🇴",
   "Argentina": "🇦🇷", "Algeria": "🇩🇿", "Austria": "🇦🇹", "Jordan": "🇯🇴",
-  "Portugal": "🇵🇹", "Congo DR": "🇨🇩", "England": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "Croatia": "🇭🇷",
+  "Portugal": "🇵🇹", "Congo DR": "🇨🇩", "England": "🏴 ENG", "Croatia": "🇭🇷",
   "Ghana": "🇬🇭", "Panama": "🇵🇦", "Uzbekistan": "🇺🇿", "Colombia": "🇨🇴",
 };
 
