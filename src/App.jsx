@@ -415,7 +415,10 @@ export default function FootballPredictor() {
         user_prediction: up, ai_prediction: aiPrediction, ai_verdict: parsed.verdict,
         ai_data: parsed,
       }).select().single();
-      if (saved) setHistory(prev => [saved, ...prev]);
+      if (saved) {
+        setHistory(prev => [saved, ...prev]);
+        setSavedPredictionId(saved.id);
+      }
     } catch (e) { setError(e.message || "Something went wrong. Try again."); }
     setLoading(false);
   };
@@ -469,10 +472,10 @@ export default function FootballPredictor() {
   const [confirmedLineup, setConfirmedLineup] = useState(null);
   const [lineupFetching, setLineupFetching] = useState(false);
   const [viewingPitch, setViewingPitch] = useState(null);
+  const [savedPredictionId, setSavedPredictionId] = useState(null);
 
-  const fetchConfirmedLineup = async (home, away, league) => {
+  const fetchConfirmedLineup = async (home, away, league, predictionId) => {
     setLineupFetching(true);
-    // Try today and yesterday/tomorrow to handle UTC date boundary edge cases
     const now = new Date();
     const dates = [
       new Date(now.getTime() - 86400000).toISOString().split("T")[0],
@@ -485,6 +488,21 @@ export default function FootballPredictor() {
         const data = await res.json();
         if (data.available) {
           setConfirmedLineup(data);
+          // Persist confirmed lineup into the prediction row so it survives navigation
+          const pid = predictionId || savedPredictionId;
+          if (pid) {
+            await supabase.from("predictions").update({
+              ai_data: {
+                ...((await supabase.from("predictions").select("ai_data").eq("id", pid).single()).data?.ai_data || {}),
+                confirmedLineup: data,
+              }
+            }).eq("id", pid);
+            // Update local history too
+            setHistory(prev => prev.map(h => h.id === pid
+              ? { ...h, ai_data: { ...(h.ai_data || {}), confirmedLineup: data } }
+              : h
+            ));
+          }
           setLineupFetching(false);
           return;
         }
@@ -497,7 +515,7 @@ export default function FootballPredictor() {
   useEffect(() => {
     if (step !== 3 || !result) return;
     setConfirmedLineup(null);
-    fetchConfirmedLineup(homeTeam, awayTeam, selectedLeague);
+    fetchConfirmedLineup(homeTeam, awayTeam, selectedLeague, savedPredictionId);
   }, [step, result, homeTeam, awayTeam, selectedLeague]);
 
   const TABS = [
@@ -699,7 +717,7 @@ export default function FootballPredictor() {
                 />
                 {!confirmedLineup && (
                   <button
-                    onClick={() => fetchConfirmedLineup(homeTeam, awayTeam, selectedLeague)}
+                    onClick={() => fetchConfirmedLineup(homeTeam, awayTeam, selectedLeague, savedPredictionId)}
                     disabled={lineupFetching}
                     style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 8, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "8px 16px", width: "100%", marginTop: 4 }}
                   >
@@ -943,11 +961,11 @@ export default function FootballPredictor() {
             <PitchView
               homeTeam={viewingPitch.home_team}
               awayTeam={viewingPitch.away_team}
-              homeFormation={viewingPitch.ai_data?.homeFormation}
-              awayFormation={viewingPitch.ai_data?.awayFormation}
-              homeLineupNames={viewingPitch.ai_data?.homeLineup}
-              awayLineupNames={viewingPitch.ai_data?.awayLineup}
-              lineupSource="predicted"
+              homeFormation={viewingPitch.ai_data?.confirmedLineup?.home?.formation || viewingPitch.ai_data?.homeFormation}
+              awayFormation={viewingPitch.ai_data?.confirmedLineup?.away?.formation || viewingPitch.ai_data?.awayFormation}
+              homeLineupNames={viewingPitch.ai_data?.confirmedLineup ? viewingPitch.ai_data.confirmedLineup.home.players.map(p => p.name) : viewingPitch.ai_data?.homeLineup}
+              awayLineupNames={viewingPitch.ai_data?.confirmedLineup ? viewingPitch.ai_data.confirmedLineup.away.players.map(p => p.name) : viewingPitch.ai_data?.awayLineup}
+              lineupSource={viewingPitch.ai_data?.confirmedLineup ? "confirmed" : "predicted"}
             />
           </div>
         </div>
