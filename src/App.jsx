@@ -473,6 +473,7 @@ export default function FootballPredictor() {
   const [lineupFetching, setLineupFetching] = useState(false);
   const [viewingPitch, setViewingPitch] = useState(null);
   const [savedPredictionId, setSavedPredictionId] = useState(null);
+  const [deepInsights, setDeepInsights] = useState(null);
 
   const fetchConfirmedLineup = async (home, away, league, predictionId) => {
     setLineupFetching(true);
@@ -517,7 +518,17 @@ export default function FootballPredictor() {
   useEffect(() => {
     if (step !== 3 || !result) return;
     setConfirmedLineup(null);
+    setDeepInsights(null);
     fetchConfirmedLineup(homeTeam, awayTeam, selectedLeague, savedPredictionId);
+
+    // Also fetch deep insights if we have a fixtureId
+    const live = findLiveFixture(homeTeam, awayTeam);
+    if (live?.fixtureId) {
+      fetch(`/api/fixture-insights?fixtureId=${live.fixtureId}`)
+        .then(r => r.json())
+        .then(data => { if (data.available) setDeepInsights(data); })
+        .catch(() => {});
+    }
   }, [step, result, homeTeam, awayTeam, selectedLeague]);
 
   const TABS = [
@@ -791,6 +802,80 @@ export default function FootballPredictor() {
                   <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>🃏 Wildcard Factor</div>
                   <p style={{ fontSize: 14, color: "#aaa", lineHeight: 1.6 }}>{result.wildcard}</p>
                 </div>
+
+                {deepInsights && (
+                  <div className="card" style={{ borderColor: "#3730a322", background: "#0f0f1f" }}>
+                    <div style={{ fontSize: 11, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 14 }}>📊 Deep Insights</div>
+                    <div style={{ fontSize: 11, color: "#555", marginBottom: 12 }}>Statistical model — independent of AI verdict</div>
+
+                    {/* Win probability bar */}
+                    {deepInsights.percent?.home && (
+                      <div style={{ marginBottom: 14 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#888", marginBottom: 6 }}>
+                          <span>{homeTeam} {deepInsights.percent.home}</span>
+                          <span>Draw {deepInsights.percent.draw}</span>
+                          <span>{awayTeam} {deepInsights.percent.away}</span>
+                        </div>
+                        <div style={{ display: "flex", height: 8, borderRadius: 4, overflow: "hidden", gap: 2 }}>
+                          <div style={{ width: deepInsights.percent.home, background: "#4ade80", borderRadius: "4px 0 0 4px" }} />
+                          <div style={{ width: deepInsights.percent.draw, background: "#a78bfa" }} />
+                          <div style={{ width: deepInsights.percent.away, background: "#f59e0b", borderRadius: "0 4px 4px 0" }} />
+                        </div>
+                      </div>
+                    )}
+
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
+                      {deepInsights.goals?.home !== null && (
+                        <div style={{ background: "#13131f", borderRadius: 8, padding: "10px 12px", textAlign: "center" }}>
+                          <div style={{ fontSize: 10, color: "#555", marginBottom: 4 }}>PREDICTED GOALS</div>
+                          <div style={{ fontSize: 16, fontWeight: 800, color: "#f0f0f0" }}>{deepInsights.goals.home} — {deepInsights.goals.away}</div>
+                        </div>
+                      )}
+                      {deepInsights.underOver && (
+                        <div style={{ background: "#13131f", borderRadius: 8, padding: "10px 12px", textAlign: "center" }}>
+                          <div style={{ fontSize: 10, color: "#555", marginBottom: 4 }}>GOALS MARKET</div>
+                          <div style={{ fontSize: 16, fontWeight: 800, color: "#f0f0f0" }}>{deepInsights.underOver}</div>
+                        </div>
+                      )}
+                    </div>
+
+                    {deepInsights.form?.home && (
+                      <div style={{ marginBottom: 10 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                          <span style={{ fontSize: 11, color: "#4ade80", fontWeight: 700 }}>{homeTeam} form</span>
+                          <span style={{ fontSize: 11, color: "#f59e0b", fontWeight: 700 }}>{awayTeam} form</span>
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between" }}>
+                          <div style={{ display: "flex", gap: 3 }}>
+                            {deepInsights.form.home.split("").map((r, i) => (
+                              <div key={i} style={{ width: 18, height: 18, borderRadius: 3, background: r === "W" ? "#22c55e" : r === "D" ? "#a78bfa" : "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 800, color: "#fff" }}>{r}</div>
+                            ))}
+                          </div>
+                          <div style={{ display: "flex", gap: 3 }}>
+                            {deepInsights.form.away.split("").map((r, i) => (
+                              <div key={i} style={{ width: 18, height: 18, borderRadius: 3, background: r === "W" ? "#22c55e" : r === "D" ? "#a78bfa" : "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 800, color: "#fff" }}>{r}</div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {deepInsights.h2h?.length > 0 && (
+                      <div>
+                        <div style={{ fontSize: 10, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Recent H2H</div>
+                        {deepInsights.h2h.map((r, i) => (
+                          <div key={i} style={{ fontSize: 11, color: "#666", padding: "3px 0", borderBottom: "1px solid #1a1a2a" }}>{r}</div>
+                        ))}
+                      </div>
+                    )}
+
+                    {deepInsights.advice && (
+                      <div style={{ marginTop: 12, padding: "8px 12px", background: "#13131f", borderRadius: 8, fontSize: 12, color: "#818cf8", fontStyle: "italic" }}>
+                        "{deepInsights.advice}"
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="card" style={{ borderColor: "#4ade8033" }}>
                   <div style={{ fontSize: 11, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>📤 Challenge Your Friends</div>
