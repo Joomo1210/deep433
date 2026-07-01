@@ -145,7 +145,7 @@ function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineu
 
       <div style={{ background: "#0d0d18", display: "flex", alignItems: "center", gap: 8, padding: "5px 14px" }}>
         <div style={{ flex: 1, height: 1, background: "#1e1e30" }} />
-        <div style={{ fontSize: 8, color: "#333", fontWeight: 700, letterSpacing: 1 }}>HALFWAY</div>
+        <div style={{ width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg, #1a1a2e, #16213e)", border: "2px solid #2a2a4a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>⚽</div>
         <div style={{ flex: 1, height: 1, background: "#1e1e30" }} />
       </div>
 
