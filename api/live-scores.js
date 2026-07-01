@@ -1,72 +1,73 @@
 // /api/live-scores.js
-// Fetches fixtures + live status/scores from football-data.org for supported competitions.
-// Usage: /api/live-scores?leagueId=wc2026&date=2026-06-28
+// Fetches fixtures + live status/scores from API-Football for any competition.
+// Usage: /api/live-scores?leagueId=wc2026&date=2026-06-28&season=2026
 
-// Map your app's league IDs to football-data.org's competition codes.
-// Free tier covers: WC, CL, BL1, DED, BSA, PD, FL1, ELC, PPL, EC, SA, PL
 const LEAGUE_MAP = {
-  wc2026:      "WC",
-  pl:          "PL",
-  laliga:      "PD",
-  seriea:      "SA",
-  bundesliga:  "BL1",
-  ligue1:      "FL1",
-  ucl:         "CL",
-  // Not covered by football-data.org's free tier:
-  // uel, facup, copadelrey, afcon, copamerica
+  wc2026:      { id: 1,   season: 2026 },
+  pl:          { id: 39,  season: 2025 },
+  laliga:      { id: 140, season: 2025 },
+  seriea:      { id: 135, season: 2025 },
+  bundesliga:  { id: 78,  season: 2025 },
+  ligue1:      { id: 61,  season: 2025 },
+  ucl:         { id: 2,   season: 2025 },
+  uel:         { id: 3,   season: 2025 },
+  facup:       { id: 45,  season: 2025 },
+  copadelrey:  { id: 143, season: 2025 },
+  afcon:       { id: 6,   season: 2025 },
+  copamerica:  { id: 9,   season: 2024 },
 };
 
-// Map football-data.org's status values to simple states our app understands.
-function mapStatus(status) {
-  const live = ["IN_PLAY", "PAUSED"];
-  const finished = ["FINISHED", "AWARDED"];
-  if (live.includes(status)) return "live";
-  if (finished.includes(status)) return "finished";
-  return "upcoming"; // SCHEDULED, TIMED, POSTPONED, etc.
+function mapStatus(shortStatus) {
+  const live = ["1H", "HT", "2H", "ET", "BT", "P", "INT"];
+  const finished = ["FT", "AET", "PEN"];
+  if (live.includes(shortStatus)) return "live";
+  if (finished.includes(shortStatus)) return "finished";
+  return "upcoming";
 }
 
 export default async function handler(req, res) {
-  const { leagueId, date } = req.query;
+  const { leagueId, date, season } = req.query;
 
   if (!leagueId || !date) {
     return res.status(400).json({ error: "leagueId and date are required" });
   }
 
-  const competitionCode = LEAGUE_MAP[leagueId];
-  if (!competitionCode) {
-    return res.status(400).json({
-      error: `League "${leagueId}" isn't covered by football-data.org's free tier`,
-    });
+  const league = LEAGUE_MAP[leagueId];
+  if (!league) {
+    return res.status(400).json({ error: `Unknown leagueId: ${leagueId}` });
   }
 
-  const apiKey = process.env.FOOTBALL_DATA_API_KEY;
+  const seasonToUse = season || league.season;
+  const apiKey = process.env.API_FOOTBALL_KEY;
+
   if (!apiKey) {
-    return res.status(500).json({ error: "FOOTBALL_DATA_API_KEY not configured" });
+    return res.status(500).json({ error: "API_FOOTBALL_KEY not configured" });
   }
 
   try {
-    const url = `https://api.football-data.org/v4/competitions/${competitionCode}/matches?dateFrom=${date}&dateTo=${date}`;
+    const url = `https://v3.football.api-sports.io/fixtures?league=${league.id}&season=${seasonToUse}&date=${date}`;
     const response = await fetch(url, {
-      headers: { "X-Auth-Token": apiKey },
+      headers: { "x-apisports-key": apiKey },
     });
 
     if (!response.ok) {
       const text = await response.text();
-      return res.status(response.status).json({ error: "football-data.org error", detail: text });
+      return res.status(response.status).json({ error: "API-Football error", detail: text });
     }
 
     const data = await response.json();
 
-    const fixtures = (data.matches || []).map(m => ({
-      home: m.homeTeam?.name,
-      away: m.awayTeam?.name,
-      status: mapStatus(m.status),
-      statusRaw: m.status,
-      minute: m.minute ?? null,
-      kickoff: m.utcDate,
+    const fixtures = (data.response || []).map(f => ({
+      home: f.teams?.home?.name,
+      away: f.teams?.away?.name,
+      status: mapStatus(f.fixture?.status?.short),
+      statusRaw: f.fixture?.status?.short,
+      elapsed: f.fixture?.status?.elapsed,
+      kickoff: f.fixture?.date,
+      fixtureId: f.fixture?.id,
       score: {
-        home: m.score?.fullTime?.home ?? null,
-        away: m.score?.fullTime?.away ?? null,
+        home: f.goals?.home,
+        away: f.goals?.away,
       },
     }));
 
