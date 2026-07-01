@@ -1,7 +1,7 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { homeTeam, awayTeam, league } = req.body;
+  const { homeTeam, awayTeam, league, fixtureId } = req.body;
 
 const SQUADS = {
   "Algeria": { manager: "Vladimir PETKOVIC", goalkeepers: ["Melvin MASTIL", "Oussama BENBOT", "Luca ZIDANE"], defenders: ["Aissa MANDI", "Achref ABADA", "Mohamed Amine TOUGAI", "Zineddine BELAID", "Jaouen HADJAM", "Rayan AIT-NOURI", "Rafik BELGHALI", "Ramy BENSEBAINI", "Samir CHERGUI"], midfielders: ["Ramiz ZERROUKI", "Houssem AOUAR", "Fares CHAIBI", "Hicham BOUDAOUI", "Nabil BENTALEB", "Ibrahim MAZA", "Yassine TITRAOUI"], forwards: ["Riyad MAHREZ", "Amine GOUIRI", "Anis HADJ MOUSSA", "Nadhir BENBOUALI", "Mohamed AMOURA", "Adil BOULBINA", "Fares GHEDJEMIS"] },
@@ -88,6 +88,40 @@ const SQUADS = {
     ? `This match is played at a NEUTRAL VENUE as part of a tournament. Neither team has home advantage. Do NOT mention "home crowd," "home support," "at home," or any home-field advantage anywhere in your analysis or verdict. Refer to "${homeTeam}" and "${awayTeam}" by name only, never as "the hosts" or "the home side."`
     : `This is a domestic league/cup fixture. ${homeTeam} are playing at their home ground with their usual home advantage — this is a legitimate factor to mention.`;
 
+  // Fetch injury/suspension data if we have a fixtureId
+  let injuryInstruction = "";
+  if (fixtureId) {
+    try {
+      const injuryRes = await fetch(`https://v3.football.api-sports.io/injuries?fixture=${fixtureId}`, {
+        headers: { "x-apisports-key": process.env.API_FOOTBALL_KEY },
+      });
+      const injuryData = await injuryRes.json();
+      const injuries = injuryData.response || [];
+
+      if (injuries.length) {
+        const homeTeamId = injuries[0]?.team?.id;
+        const homeOut = [];
+        const awayOut = [];
+
+        injuries.forEach(entry => {
+          const label = `${entry.player?.name} (${entry.player?.reason || entry.player?.type || "unavailable"})`;
+          if (entry.team?.id === homeTeamId) homeOut.push(label);
+          else awayOut.push(label);
+        });
+
+        const parts = [];
+        if (homeOut.length) parts.push(`${homeTeam} unavailable: ${homeOut.join(", ")}`);
+        if (awayOut.length) parts.push(`${awayTeam} unavailable: ${awayOut.join(", ")}`);
+
+        if (parts.length) {
+          injuryInstruction = `INJURIES & SUSPENSIONS — these players are confirmed unavailable and MUST NOT appear in your predicted lineups: ${parts.join(" | ")}. Adjust your lineup and verdict to reflect these absences.`;
+        }
+      }
+    } catch {
+      // Fail silently — injuries are supplementary, not critical
+    }
+  }
+
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -98,10 +132,10 @@ const SQUADS = {
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 1200,
-      system: `You are a brutally honest expert football analyst. Respond with ONLY a raw JSON object. No markdown. No backticks. Just JSON. ${squadInstructions} ${venueInstruction}`,
+      system: `You are a brutally honest expert football analyst. Respond with ONLY a raw JSON object. No markdown. No backticks. Just JSON. ${squadInstructions} ${venueInstruction} ${injuryInstruction}`,
       messages: [{
         role: 'user',
-        content: `Predict this ${league} match. Team 1: ${homeTeam}, Team 2: ${awayTeam}. ${isNeutralVenue ? "Remember: neutral venue, no home advantage for either side." : `${homeTeam} play at home.`} Return ONLY this JSON: {"scoreline":"2-1","homeGoals":2,"awayGoals":1,"outcome":"Home Win","confidence":"Medium","homeLineup":["GK","RB","CB","CB","LB","CM","CM","CM","RW","ST","LW"],"awayLineup":["GK","RB","CB","CB","LB","CM","CM","CM","RW","ST","LW"],"homeFormation":"4-3-3","awayFormation":"4-2-3-1","keyBattle":"Description","homeKeyPlayer":"Name","awayKeyPlayer":"Name","verdict":"2-3 sentence brutal honest verdict.","wildcard":"One surprise factor."} Use only players from the verified squads provided.`
+        content: `Predict this ${league} match. Team 1: ${homeTeam}, Team 2: ${awayTeam}. ${isNeutralVenue ? "Remember: neutral venue, no home advantage for either side." : `${homeTeam} play at home.`} ${injuryInstruction ? "Important: respect the injury/suspension list above in your lineup selections." : ""} Return ONLY this JSON: {"scoreline":"2-1","homeGoals":2,"awayGoals":1,"outcome":"Home Win","confidence":"Medium","homeLineup":["GK","RB","CB","CB","LB","CM","CM","CM","RW","ST","LW"],"awayLineup":["GK","RB","CB","CB","LB","CM","CM","CM","RW","ST","LW"],"homeFormation":"4-3-3","awayFormation":"4-2-3-1","keyBattle":"Description","homeKeyPlayer":"Name","awayKeyPlayer":"Name","verdict":"2-3 sentence brutal honest verdict.","wildcard":"One surprise factor."} Use only players from the verified squads provided.`
       }],
     }),
   });
