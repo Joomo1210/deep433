@@ -403,7 +403,7 @@ export default function FootballPredictor() {
       const res = await fetch("/api/predict", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ homeTeam, awayTeam, league: leagueLabel }),
+        body: JSON.stringify({ homeTeam, awayTeam, league: leagueLabel, fixtureId: findLiveFixture(homeTeam, awayTeam)?.fixtureId || null }),
       });
       if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `Error ${res.status}`); }
       const parsed = await res.json();
