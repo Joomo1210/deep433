@@ -871,8 +871,8 @@ export default function FootballPredictor() {
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
                       {deepInsights.comparison?.attackHome && (
                         <div style={{ background: "#13131f", borderRadius: 8, padding: "12px 14px" }}>
-                          <div style={{ fontSize: 11, color: "#555", marginBottom: 2, textTransform: "uppercase", letterSpacing: 1 }}>Attack Rating</div>
-                          <div style={{ fontSize: 10, color: "#444", marginBottom: 8 }}>Relative attacking strength</div>
+                          <div style={{ fontSize: 12, color: "#ccc", marginBottom: 2, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Attack Rating</div>
+                          <div style={{ fontSize: 10, color: "#666", marginBottom: 8 }}>Relative attacking strength</div>
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                             <span style={{ fontSize: 13, fontWeight: 700, color: "#4ade80", minWidth: 34, textAlign: "right" }}>{deepInsights.comparison.attackHome}</span>
                             <div style={{ flex: 1, height: 7, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex" }}>
@@ -883,16 +883,16 @@ export default function FootballPredictor() {
                             </div>
                             <span style={{ fontSize: 13, fontWeight: 700, color: "#f59e0b", minWidth: 34 }}>{deepInsights.comparison.attackAway}</span>
                           </div>
-                          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontSize: 10, color: "#444" }}>
-                            <span>{homeTeam.split(" ")[0]}</span>
-                            <span>{awayTeam.split(" ")[0]}</span>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontSize: 10, color: "#888" }}>
+                            <span style={{ color: "#4ade80" }}>{homeTeam.split(" ")[0]}</span>
+                            <span style={{ color: "#f59e0b" }}>{awayTeam.split(" ")[0]}</span>
                           </div>
                         </div>
                       )}
                       {deepInsights.comparison?.defenceHome && (
                         <div style={{ background: "#13131f", borderRadius: 8, padding: "12px 14px" }}>
-                          <div style={{ fontSize: 11, color: "#555", marginBottom: 2, textTransform: "uppercase", letterSpacing: 1 }}>Defence Rating</div>
-                          <div style={{ fontSize: 10, color: "#444", marginBottom: 8 }}>Relative defensive strength</div>
+                          <div style={{ fontSize: 12, color: "#ccc", marginBottom: 2, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Defence Rating</div>
+                          <div style={{ fontSize: 10, color: "#666", marginBottom: 8 }}>Relative defensive strength</div>
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                             <span style={{ fontSize: 13, fontWeight: 700, color: "#4ade80", minWidth: 34, textAlign: "right" }}>{deepInsights.comparison.defenceHome}</span>
                             <div style={{ flex: 1, height: 7, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex" }}>
@@ -903,9 +903,9 @@ export default function FootballPredictor() {
                             </div>
                             <span style={{ fontSize: 13, fontWeight: 700, color: "#f59e0b", minWidth: 34 }}>{deepInsights.comparison.defenceAway}</span>
                           </div>
-                          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontSize: 10, color: "#444" }}>
-                            <span>{homeTeam.split(" ")[0]}</span>
-                            <span>{awayTeam.split(" ")[0]}</span>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontSize: 10, color: "#888" }}>
+                            <span style={{ color: "#4ade80" }}>{homeTeam.split(" ")[0]}</span>
+                            <span style={{ color: "#f59e0b" }}>{awayTeam.split(" ")[0]}</span>
                           </div>
                         </div>
                       )}
@@ -913,7 +913,7 @@ export default function FootballPredictor() {
 
                     {deepInsights.comparison?.formHome && (
                       <div style={{ background: "#13131f", borderRadius: 8, padding: "12px 14px", marginBottom: 10 }}>
-                        <div style={{ fontSize: 11, color: "#555", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>Recent Form (last 5)</div>
+                        <div style={{ fontSize: 12, color: "#ccc", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Recent Form (last 5)</div>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                           <div style={{ textAlign: "center" }}>
                             <div style={{ fontSize: 12, color: "#4ade80", marginBottom: 6, fontWeight: 700 }}>{homeTeam}</div>
