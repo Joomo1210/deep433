@@ -248,6 +248,7 @@ export default function FootballPredictor() {
   const [fixtureSearch, setFixtureSearch] = useState("");
   const [historySearch, setHistorySearch] = useState("");
   const [liveData, setLiveData] = useState([]);
+  const [liveEvents, setLiveEvents] = useState({}); // keyed by fixtureId
   const [confirmedLineup, setConfirmedLineup] = useState(null);
   const [lineupFetching, setLineupFetching] = useState(false);
   const [viewingPitch, setViewingPitch] = useState(null);
@@ -337,7 +338,32 @@ export default function FootballPredictor() {
     return () => clearInterval(interval);
   }, [session, selectedLeague]);
 
-  // Auto-fill final scores: whenever live data updates, check history for finished
+  // Poll live events every 60 seconds for any currently live matches
+  useEffect(() => {
+    const liveFixtures = liveData.filter(f => f.status === "live" && f.fixtureId);
+    if (!liveFixtures.length) return;
+
+    const fetchEvents = async () => {
+      const results = await Promise.allSettled(
+        liveFixtures.map(f =>
+          fetch(`/api/match-events?fixtureId=${f.fixtureId}`)
+            .then(r => r.json())
+            .then(data => ({ fixtureId: f.fixtureId, events: data.events || [] }))
+        )
+      );
+      const updated = {};
+      results.forEach(r => {
+        if (r.status === "fulfilled") {
+          updated[r.value.fixtureId] = r.value.events;
+        }
+      });
+      setLiveEvents(prev => ({ ...prev, ...updated }));
+    };
+
+    fetchEvents();
+    const interval = setInterval(fetchEvents, 60000);
+    return () => clearInterval(interval);
+  }, [liveData]);
   // matches that don't have a logged result yet, and fill it in automatically.
   useEffect(() => {
     if (!liveData.length || !history.length) return;
@@ -1085,6 +1111,29 @@ export default function FootballPredictor() {
                   {matchStatus === "live" && (
                     <div style={{ fontSize: 11, color: "#ef4444", fontWeight: 700, textAlign: "center", padding: "6px", marginTop: 4 }}>🔴 Match in progress</div>
                   )}
+                  {/* Live events ticker */}
+                  {matchStatus === "live" && (() => {
+                    const live = findLiveFixture(h.home_team, h.away_team);
+                    const events = live?.fixtureId ? liveEvents[live.fixtureId] : null;
+                    if (!events?.length) return null;
+                    return (
+                      <div style={{ marginTop: 8, background: "#0d0d18", borderRadius: 8, padding: "10px 12px" }}>
+                        <div style={{ fontSize: 10, color: "#ef4444", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
+                          🔴 Live — {live.elapsed}'
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                          {events.map((e, i) => (
+                            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
+                              <span style={{ color: "#555", minWidth: 32, fontWeight: 700 }}>{e.minute}{e.extra}'</span>
+                              <span style={{ fontSize: 14 }}>{e.icon}</span>
+                              <span style={{ color: "#f0f0f0", fontWeight: 600 }}>{e.label}</span>
+                              <span style={{ color: "#555", fontSize: 11, marginLeft: "auto" }}>{e.team?.split(" ").pop()}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
                   {matchStatus === "finished" && !h.actual_score && (
                     <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 700, textAlign: "center", padding: "6px", marginTop: 4 }}>🏁 Match finished — log the final score below</div>
                   )}
