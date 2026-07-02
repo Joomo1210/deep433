@@ -927,7 +927,7 @@ export default function FootballPredictor() {
                             <div style={{ fontSize: 12, color: "#4ade80", marginBottom: 6, fontWeight: 700 }}>{homeTeam}</div>
                             <div style={{ fontSize: 22, fontWeight: 800, color: "#f0f0f0" }}>{deepInsights.comparison.formHome}</div>
                           </div>
-                          <div style={{ fontSize: 13, color: "#333" }}>vs</div>
+                          <div style={{ fontSize: 13, color: "#ffffff", fontWeight: 700 }}>vs</div>
                           <div style={{ textAlign: "center" }}>
                             <div style={{ fontSize: 12, color: "#f59e0b", marginBottom: 6, fontWeight: 700 }}>{awayTeam}</div>
                             <div style={{ fontSize: 22, fontWeight: 800, color: "#f0f0f0" }}>{deepInsights.comparison.formAway}</div>
