@@ -196,7 +196,7 @@ function AuthScreen() {
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; }`}</style>
       <div style={{ width: "100%", maxWidth: 400 }}>
         <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div style={{ fontSize: 40, marginBottom: 8 }}>⚽</div>
+         <img src="/favicon.png" alt="Deep433" style={{ width: 40, height: 40, marginBottom: 8 }} />
           <div style={{ fontSize: 28, fontWeight: 900, color: "#4ade80", textShadow: "0 0 30px rgba(74,222,128,0.4)" }}>DEEP433</div>
           <div style={{ fontSize: 13, color: "#555", marginTop: 4 }}>PUNDITS VS FANS · PREDICT NOW</div>
         </div>
