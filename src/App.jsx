@@ -860,21 +860,7 @@ export default function FootballPredictor() {
                     <div style={{ fontSize: 11, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 14 }}>📊 Deep Insights</div>
                     <div style={{ fontSize: 13, color: "#aaa", marginBottom: 14, fontWeight: 600 }}>Statistical model — independent of AI verdict</div>
 
-                    {/* Win probability bar */}
-                    {deepInsights.percent?.home && (
-                      <div style={{ marginBottom: 16 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#888", marginBottom: 8 }}>
-                          <span style={{ color: "#4ade80", fontWeight: 700 }}>{homeTeam} {deepInsights.percent.home}</span>
-                          <span style={{ color: "#a78bfa", fontWeight: 700 }}>Draw {deepInsights.percent.draw}</span>
-                          <span style={{ color: "#f59e0b", fontWeight: 700 }}>{awayTeam} {deepInsights.percent.away}</span>
-                        </div>
-                        <div style={{ display: "flex", height: 10, borderRadius: 5, overflow: "hidden" }}>
-                          <div style={{ width: deepInsights.percent.home, background: "#4ade80" }} />
-                          <div style={{ width: deepInsights.percent.draw, background: "#a78bfa" }} />
-                          <div style={{ width: deepInsights.percent.away, background: "#f59e0b" }} />
-                        </div>
-                      </div>
-                    )}
+                    {/* Win probability intentionally hidden — API returns identical values across WC fixtures */}
 
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
                       {deepInsights.comparison?.attackHome && (
