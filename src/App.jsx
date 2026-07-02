@@ -1212,6 +1212,43 @@ export default function FootballPredictor() {
                 <p style={{ fontSize: 13, color: "#aaa", lineHeight: 1.6 }}>{viewingAnalysis.ai_data.wildcard}</p>
               </div>
             )}
+
+            {/* Bench & Managers — from saved confirmedLineup */}
+            {viewingAnalysis.ai_data?.confirmedLineup && (
+              <div className="card" style={{ padding: "14px 16px" }}>
+                <div style={{ fontSize: 11, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🪑 Bench & Managers</div>
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "#4ade80" }}>{viewingAnalysis.home_team}</span>
+                    {viewingAnalysis.ai_data.confirmedLineup.home?.coach && (
+                      <span style={{ fontSize: 11, color: "#555" }}>👔 {viewingAnalysis.ai_data.confirmedLineup.home.coach}</span>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
+                    {(viewingAnalysis.ai_data.confirmedLineup.home?.substitutes || []).map((p, i) => (
+                      <div key={i} style={{ background: "#1a1a28", border: "1px solid #2a2a40", borderRadius: 20, padding: "4px 10px", fontSize: 12, fontWeight: 600, color: "#ccc", whiteSpace: "nowrap", flexShrink: 0 }}>
+                        <span style={{ color: "#4ade80", marginRight: 4, fontSize: 11 }}>{p.number}</span>{p.name?.split(" ").pop()}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "#a855f7" }}>{viewingAnalysis.away_team}</span>
+                    {viewingAnalysis.ai_data.confirmedLineup.away?.coach && (
+                      <span style={{ fontSize: 11, color: "#555" }}>👔 {viewingAnalysis.ai_data.confirmedLineup.away.coach}</span>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
+                    {(viewingAnalysis.ai_data.confirmedLineup.away?.substitutes || []).map((p, i) => (
+                      <div key={i} style={{ background: "#1a1a28", border: "1px solid #2a2a40", borderRadius: 20, padding: "4px 10px", fontSize: 12, fontWeight: 600, color: "#ccc", whiteSpace: "nowrap", flexShrink: 0 }}>
+                        <span style={{ color: "#a855f7", marginRight: 4, fontSize: 11 }}>{p.number}</span>{p.name?.split(" ").pop()}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
