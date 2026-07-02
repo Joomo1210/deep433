@@ -532,6 +532,12 @@ export default function FootballPredictor() {
         const data = await res.json();
         if (data.available) {
           setConfirmedLineup(data);
+          // Also update viewingPitch so the modal re-renders with confirmed data immediately
+          setViewingPitch(prev => prev ? { ...prev, confirmed_lineup: data } : prev);
+          // Save to localStorage as reliable fallback
+          try {
+            localStorage.setItem(`lineup_${home}_${away}`, JSON.stringify(data));
+          } catch {}
           if (pid) {
             const { error } = await supabase.from("predictions")
               .update({ confirmed_lineup: data })
@@ -1044,7 +1050,11 @@ export default function FootballPredictor() {
                     </div>
                     {h.ai_data && (
                       <div style={{ display: "flex", gap: 6 }}>
-                        <button onClick={() => setViewingPitch(h)} style={{ background: "none", border: "1px solid #4ade8044", borderRadius: 6, color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "5px 10px", whiteSpace: "nowrap" }}>⚽ Pitch</button>
+                        <button onClick={() => {
+                          // Load from localStorage if available
+                          const cached = (() => { try { const s = localStorage.getItem(`lineup_${h.home_team}_${h.away_team}`); return s ? JSON.parse(s) : null; } catch { return null; } })();
+                          setViewingPitch(cached ? { ...h, confirmed_lineup: cached } : h);
+                        }} style={{ background: "none", border: "1px solid #4ade8044", borderRadius: 6, color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "5px 10px", whiteSpace: "nowrap" }}>⚽ Pitch</button>
                         <button onClick={() => setViewingAnalysis(h)} style={{ background: "none", border: "1px solid #818cf844", borderRadius: 6, color: "#818cf8", cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "5px 10px", whiteSpace: "nowrap" }}>📊 Analysis</button>
                       </div>
                     )}
@@ -1114,15 +1124,25 @@ export default function FootballPredictor() {
       </div>
 
       {viewingPitch && (
-        <div
-          onClick={() => setViewingPitch(null)}
-          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
-        >
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, maxHeight: "90vh", overflowY: "auto" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-              <div style={{ fontSize: 13, color: "#888", fontWeight: 700 }}>{viewingPitch.home_team} vs {viewingPitch.away_team}</div>
-              <button onClick={() => setViewingPitch(null)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 13, padding: "4px 10px" }}>✕ Close</button>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)", zIndex: 50, display: "flex", flexDirection: "column" }}>
+          {/* Fixed header */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", background: "#0d0d18", borderBottom: "1px solid #1a1a2a", flexShrink: 0 }}>
+            <div style={{ fontSize: 13, color: "#f0f0f0", fontWeight: 700 }}>{viewingPitch.home_team} vs {viewingPitch.away_team}</div>
+            <div style={{ display: "flex", gap: 8 }}>
+              {!viewingPitch.confirmed_lineup && (
+                <button
+                  onClick={() => fetchConfirmedLineup(viewingPitch.home_team, viewingPitch.away_team, selectedLeague, viewingPitch.id)}
+                  disabled={lineupFetching}
+                  style={{ background: "none", border: "1px solid #f59e0b44", borderRadius: 6, color: "#f59e0b", cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "6px 12px" }}
+                >
+                  {lineupFetching ? "Checking..." : "🔄 Refresh Lineup"}
+                </button>
+              )}
+              <button onClick={() => setViewingPitch(null)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#aaa", cursor: "pointer", fontFamily: "inherit", fontSize: 13, padding: "6px 14px" }}>✕ Close</button>
             </div>
+          </div>
+          {/* Scrollable pitch content */}
+          <div style={{ flex: 1, overflowY: "auto", padding: 16, maxWidth: 500, width: "100%", margin: "0 auto" }}>
             <PitchView
               homeTeam={viewingPitch.home_team}
               awayTeam={viewingPitch.away_team}
