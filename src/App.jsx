@@ -403,7 +403,7 @@ export default function FootballPredictor() {
       const res = await fetch("/api/predict", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ homeTeam, awayTeam, league: leagueLabel, fixtureId: findLiveFixture(homeTeam, awayTeam)?.fixtureId || null }),
+        body: JSON.stringify({ homeTeam, awayTeam, league: leagueLabel, fixtureId: selectedFixtureId || findLiveFixture(homeTeam, awayTeam)?.fixtureId || null }),
       });
       if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `Error ${res.status}`); }
       const parsed = await res.json();
@@ -426,6 +426,7 @@ export default function FootballPredictor() {
   const resetPredict = () => {
     setStep(1); setResult(null); setHomeTeam(""); setAwayTeam("");
     setUserHome(""); setUserAway(""); setUserPrediction(""); setError(""); setFixtureSearch("");
+    setSelectedFixtureId(null); setDeepInsights(null);
   };
 
   const logResult = async (id, score) => {
@@ -474,6 +475,48 @@ export default function FootballPredictor() {
   const [viewingPitch, setViewingPitch] = useState(null);
   const [savedPredictionId, setSavedPredictionId] = useState(null);
   const [deepInsights, setDeepInsights] = useState(null);
+  const [selectedFixtureId, setSelectedFixtureId] = useState(null);
+
+  // Look up fixtureId whenever home/away/league changes — try live data first, then API
+  useEffect(() => {
+    if (!homeTeam || !awayTeam || !session) return;
+
+    // First check live data
+    const live = findLiveFixture(homeTeam, awayTeam);
+    if (live?.fixtureId) {
+      setSelectedFixtureId(live.fixtureId);
+      return;
+    }
+
+    // Otherwise fetch from API using today + tomorrow dates
+    const fetchFixtureId = async () => {
+      const now = new Date();
+      const dates = [
+        now.toISOString().split("T")[0],
+        new Date(now.getTime() + 86400000).toISOString().split("T")[0],
+        new Date(now.getTime() + 172800000).toISOString().split("T")[0],
+      ];
+      for (const date of dates) {
+        try {
+          const res = await fetch(`/api/live-scores?leagueId=${selectedLeague}&date=${date}`);
+          const data = await res.json();
+          const h = homeTeam.toLowerCase().replace(/[^a-z0-9]/g, "");
+          const a = awayTeam.toLowerCase().replace(/[^a-z0-9]/g, "");
+          const match = (data.fixtures || []).find(f =>
+            (f.home.toLowerCase().replace(/[^a-z0-9]/g, "") === h && f.away.toLowerCase().replace(/[^a-z0-9]/g, "") === a) ||
+            (f.home.toLowerCase().replace(/[^a-z0-9]/g, "") === a && f.away.toLowerCase().replace(/[^a-z0-9]/g, "") === h)
+          );
+          if (match?.fixtureId) {
+            setSelectedFixtureId(match.fixtureId);
+            return;
+          }
+        } catch {}
+      }
+      setSelectedFixtureId(null);
+    };
+
+    fetchFixtureId();
+  }, [homeTeam, awayTeam, selectedLeague, session]);
 
   const fetchConfirmedLineup = async (home, away, league, predictionId) => {
     setLineupFetching(true);
@@ -522,9 +565,9 @@ export default function FootballPredictor() {
     fetchConfirmedLineup(homeTeam, awayTeam, selectedLeague, savedPredictionId);
 
     // Also fetch deep insights if we have a fixtureId
-    const live = findLiveFixture(homeTeam, awayTeam);
-    if (live?.fixtureId) {
-      fetch(`/api/fixture-insights?fixtureId=${live.fixtureId}`)
+    const fid = selectedFixtureId || findLiveFixture(homeTeam, awayTeam)?.fixtureId;
+    if (fid) {
+      fetch(`/api/fixture-insights?fixtureId=${fid}`)
         .then(r => r.json())
         .then(data => { if (data.available) setDeepInsights(data); })
         .catch(() => {});
