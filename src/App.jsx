@@ -575,6 +575,14 @@ export default function FootballPredictor() {
     }
   }, [step, result, homeTeam, awayTeam, selectedLeague]);
 
+  const capStat = (val) => {
+    if (!val) return val;
+    const num = parseFloat(val);
+    if (isNaN(num)) return val;
+    const capped = Math.min(Math.max(num, 20), 70);
+    return capped + '%';
+  };
+
   const TABS = [
     { id: "predict", label: "⚡ Predict" },
     { id: "standings", label: "🏆 You vs AI" },
@@ -874,14 +882,14 @@ export default function FootballPredictor() {
                           <div style={{ fontSize: 12, color: "#ccc", marginBottom: 2, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Attack Rating</div>
                           <div style={{ fontSize: 10, color: "#666", marginBottom: 8 }}>Relative attacking strength</div>
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: "#4ade80", minWidth: 34, textAlign: "right" }}>{deepInsights.comparison.attackHome}</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: "#4ade80", minWidth: 34, textAlign: "right" }}>{capStat(deepInsights.comparison.attackHome)}</span>
                             <div style={{ flex: 1, height: 7, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex" }}>
                               <div style={{ width: deepInsights.comparison.attackHome, background: "#4ade80" }} />
                             </div>
                             <div style={{ flex: 1, height: 7, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex", flexDirection: "row-reverse" }}>
                               <div style={{ width: deepInsights.comparison.attackAway, background: "#f59e0b" }} />
                             </div>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: "#f59e0b", minWidth: 34 }}>{deepInsights.comparison.attackAway}</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: "#f59e0b", minWidth: 34 }}>{capStat(deepInsights.comparison.attackAway)}</span>
                           </div>
                           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontSize: 10, color: "#888" }}>
                             <span style={{ color: "#4ade80" }}>{homeTeam.split(" ")[0]}</span>
@@ -894,14 +902,14 @@ export default function FootballPredictor() {
                           <div style={{ fontSize: 12, color: "#ccc", marginBottom: 2, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Defence Rating</div>
                           <div style={{ fontSize: 10, color: "#666", marginBottom: 8 }}>Relative defensive strength</div>
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: "#4ade80", minWidth: 34, textAlign: "right" }}>{deepInsights.comparison.defenceHome}</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: "#4ade80", minWidth: 34, textAlign: "right" }}>{capStat(deepInsights.comparison.defenceHome)}</span>
                             <div style={{ flex: 1, height: 7, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex" }}>
                               <div style={{ width: deepInsights.comparison.defenceHome, background: "#4ade80" }} />
                             </div>
                             <div style={{ flex: 1, height: 7, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex", flexDirection: "row-reverse" }}>
                               <div style={{ width: deepInsights.comparison.defenceAway, background: "#f59e0b" }} />
                             </div>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: "#f59e0b", minWidth: 34 }}>{deepInsights.comparison.defenceAway}</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: "#f59e0b", minWidth: 34 }}>{capStat(deepInsights.comparison.defenceAway)}</span>
                           </div>
                           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontSize: 10, color: "#888" }}>
                             <span style={{ color: "#4ade80" }}>{homeTeam.split(" ")[0]}</span>
