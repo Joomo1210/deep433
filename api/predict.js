@@ -1,7 +1,32 @@
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  'https://idisdztwpvedtnroiian.supabase.co',
+  process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlkaXNkenR3cHZlZHRucm9paWFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NTczOTQsImV4cCI6MjA5NzAzMzM5NH0.YmF0DqWmopuJs9Ci1hdFi0XDMoWRD0yfVwOuuG7WVyE'
+);
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { homeTeam, awayTeam, league, fixtureId } = req.body;
+
+  // ── Cache check ──────────────────────────────────────────────────────────
+  // If we already have a prediction for this exact match, return it immediately
+  // so all users see the same canonical AI prediction.
+  try {
+    const { data: cached } = await supabase
+      .from('match_predictions')
+      .select('ai_data')
+      .eq('league', league)
+      .eq('home_team', homeTeam)
+      .eq('away_team', awayTeam)
+      .single();
+
+    if (cached?.ai_data) {
+      return res.status(200).json({ ...cached.ai_data, cached: true });
+    }
+  } catch {}
+  // ─────────────────────────────────────────────────────────────────────────
 
 const SQUADS = {
   "Algeria": { manager: "Vladimir PETKOVIC", goalkeepers: ["Melvin MASTIL", "Oussama BENBOT", "Luca ZIDANE"], defenders: ["Aissa MANDI", "Achref ABADA", "Mohamed Amine TOUGAI", "Zineddine BELAID", "Jaouen HADJAM", "Rayan AIT-NOURI", "Rafik BELGHALI", "Ramy BENSEBAINI", "Samir CHERGUI"], midfielders: ["Ramiz ZERROUKI", "Houssem AOUAR", "Fares CHAIBI", "Hicham BOUDAOUI", "Nabil BENTALEB", "Ibrahim MAZA", "Yassine TITRAOUI"], forwards: ["Riyad MAHREZ", "Amine GOUIRI", "Anis HADJ MOUSSA", "Nadhir BENBOUALI", "Mohamed AMOURA", "Adil BOULBINA", "Fares GHEDJEMIS"] },
@@ -179,5 +204,18 @@ const SQUADS = {
   const text = data.content?.map(b => b.text || '').join('').trim() || '';
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) return res.status(500).json({ error: 'Parse error' });
-  res.status(200).json(JSON.parse(jsonMatch[0]));
+
+  const parsed = JSON.parse(jsonMatch[0]);
+
+  // Save to cache for future users
+  try {
+    await supabase.from('match_predictions').upsert({
+      league,
+      home_team: homeTeam,
+      away_team: awayTeam,
+      ai_data: parsed,
+    }, { onConflict: 'league,home_team,away_team' });
+  } catch {}
+
+  res.status(200).json(parsed);
 }
