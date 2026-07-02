@@ -248,7 +248,8 @@ export default function FootballPredictor() {
   const [fixtureSearch, setFixtureSearch] = useState("");
   const [historySearch, setHistorySearch] = useState("");
   const [liveData, setLiveData] = useState([]);
-  const [liveEvents, setLiveEvents] = useState({}); // keyed by fixtureId
+  const [liveEvents, setLiveEvents] = useState({});
+  const [expandedLive, setExpandedLive] = useState(null); // fixtureId of expanded match
   const [confirmedLineup, setConfirmedLineup] = useState(null);
   const [lineupFetching, setLineupFetching] = useState(false);
   const [viewingPitch, setViewingPitch] = useState(null);
@@ -338,32 +339,6 @@ export default function FootballPredictor() {
     return () => clearInterval(interval);
   }, [session, selectedLeague]);
 
-  // Poll live events every 60 seconds for any currently live matches
-  useEffect(() => {
-    const liveFixtures = liveData.filter(f => f.status === "live" && f.fixtureId);
-    if (!liveFixtures.length) return;
-
-    const fetchEvents = async () => {
-      const results = await Promise.allSettled(
-        liveFixtures.map(f =>
-          fetch(`/api/match-events?fixtureId=${f.fixtureId}`)
-            .then(r => r.json())
-            .then(data => ({ fixtureId: f.fixtureId, events: data.events || [] }))
-        )
-      );
-      const updated = {};
-      results.forEach(r => {
-        if (r.status === "fulfilled") {
-          updated[r.value.fixtureId] = r.value.events;
-        }
-      });
-      setLiveEvents(prev => ({ ...prev, ...updated }));
-    };
-
-    fetchEvents();
-    const interval = setInterval(fetchEvents, 60000);
-    return () => clearInterval(interval);
-  }, [liveData]);
   // matches that don't have a logged result yet, and fill it in automatically.
   useEffect(() => {
     if (!liveData.length || !history.length) return;
@@ -700,6 +675,106 @@ export default function FootballPredictor() {
           {TABS.map(t => <button key={t.id} className={`nav-tab${tab === t.id ? " active" : ""}`} onClick={() => setTab(t.id)}>{t.label}</button>)}
         </div>
       </div>
+
+      {/* Live ticker bar — shows when matches are live */}
+      {liveData.filter(f => f.status === "live").length > 0 && (
+        <div style={{ background: "#0f0f0f", borderBottom: "1px solid #1a0000" }}>
+          {liveData.filter(f => f.status === "live").map(f => (
+            <div key={f.fixtureId}>
+              {/* Collapsed ticker row */}
+              <div
+                onClick={() => setExpandedLive(expandedLive === f.fixtureId ? null : f.fixtureId)}
+                style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 16px", cursor: "pointer", maxWidth: 600, margin: "0 auto" }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#ef4444", animation: "pulse 1.5s infinite" }} />
+                  <span style={{ fontSize: 11, color: "#ef4444", fontWeight: 700 }}>{f.elapsed}'</span>
+                </div>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", flex: 1 }}>
+                  {f.home} <span style={{ color: "#4ade80" }}>{f.score.home ?? 0}</span>
+                  <span style={{ color: "#555", margin: "0 4px" }}>-</span>
+                  <span style={{ color: "#4ade80" }}>{f.score.away ?? 0}</span> {f.away}
+                </span>
+                {f.possession?.home && (
+                  <span style={{ fontSize: 10, color: "#555" }}>⚽ {f.possession.home}</span>
+                )}
+                <span style={{ fontSize: 10, color: "#555" }}>{expandedLive === f.fixtureId ? "▲" : "▼"}</span>
+              </div>
+
+              {/* Expanded live card */}
+              {expandedLive === f.fixtureId && (
+                <div style={{ background: "#0a0a0a", borderTop: "1px solid #1a1a1a", padding: "12px 16px", maxWidth: 600, margin: "0 auto" }}>
+
+                  {/* Score header */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 8, alignItems: "center", marginBottom: 12 }}>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>{f.home}</div>
+                      <div style={{ fontSize: 36, fontWeight: 900, color: "#4ade80" }}>{f.score.home ?? 0}</div>
+                    </div>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: 11, color: "#ef4444", fontWeight: 700, marginBottom: 4 }}>🔴 LIVE</div>
+                      <div style={{ fontSize: 20, fontWeight: 800, color: "#555" }}>{f.elapsed}'</div>
+                      <div style={{ fontSize: 10, color: "#555", marginTop: 2 }}>{90 - (f.elapsed || 0) > 0 ? `~${90 - f.elapsed}' left` : "Extra time"}</div>
+                    </div>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>{f.away}</div>
+                      <div style={{ fontSize: 36, fontWeight: 900, color: "#f59e0b" }}>{f.score.away ?? 0}</div>
+                    </div>
+                  </div>
+
+                  {/* Possession bar */}
+                  {f.possession?.home && (
+                    <div style={{ marginBottom: 12 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#555", marginBottom: 4 }}>
+                        <span style={{ color: "#4ade80", fontWeight: 700 }}>{f.possession.home}</span>
+                        <span style={{ color: "#888" }}>Possession</span>
+                        <span style={{ color: "#f59e0b", fontWeight: 700 }}>{f.possession.away}</span>
+                      </div>
+                      <div style={{ display: "flex", height: 6, borderRadius: 3, overflow: "hidden" }}>
+                        <div style={{ width: f.possession.home, background: "#4ade80" }} />
+                        <div style={{ flex: 1, background: "#f59e0b" }} />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Cards summary */}
+                  {(f.cards?.home?.yellow > 0 || f.cards?.away?.yellow > 0 || f.cards?.home?.red > 0 || f.cards?.away?.red > 0) && (
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, fontSize: 12 }}>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        {Array.from({ length: f.cards?.home?.yellow || 0 }).map((_, i) => <span key={i}>🟨</span>)}
+                        {Array.from({ length: f.cards?.home?.red || 0 }).map((_, i) => <span key={i}>🟥</span>)}
+                      </div>
+                      <div style={{ fontSize: 10, color: "#555" }}>Cards</div>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        {Array.from({ length: f.cards?.away?.yellow || 0 }).map((_, i) => <span key={i}>🟨</span>)}
+                        {Array.from({ length: f.cards?.away?.red || 0 }).map((_, i) => <span key={i}>🟥</span>)}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Events timeline */}
+                  {f.events?.length > 0 && (
+                    <div style={{ borderTop: "1px solid #1a1a1a", paddingTop: 10 }}>
+                      <div style={{ fontSize: 10, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Match Events</div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 240, overflowY: "auto" }}>
+                        {[...f.events].reverse().map((e, i) => (
+                          <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
+                            <span style={{ color: "#555", minWidth: 32, fontWeight: 700, fontSize: 11 }}>{e.minute}{e.extra}'</span>
+                            <span style={{ fontSize: 14 }}>{e.icon}</span>
+                            <span style={{ color: "#f0f0f0", fontWeight: 600, flex: 1 }}>{e.label}</span>
+                            <span style={{ color: "#444", fontSize: 10 }}>{e.team?.split(" ").slice(-1)[0]}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+          <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }`}</style>
+        </div>
+      )}
 
       <div style={{ maxWidth: 600, margin: "0 auto", padding: "20px 16px", display: "flex", flexDirection: "column", gap: 14 }}>
 
@@ -1111,10 +1186,9 @@ export default function FootballPredictor() {
                   {matchStatus === "live" && (
                     <div style={{ fontSize: 11, color: "#ef4444", fontWeight: 700, textAlign: "center", padding: "6px", marginTop: 4 }}>🔴 Match in progress</div>
                   )}
-                  {/* Live events ticker */}
                   {matchStatus === "live" && (() => {
                     const live = findLiveFixture(h.home_team, h.away_team);
-                    const events = live?.fixtureId ? liveEvents[live.fixtureId] : null;
+                    const events = live?.events;
                     if (!events?.length) return null;
                     return (
                       <div style={{ marginTop: 8, background: "#0d0d18", borderRadius: 8, padding: "10px 12px" }}>
