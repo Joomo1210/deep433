@@ -850,7 +850,7 @@ export default function FootballPredictor() {
                 {deepInsights && (
                   <div className="card" style={{ borderColor: "#3730a322", background: "#0f0f1f" }}>
                     <div style={{ fontSize: 11, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 14 }}>📊 Deep Insights</div>
-                    <div style={{ fontSize: 11, color: "#555", marginBottom: 12 }}>Statistical model — independent of AI verdict</div>
+                    <div style={{ fontSize: 13, color: "#aaa", marginBottom: 14, fontWeight: 600 }}>Statistical model — independent of AI verdict</div>
 
                     {/* Win probability bar */}
                     {deepInsights.percent?.home && (
