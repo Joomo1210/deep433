@@ -97,7 +97,13 @@ export default async function handler(req, res) {
       available: true,
       home: {
         formation: homeLineup.formation || null,
+        coach: homeLineup.coach?.name || null,
         players: homeLineup.startXI.map(p => ({
+          name: p.player?.name,
+          number: p.player?.number,
+          position: p.player?.pos,
+        })),
+        substitutes: (homeLineup.substitutes || []).map(p => ({
           name: p.player?.name,
           number: p.player?.number,
           position: p.player?.pos,
@@ -105,7 +111,13 @@ export default async function handler(req, res) {
       },
       away: {
         formation: awayLineup.formation || null,
+        coach: awayLineup.coach?.name || null,
         players: awayLineup.startXI.map(p => ({
+          name: p.player?.name,
+          number: p.player?.number,
+          position: p.player?.pos,
+        })),
+        substitutes: (awayLineup.substitutes || []).map(p => ({
           name: p.player?.name,
           number: p.player?.number,
           position: p.player?.pos,
