@@ -196,7 +196,7 @@ function AuthScreen() {
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; }`}</style>
       <div style={{ width: "100%", maxWidth: 400 }}>
         <div style={{ textAlign: "center", marginBottom: 32 }}>
-         <img src="/favicon.png" alt="Deep433" style={{ width: 40, height: 40, marginBottom: 8 }} />
+          <div style={{ fontSize: 40, marginBottom: 8 }}>⚽</div>
           <div style={{ fontSize: 28, fontWeight: 900, color: "#4ade80", textShadow: "0 0 30px rgba(74,222,128,0.4)" }}>DEEP433</div>
           <div style={{ fontSize: 13, color: "#555", marginTop: 4 }}>PUNDITS VS FANS · PREDICT NOW</div>
         </div>
@@ -647,7 +647,7 @@ export default function FootballPredictor() {
       <div style={{ background: "#0d0d18", borderBottom: "1px solid #1a1a2e", padding: "16px 20px" }}>
         <div style={{ maxWidth: 600, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <img src="/favicon.png" alt="Deep433" style={{ width: 24, height: 24 }} />
+            <span style={{ fontSize: 24 }}>⚽</span>
             <div>
               <div style={{ fontSize: 16, fontWeight: 900, color: "#4ade80" }} className="glow">DEEP433</div>
               <div style={{ fontSize: 10, color: "#555", letterSpacing: 1 }}>PUNDITS VS FANS · PREDICT NOW</div>
@@ -833,19 +833,42 @@ export default function FootballPredictor() {
                   <p style={{ fontSize: 14, color: "#aaa", lineHeight: 1.6 }}>{result.keyBattle}</p>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  <div className="card">
-                    <div style={{ fontSize: 10, color: "#60a5fa", fontWeight: 700, textTransform: "uppercase", marginBottom: 4 }}>{homeTeam}</div>
-                    <div style={{ fontSize: 11, color: "#555", marginBottom: 10 }}>{result.homeFormation}</div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                      {result.homeLineup?.map((p, i) => <div key={i} className="player-chip"><span style={{ color: "#555", marginRight: 6, fontSize: 11 }}>{i+1}</span>{p}</div>)}
+                <div className="card" style={{ padding: "14px 16px" }}>
+                  <div style={{ fontSize: 11, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🪑 Bench & Managers</div>
+
+                  {/* Home bench */}
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: "#4ade80" }}>{homeTeam}</span>
+                      {confirmedLineup?.home?.coach && (
+                        <span style={{ fontSize: 11, color: "#555" }}>👔 {confirmedLineup.home.coach}</span>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
+                      {(confirmedLineup?.home?.substitutes || []).map((p, i) => (
+                        <div key={i} style={{ background: "#1a1a28", border: "1px solid #2a2a40", borderRadius: 20, padding: "4px 10px", fontSize: 12, fontWeight: 600, color: "#ccc", whiteSpace: "nowrap", flexShrink: 0 }}>
+                          <span style={{ color: "#4ade80", marginRight: 4, fontSize: 11 }}>{p.number}</span>{p.name?.split(" ").pop()}
+                        </div>
+                      ))}
+                      {!confirmedLineup && <span style={{ fontSize: 12, color: "#333", fontStyle: "italic" }}>Available after lineup confirmation</span>}
                     </div>
                   </div>
-                  <div className="card">
-                    <div style={{ fontSize: 10, color: "#f87171", fontWeight: 700, textTransform: "uppercase", marginBottom: 4 }}>{awayTeam}</div>
-                    <div style={{ fontSize: 11, color: "#555", marginBottom: 10 }}>{result.awayFormation}</div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                      {result.awayLineup?.map((p, i) => <div key={i} className="player-chip"><span style={{ color: "#555", marginRight: 6, fontSize: 11 }}>{i+1}</span>{p}</div>)}
+
+                  {/* Away bench */}
+                  <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: "#a855f7" }}>{awayTeam}</span>
+                      {confirmedLineup?.away?.coach && (
+                        <span style={{ fontSize: 11, color: "#555" }}>👔 {confirmedLineup.away.coach}</span>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
+                      {(confirmedLineup?.away?.substitutes || []).map((p, i) => (
+                        <div key={i} style={{ background: "#1a1a28", border: "1px solid #2a2a40", borderRadius: 20, padding: "4px 10px", fontSize: 12, fontWeight: 600, color: "#ccc", whiteSpace: "nowrap", flexShrink: 0 }}>
+                          <span style={{ color: "#a855f7", marginRight: 4, fontSize: 11 }}>{p.number}</span>{p.name?.split(" ").pop()}
+                        </div>
+                      ))}
+                      {!confirmedLineup && <span style={{ fontSize: 12, color: "#333", fontStyle: "italic" }}>Available after lineup confirmation</span>}
                     </div>
                   </div>
                 </div>
