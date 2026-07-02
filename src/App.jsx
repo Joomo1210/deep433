@@ -356,7 +356,7 @@ export default function FootballPredictor() {
   }, [liveData, history]);
 
   const loadHistory = async (userId) => {
-    const { data } = await supabase.from("predictions").select("*").eq("user_id", userId).order("created_at", { ascending: false });
+    const { data } = await supabase.from("predictions").select("*, confirmed_lineup").eq("user_id", userId).order("created_at", { ascending: false });
     if (data) setHistory(data);
   };
 
@@ -523,17 +523,13 @@ export default function FootballPredictor() {
           setConfirmedLineup(data);
           const pid = predictionId || savedPredictionId;
           if (pid) {
-            // Get existing ai_data from local history to merge with
-            const existingPrediction = history.find(h => h.id === pid);
-            const existingAiData = existingPrediction?.ai_data || {};
-            const updatedAiData = { ...existingAiData, confirmedLineup: data };
-            // Save to Supabase
+            // Save to dedicated confirmed_lineup column — clean, no JSON merging
             const { error } = await supabase.from("predictions")
-              .update({ ai_data: updatedAiData })
+              .update({ confirmed_lineup: data })
               .eq("id", pid);
             if (!error) {
               setHistory(prev => prev.map(h => h.id === pid
-                ? { ...h, ai_data: updatedAiData }
+                ? { ...h, confirmed_lineup: data }
                 : h
               ));
             }
@@ -549,9 +545,19 @@ export default function FootballPredictor() {
   // Once a prediction reveals (step 3), try fetching the real confirmed lineup.
   useEffect(() => {
     if (step !== 3 || !result) return;
-    setConfirmedLineup(null);
     setDeepInsights(null);
-    fetchConfirmedLineup(homeTeam, awayTeam, selectedLeague, savedPredictionId);
+
+    // Check if we already have a saved confirmed lineup in history
+    const existingPrediction = savedPredictionId
+      ? history.find(h => h.id === savedPredictionId)
+      : null;
+
+    if (existingPrediction?.confirmed_lineup) {
+      setConfirmedLineup(existingPrediction.confirmed_lineup);
+    } else {
+      setConfirmedLineup(null);
+      fetchConfirmedLineup(homeTeam, awayTeam, selectedLeague, savedPredictionId);
+    }
 
     // Also fetch deep insights if we have a fixtureId
     const fid = selectedFixtureId || findLiveFixture(homeTeam, awayTeam)?.fixtureId;
@@ -1111,11 +1117,11 @@ export default function FootballPredictor() {
             <PitchView
               homeTeam={viewingPitch.home_team}
               awayTeam={viewingPitch.away_team}
-              homeFormation={viewingPitch.ai_data?.confirmedLineup?.home?.formation || viewingPitch.ai_data?.homeFormation}
-              awayFormation={viewingPitch.ai_data?.confirmedLineup?.away?.formation || viewingPitch.ai_data?.awayFormation}
-              homeLineupNames={viewingPitch.ai_data?.confirmedLineup ? viewingPitch.ai_data.confirmedLineup.home.players.map(p => p.name) : viewingPitch.ai_data?.homeLineup}
-              awayLineupNames={viewingPitch.ai_data?.confirmedLineup ? viewingPitch.ai_data.confirmedLineup.away.players.map(p => p.name) : viewingPitch.ai_data?.awayLineup}
-              lineupSource={viewingPitch.ai_data?.confirmedLineup ? "confirmed" : "predicted"}
+              homeFormation={viewingPitch.confirmed_lineup?.home?.formation || viewingPitch.ai_data?.homeFormation}
+              awayFormation={viewingPitch.confirmed_lineup?.away?.formation || viewingPitch.ai_data?.awayFormation}
+              homeLineupNames={viewingPitch.confirmed_lineup ? viewingPitch.confirmed_lineup.home.players.map(p => p.name) : viewingPitch.ai_data?.homeLineup}
+              awayLineupNames={viewingPitch.confirmed_lineup ? viewingPitch.confirmed_lineup.away.players.map(p => p.name) : viewingPitch.ai_data?.awayLineup}
+              lineupSource={viewingPitch.confirmed_lineup ? "confirmed" : "predicted"}
             />
           </div>
         </div>
@@ -1174,18 +1180,18 @@ export default function FootballPredictor() {
             )}
 
             {/* Bench & Managers — from saved confirmedLineup */}
-            {viewingAnalysis.ai_data?.confirmedLineup && (
+            {viewingAnalysis.confirmed_lineup && (
               <div className="card" style={{ padding: "14px 16px" }}>
                 <div style={{ fontSize: 11, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🪑 Bench & Managers</div>
                 <div style={{ marginBottom: 12 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                     <span style={{ fontSize: 12, fontWeight: 700, color: "#4ade80" }}>{viewingAnalysis.home_team}</span>
-                    {viewingAnalysis.ai_data.confirmedLineup.home?.coach && (
+                    {viewingAnalysis.confirmed_lineup.home?.coach && (
                       <span style={{ fontSize: 11, color: "#555" }}>👔 {viewingAnalysis.ai_data.confirmedLineup.home.coach}</span>
                     )}
                   </div>
                   <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
-                    {(viewingAnalysis.ai_data.confirmedLineup.home?.substitutes || []).map((p, i) => (
+                    {(viewingAnalysis.confirmed_lineup.home?.substitutes || []).map((p, i) => (
                       <div key={i} style={{ background: "#1a1a28", border: "1px solid #2a2a40", borderRadius: 20, padding: "4px 10px", fontSize: 12, fontWeight: 600, color: "#ccc", whiteSpace: "nowrap", flexShrink: 0 }}>
                         <span style={{ color: "#4ade80", marginRight: 4, fontSize: 11 }}>{p.number}</span>{p.name?.split(" ").pop()}
                       </div>
@@ -1195,12 +1201,12 @@ export default function FootballPredictor() {
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                     <span style={{ fontSize: 12, fontWeight: 700, color: "#a855f7" }}>{viewingAnalysis.away_team}</span>
-                    {viewingAnalysis.ai_data.confirmedLineup.away?.coach && (
+                    {viewingAnalysis.confirmed_lineup.away?.coach && (
                       <span style={{ fontSize: 11, color: "#555" }}>👔 {viewingAnalysis.ai_data.confirmedLineup.away.coach}</span>
                     )}
                   </div>
                   <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
-                    {(viewingAnalysis.ai_data.confirmedLineup.away?.substitutes || []).map((p, i) => (
+                    {(viewingAnalysis.confirmed_lineup.away?.substitutes || []).map((p, i) => (
                       <div key={i} style={{ background: "#1a1a28", border: "1px solid #2a2a40", borderRadius: 20, padding: "4px 10px", fontSize: 12, fontWeight: 600, color: "#ccc", whiteSpace: "nowrap", flexShrink: 0 }}>
                         <span style={{ color: "#a855f7", marginRight: 4, fontSize: 11 }}>{p.number}</span>{p.name?.split(" ").pop()}
                       </div>
