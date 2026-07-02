@@ -854,13 +854,13 @@ export default function FootballPredictor() {
 
                     {/* Win probability bar */}
                     {deepInsights.percent?.home && (
-                      <div style={{ marginBottom: 14 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#888", marginBottom: 6 }}>
+                      <div style={{ marginBottom: 16 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#888", marginBottom: 8 }}>
                           <span style={{ color: "#4ade80", fontWeight: 700 }}>{homeTeam} {deepInsights.percent.home}</span>
                           <span style={{ color: "#a78bfa", fontWeight: 700 }}>Draw {deepInsights.percent.draw}</span>
                           <span style={{ color: "#f59e0b", fontWeight: 700 }}>{awayTeam} {deepInsights.percent.away}</span>
                         </div>
-                        <div style={{ display: "flex", height: 8, borderRadius: 4, overflow: "hidden" }}>
+                        <div style={{ display: "flex", height: 10, borderRadius: 5, overflow: "hidden" }}>
                           <div style={{ width: deepInsights.percent.home, background: "#4ade80" }} />
                           <div style={{ width: deepInsights.percent.draw, background: "#a78bfa" }} />
                           <div style={{ width: deepInsights.percent.away, background: "#f59e0b" }} />
@@ -868,42 +868,42 @@ export default function FootballPredictor() {
                       </div>
                     )}
 
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
                       {deepInsights.comparison?.attackHome && (
-                        <div style={{ background: "#13131f", borderRadius: 8, padding: "10px 12px", textAlign: "center" }}>
-                          <div style={{ fontSize: 10, color: "#555", marginBottom: 4 }}>ATTACK RATING</div>
-                          <div style={{ fontSize: 11, color: "#888", marginBottom: 6 }}>Relative attacking strength</div>
+                        <div style={{ background: "#13131f", borderRadius: 8, padding: "12px 14px" }}>
+                          <div style={{ fontSize: 11, color: "#555", marginBottom: 2, textTransform: "uppercase", letterSpacing: 1 }}>Attack Rating</div>
+                          <div style={{ fontSize: 10, color: "#444", marginBottom: 8 }}>Relative attacking strength</div>
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <span style={{ fontSize: 11, fontWeight: 700, color: "#4ade80", minWidth: 30, textAlign: "right" }}>{deepInsights.comparison.attackHome}</span>
-                            <div style={{ flex: 1, height: 6, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex" }}>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: "#4ade80", minWidth: 34, textAlign: "right" }}>{deepInsights.comparison.attackHome}</span>
+                            <div style={{ flex: 1, height: 7, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex" }}>
                               <div style={{ width: deepInsights.comparison.attackHome, background: "#4ade80" }} />
                             </div>
-                            <div style={{ flex: 1, height: 6, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex", flexDirection: "row-reverse" }}>
+                            <div style={{ flex: 1, height: 7, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex", flexDirection: "row-reverse" }}>
                               <div style={{ width: deepInsights.comparison.attackAway, background: "#f59e0b" }} />
                             </div>
-                            <span style={{ fontSize: 11, fontWeight: 700, color: "#f59e0b", minWidth: 30 }}>{deepInsights.comparison.attackAway}</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: "#f59e0b", minWidth: 34 }}>{deepInsights.comparison.attackAway}</span>
                           </div>
-                          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, fontSize: 9, color: "#444" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontSize: 10, color: "#444" }}>
                             <span>{homeTeam.split(" ")[0]}</span>
                             <span>{awayTeam.split(" ")[0]}</span>
                           </div>
                         </div>
                       )}
                       {deepInsights.comparison?.defenceHome && (
-                        <div style={{ background: "#13131f", borderRadius: 8, padding: "10px 12px", textAlign: "center" }}>
-                          <div style={{ fontSize: 10, color: "#555", marginBottom: 4 }}>DEFENCE RATING</div>
-                          <div style={{ fontSize: 11, color: "#888", marginBottom: 6 }}>Relative defensive strength</div>
+                        <div style={{ background: "#13131f", borderRadius: 8, padding: "12px 14px" }}>
+                          <div style={{ fontSize: 11, color: "#555", marginBottom: 2, textTransform: "uppercase", letterSpacing: 1 }}>Defence Rating</div>
+                          <div style={{ fontSize: 10, color: "#444", marginBottom: 8 }}>Relative defensive strength</div>
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <span style={{ fontSize: 11, fontWeight: 700, color: "#4ade80", minWidth: 30, textAlign: "right" }}>{deepInsights.comparison.defenceHome}</span>
-                            <div style={{ flex: 1, height: 6, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex" }}>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: "#4ade80", minWidth: 34, textAlign: "right" }}>{deepInsights.comparison.defenceHome}</span>
+                            <div style={{ flex: 1, height: 7, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex" }}>
                               <div style={{ width: deepInsights.comparison.defenceHome, background: "#4ade80" }} />
                             </div>
-                            <div style={{ flex: 1, height: 6, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex", flexDirection: "row-reverse" }}>
+                            <div style={{ flex: 1, height: 7, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex", flexDirection: "row-reverse" }}>
                               <div style={{ width: deepInsights.comparison.defenceAway, background: "#f59e0b" }} />
                             </div>
-                            <span style={{ fontSize: 11, fontWeight: 700, color: "#f59e0b", minWidth: 30 }}>{deepInsights.comparison.defenceAway}</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: "#f59e0b", minWidth: 34 }}>{deepInsights.comparison.defenceAway}</span>
                           </div>
-                          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, fontSize: 9, color: "#444" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontSize: 10, color: "#444" }}>
                             <span>{homeTeam.split(" ")[0]}</span>
                             <span>{awayTeam.split(" ")[0]}</span>
                           </div>
@@ -912,17 +912,17 @@ export default function FootballPredictor() {
                     </div>
 
                     {deepInsights.comparison?.formHome && (
-                      <div style={{ background: "#13131f", borderRadius: 8, padding: "10px 12px", marginBottom: 10 }}>
-                        <div style={{ fontSize: 10, color: "#555", marginBottom: 8, textTransform: "uppercase", letterSpacing: 1 }}>Recent Form (last 5)</div>
+                      <div style={{ background: "#13131f", borderRadius: 8, padding: "12px 14px", marginBottom: 10 }}>
+                        <div style={{ fontSize: 11, color: "#555", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>Recent Form (last 5)</div>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                           <div style={{ textAlign: "center" }}>
-                            <div style={{ fontSize: 10, color: "#4ade80", marginBottom: 4 }}>{homeTeam}</div>
-                            <div style={{ fontSize: 16, fontWeight: 800, color: "#f0f0f0" }}>{deepInsights.comparison.formHome}</div>
+                            <div style={{ fontSize: 12, color: "#4ade80", marginBottom: 6, fontWeight: 700 }}>{homeTeam}</div>
+                            <div style={{ fontSize: 22, fontWeight: 800, color: "#f0f0f0" }}>{deepInsights.comparison.formHome}</div>
                           </div>
-                          <div style={{ fontSize: 10, color: "#555" }}>vs</div>
+                          <div style={{ fontSize: 13, color: "#333" }}>vs</div>
                           <div style={{ textAlign: "center" }}>
-                            <div style={{ fontSize: 10, color: "#f59e0b", marginBottom: 4 }}>{awayTeam}</div>
-                            <div style={{ fontSize: 16, fontWeight: 800, color: "#f0f0f0" }}>{deepInsights.comparison.formAway}</div>
+                            <div style={{ fontSize: 12, color: "#f59e0b", marginBottom: 6, fontWeight: 700 }}>{awayTeam}</div>
+                            <div style={{ fontSize: 22, fontWeight: 800, color: "#f0f0f0" }}>{deepInsights.comparison.formAway}</div>
                           </div>
                         </div>
                       </div>
@@ -930,9 +930,9 @@ export default function FootballPredictor() {
 
                     {deepInsights.h2h?.length > 0 && (
                       <div style={{ marginBottom: 10 }}>
-                        <div style={{ fontSize: 10, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Recent H2H</div>
+                        <div style={{ fontSize: 11, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Recent H2H</div>
                         {deepInsights.h2h.map((r, i) => (
-                          <div key={i} style={{ fontSize: 11, color: "#666", padding: "4px 0", borderBottom: "1px solid #1a1a2a" }}>{r}</div>
+                          <div key={i} style={{ fontSize: 13, color: "#666", padding: "5px 0", borderBottom: "1px solid #1a1a2a" }}>{r}</div>
                         ))}
                       </div>
                     )}
