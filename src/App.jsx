@@ -921,7 +921,7 @@ export default function FootballPredictor() {
 
                     {deepInsights.comparison?.formHome && (
                       <div style={{ background: "#13131f", borderRadius: 8, padding: "12px 14px", marginBottom: 10 }}>
-                        <div style={{ fontSize: 12, color: "#ccc", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Recent Form (last 5)</div>
+                        <div style={{ fontSize: 12, color: "#ccc", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Current Form Index</div>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                           <div style={{ textAlign: "center" }}>
                             <div style={{ fontSize: 12, color: "#4ade80", marginBottom: 6, fontWeight: 700 }}>{homeTeam}</div>
