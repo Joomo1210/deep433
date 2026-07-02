@@ -895,6 +895,26 @@ export default function FootballPredictor() {
                           </div>
                         </div>
                       )}
+                      {deepInsights.comparison?.defenceHome && (
+                        <div style={{ background: "#13131f", borderRadius: 8, padding: "10px 12px", textAlign: "center" }}>
+                          <div style={{ fontSize: 10, color: "#555", marginBottom: 4 }}>DEFENCE RATING</div>
+                          <div style={{ fontSize: 11, color: "#888", marginBottom: 6 }}>Relative defensive strength</div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: "#4ade80", minWidth: 30, textAlign: "right" }}>{deepInsights.comparison.defenceHome}</span>
+                            <div style={{ flex: 1, height: 6, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex" }}>
+                              <div style={{ width: deepInsights.comparison.defenceHome, background: "#4ade80" }} />
+                            </div>
+                            <div style={{ flex: 1, height: 6, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex", flexDirection: "row-reverse" }}>
+                              <div style={{ width: deepInsights.comparison.defenceAway, background: "#f59e0b" }} />
+                            </div>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: "#f59e0b", minWidth: 30 }}>{deepInsights.comparison.defenceAway}</span>
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, fontSize: 9, color: "#444" }}>
+                            <span>{homeTeam.split(" ")[0]}</span>
+                            <span>{awayTeam.split(" ")[0]}</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {deepInsights.comparison?.formHome && (
@@ -923,11 +943,6 @@ export default function FootballPredictor() {
                       </div>
                     )}
 
-                    {deepInsights.advice && (
-                      <div style={{ marginTop: 10, padding: "8px 12px", background: "#13131f", borderRadius: 8, fontSize: 12, color: "#818cf8", fontStyle: "italic" }}>
-                        {deepInsights.advice}
-                      </div>
-                    )}
                   </div>
                 )}
 
