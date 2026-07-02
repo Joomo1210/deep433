@@ -31,7 +31,7 @@ const WC_FIXTURES = [
   { date: "Tue 30 Jun", kickoff: "2026-06-30T21:00:00Z", home: "France", away: "Sweden", group: "Round of 32", venue: "MetLife Stadium" },
   { date: "Wed 1 Jul", kickoff: "2026-07-01T01:00:00Z", home: "Mexico", away: "Ecuador", group: "Round of 32", venue: "Estadio Azteca" },
   { date: "Wed 1 Jul", kickoff: "2026-07-01T16:00:00Z", home: "England", away: "Congo DR", group: "Round of 32", venue: "Mercedes-Benz Stadium" },
-  { date: "Thu 2 Jul", kickoff: "2026-07-01T23:00:00Z", home: "Portugal", away: "Croatia", group: "Round of 32", venue: "Toronto Stadium" },
+  { date: "Thu 3 Jul", kickoff: "2026-07-02T21:00:00Z", home: "Portugal", away: "Croatia", group: "Round of 32", venue: "Toronto Stadium" },
   { date: "Thu 2 Jul", kickoff: "2026-07-02T00:00:00Z", home: "USA", away: "Bosnia and Herzegovina", group: "Round of 32", venue: "Levi's Stadium" },
   { date: "Thu 2 Jul", kickoff: "2026-07-02T19:00:00Z", home: "Spain", away: "Austria", group: "Round of 32", venue: "SoFi Stadium" },
   { date: "Fri 3 Jul", kickoff: "2026-07-03T03:00:00Z", home: "Switzerland", away: "Algeria", group: "Round of 32", venue: "BC Place" },
