@@ -647,7 +647,7 @@ export default function FootballPredictor() {
       <div style={{ background: "#0d0d18", borderBottom: "1px solid #1a1a2e", padding: "16px 20px" }}>
         <div style={{ maxWidth: 600, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 24 }}>⚽</span>
+          <img src="/favicon.png" alt="Deep433" style={{ width: 24, height: 24 }} />
             <div>
               <div style={{ fontSize: 16, fontWeight: 900, color: "#4ade80" }} className="glow">DEEP433</div>
               <div style={{ fontSize: 10, color: "#555", letterSpacing: 1 }}>PUNDITS VS FANS · PREDICT NOW</div>
