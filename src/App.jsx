@@ -509,6 +509,17 @@ export default function FootballPredictor() {
 
   const fetchConfirmedLineup = async (home, away, league, predictionId) => {
     setLineupFetching(true);
+
+    // Find the prediction ID — use passed ID, savedPredictionId, or look up from history
+    const pid = predictionId || savedPredictionId || (() => {
+      const h = normalize(home);
+      const a = normalize(away);
+      const match = history.find(item =>
+        (normalize(item.home_team) === h && normalize(item.away_team) === a) ||
+        (normalize(item.home_team) === a && normalize(item.away_team) === h)
+      );
+      return match?.id || null;
+    })();
     const now = new Date();
     const dates = [
       new Date(now.getTime() - 86400000).toISOString().split("T")[0],
@@ -521,9 +532,7 @@ export default function FootballPredictor() {
         const data = await res.json();
         if (data.available) {
           setConfirmedLineup(data);
-          const pid = predictionId || savedPredictionId;
           if (pid) {
-            // Save to dedicated confirmed_lineup column — clean, no JSON merging
             const { error } = await supabase.from("predictions")
               .update({ confirmed_lineup: data })
               .eq("id", pid);
