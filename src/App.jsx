@@ -248,6 +248,13 @@ export default function FootballPredictor() {
   const [fixtureSearch, setFixtureSearch] = useState("");
   const [historySearch, setHistorySearch] = useState("");
   const [liveData, setLiveData] = useState([]);
+  const [confirmedLineup, setConfirmedLineup] = useState(null);
+  const [lineupFetching, setLineupFetching] = useState(false);
+  const [viewingPitch, setViewingPitch] = useState(null);
+  const [viewingAnalysis, setViewingAnalysis] = useState(null);
+  const [savedPredictionId, setSavedPredictionId] = useState(null);
+  const [deepInsights, setDeepInsights] = useState(null);
+  const [selectedFixtureId, setSelectedFixtureId] = useState(null);
 
   const isWorldCup = selectedLeague === "wc2026";
   const leagueLabel = LEAGUES.find(l => l.id === selectedLeague)?.short || "World Cup 2026";
@@ -470,26 +477,11 @@ export default function FootballPredictor() {
     return acc;
   }, {});
 
-  const [confirmedLineup, setConfirmedLineup] = useState(null);
-  const [lineupFetching, setLineupFetching] = useState(false);
-  const [viewingPitch, setViewingPitch] = useState(null);
-  const [viewingAnalysis, setViewingAnalysis] = useState(null);
-  const [savedPredictionId, setSavedPredictionId] = useState(null);
-  const [deepInsights, setDeepInsights] = useState(null);
-  const [selectedFixtureId, setSelectedFixtureId] = useState(null);
-
   // Look up fixtureId whenever home/away/league changes — try live data first, then API
   useEffect(() => {
     if (!homeTeam || !awayTeam || !session) return;
-
-    // First check live data
     const live = findLiveFixture(homeTeam, awayTeam);
-    if (live?.fixtureId) {
-      setSelectedFixtureId(live.fixtureId);
-      return;
-    }
-
-    // Otherwise fetch from API using today + tomorrow dates
+    if (live?.fixtureId) { setSelectedFixtureId(live.fixtureId); return; }
     const fetchFixtureId = async () => {
       const now = new Date();
       const dates = [
@@ -507,15 +499,11 @@ export default function FootballPredictor() {
             (f.home.toLowerCase().replace(/[^a-z0-9]/g, "") === h && f.away.toLowerCase().replace(/[^a-z0-9]/g, "") === a) ||
             (f.home.toLowerCase().replace(/[^a-z0-9]/g, "") === a && f.away.toLowerCase().replace(/[^a-z0-9]/g, "") === h)
           );
-          if (match?.fixtureId) {
-            setSelectedFixtureId(match.fixtureId);
-            return;
-          }
+          if (match?.fixtureId) { setSelectedFixtureId(match.fixtureId); return; }
         } catch {}
       }
       setSelectedFixtureId(null);
     };
-
     fetchFixtureId();
   }, [homeTeam, awayTeam, selectedLeague, session]);
 
