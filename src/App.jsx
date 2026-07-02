@@ -817,17 +817,6 @@ export default function FootballPredictor() {
                   <p style={{ fontSize: 15, lineHeight: 1.7, color: "#ccc" }}>{result.verdict}</p>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  <div className="card">
-                    <div style={{ fontSize: 10, color: "#888", fontWeight: 700, textTransform: "uppercase", marginBottom: 8 }}>🔑 {homeTeam} Key Player</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "#60a5fa" }}>{result.homeKeyPlayer}</div>
-                  </div>
-                  <div className="card">
-                    <div style={{ fontSize: 10, color: "#888", fontWeight: 700, textTransform: "uppercase", marginBottom: 8 }}>🔑 {awayTeam} Key Player</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "#f87171" }}>{result.awayKeyPlayer}</div>
-                  </div>
-                </div>
-
                 <div className="card">
                   <div style={{ fontSize: 11, color: "#888", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>⚔️ Key Tactical Battle</div>
                   <p style={{ fontSize: 14, color: "#aaa", lineHeight: 1.6 }}>{result.keyBattle}</p>
@@ -1180,20 +1169,6 @@ export default function FootballPredictor() {
               <div className="card">
                 <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>🤖 AI Verdict</div>
                 <p style={{ fontSize: 14, lineHeight: 1.7, color: "#ccc" }}>{viewingAnalysis.ai_data.verdict}</p>
-              </div>
-            )}
-
-            {/* Key players */}
-            {viewingAnalysis.ai_data?.homeKeyPlayer && (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                <div className="card">
-                  <div style={{ fontSize: 10, color: "#888", fontWeight: 700, textTransform: "uppercase", marginBottom: 6 }}>🔑 {viewingAnalysis.home_team}</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#60a5fa" }}>{viewingAnalysis.ai_data.homeKeyPlayer}</div>
-                </div>
-                <div className="card">
-                  <div style={{ fontSize: 10, color: "#888", fontWeight: 700, textTransform: "uppercase", marginBottom: 6 }}>🔑 {viewingAnalysis.away_team}</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#f87171" }}>{viewingAnalysis.ai_data.awayKeyPlayer}</div>
-                </div>
               </div>
             )}
 
