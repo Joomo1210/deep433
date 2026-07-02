@@ -1046,10 +1046,23 @@ export default function FootballPredictor() {
 
                     {deepInsights.h2h?.length > 0 && (
                       <div style={{ marginBottom: 10 }}>
-                        <div style={{ fontSize: 11, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Recent H2H</div>
-                        {deepInsights.h2h.map((r, i) => (
-                          <div key={i} style={{ fontSize: 13, color: "#666", padding: "5px 0", borderBottom: "1px solid #1a1a2a" }}>{r}</div>
-                        ))}
+                        <div style={{ fontSize: 12, color: "#ccc", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Recent H2H</div>
+                        {deepInsights.h2h.map((r, i) => {
+                          // r = "Croatia 1-1 Portugal" — split on score pattern
+                          const parts = r.match(/^(.+?)\s+(\d+-\d+)\s+(.+)$/);
+                          if (!parts) return <div key={i} style={{ fontSize: 13, color: "#666", padding: "5px 0", borderBottom: "1px solid #1a1a2a" }}>{r}</div>;
+                          const [, home, score, away] = parts;
+                          const [hg, ag] = score.split("-").map(Number);
+                          const homeColor = hg > ag ? "#4ade80" : hg < ag ? "#f87171" : "#aaa";
+                          const awayColor = ag > hg ? "#4ade80" : ag < hg ? "#f87171" : "#aaa";
+                          return (
+                            <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid #1a1a2a" }}>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: homeColor, flex: 1 }}>{home}</span>
+                              <span style={{ fontSize: 15, fontWeight: 900, color: "#f0f0f0", margin: "0 10px" }}>{score}</span>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: awayColor, flex: 1, textAlign: "right" }}>{away}</span>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
 
