@@ -869,12 +869,6 @@ export default function FootballPredictor() {
                     )}
 
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
-                      {deepInsights.underOver && (
-                        <div style={{ background: "#13131f", borderRadius: 8, padding: "10px 12px", textAlign: "center" }}>
-                          <div style={{ fontSize: 10, color: "#555", marginBottom: 4 }}>GOALS LINE</div>
-                          <div style={{ fontSize: 15, fontWeight: 800, color: "#f0f0f0" }}>{deepInsights.underOver}</div>
-                        </div>
-                      )}
                       {deepInsights.comparison?.attackHome && (
                         <div style={{ background: "#13131f", borderRadius: 8, padding: "10px 12px", textAlign: "center" }}>
                           <div style={{ fontSize: 10, color: "#555", marginBottom: 4 }}>ATTACK RATING</div>
