@@ -714,7 +714,7 @@ export default function FootballPredictor() {
                     <div style={{ textAlign: "center" }}>
                       <div style={{ fontSize: 11, color: "#ef4444", fontWeight: 700, marginBottom: 4 }}>🔴 LIVE</div>
                       <div style={{ fontSize: 20, fontWeight: 800, color: "#555" }}>{f.elapsed}'</div>
-                      <div style={{ fontSize: 10, color: "#555", marginTop: 2 }}>{90 - (f.elapsed || 0) > 0 ? `~${90 - f.elapsed}' left` : "Extra time"}</div>
+                      <div style={{ fontSize: 10, color: "#555", marginTop: 2 }}>{90 - (f.elapsed || 0) > 0 ? `~${90 - f.elapsed}' left` : f.statusRaw === "ET" ? "Extra time" : "Added time"}</div>
                     </div>
                     <div style={{ textAlign: "center" }}>
                       <div style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>{f.away}</div>
