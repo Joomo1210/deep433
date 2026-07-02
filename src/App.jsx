@@ -1187,7 +1187,7 @@ export default function FootballPredictor() {
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                     <span style={{ fontSize: 12, fontWeight: 700, color: "#4ade80" }}>{viewingAnalysis.home_team}</span>
                     {viewingAnalysis.confirmed_lineup.home?.coach && (
-                      <span style={{ fontSize: 11, color: "#555" }}>👔 {viewingAnalysis.ai_data.confirmedLineup.home.coach}</span>
+                      <span style={{ fontSize: 11, color: "#555" }}>👔 {viewingAnalysis.confirmed_lineup.home?.coach}</span>
                     )}
                   </div>
                   <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
@@ -1202,7 +1202,7 @@ export default function FootballPredictor() {
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                     <span style={{ fontSize: 12, fontWeight: 700, color: "#a855f7" }}>{viewingAnalysis.away_team}</span>
                     {viewingAnalysis.confirmed_lineup.away?.coach && (
-                      <span style={{ fontSize: 11, color: "#555" }}>👔 {viewingAnalysis.ai_data.confirmedLineup.away.coach}</span>
+                      <span style={{ fontSize: 11, color: "#555" }}>👔 {viewingAnalysis.confirmed_lineup.away?.coach}</span>
                     )}
                   </div>
                   <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
