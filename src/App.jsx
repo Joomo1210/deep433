@@ -473,6 +473,7 @@ export default function FootballPredictor() {
   const [confirmedLineup, setConfirmedLineup] = useState(null);
   const [lineupFetching, setLineupFetching] = useState(false);
   const [viewingPitch, setViewingPitch] = useState(null);
+  const [viewingAnalysis, setViewingAnalysis] = useState(null);
   const [savedPredictionId, setSavedPredictionId] = useState(null);
   const [deepInsights, setDeepInsights] = useState(null);
   const [selectedFixtureId, setSelectedFixtureId] = useState(null);
@@ -1024,7 +1025,10 @@ export default function FootballPredictor() {
                       <div style={{ fontSize: 11, color: "#555" }}>{new Date(h.created_at).toLocaleDateString("en-GB")}</div>
                     </div>
                     {h.ai_data && (
-                      <button onClick={() => setViewingPitch(h)} style={{ background: "none", border: "1px solid #4ade8044", borderRadius: 6, color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "5px 10px", whiteSpace: "nowrap" }}>⚽ View Pitch</button>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button onClick={() => setViewingPitch(h)} style={{ background: "none", border: "1px solid #4ade8044", borderRadius: 6, color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "5px 10px", whiteSpace: "nowrap" }}>⚽ Pitch</button>
+                        <button onClick={() => setViewingAnalysis(h)} style={{ background: "none", border: "1px solid #818cf844", borderRadius: 6, color: "#818cf8", cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "5px 10px", whiteSpace: "nowrap" }}>📊 Analysis</button>
+                      </div>
                     )}
                   </div>
                   <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
@@ -1110,6 +1114,78 @@ export default function FootballPredictor() {
               awayLineupNames={viewingPitch.ai_data?.confirmedLineup ? viewingPitch.ai_data.confirmedLineup.away.players.map(p => p.name) : viewingPitch.ai_data?.awayLineup}
               lineupSource={viewingPitch.ai_data?.confirmedLineup ? "confirmed" : "predicted"}
             />
+          </div>
+        </div>
+      )}
+
+      {viewingAnalysis && (
+        <div
+          onClick={() => setViewingAnalysis(null)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, maxHeight: "90vh", overflowY: "auto", display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ fontSize: 13, color: "#888", fontWeight: 700 }}>{viewingAnalysis.home_team} vs {viewingAnalysis.away_team}</div>
+              <button onClick={() => setViewingAnalysis(null)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 13, padding: "4px 10px" }}>✕ Close</button>
+            </div>
+
+            {/* Score comparison */}
+            <div className="reveal-box">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 12, alignItems: "center" }}>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 11, color: "#4ade80", fontWeight: 700, marginBottom: 8 }}>👤 Your Call</div>
+                  <div style={{ fontSize: 40, fontWeight: 900, color: "#4ade80" }}>{viewingAnalysis.user_prediction}</div>
+                </div>
+                <div style={{ textAlign: "center", fontSize: 16, color: "#333" }}>vs</div>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 700, marginBottom: 8 }}>🤖 AI Predicts</div>
+                  <div style={{ fontSize: 40, fontWeight: 900, color: "#f59e0b" }}>{viewingAnalysis.ai_prediction}</div>
+                </div>
+              </div>
+              {viewingAnalysis.actual_score && (
+                <div style={{ textAlign: "center", marginTop: 12, padding: "8px", background: resultColor(viewingAnalysis.result) + "11", borderRadius: 8, fontSize: 13, fontWeight: 700, color: resultColor(viewingAnalysis.result) }}>
+                  Final: {viewingAnalysis.actual_score} · {viewingAnalysis.result === "user" ? "🏆 You beat the AI!" : viewingAnalysis.result === "ai" ? "🤖 AI wins" : "🤝 Tie"}
+                </div>
+              )}
+            </div>
+
+            {/* AI Verdict */}
+            {viewingAnalysis.ai_data?.verdict && (
+              <div className="card">
+                <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>🤖 AI Verdict</div>
+                <p style={{ fontSize: 14, lineHeight: 1.7, color: "#ccc" }}>{viewingAnalysis.ai_data.verdict}</p>
+              </div>
+            )}
+
+            {/* Key players */}
+            {viewingAnalysis.ai_data?.homeKeyPlayer && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div className="card">
+                  <div style={{ fontSize: 10, color: "#888", fontWeight: 700, textTransform: "uppercase", marginBottom: 6 }}>🔑 {viewingAnalysis.home_team}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#60a5fa" }}>{viewingAnalysis.ai_data.homeKeyPlayer}</div>
+                </div>
+                <div className="card">
+                  <div style={{ fontSize: 10, color: "#888", fontWeight: 700, textTransform: "uppercase", marginBottom: 6 }}>🔑 {viewingAnalysis.away_team}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#f87171" }}>{viewingAnalysis.ai_data.awayKeyPlayer}</div>
+                </div>
+              </div>
+            )}
+
+            {/* Key battle */}
+            {viewingAnalysis.ai_data?.keyBattle && (
+              <div className="card">
+                <div style={{ fontSize: 11, color: "#888", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>⚔️ Key Tactical Battle</div>
+                <p style={{ fontSize: 13, color: "#aaa", lineHeight: 1.6 }}>{viewingAnalysis.ai_data.keyBattle}</p>
+              </div>
+            )}
+
+            {/* Wildcard */}
+            {viewingAnalysis.ai_data?.wildcard && (
+              <div className="card" style={{ borderColor: "#2a1f00", background: "#13100a" }}>
+                <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>🃏 Wildcard</div>
+                <p style={{ fontSize: 13, color: "#aaa", lineHeight: 1.6 }}>{viewingAnalysis.ai_data.wildcard}</p>
+              </div>
+            )}
           </div>
         </div>
       )}
