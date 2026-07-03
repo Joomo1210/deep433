@@ -849,6 +849,7 @@ export default function FootballPredictor() {
 
   const TABS = [
     { id: "predict", label: "⚡ Predict" },
+    { id: "scores", label: "🔴 Scores" },
     { id: "standings", label: "🏆 You vs AI" },
     { id: "badges", label: "🏅 Badges" },
     { id: "history", label: "📋 History" },
@@ -1350,6 +1351,98 @@ export default function FootballPredictor() {
                 </div>
               </>
             )}
+          </>
+        )}
+
+        {tab === "scores" && (
+          <>
+            {/* Horizontal scrolling completed scores ticker */}
+            {liveData.filter(f => f.status === "finished").length > 0 && (
+              <div style={{ background: "#0d0d18", borderRadius: 10, padding: "10px 0", overflow: "hidden", position: "relative" }}>
+                <div style={{ fontSize: 10, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, padding: "0 14px", marginBottom: 8 }}>FT Results</div>
+                <div style={{ display: "flex", gap: 12, overflowX: "auto", padding: "0 14px 4px", scrollbarWidth: "none" }}>
+                  {liveData.filter(f => f.status === "finished").map((f, i) => (
+                    <div key={i} style={{ background: "#13131f", border: "1px solid #1e1e30", borderRadius: 8, padding: "8px 14px", flexShrink: 0, textAlign: "center", minWidth: 130 }}>
+                      <div style={{ fontSize: 10, color: "#555", marginBottom: 6 }}>FT</div>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: "#f0f0f0", textAlign: "right", flex: 1 }}>{f.home.split(" ").slice(-1)[0]}</span>
+                        <span style={{ fontSize: 16, fontWeight: 900, color: "#f0f0f0" }}>{f.score.home ?? 0}-{f.score.away ?? 0}</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: "#f0f0f0", textAlign: "left", flex: 1 }}>{f.away.split(" ").slice(-1)[0]}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* All today's fixtures */}
+            <div style={{ fontSize: 11, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Today's Fixtures</div>
+
+            {liveData.length === 0 && (
+              <div style={{ textAlign: "center", color: "#444", fontSize: 14, padding: "40px 0" }}>No fixtures today — check back on matchday</div>
+            )}
+
+            {liveData.map((f, i) => {
+              const isLive = f.status === "live";
+              const isFinished = f.status === "finished";
+              const statusColor = isLive ? "#ef4444" : isFinished ? "#555" : "#4ade80";
+              const statusLabel = isLive ? `🔴 ${f.elapsed}'` : isFinished ? "FT" : "Soon";
+
+              return (
+                <div key={i} style={{ background: "#13131f", border: `1px solid ${isLive ? "#ef444433" : "#1e1e30"}`, borderRadius: 12, overflow: "hidden" }}>
+                  {/* Match header */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", padding: "14px 16px", gap: 8 }}>
+                    <div style={{ textAlign: "center" }}>
+                      <TeamFlag team={f.home} size={24} />
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", marginTop: 4 }}>{f.home}</div>
+                      <div style={{ fontSize: 36, fontWeight: 900, color: isFinished ? "#888" : "#f0f0f0", marginTop: 2 }}>{isLive || isFinished ? (f.score.home ?? 0) : ""}</div>
+                    </div>
+                    <div style={{ textAlign: "center", minWidth: 60 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: statusColor, marginBottom: 4 }}>{statusLabel}</div>
+                      {!isLive && !isFinished && <div style={{ fontSize: 11, color: "#555" }}>{new Date(f.kickoff).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} BST</div>}
+                      {isLive && f.possession?.home && (
+                        <div style={{ fontSize: 10, color: "#555", marginTop: 4 }}>⚽ {f.possession.home}</div>
+                      )}
+                    </div>
+                    <div style={{ textAlign: "center" }}>
+                      <TeamFlag team={f.away} size={24} />
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", marginTop: 4 }}>{f.away}</div>
+                      <div style={{ fontSize: 36, fontWeight: 900, color: isFinished ? "#888" : "#f0f0f0", marginTop: 2 }}>{isLive || isFinished ? (f.score.away ?? 0) : ""}</div>
+                    </div>
+                  </div>
+
+                  {/* Live possession bar */}
+                  {isLive && f.possession?.home && (
+                    <div style={{ display: "flex", height: 3 }}>
+                      <div style={{ width: f.possession.home, background: "#4ade80" }} />
+                      <div style={{ flex: 1, background: "#f59e0b", opacity: 0.5 }} />
+                    </div>
+                  )}
+
+                  {/* Events for live/finished matches */}
+                  {(isLive || isFinished) && f.events?.length > 0 && (
+                    <div style={{ padding: "8px 16px 12px", borderTop: "1px solid #1a1a2a" }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                        {f.events.filter(e => e.type === "Goal" || e.type === "Card").map((e, j) => (
+                          <div key={j} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
+                            <span style={{ color: "#555", minWidth: 32, fontSize: 11, fontWeight: 700 }}>{e.minute}'</span>
+                            <span style={{ fontSize: 13 }}>{e.icon}</span>
+                            <span style={{ color: "#ccc", fontWeight: 600, flex: 1 }}>{e.label}</span>
+                            <span style={{ color: "#444", fontSize: 10 }}>{e.team?.split(" ").slice(-1)[0]}</span>
+                          </div>
+                        ))}
+                      </div>
+                      {/* Subs collapsed */}
+                      {f.events.filter(e => e.type === "subst").length > 0 && (
+                        <div style={{ marginTop: 6, fontSize: 10, color: "#444" }}>
+                          🔄 {f.events.filter(e => e.type === "subst").length} substitution{f.events.filter(e => e.type === "subst").length !== 1 ? "s" : ""}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </>
         )}
 
