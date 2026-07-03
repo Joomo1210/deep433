@@ -51,7 +51,7 @@ const WC_FIXTURES = [
   { date: "Thu 2 Jul", kickoff: "2026-07-02T19:00:00Z", home: "Spain", away: "Austria", group: "Round of 32", venue: "SoFi Stadium" },
   { date: "Fri 3 Jul", kickoff: "2026-07-03T03:00:00Z", home: "Switzerland", away: "Algeria", group: "Round of 32", venue: "BC Place" },
   { date: "Fri 3 Jul", kickoff: "2026-07-03T18:00:00Z", home: "Australia", away: "Egypt", group: "Round of 32", venue: "AT&T Stadium" },
-  { date: "Fri 3 Jul", kickoff: "2026-07-03T22:00:00Z", home: "Argentina", away: "Cabo Verde", group: "Round of 32", venue: "Hard Rock Stadium" },
+  { date: "Fri 3 Jul", kickoff: "2026-07-03T22:00:00Z", home: "Argentina", away: "Cape Verde Islands", group: "Round of 32", venue: "Hard Rock Stadium" },
   { date: "Sat 4 Jul", kickoff: "2026-07-04T01:30:00Z", home: "Colombia", away: "Ghana", group: "Round of 32", venue: "Arrowhead Stadium" },
 ];
 
@@ -91,6 +91,7 @@ const TEAM_CODES = {
   "Algeria": "dz", "Austria": "at", "Jordan": "jo", "Portugal": "pt",
   "Congo DR": "cd", "England": "gb-eng", "Croatia": "hr", "Ghana": "gh",
   "Panama": "pa", "Uzbekistan": "uz", "Colombia": "co",
+  "Cape Verde Islands": "cv",
 };
 
 function TeamFlag({ team, size = 20 }) {
@@ -119,6 +120,7 @@ const TEAM_FLAGS = {
   "Argentina": "🇦🇷", "Algeria": "🇩🇿", "Austria": "🇦🇹", "Jordan": "🇯🇴",
   "Portugal": "🇵🇹", "Congo DR": "🇨🇩", "England": "🏴 ENG", "Croatia": "🇭🇷",
   "Ghana": "🇬🇭", "Panama": "🇵🇦", "Uzbekistan": "🇺🇿", "Colombia": "🇨🇴",
+  "Cape Verde Islands": "🇨🇻",
 };
 
 
