@@ -7,19 +7,34 @@ const supabase = createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlkaXNkenR3cHZlZHRucm9paWFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NTczOTQsImV4cCI6MjA5NzAzMzM5NH0.YmF0DqWmopuJs9Ci1hdFi0XDMoWRD0yfVwOuuG7WVyE"
 );
 
+const LEAGUE_LOGOS = {
+  wc2026:     "https://media.api-sports.io/football/leagues/1.png",
+  pl:         "https://media.api-sports.io/football/leagues/39.png",
+  laliga:     "https://media.api-sports.io/football/leagues/140.png",
+  seriea:     "https://media.api-sports.io/football/leagues/135.png",
+  bundesliga: "https://media.api-sports.io/football/leagues/78.png",
+  ligue1:     "https://media.api-sports.io/football/leagues/61.png",
+  ucl:        "https://media.api-sports.io/football/leagues/2.png",
+  uel:        "https://media.api-sports.io/football/leagues/3.png",
+  facup:      "https://media.api-sports.io/football/leagues/45.png",
+  copadelrey: "https://media.api-sports.io/football/leagues/143.png",
+  afcon:      "https://media.api-sports.io/football/leagues/6.png",
+  copamerica: "https://media.api-sports.io/football/leagues/9.png",
+};
+
 const LEAGUES = [
-  { id: "wc2026", label: "🏆 World Cup 2026", short: "World Cup 2026" },
-  { id: "pl", label: "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League", short: "Premier League" },
-  { id: "laliga", label: "🇪🇸 La Liga", short: "La Liga" },
-  { id: "seriea", label: "🇮🇹 Serie A", short: "Serie A" },
-  { id: "bundesliga", label: "🇩🇪 Bundesliga", short: "Bundesliga" },
-  { id: "ligue1", label: "🇫🇷 Ligue 1", short: "Ligue 1" },
-  { id: "ucl", label: "⭐ Champions League", short: "Champions League" },
-  { id: "uel", label: "🟠 Europa League", short: "Europa League" },
-  { id: "facup", label: "🏆 FA Cup", short: "FA Cup" },
-  { id: "copadelrey", label: "👑 Copa del Rey", short: "Copa del Rey" },
-  { id: "afcon", label: "🌍 AFCON", short: "AFCON" },
-  { id: "copamerica", label: "🌎 Copa America", short: "Copa America" },
+  { id: "wc2026",     label: "World Cup 2026",     short: "World Cup 2026" },
+  { id: "pl",         label: "Premier League",      short: "Premier League" },
+  { id: "laliga",     label: "La Liga",             short: "La Liga" },
+  { id: "seriea",     label: "Serie A",             short: "Serie A" },
+  { id: "bundesliga", label: "Bundesliga",          short: "Bundesliga" },
+  { id: "ligue1",     label: "Ligue 1",             short: "Ligue 1" },
+  { id: "ucl",        label: "Champions League",    short: "Champions League" },
+  { id: "uel",        label: "Europa League",       short: "Europa League" },
+  { id: "facup",      label: "FA Cup",              short: "FA Cup" },
+  { id: "copadelrey", label: "Copa del Rey",        short: "Copa del Rey" },
+  { id: "afcon",      label: "AFCON",               short: "AFCON" },
+  { id: "copamerica", label: "Copa America",        short: "Copa America" },
 ];
 
 const WC_FIXTURES = [
@@ -1047,6 +1062,7 @@ export default function FootballPredictor() {
                   {LEAGUES.map(l => (
                     <button key={l.id} className={`league-btn${selectedLeague === l.id ? " active" : ""}`}
                       onClick={() => { setSelectedLeague(l.id); setHomeTeam(""); setAwayTeam(""); setFixtureSearch(""); }}>
+                      {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt={l.label} style={{ width: 16, height: 16, objectFit: "contain", marginRight: 5, verticalAlign: "middle" }} crossOrigin="anonymous" />}
                       {l.label}
                     </button>
                   ))}
