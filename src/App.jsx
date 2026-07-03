@@ -62,6 +62,35 @@ function computeStats(history) {
   return { total: history.length, verified: verified.length, userCorrect, aiCorrect, beatAI };
 }
 
+const TEAM_CODES = {
+  "Mexico": "mx", "South Africa": "za", "Korea Republic": "kr", "Czechia": "cz",
+  "Canada": "ca", "Bosnia and Herzegovina": "ba", "Bosnia-Herzegovina": "ba",
+  "United States": "us", "USA": "us", "Paraguay": "py", "Qatar": "qa",
+  "Switzerland": "ch", "Brazil": "br", "Morocco": "ma", "Haiti": "ht",
+  "Scotland": "gb-sct", "Australia": "au", "Türkiye": "tr", "Germany": "de",
+  "Curaçao": "cw", "Netherlands": "nl", "Japan": "jp", "Côte d'Ivoire": "ci",
+  "Ecuador": "ec", "Sweden": "se", "Tunisia": "tn", "Spain": "es",
+  "Cabo Verde": "cv", "Belgium": "be", "Egypt": "eg", "Saudi Arabia": "sa",
+  "Uruguay": "uy", "IR Iran": "ir", "New Zealand": "nz", "France": "fr",
+  "Senegal": "sn", "Iraq": "iq", "Norway": "no", "Argentina": "ar",
+  "Algeria": "dz", "Austria": "at", "Jordan": "jo", "Portugal": "pt",
+  "Congo DR": "cd", "England": "gb-eng", "Croatia": "hr", "Ghana": "gh",
+  "Panama": "pa", "Uzbekistan": "uz", "Colombia": "co",
+};
+
+function TeamFlag({ team, size = 20 }) {
+  const code = TEAM_CODES[team];
+  if (!code) return null;
+  return (
+    <img
+      src={`https://flagcdn.com/w40/${code}.png`}
+      alt={team}
+      crossOrigin="anonymous"
+      style={{ width: size, height: size * 0.67, objectFit: "cover", borderRadius: 3, display: "inline-block", verticalAlign: "middle" }}
+    />
+  );
+}
+
 const TEAM_FLAGS = {
   "Mexico": "🇲🇽", "South Africa": "🇿🇦", "Korea Republic": "🇰🇷", "Czechia": "🇨🇿",
   "Canada": "🇨🇦", "Bosnia and Herzegovina": "🇧🇦", "USA": "🇺🇸", "Paraguay": "🇵🇾",
@@ -215,9 +244,9 @@ function SocialShareCard({ homeTeam, awayTeam, userPrediction, aiPrediction, lea
           <>
             <div style={{ width: "42%", padding: "22px 18px", display: "flex", flexDirection: "column", justifyContent: "space-between", borderRight: "1px solid #1a1a2a" }}>
               <div>
-                <div style={{ fontSize: 9, color: "#555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10, marginTop: 10 }}>{leagueLabel}</div>
-                <div style={{ fontSize: 17, fontWeight: 900, color: "#f0f0f0", lineHeight: 1.2, marginBottom: 16 }}>
-                  {TEAM_FLAGS[homeTeam] || ""} {homeTeam} <span style={{ color: "#333" }}>vs</span> {TEAM_FLAGS[awayTeam] || ""} {awayTeam}
+                <div style={{ fontSize: 10, color: "#aaa", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10, marginTop: 10, fontWeight: 600 }}>{leagueLabel}</div>
+                <div style={{ fontSize: 17, fontWeight: 900, color: "#f0f0f0", lineHeight: 1.2, marginBottom: 16, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <TeamFlag team={homeTeam} size={18} /> {homeTeam} <span style={{ color: "#333" }}>vs</span> <TeamFlag team={awayTeam} size={18} /> {awayTeam}
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                   {[{ label: "👤 Your Call", val: userPrediction, color: "#4ade80" }, { label: "🤖 AI Says", val: aiPrediction, color: "#f59e0b" }].map(p => (
@@ -254,29 +283,30 @@ function SocialShareCard({ homeTeam, awayTeam, userPrediction, aiPrediction, lea
         ) : (
           <div style={{ flex: 1, padding: "24px 20px", display: "flex", flexDirection: "column", gap: 16, paddingTop: 32 }}>
             <div>
-              <div style={{ fontSize: 9, color: "#555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>{leagueLabel}</div>
+              <div style={{ fontSize: 10, color: "#aaa", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8, fontWeight: 600 }}>{leagueLabel}</div>
               {/* YOUR PREDICTION badge */}
               <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
                 <div style={{ background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.3)", borderRadius: 20, padding: "3px 14px", fontSize: 9, color: "#4ade80", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" }}>👤 Your Prediction</div>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 6 }}>
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 18, marginBottom: 2 }}>{TEAM_FLAGS[homeTeam] || "🏳️"}</div>
-                  <div style={{ fontSize: 13, fontWeight: 900, color: "#4ade80" }}>{homeTeam}</div>
-                  <div style={{ fontSize: 34, fontWeight: 900, color: "#4ade80", marginTop: 2 }}>{userPrediction.split("-")[0]}</div>
+                  <div style={{ marginBottom: 4 }}><TeamFlag team={homeTeam} size={28} /></div>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: "#4ade80", marginBottom: 4 }}>{homeTeam}</div>
+                  <div style={{ fontSize: 42, fontWeight: 900, color: "#4ade80", lineHeight: 1 }}>{userPrediction.split("-")[0]}</div>
                 </div>
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 10, color: "#333", marginBottom: 4 }}>vs</div>
-                  <div style={{ fontSize: 9, color: "#555" }}>AI: {aiPrediction}</div>
+                  <div style={{ fontSize: 16, color: "#888", fontWeight: 700, marginBottom: 6 }}>vs</div>
+                  <div style={{ fontSize: 11, color: "#818cf8", fontWeight: 700, background: "rgba(129,140,248,0.1)", border: "1px solid rgba(129,140,248,0.3)", borderRadius: 6, padding: "3px 8px" }}>🤖 AI: {aiPrediction}</div>
                 </div>
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 18, marginBottom: 2 }}>{TEAM_FLAGS[awayTeam] || "🏳️"}</div>
-                  <div style={{ fontSize: 13, fontWeight: 900, color: "#f59e0b" }}>{awayTeam}</div>
-                  <div style={{ fontSize: 34, fontWeight: 900, color: "#f59e0b", marginTop: 2 }}>{userPrediction.split("-")[1]}</div>
+                  <div style={{ marginBottom: 4 }}><TeamFlag team={awayTeam} size={28} /></div>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: "#f59e0b", marginBottom: 4 }}>{awayTeam}</div>
+                  <div style={{ fontSize: 42, fontWeight: 900, color: "#f59e0b", lineHeight: 1 }}>{userPrediction.split("-")[1]}</div>
                 </div>
               </div>
             </div>
             <div style={{ height: 1, background: "#1a1a2a" }} />
+            <div style={{ fontSize: 9, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>📊 Deep Insights</div>
             {stats.map(s => (
               <div key={s.label}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
