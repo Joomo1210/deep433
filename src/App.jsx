@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import LandingPage from "./LandingPage";
+import DataGraphics from "./DataGraphics";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -874,11 +875,12 @@ export default function FootballPredictor() {
   };
 
   const TABS = [
-    { id: "predict", label: "⚡ Predict" },
-    { id: "scores", label: "🔴 Scores" },
-    { id: "standings", label: "🏆 You vs AI" },
-    { id: "badges", label: "🏅 Badges" },
-    { id: "history", label: "📋 History" },
+    { id: "predict",  label: "⚡ Predict" },
+    { id: "scores",   label: "🔴 Scores" },
+    { id: "graphics", label: "📊 Graphics" },
+    { id: "standings",label: "🏆 You vs AI" },
+    { id: "badges",   label: "🏅 Badges" },
+    { id: "history",  label: "📋 History" },
   ];
 
   if (authLoading) return (
@@ -1472,6 +1474,8 @@ export default function FootballPredictor() {
             })}
           </>
         )}
+
+        {tab === "graphics" && <DataGraphics />}
 
         {tab === "standings" && (
           <>
