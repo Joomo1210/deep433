@@ -78,11 +78,23 @@ const TEAM_FLAGS = {
 };
 
 
-function capStatShare(val) {
+function capStatShare(val, counterVal) {
   if (!val) return val;
   const num = parseFloat(val);
   if (isNaN(num)) return val;
-  return Math.min(Math.max(num, 20), 70) + "%";
+  const capped = Math.min(Math.max(num, 20), 70);
+  // If counterVal provided, ensure they sum to 100
+  if (counterVal !== undefined) {
+    const counter = parseFloat(counterVal);
+    if (!isNaN(counter)) {
+      const cappedCounter = Math.min(Math.max(counter, 20), 70);
+      const total = capped + cappedCounter;
+      if (total !== 100) {
+        return Math.round((capped / total) * 100) + "%";
+      }
+    }
+  }
+  return capped + "%";
 }
 
 function StatBarShare({ leftVal, rightVal }) {
@@ -204,7 +216,9 @@ function SocialShareCard({ homeTeam, awayTeam, userPrediction, aiPrediction, lea
             <div style={{ width: "42%", padding: "22px 18px", display: "flex", flexDirection: "column", justifyContent: "space-between", borderRight: "1px solid #1a1a2a" }}>
               <div>
                 <div style={{ fontSize: 9, color: "#555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10, marginTop: 10 }}>{leagueLabel}</div>
-                <div style={{ fontSize: 17, fontWeight: 900, color: "#f0f0f0", lineHeight: 1.2, marginBottom: 16 }}>{homeTeam} <span style={{ color: "#333" }}>vs</span> {awayTeam}</div>
+                <div style={{ fontSize: 17, fontWeight: 900, color: "#f0f0f0", lineHeight: 1.2, marginBottom: 16 }}>
+                  {TEAM_FLAGS[homeTeam] || ""} {homeTeam} <span style={{ color: "#333" }}>vs</span> {TEAM_FLAGS[awayTeam] || ""} {awayTeam}
+                </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                   {[{ label: "👤 Your Call", val: userPrediction, color: "#4ade80" }, { label: "🤖 AI Says", val: aiPrediction, color: "#f59e0b" }].map(p => (
                     <div key={p.label} style={{ background: p.color + "0a", border: "1px solid " + p.color + "33", borderRadius: 8, padding: "10px 8px", textAlign: "center" }}>
@@ -225,9 +239,9 @@ function SocialShareCard({ homeTeam, awayTeam, userPrediction, aiPrediction, lea
               {stats.map(s => (
                 <div key={s.label}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
-                    <span style={{ fontSize: 22, fontWeight: 900, color: "#4ade80" }}>{capStatShare(s.home)}</span>
-                    <span style={{ fontSize: 9, color: "#555", textTransform: "uppercase", letterSpacing: 1 }}>{s.label}</span>
-                    <span style={{ fontSize: 22, fontWeight: 900, color: "#f59e0b" }}>{capStatShare(s.away)}</span>
+                    <span style={{ fontSize: 22, fontWeight: 900, color: "#4ade80" }}>{capStatShare(s.home, s.away)}</span>
+                    <span style={{ fontSize: 9, color: "#aaa", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>{s.label}</span>
+                    <span style={{ fontSize: 22, fontWeight: 900, color: "#f59e0b" }}>{capStatShare(s.away, s.home)}</span>
                   </div>
                   <StatBarShare leftVal={s.home} rightVal={s.away} />
                   <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3, fontSize: 9, color: "#444" }}>
@@ -241,24 +255,34 @@ function SocialShareCard({ homeTeam, awayTeam, userPrediction, aiPrediction, lea
           <div style={{ flex: 1, padding: "24px 20px", display: "flex", flexDirection: "column", gap: 16, paddingTop: 32 }}>
             <div>
               <div style={{ fontSize: 9, color: "#555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>{leagueLabel}</div>
+              {/* YOUR PREDICTION badge */}
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
+                <div style={{ background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.3)", borderRadius: 20, padding: "3px 14px", fontSize: 9, color: "#4ade80", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" }}>👤 Your Prediction</div>
+              </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 6 }}>
-                {[{ team: homeTeam, val: userPrediction.split("-")[0], color: "#4ade80", label: "Your call" }, null, { team: awayTeam, val: userPrediction.split("-")[1], color: "#f59e0b", label: "Your call" }].map((p, i) =>
-                  p === null ? <div key={i} style={{ textAlign: "center", fontSize: 10, color: "#333" }}>vs<div style={{ fontSize: 9, color: "#555", marginTop: 4 }}>AI: {aiPrediction}</div></div> :
-                  <div key={i} style={{ textAlign: "center" }}>
-                    <div style={{ fontSize: 15, fontWeight: 900, color: p.color }}>{p.team}</div>
-                    <div style={{ fontSize: 34, fontWeight: 900, color: p.color, marginTop: 2 }}>{p.val}</div>
-                    <div style={{ fontSize: 8, color: p.color, marginTop: 2 }}>{p.label}</div>
-                  </div>
-                )}
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 18, marginBottom: 2 }}>{TEAM_FLAGS[homeTeam] || "🏳️"}</div>
+                  <div style={{ fontSize: 13, fontWeight: 900, color: "#4ade80" }}>{homeTeam}</div>
+                  <div style={{ fontSize: 34, fontWeight: 900, color: "#4ade80", marginTop: 2 }}>{userPrediction.split("-")[0]}</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 10, color: "#333", marginBottom: 4 }}>vs</div>
+                  <div style={{ fontSize: 9, color: "#555" }}>AI: {aiPrediction}</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 18, marginBottom: 2 }}>{TEAM_FLAGS[awayTeam] || "🏳️"}</div>
+                  <div style={{ fontSize: 13, fontWeight: 900, color: "#f59e0b" }}>{awayTeam}</div>
+                  <div style={{ fontSize: 34, fontWeight: 900, color: "#f59e0b", marginTop: 2 }}>{userPrediction.split("-")[1]}</div>
+                </div>
               </div>
             </div>
             <div style={{ height: 1, background: "#1a1a2a" }} />
             {stats.map(s => (
               <div key={s.label}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                  <span style={{ fontSize: 20, fontWeight: 900, color: "#4ade80" }}>{capStatShare(s.home)}</span>
-                  <span style={{ fontSize: 9, color: "#666", textTransform: "uppercase", letterSpacing: 1 }}>{s.label}</span>
-                  <span style={{ fontSize: 20, fontWeight: 900, color: "#f59e0b" }}>{capStatShare(s.away)}</span>
+                  <span style={{ fontSize: 20, fontWeight: 900, color: "#4ade80" }}>{capStatShare(s.home, s.away)}</span>
+                  <span style={{ fontSize: 9, color: "#aaa", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>{s.label}</span>
+                  <span style={{ fontSize: 20, fontWeight: 900, color: "#f59e0b" }}>{capStatShare(s.away, s.home)}</span>
                 </div>
                 <StatBarShare leftVal={s.home} rightVal={s.away} />
               </div>
