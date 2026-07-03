@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import LandingPage from "./LandingPage";
 import { createClient } from "@supabase/supabase-js";
 
@@ -77,6 +77,205 @@ const TEAM_FLAGS = {
   "Ghana": "🇬🇭", "Panama": "🇵🇦", "Uzbekistan": "🇺🇿", "Colombia": "🇨🇴",
 };
 
+
+function capStatShare(val) {
+  if (!val) return val;
+  const num = parseFloat(val);
+  if (isNaN(num)) return val;
+  return Math.min(Math.max(num, 20), 70) + "%";
+}
+
+function StatBarShare({ leftVal, rightVal }) {
+  return (
+    <div style={{ display: "flex", height: 8, borderRadius: 4, overflow: "hidden" }}>
+      <div style={{ width: leftVal, background: "#4ade80" }} />
+      <div style={{ flex: 1, background: "#f59e0b", opacity: 0.5 }} />
+    </div>
+  );
+}
+
+function H2HSummaryShare({ h2h, homeTeam, awayTeam }) {
+  const homeWins = h2h.filter(r => {
+    const parts = r.match(/^(.+?)\s+(\d+-\d+)\s+(.+)$/);
+    if (!parts) return false;
+    const [, home, score] = parts;
+    const [hg, ag] = score.split("-").map(Number);
+    return (home === homeTeam && hg > ag) || (home !== homeTeam && ag > hg);
+  }).length;
+  const awayWins = h2h.filter(r => {
+    const parts = r.match(/^(.+?)\s+(\d+-\d+)\s+(.+)$/);
+    if (!parts) return false;
+    const [, home, score] = parts;
+    const [hg, ag] = score.split("-").map(Number);
+    return (home === awayTeam && hg > ag) || (home !== awayTeam && ag > hg);
+  }).length;
+  const draws = h2h.length - homeWins - awayWins;
+  const dots = h2h.map(r => {
+    const parts = r.match(/^(.+?)\s+(\d+-\d+)\s+(.+)$/);
+    if (!parts) return "D";
+    const [, home, score] = parts;
+    const [hg, ag] = score.split("-").map(Number);
+    if (hg === ag) return "D";
+    const homeWon = hg > ag;
+    return (home === homeTeam && homeWon) || (home !== homeTeam && !homeWon) ? "W" : "L";
+  });
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-around", marginBottom: 10 }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 26, fontWeight: 900, color: "#4ade80" }}>{homeWins}</div>
+          <div style={{ fontSize: 9, color: "#4ade80", marginTop: 2 }}>{homeTeam.split(" ")[0]}</div>
+        </div>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 26, fontWeight: 900, color: "#a78bfa" }}>{draws}</div>
+          <div style={{ fontSize: 9, color: "#a78bfa", marginTop: 2 }}>Draws</div>
+        </div>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 26, fontWeight: 900, color: "#f59e0b" }}>{awayWins}</div>
+          <div style={{ fontSize: 9, color: "#f59e0b", marginTop: 2 }}>{awayTeam.split(" ")[0]}</div>
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: 5, justifyContent: "center" }}>
+        {dots.map((d, i) => (
+          <div key={i} style={{ width: 26, height: 26, borderRadius: "50%", background: d === "W" ? "#4ade80" : d === "L" ? "#f59e0b" : "#a78bfa", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 900, color: "#0a0a0f" }}>{d}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SocialShareCard({ homeTeam, awayTeam, userPrediction, aiPrediction, leagueLabel, deepInsights, onClose }) {
+  const cardRef = useRef(null);
+  const [downloading, setDownloading] = useState(false);
+  const [variant, setVariant] = useState("square");
+  const isLandscape = variant === "landscape";
+
+  const downloadImage = async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      const script = document.createElement("script");
+      script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+      document.head.appendChild(script);
+      await new Promise((resolve, reject) => { script.onload = resolve; script.onerror = reject; });
+      const canvas = await window.html2canvas(cardRef.current, {
+        backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false,
+      });
+      const link = document.createElement("a");
+      link.download = `deep433-${homeTeam}-vs-${awayTeam}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch (err) {
+      alert("Download failed — try screenshotting manually");
+    }
+    setDownloading(false);
+  };
+
+  const stats = [
+    { label: "Attack", home: deepInsights?.comparison?.attackHome, away: deepInsights?.comparison?.attackAway },
+    { label: "Defence", home: deepInsights?.comparison?.defenceHome, away: deepInsights?.comparison?.defenceAway },
+    { label: "Form", home: deepInsights?.comparison?.formHome, away: deepInsights?.comparison?.formAway },
+  ].filter(s => s.home && s.away);
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)", zIndex: 60, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 16, overflowY: "auto" }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 12, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
+        {["square", "landscape"].map(v => (
+          <button key={v} onClick={() => setVariant(v)} style={{ background: variant === v ? "#4ade80" : "none", border: "1px solid " + (variant === v ? "#4ade80" : "#333"), borderRadius: 6, color: variant === v ? "#0a0f0a" : "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 14px" }}>
+            {v === "square" ? "1:1" : "16:9"}
+          </button>
+        ))}
+        <button onClick={downloadImage} disabled={downloading} style={{ background: "linear-gradient(135deg, #4ade80, #22c55e)", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 800, padding: "6px 16px", opacity: downloading ? 0.6 : 1 }}>
+          {downloading ? "Generating..." : "⬇ Download PNG"}
+        </button>
+        <button onClick={onClose} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "6px 12px" }}>✕ Close</button>
+      </div>
+
+      <div ref={cardRef} style={{ width: isLandscape ? Math.min(760, window.innerWidth - 32) : Math.min(480, window.innerWidth - 32), aspectRatio: isLandscape ? "16/9" : "1/1", background: "linear-gradient(145deg, #0a0a0f 0%, #0d0d1a 50%, #0a0f0a 100%)", borderRadius: 14, overflow: "hidden", position: "relative", display: "flex", flexDirection: isLandscape ? "row" : "column", border: "1px solid #1e1e30" }}>
+        <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(74,222,128,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(74,222,128,0.03) 1px, transparent 1px)", backgroundSize: "40px 40px", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg, #4ade80, #a855f7, #f59e0b)" }} />
+        <div style={{ position: "absolute", top: 12, right: 14, zIndex: 2 }}>
+          <span style={{ fontSize: 11, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
+          <span style={{ fontSize: 9, color: "#555", marginLeft: 6 }}>deep433.com</span>
+        </div>
+
+        {isLandscape ? (
+          <>
+            <div style={{ width: "42%", padding: "22px 18px", display: "flex", flexDirection: "column", justifyContent: "space-between", borderRight: "1px solid #1a1a2a" }}>
+              <div>
+                <div style={{ fontSize: 9, color: "#555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10, marginTop: 10 }}>{leagueLabel}</div>
+                <div style={{ fontSize: 17, fontWeight: 900, color: "#f0f0f0", lineHeight: 1.2, marginBottom: 16 }}>{homeTeam} <span style={{ color: "#333" }}>vs</span> {awayTeam}</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  {[{ label: "👤 Your Call", val: userPrediction, color: "#4ade80" }, { label: "🤖 AI Says", val: aiPrediction, color: "#f59e0b" }].map(p => (
+                    <div key={p.label} style={{ background: p.color + "0a", border: "1px solid " + p.color + "33", borderRadius: 8, padding: "10px 8px", textAlign: "center" }}>
+                      <div style={{ fontSize: 8, color: p.color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>{p.label}</div>
+                      <div style={{ fontSize: 30, fontWeight: 900, color: p.color }}>{p.val}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {deepInsights?.h2h?.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 9, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>H2H Last 5</div>
+                  <H2HSummaryShare h2h={deepInsights.h2h} homeTeam={homeTeam} awayTeam={awayTeam} />
+                </div>
+              )}
+            </div>
+            <div style={{ flex: 1, padding: "22px 18px", display: "flex", flexDirection: "column", justifyContent: "space-around", paddingTop: 32 }}>
+              {stats.map(s => (
+                <div key={s.label}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+                    <span style={{ fontSize: 22, fontWeight: 900, color: "#4ade80" }}>{capStatShare(s.home)}</span>
+                    <span style={{ fontSize: 9, color: "#555", textTransform: "uppercase", letterSpacing: 1 }}>{s.label}</span>
+                    <span style={{ fontSize: 22, fontWeight: 900, color: "#f59e0b" }}>{capStatShare(s.away)}</span>
+                  </div>
+                  <StatBarShare leftVal={s.home} rightVal={s.away} />
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3, fontSize: 9, color: "#444" }}>
+                    <span>{homeTeam.split(" ")[0]}</span><span>{awayTeam.split(" ")[0]}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div style={{ flex: 1, padding: "24px 20px", display: "flex", flexDirection: "column", gap: 16, paddingTop: 32 }}>
+            <div>
+              <div style={{ fontSize: 9, color: "#555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>{leagueLabel}</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 6 }}>
+                {[{ team: homeTeam, val: userPrediction.split("-")[0], color: "#4ade80", label: "Your call" }, null, { team: awayTeam, val: userPrediction.split("-")[1], color: "#f59e0b", label: "Your call" }].map((p, i) =>
+                  p === null ? <div key={i} style={{ textAlign: "center", fontSize: 10, color: "#333" }}>vs<div style={{ fontSize: 9, color: "#555", marginTop: 4 }}>AI: {aiPrediction}</div></div> :
+                  <div key={i} style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 15, fontWeight: 900, color: p.color }}>{p.team}</div>
+                    <div style={{ fontSize: 34, fontWeight: 900, color: p.color, marginTop: 2 }}>{p.val}</div>
+                    <div style={{ fontSize: 8, color: p.color, marginTop: 2 }}>{p.label}</div>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div style={{ height: 1, background: "#1a1a2a" }} />
+            {stats.map(s => (
+              <div key={s.label}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                  <span style={{ fontSize: 20, fontWeight: 900, color: "#4ade80" }}>{capStatShare(s.home)}</span>
+                  <span style={{ fontSize: 9, color: "#666", textTransform: "uppercase", letterSpacing: 1 }}>{s.label}</span>
+                  <span style={{ fontSize: 20, fontWeight: 900, color: "#f59e0b" }}>{capStatShare(s.away)}</span>
+                </div>
+                <StatBarShare leftVal={s.home} rightVal={s.away} />
+              </div>
+            ))}
+            {deepInsights?.h2h?.length > 0 && (
+              <>
+                <div style={{ height: 1, background: "#1a1a2a" }} />
+                <H2HSummaryShare h2h={deepInsights.h2h} homeTeam={homeTeam} awayTeam={awayTeam} />
+              </>
+            )}
+          </div>
+        )}
+      </div>
+      <div style={{ fontSize: 10, color: "#555", marginTop: 10 }}>Tap Download PNG to save and share on X / Instagram</div>
+    </div>
+  );
+}
 
 function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineupNames, awayLineupNames, lineupSource }) {
   const homeFlag = TEAM_FLAGS[homeTeam] || "🏳️";
@@ -249,7 +448,8 @@ export default function FootballPredictor() {
   const [historySearch, setHistorySearch] = useState("");
   const [liveData, setLiveData] = useState([]);
   const [liveEvents, setLiveEvents] = useState({});
-  const [expandedLive, setExpandedLive] = useState(null); // fixtureId of expanded match
+  const [expandedLive, setExpandedLive] = useState(null);
+  const [showShareCard, setShowShareCard] = useState(false); // fixtureId of expanded match
   const [confirmedLineup, setConfirmedLineup] = useState(null);
   const [lineupFetching, setLineupFetching] = useState(false);
   const [viewingPitch, setViewingPitch] = useState(null);
@@ -1087,6 +1287,11 @@ export default function FootballPredictor() {
                     <div style={{ fontSize: 11, color: "#4ade80", fontWeight: 700 }}>deep433.com</div>
                   </div>
                   <button className="copy-btn" onClick={copyShare} style={{ marginBottom: 10 }}>{copied ? "✓ Copied!" : "📋 Copy & Share"}</button>
+                  {deepInsights && (
+                    <button onClick={() => setShowShareCard(true)} style={{ background: "linear-gradient(135deg, #818cf8, #6366f1)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px 24px", width: "100%", marginBottom: 10 }}>
+                      📸 Create Share Card
+                    </button>
+                  )}
                   <button className="ghost-btn" onClick={resetPredict}>⚡ Predict Another Match</button>
                 </div>
               </>
@@ -1420,6 +1625,18 @@ export default function FootballPredictor() {
           </div>
         </div>
       )}
+      {showShareCard && (
+        <SocialShareCard
+          homeTeam={homeTeam}
+          awayTeam={awayTeam}
+          userPrediction={userPrediction}
+          aiPrediction={result?.scoreline || ""}
+          leagueLabel={leagueLabel}
+          deepInsights={deepInsights}
+          onClose={() => setShowShareCard(false)}
+        />
+      )}
+
     </div>
   );
 }
