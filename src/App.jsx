@@ -100,9 +100,9 @@ function TeamFlag({ team, size = 20 }) {
   return (
     <img
       src={`https://flagcdn.com/w40/${code}.png`}
-      alt={team}
+      alt=""
       crossOrigin="anonymous"
-      style={{ width: size, height: size * 0.67, objectFit: "cover", borderRadius: 3, display: "inline-block", verticalAlign: "middle" }}
+      style={{ width: size, height: Math.round(size * 0.67), objectFit: "cover", borderRadius: 3, display: "block", flexShrink: 0 }}
     />
   );
 }
@@ -144,10 +144,15 @@ function capStatShare(val, counterVal) {
 }
 
 function StatBarShare({ leftVal, rightVal }) {
+  const left = parseFloat(leftVal) || 50;
+  const right = parseFloat(rightVal) || 50;
+  const total = left + right;
+  const leftPct = Math.round((left / total) * 100);
+  const rightPct = 100 - leftPct;
   return (
-    <div style={{ display: "flex", height: 8, borderRadius: 4, overflow: "hidden" }}>
-      <div style={{ width: leftVal, background: "#4ade80" }} />
-      <div style={{ flex: 1, background: "#f59e0b", opacity: 0.5 }} />
+    <div style={{ display: "flex", height: 8, borderRadius: 4, overflow: "hidden", width: "100%" }}>
+      <div style={{ width: `${leftPct}%`, background: "#4ade80", flexShrink: 0 }} />
+      <div style={{ width: `${rightPct}%`, background: "#f59e0b", opacity: 0.6, flexShrink: 0 }} />
     </div>
   );
 }
@@ -307,18 +312,22 @@ function SocialShareCard({ homeTeam, awayTeam, userPrediction, aiPrediction, lea
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 6 }}>
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ marginBottom: 4 }}><TeamFlag team={homeTeam} size={28} /></div>
-                  <div style={{ fontSize: 14, fontWeight: 900, color: "#4ade80", marginBottom: 4 }}>{homeTeam}</div>
-                  <div style={{ fontSize: 42, fontWeight: 900, color: "#4ade80", lineHeight: 1 }}>{userPrediction.split("-")[0]}</div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 6 }}>
+                    <TeamFlag team={homeTeam} size={20} />
+                    <span style={{ fontSize: 13, fontWeight: 900, color: "#4ade80" }}>{homeTeam}</span>
+                  </div>
+                  <div style={{ fontSize: 44, fontWeight: 900, color: "#4ade80", lineHeight: 1 }}>{userPrediction.split("-")[0]}</div>
                 </div>
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 16, color: "#888", fontWeight: 700, marginBottom: 6 }}>vs</div>
-                  <div style={{ fontSize: 11, color: "#818cf8", fontWeight: 700, background: "rgba(129,140,248,0.1)", border: "1px solid rgba(129,140,248,0.3)", borderRadius: 6, padding: "3px 8px" }}>🤖 AI: {aiPrediction}</div>
+                  <div style={{ fontSize: 16, color: "#888", fontWeight: 700, marginBottom: 8 }}>vs</div>
+                  <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 700, background: "rgba(129,140,248,0.1)", border: "1px solid rgba(129,140,248,0.3)", borderRadius: 6, padding: "4px 10px" }}>🤖 AI: {aiPrediction}</div>
                 </div>
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ marginBottom: 4 }}><TeamFlag team={awayTeam} size={28} /></div>
-                  <div style={{ fontSize: 14, fontWeight: 900, color: "#f59e0b", marginBottom: 4 }}>{awayTeam}</div>
-                  <div style={{ fontSize: 42, fontWeight: 900, color: "#f59e0b", lineHeight: 1 }}>{userPrediction.split("-")[1]}</div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 6 }}>
+                    <span style={{ fontSize: 13, fontWeight: 900, color: "#f59e0b" }}>{awayTeam}</span>
+                    <TeamFlag team={awayTeam} size={20} />
+                  </div>
+                  <div style={{ fontSize: 44, fontWeight: 900, color: "#f59e0b", lineHeight: 1 }}>{userPrediction.split("-")[1]}</div>
                 </div>
               </div>
             </div>
