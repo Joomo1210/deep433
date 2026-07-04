@@ -32,21 +32,27 @@ export default async function handler(req, res) {
       headers: { "x-apisports-key": apiKey }
     });
     const data = await r.json();
-    const players = (data.response || []).slice(0, 10).map(p => ({
+    const players = (data.response || []).slice(0, 20).map(p => ({
       name: p.player?.name,
       photo: p.player?.photo,
       nationality: p.player?.nationality,
       team: p.statistics?.[0]?.team?.name,
       teamLogo: p.statistics?.[0]?.team?.logo,
-      goals: p.statistics?.[0]?.goals?.total,
-      assists: p.statistics?.[0]?.goals?.assists,
-      yellowCards: p.statistics?.[0]?.cards?.yellow,
-      redCards: p.statistics?.[0]?.cards?.red,
+      goals: p.statistics?.[0]?.goals?.total || 0,
+      assists: p.statistics?.[0]?.goals?.assists || 0,
+      yellowCards: p.statistics?.[0]?.cards?.yellow || 0,
+      redCards: p.statistics?.[0]?.cards?.red || 0,
       appearances: p.statistics?.[0]?.games?.appearences,
       rating: p.statistics?.[0]?.games?.rating,
     }));
 
-    res.status(200).json({ available: true, type, players });
+    // Sort by the correct metric for each type
+    const sortKey = type === "assists" ? "assists" : type === "cards" ? "yellowCards" : "goals";
+    const sorted = players
+      .sort((a, b) => (b[sortKey] || 0) - (a[sortKey] || 0))
+      .slice(0, 10);
+
+    res.status(200).json({ available: true, type, players: sorted });
   } catch (err) {
     res.status(200).json({ available: false, error: err.message });
   }
