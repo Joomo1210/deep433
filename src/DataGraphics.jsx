@@ -10,6 +10,103 @@ const LEAGUE_OPTIONS = [
   { id: "ucl",    label: "Champions League" },
 ];
 
+// ─── FIXTURE PICKER ──────────────────────────────────────────────────────────
+function FixturePicker({ onSelect }) {
+  const [leagueId, setLeagueId] = useState("wc2026");
+  const [fixtures, setFixtures] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    setLoading(true);
+    setFixtures([]);
+    fetch(`/api/fixtures?leagueId=${leagueId}`)
+      .then(r => r.json())
+      .then(d => setFixtures(d.fixtures || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [leagueId]);
+
+  const getDateLabel = (dateStr) => {
+    const now = new Date();
+    const today = now.toISOString().split("T")[0];
+    const yesterday = new Date(now.getTime() - 86400000).toISOString().split("T")[0];
+    const tomorrow = new Date(now.getTime() + 86400000).toISOString().split("T")[0];
+    if (dateStr === today) return "Today";
+    if (dateStr === yesterday) return "Yesterday";
+    if (dateStr === tomorrow) return "Tomorrow";
+    return new Date(dateStr).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+  };
+
+  const filtered = search.trim()
+    ? fixtures.filter(f => f.home.toLowerCase().includes(search.toLowerCase()) || f.away.toLowerCase().includes(search.toLowerCase()))
+    : fixtures;
+
+  const byDate = filtered.reduce((acc, f) => {
+    const label = getDateLabel(f.date);
+    if (!acc[label]) acc[label] = [];
+    acc[label].push(f);
+    return acc;
+  }, {});
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {/* League selector */}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {LEAGUE_OPTIONS.map(l => (
+          <button key={l.id} onClick={() => setLeagueId(l.id)} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "5px 12px" }}>
+            {l.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Search */}
+      <input
+        placeholder="🔍 Search team..."
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 14px", outline: "none", fontFamily: "inherit" }}
+      />
+
+      {loading && <div style={{ fontSize: 12, color: "#555", textAlign: "center" }}>Loading fixtures...</div>}
+
+      {/* Fixture list */}
+      <div style={{ maxHeight: 260, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
+        {Object.entries(byDate).map(([date, dateFixtures]) => (
+          <div key={date}>
+            <div style={{ fontSize: 10, color: date === "Today" ? "#4ade80" : date === "Yesterday" ? "#888" : date === "Tomorrow" ? "#f59e0b" : "#444", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, padding: "6px 0 4px" }}>{date}</div>
+            {dateFixtures.map((f, i) => (
+              <div
+                key={i}
+                onClick={() => onSelect(f)}
+                style={{ background: "#13131f", border: "1px solid #1e1e30", borderRadius: 8, padding: "8px 12px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {f.homeLogo && <img src={f.homeLogo} alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />}
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>{f.home}</span>
+                </div>
+                <div style={{ textAlign: "center", fontSize: 11 }}>
+                  {f.status === "finished"
+                    ? <span style={{ color: "#888", fontWeight: 800 }}>{f.score.home}-{f.score.away}</span>
+                    : f.status === "live"
+                    ? <span style={{ color: "#ef4444", fontWeight: 700 }}>🔴 LIVE</span>
+                    : <span style={{ color: "#555" }}>{new Date(f.kickoff).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} BST</span>
+                  }
+                  <div style={{ fontSize: 9, color: "#333", marginTop: 2 }}>{f.round}</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>{f.away}</span>
+                  {f.awayLogo && <img src={f.awayLogo} alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />}
+                </div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const LEAGUE_LOGOS = {
   wc2026:     "https://media.api-sports.io/football/leagues/1.png",
   pl:         "https://media.api-sports.io/football/leagues/39.png",
@@ -79,18 +176,27 @@ function GraphicCard({ children, cardRef, label }) {
 function MatchStatsGraphic() {
   const cardRef = useRef(null);
   const [fixtureId, setFixtureId] = useState("");
+  const [selectedFixture, setSelectedFixture] = useState(null);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState("");
 
-  const fetch_ = async () => {
-    if (!fixtureId.trim()) return;
+  const handleSelect = (f) => {
+    setSelectedFixture(f);
+    setFixtureId(f.fixtureId);
+    setData(null);
+    setError("");
+  };
+
+  const fetch_ = async (id) => {
+    const fid = id || fixtureId;
+    if (!fid) return;
     setLoading(true); setError(""); setData(null);
     try {
-      const r = await fetch(`/api/match-stats?fixtureId=${fixtureId.trim()}`);
+      const r = await fetch(`/api/match-stats?fixtureId=${fid}`);
       const d = await r.json();
-      if (!d.available) throw new Error("No stats available for this fixture yet");
+      if (!d.available) throw new Error("No stats available for this fixture yet — try after kickoff");
       setData(d);
     } catch (e) { setError(e.message); }
     setLoading(false);
@@ -130,18 +236,21 @@ function MatchStatsGraphic() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ display: "flex", gap: 8 }}>
-        <input
-          placeholder="Fixture ID (from Scores tab)"
-          value={fixtureId}
-          onChange={e => setFixtureId(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && fetch_()}
-          style={{ flex: 1, background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "10px 14px", outline: "none", fontFamily: "inherit" }}
-        />
-        <button onClick={fetch_} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 800, padding: "10px 18px" }}>
-          {loading ? "..." : "Load"}
-        </button>
-      </div>
+      {!selectedFixture ? (
+        <FixturePicker onSelect={handleSelect} />
+      ) : (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
+            <button onClick={() => { setSelectedFixture(null); setData(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "4px 10px" }}>Change</button>
+          </div>
+          {!data && (
+            <button onClick={() => fetch_()} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
+              {loading ? "Loading stats..." : "Load Match Stats"}
+            </button>
+          )}
+        </>
+      )}
       {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
 
       {s && (
@@ -186,19 +295,27 @@ function MatchStatsGraphic() {
 function PlayerRatingsGraphic() {
   const cardRef = useRef(null);
   const [fixtureId, setFixtureId] = useState("");
+  const [selectedFixture, setSelectedFixture] = useState(null);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState("");
   const [selectedTeam, setSelectedTeam] = useState("home");
 
+  const handleSelect = (f) => {
+    setSelectedFixture(f);
+    setFixtureId(f.fixtureId);
+    setData(null);
+    setError("");
+  };
+
   const fetch_ = async () => {
-    if (!fixtureId.trim()) return;
+    if (!fixtureId) return;
     setLoading(true); setError(""); setData(null);
     try {
-      const r = await fetch(`/api/player-ratings?fixtureId=${fixtureId.trim()}`);
+      const r = await fetch(`/api/player-ratings?fixtureId=${fixtureId}`);
       const d = await r.json();
-      if (!d.available) throw new Error("No player ratings available yet");
+      if (!d.available) throw new Error("No player ratings available yet — try after kickoff");
       setData(d);
     } catch (e) { setError(e.message); }
     setLoading(false);
@@ -228,10 +345,21 @@ function PlayerRatingsGraphic() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ display: "flex", gap: 8 }}>
-        <input placeholder="Fixture ID" value={fixtureId} onChange={e => setFixtureId(e.target.value)} onKeyDown={e => e.key === "Enter" && fetch_()} style={{ flex: 1, background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "10px 14px", outline: "none", fontFamily: "inherit" }} />
-        <button onClick={fetch_} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 800, padding: "10px 18px" }}>{loading ? "..." : "Load"}</button>
-      </div>
+      {!selectedFixture ? (
+        <FixturePicker onSelect={handleSelect} />
+      ) : (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
+            <button onClick={() => { setSelectedFixture(null); setData(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "4px 10px" }}>Change</button>
+          </div>
+          {!data && (
+            <button onClick={fetch_} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
+              {loading ? "Loading ratings..." : "Load Player Ratings"}
+            </button>
+          )}
+        </>
+      )}
       {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
 
       {data && (
@@ -391,19 +519,33 @@ function TopScorersGraphic() {
 function TeamStatsGraphic() {
   const cardRef = useRef(null);
   const [leagueId, setLeagueId] = useState("pl");
-  const [teamId, setTeamId] = useState("");
+  const [teamSearch, setTeamSearch] = useState("");
+  const [teamSuggestions, setTeamSuggestions] = useState([]);
+  const [selectedTeam, setSelectedTeam] = useState(null); // { id, name, logo }
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [searching, setSearching] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState("");
 
+  const searchTeams = async (query) => {
+    if (query.length < 3) { setTeamSuggestions([]); return; }
+    setSearching(true);
+    try {
+      const r = await fetch(`/api/team-search?query=${encodeURIComponent(query)}`);
+      const d = await r.json();
+      setTeamSuggestions(d.teams || []);
+    } catch {}
+    setSearching(false);
+  };
+
   const fetch_ = async () => {
-    if (!teamId.trim()) return;
+    if (!selectedTeam) return;
     setLoading(true); setError(""); setData(null);
     try {
-      const r = await fetch(`/api/team-stats?leagueId=${leagueId}&teamId=${teamId.trim()}`);
+      const r = await fetch(`/api/team-stats?leagueId=${leagueId}&teamId=${selectedTeam.id}`);
       const d = await r.json();
-      if (!d.available) throw new Error("No data available for this team");
+      if (!d.available) throw new Error("No stats available for this team in this competition");
       setData(d);
     } catch (e) { setError(e.message); }
     setLoading(false);
@@ -434,19 +576,50 @@ function TeamStatsGraphic() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#555" }}>Enter the API-Football Team ID (e.g. Arsenal = 42, Liverpool = 40)</div>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         {LEAGUE_OPTIONS.slice(1).map(l => (
-          <button key={l.id} onClick={() => setLeagueId(l.id)} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
+          <button key={l.id} onClick={() => { setLeagueId(l.id); setData(null); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
             {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
             {l.label}
           </button>
         ))}
       </div>
-      <div style={{ display: "flex", gap: 8 }}>
-        <input placeholder="Team ID (e.g. 42 for Arsenal)" value={teamId} onChange={e => setTeamId(e.target.value)} onKeyDown={e => e.key === "Enter" && fetch_()} style={{ flex: 1, background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "10px 14px", outline: "none", fontFamily: "inherit" }} />
-        <button onClick={fetch_} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 800, padding: "10px 18px" }}>{loading ? "..." : "Load"}</button>
+
+      {/* Team search */}
+      <div style={{ position: "relative" }}>
+        <input
+          placeholder="Search team name e.g. Arsenal, Barcelona..."
+          value={selectedTeam ? selectedTeam.name : teamSearch}
+          onChange={e => {
+            setTeamSearch(e.target.value);
+            setSelectedTeam(null);
+            setData(null);
+            searchTeams(e.target.value);
+          }}
+          style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${selectedTeam ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "10px 14px", outline: "none", fontFamily: "inherit" }}
+        />
+        {searching && <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: "#555" }}>Searching...</div>}
+        {teamSuggestions.length > 0 && !selectedTeam && (
+          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, zIndex: 10, marginTop: 4, maxHeight: 200, overflowY: "auto" }}>
+            {teamSuggestions.map(t => (
+              <div key={t.id} onClick={() => { setSelectedTeam(t); setTeamSearch(t.name); setTeamSuggestions([]); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", cursor: "pointer", borderBottom: "1px solid #1a1a2a" }}>
+                {t.logo && <img src={t.logo} alt="" style={{ width: 24, height: 24, objectFit: "contain" }} />}
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{t.name}</div>
+                  <div style={{ fontSize: 11, color: "#555" }}>{t.country}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
+
+      {selectedTeam && (
+        <button onClick={fetch_} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
+          {loading ? "Loading..." : `Load ${selectedTeam.name} Stats`}
+        </button>
+      )}
+
       {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
 
       {data && (
@@ -474,15 +647,15 @@ function TeamStatsGraphic() {
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 14 }}>
                 {[
-                  { label: "Played", value: data.played, color: "#f0f0f0" },
-                  { label: "Wins", value: data.wins, color: "#4ade80" },
-                  { label: "Draws", value: data.draws, color: "#a78bfa" },
-                  { label: "Losses", value: data.losses, color: "#f87171" },
-                  { label: "Goals For", value: data.goalsFor, color: "#4ade80" },
-                  { label: "Goals Against", value: data.goalsAgainst, color: "#f87171" },
-                  { label: "Clean Sheets", value: data.cleanSheets, color: "#60a5fa" },
-                  { label: "Avg Scored", value: data.avgGoalsFor, color: "#4ade80" },
-                  { label: "Avg Conceded", value: data.avgGoalsAgainst, color: "#f87171" },
+                  { label: "Played",        value: data.played,          color: "#f0f0f0" },
+                  { label: "Wins",          value: data.wins,            color: "#4ade80" },
+                  { label: "Draws",         value: data.draws,           color: "#a78bfa" },
+                  { label: "Losses",        value: data.losses,          color: "#f87171" },
+                  { label: "Goals For",     value: data.goalsFor,        color: "#4ade80" },
+                  { label: "Goals Against", value: data.goalsAgainst,    color: "#f87171" },
+                  { label: "Clean Sheets",  value: data.cleanSheets,     color: "#60a5fa" },
+                  { label: "Avg Scored",    value: data.avgGoalsFor,     color: "#4ade80" },
+                  { label: "Avg Conceded",  value: data.avgGoalsAgainst, color: "#f87171" },
                 ].map(s => (
                   <div key={s.label} style={{ background: "#13131f", borderRadius: 8, padding: "10px 8px", textAlign: "center" }}>
                     <div style={{ fontSize: 22, fontWeight: 900, color: s.color }}>{s.value ?? "—"}</div>
