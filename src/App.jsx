@@ -141,51 +141,70 @@ function StatBarShare({ leftVal, rightVal }) {
 }
 
 function H2HSummaryShare({ h2h, homeTeam, awayTeam }) {
-  const homeWins = h2h.filter(r => {
-    const parts = r.match(/^(.+?)\s+(\d+-\d+)\s+(.+)$/);
-    if (!parts) return false;
-    const [, home, score] = parts;
-    const [hg, ag] = score.split("-").map(Number);
-    return (home === homeTeam && hg > ag) || (home !== homeTeam && ag > hg);
-  }).length;
-  const awayWins = h2h.filter(r => {
-    const parts = r.match(/^(.+?)\s+(\d+-\d+)\s+(.+)$/);
-    if (!parts) return false;
-    const [, home, score] = parts;
-    const [hg, ag] = score.split("-").map(Number);
-    return (home === awayTeam && hg > ag) || (home !== awayTeam && ag > hg);
-  }).length;
-  const draws = h2h.length - homeWins - awayWins;
+  if (!h2h?.length) return null;
+
+  const parse = (r) => {
+    const parts = r.match(/^(.+?)\s+(\d+)-(\d+)\s+(.+)$/);
+    if (!parts) return null;
+    return { homeTeam: parts[1].trim(), hg: parseInt(parts[2]), ag: parseInt(parts[3]), awayTeam: parts[4].trim() };
+  };
+
+  const hn = normalize(homeTeam);
+  const an = normalize(awayTeam);
+
+  const normalize = s => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
+  let hw = 0, aw = 0, d = 0;
   const dots = h2h.map(r => {
-    const parts = r.match(/^(.+?)\s+(\d+-\d+)\s+(.+)$/);
-    if (!parts) return "D";
-    const [, home, score] = parts;
-    const [hg, ag] = score.split("-").map(Number);
-    if (hg === ag) return "D";
-    const homeWon = hg > ag;
-    return (home === homeTeam && homeWon) || (home !== homeTeam && !homeWon) ? "W" : "L";
+    const p = parse(r);
+    if (!p) { d++; return "D"; }
+    const { hg, ag } = p;
+    const matchHomeIsOurHome = normalize(p.homeTeam) === hn;
+    const matchHomeIsOurAway = normalize(p.homeTeam) === an;
+    if (hg === ag) { d++; return "D"; }
+    const matchHomeWon = hg > ag;
+    // Did our homeTeam win this H2H game?
+    const ourHomeWon = (matchHomeIsOurHome && matchHomeWon) || (matchHomeIsOurAway && !matchHomeWon);
+    if (ourHomeWon) { hw++; return "W"; }
+    aw++; return "L";
   });
+
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-around", marginBottom: 10 }}>
         <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 26, fontWeight: 900, color: "#4ade80" }}>{homeWins}</div>
+          <div style={{ fontSize: 26, fontWeight: 900, color: "#4ade80" }}>{hw}</div>
           <div style={{ fontSize: 9, color: "#4ade80", marginTop: 2 }}>{homeTeam.split(" ")[0]}</div>
         </div>
         <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 26, fontWeight: 900, color: "#a78bfa" }}>{draws}</div>
+          <div style={{ fontSize: 26, fontWeight: 900, color: "#a78bfa" }}>{d}</div>
           <div style={{ fontSize: 9, color: "#a78bfa", marginTop: 2 }}>Draws</div>
         </div>
         <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 26, fontWeight: 900, color: "#f59e0b" }}>{awayWins}</div>
+          <div style={{ fontSize: 26, fontWeight: 900, color: "#f59e0b" }}>{aw}</div>
           <div style={{ fontSize: 9, color: "#f59e0b", marginTop: 2 }}>{awayTeam.split(" ")[0]}</div>
         </div>
       </div>
-      <div style={{ display: "flex", gap: 5, justifyContent: "center" }}>
-        {dots.map((d, i) => (
-          <div key={i} style={{ width: 26, height: 26, borderRadius: "50%", background: d === "W" ? "#4ade80" : d === "L" ? "#f59e0b" : "#a78bfa", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 900, color: "#0a0a0f" }}>{d}</div>
+      <div style={{ display: "flex", gap: 5, justifyContent: "center", marginBottom: 8 }}>
+        {dots.map((dot, i) => (
+          <div key={i} style={{ width: 26, height: 26, borderRadius: "50%", background: dot === "W" ? "#4ade80" : dot === "L" ? "#f59e0b" : "#a78bfa", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 900, color: "#0a0a0f" }}>{dot}</div>
         ))}
       </div>
+      {/* Raw list fallback */}
+      {h2h.map((r, i) => {
+        const p = parse(r);
+        if (!p) return <div key={i} style={{ fontSize: 10, color: "#444", textAlign: "center" }}>{r}</div>;
+        const { hg, ag } = p;
+        const homeColor = hg > ag ? "#4ade80" : hg < ag ? "#f87171" : "#aaa";
+        const awayColor = ag > hg ? "#4ade80" : ag < hg ? "#f87171" : "#aaa";
+        return (
+          <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "3px 0", borderBottom: "1px solid #1a1a2a" }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: homeColor, flex: 1 }}>{p.homeTeam}</span>
+            <span style={{ fontSize: 12, fontWeight: 900, color: "#f0f0f0", margin: "0 8px" }}>{hg}-{ag}</span>
+            <span style={{ fontSize: 10, fontWeight: 700, color: awayColor, flex: 1, textAlign: "right" }}>{p.awayTeam}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }
