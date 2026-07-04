@@ -442,6 +442,22 @@ function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineu
   );
 }
 
+function getTimeLabel(statusRaw, elapsed) {
+  switch(statusRaw) {
+    case "1H":  return elapsed ? `${elapsed}'` : "1H";
+    case "HT":  return "HT";
+    case "2H":  return elapsed > 90 ? `90+${elapsed - 90}'` : elapsed ? `${elapsed}'` : "2H";
+    case "ET":  return elapsed ? `${elapsed}'` : "ET";
+    case "BT":  return "BT";
+    case "P":   return "Pens";
+    case "INT": return "INT";
+    case "FT":  return "FT";
+    case "AET": return "AET";
+    case "PEN": return "PEN";
+    default:    return statusRaw || "";
+  }
+}
+
 function AuthScreen() {
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
