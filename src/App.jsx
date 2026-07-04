@@ -1004,7 +1004,7 @@ export default function FootballPredictor() {
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                   <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#ef4444", animation: "pulse 1.5s infinite" }} />
-                  <span style={{ fontSize: 11, color: "#ef4444", fontWeight: 700 }}>{f.elapsed}'</span>
+                  <span style={{ fontSize: 11, color: "#ef4444", fontWeight: 700 }}>{getTimeLabel(f.statusRaw, f.elapsed)}</span>
                 </div>
                 <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", flex: 1 }}>
                   {f.home} <span style={{ color: "#4ade80" }}>{f.score.home ?? 0}</span>
@@ -1029,8 +1029,7 @@ export default function FootballPredictor() {
                     </div>
                     <div style={{ textAlign: "center" }}>
                       <div style={{ fontSize: 11, color: "#ef4444", fontWeight: 700, marginBottom: 4 }}>🔴 LIVE</div>
-                      <div style={{ fontSize: 20, fontWeight: 800, color: "#555" }}>{f.elapsed}'</div>
-                      <div style={{ fontSize: 10, color: "#555", marginTop: 2 }}>{90 - (f.elapsed || 0) > 0 ? `~${90 - f.elapsed}' left` : f.statusRaw === "ET" ? "Extra time" : "Added time"}</div>
+                      <div style={{ fontSize: 20, fontWeight: 800, color: "#ef4444" }}>{getTimeLabel(f.statusRaw, f.elapsed)}</div>
                     </div>
                     <div style={{ textAlign: "center" }}>
                       <div style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>{f.away}</div>
@@ -1369,42 +1368,75 @@ export default function FootballPredictor() {
                       )}
                     </div>
 
-                    {deepInsights.comparison?.formHome && (
-                      <div style={{ background: "#13131f", borderRadius: 8, padding: "12px 14px", marginBottom: 10 }}>
-                        <div style={{ fontSize: 12, color: "#ccc", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Current Form Index</div>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <div style={{ textAlign: "center" }}>
-                            <div style={{ fontSize: 12, color: "#4ade80", marginBottom: 6, fontWeight: 700 }}>{homeTeam}</div>
-                            <div style={{ fontSize: 22, fontWeight: 800, color: "#f0f0f0" }}>{deepInsights.comparison.formHome}</div>
-                          </div>
-                          <div style={{ fontSize: 13, color: "#ffffff", fontWeight: 700 }}>vs</div>
-                          <div style={{ textAlign: "center" }}>
-                            <div style={{ fontSize: 12, color: "#f59e0b", marginBottom: 6, fontWeight: 700 }}>{awayTeam}</div>
-                            <div style={{ fontSize: 22, fontWeight: 800, color: "#f0f0f0" }}>{deepInsights.comparison.formAway}</div>
+                    {deepInsights.comparison?.formHome && (() => {
+                      const hRaw = parseFloat(deepInsights.comparison.formHome) || 0;
+                      const aRaw = parseFloat(deepInsights.comparison.formAway) || 0;
+                      const total = hRaw + aRaw || 1;
+                      const hNorm = Math.round((hRaw / total) * 100);
+                      const aNorm = 100 - hNorm;
+                      return (
+                        <div style={{ background: "#13131f", borderRadius: 8, padding: "12px 14px", marginBottom: 10 }}>
+                          <div style={{ fontSize: 12, color: "#ccc", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Current Form Index</div>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <div style={{ textAlign: "center" }}>
+                              <div style={{ fontSize: 12, color: "#4ade80", marginBottom: 6, fontWeight: 700 }}>{homeTeam}</div>
+                              <div style={{ fontSize: 22, fontWeight: 800, color: "#f0f0f0" }}>{hNorm}%</div>
+                            </div>
+                            <div style={{ fontSize: 13, color: "#ffffff", fontWeight: 700 }}>vs</div>
+                            <div style={{ textAlign: "center" }}>
+                              <div style={{ fontSize: 12, color: "#f59e0b", marginBottom: 6, fontWeight: 700 }}>{awayTeam}</div>
+                              <div style={{ fontSize: 22, fontWeight: 800, color: "#f0f0f0" }}>{aNorm}%</div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
 
                     {deepInsights.h2h?.length > 0 && (
                       <div style={{ marginBottom: 10 }}>
                         <div style={{ fontSize: 12, color: "#ccc", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Recent H2H</div>
-                        {deepInsights.h2h.map((r, i) => {
-                          // r = "Croatia 1-1 Portugal" — split on score pattern
-                          const parts = r.match(/^(.+?)\s+(\d+-\d+)\s+(.+)$/);
-                          if (!parts) return <div key={i} style={{ fontSize: 13, color: "#666", padding: "5px 0", borderBottom: "1px solid #1a1a2a" }}>{r}</div>;
-                          const [, home, score, away] = parts;
-                          const [hg, ag] = score.split("-").map(Number);
-                          const homeColor = hg > ag ? "#4ade80" : hg < ag ? "#f87171" : "#aaa";
-                          const awayColor = ag > hg ? "#4ade80" : ag < hg ? "#f87171" : "#aaa";
-                          return (
-                            <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid #1a1a2a" }}>
-                              <span style={{ fontSize: 13, fontWeight: 700, color: homeColor, flex: 1 }}>{home}</span>
-                              <span style={{ fontSize: 15, fontWeight: 900, color: "#f0f0f0", margin: "0 10px" }}>{score}</span>
-                              <span style={{ fontSize: 13, fontWeight: 700, color: awayColor, flex: 1, textAlign: "right" }}>{away}</span>
+                        <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
+                          {deepInsights.h2h.map((r, i) => {
+                            const parts = r.match(/^(.+?)\s+(\d+)-(\d+)\s+(.+)$/);
+                            if (!parts) return <div key={i} style={{ width: 28, height: 28, borderRadius: "50%", background: "#333" }} />;
+                            const hg = parseInt(parts[2]);
+                            const ag = parseInt(parts[3]);
+                            const matchHome = parts[1].trim();
+                            const hn = (s) => (s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+                            const homeTeamWon = (hn(matchHome) === hn(homeTeam) && hg > ag) || (hn(matchHome) !== hn(homeTeam) && ag > hg);
+                            const awayTeamWon = (hn(matchHome) === hn(awayTeam) && hg > ag) || (hn(matchHome) !== hn(awayTeam) && ag > hg);
+                            const bg = hg === ag ? "#555" : homeTeamWon ? "#4ade80" : "#f59e0b";
+                            const label = hg === ag ? "D" : homeTeamWon ? "W" : "L";
+                            return (
+                              <div key={i} style={{ width: 28, height: 28, borderRadius: "50%", background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 900, color: "#0a0a0f" }}>{label}</div>
+                            );
+                          })}
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 9, color: "#555" }}>
+                          <span style={{ color: "#4ade80" }}>🟢 {homeTeam.split(" ")[0]} win</span>
+                          <span>⚫ Draw</span>
+                          <span style={{ color: "#f59e0b" }}>🟡 {awayTeam.split(" ")[0]} win</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Form dots */}
+                    {deepInsights.form?.home && (
+                      <div style={{ marginBottom: 10 }}>
+                        <div style={{ fontSize: 12, color: "#ccc", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Recent Form</div>
+                        {[
+                          { team: homeTeam, form: deepInsights.form.home, color: "#4ade80" },
+                          { team: awayTeam, form: deepInsights.form.away, color: "#f59e0b" },
+                        ].map(({ team, form, color }) => (
+                          <div key={team} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, color, minWidth: 70, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{team.split(" ")[0]}</span>
+                            <div style={{ display: "flex", gap: 4 }}>
+                              {(form || "").split("").slice(0, 5).map((r, i) => (
+                                <div key={i} style={{ width: 22, height: 22, borderRadius: "50%", background: r === "W" ? "#4ade80" : r === "D" ? "#60a5fa" : "#f87171", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, color: "#0a0a0f" }}>{r}</div>
+                              ))}
                             </div>
-                          );
-                        })}
+                          </div>
+                        ))}
                       </div>
                     )}
 
@@ -1473,7 +1505,7 @@ export default function FootballPredictor() {
               const isLive = f.status === "live";
               const isFinished = f.status === "finished";
               const statusColor = isLive ? "#ef4444" : isFinished ? "#555" : "#4ade80";
-              const statusLabel = isLive ? `🔴 ${f.elapsed}'` : isFinished ? "FT" : "Soon";
+              const statusLabel = isLive ? `🔴 ${getTimeLabel(f.statusRaw, f.elapsed)}` : isFinished ? (f.statusRaw === "AET" ? "AET" : f.statusRaw === "PEN" ? "PEN" : "FT") : "Soon";
 
               return (
                 <div key={i} style={{ background: "#13131f", border: `1px solid ${isLive ? "#ef444433" : "#1e1e30"}`, borderRadius: 12, overflow: "hidden" }}>
@@ -1655,7 +1687,7 @@ export default function FootballPredictor() {
                     return (
                       <div style={{ marginTop: 8, background: "#0d0d18", borderRadius: 8, padding: "10px 12px" }}>
                         <div style={{ fontSize: 10, color: "#ef4444", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
-                          🔴 Live — {live.elapsed}'
+                          🔴 {getTimeLabel(live.statusRaw, live.elapsed)}
                         </div>
                         <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                           {events.map((e, i) => (
@@ -1671,36 +1703,13 @@ export default function FootballPredictor() {
                     );
                   })()}
                   {matchStatus === "finished" && !h.actual_score && (
-                    <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 700, textAlign: "center", padding: "6px", marginTop: 4 }}>🏁 Match finished — log the final score below</div>
+                    <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 700, textAlign: "center", padding: "6px", marginTop: 4 }}>🏁 Fetching final score...</div>
                   )}
 
-                  {(matchStatus === "upcoming" || matchStatus === "unknown" || (matchStatus === "finished" && !h.actual_score)) && (
-                    <>
-                      {loggingIdx !== h.id && loggingIdx !== "edit-" + h.id && (
-                        <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-                          {!h.actual_score && (
-                            <button onClick={() => setLoggingIdx(h.id)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "6px 12px", flex: 2 }}>+ Log score</button>
-                          )}
-                          <button onClick={() => { setLoggingIdx("edit-" + h.id); setLogScore(h.user_prediction); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#60a5fa", cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "6px 12px", flex: 1 }}>✏️ Edit</button>
-                          <button onClick={() => deletePredict(h.id)} style={{ background: "none", border: "1px solid #f8717133", borderRadius: 6, color: "#f87171", cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "6px 12px", flex: 1 }}>🗑️ Delete</button>
-                        </div>
-                      )}
-                      {!h.actual_score && loggingIdx === h.id && (
-                        <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 4 }}>
-                          <input className="log-input" placeholder="e.g. 2-1" value={logScore} onChange={e => setLogScore(e.target.value)} />
-                          <button onClick={() => logResult(h.id, logScore)} style={{ background: "#4ade80", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "7px 14px" }}>Save</button>
-                          <button onClick={() => setLoggingIdx(null)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "7px 10px" }}>Cancel</button>
-                        </div>
-                      )}
-                      {loggingIdx === "edit-" + h.id && (
-                        <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 4 }}>
-                          <input className="log-input" placeholder="e.g. 2-1" value={logScore} onChange={e => setLogScore(e.target.value)} />
-                          <button onClick={() => editPredict(h.id, logScore)} style={{ background: "#60a5fa", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "7px 14px" }}>Save</button>
-                          <button onClick={() => setLoggingIdx(null)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "7px 10px" }}>Cancel</button>
-                        </div>
-                      )}
-                    </>
-                  )}
+                  {/* Edit and Delete only — no manual score logging */}
+                  <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                    <button onClick={() => deletePredict(h.id)} style={{ background: "none", border: "1px solid #f8717133", borderRadius: 6, color: "#f87171", cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "6px 12px", flex: 1 }}>🗑️ Delete</button>
+                  </div>
                 </div>
               );
             })}
