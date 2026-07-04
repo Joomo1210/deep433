@@ -1403,33 +1403,66 @@ export default function FootballPredictor() {
                       );
                     })()}
 
-                    {deepInsights.h2h?.length > 0 && (
-                      <div style={{ marginBottom: 10 }}>
-                        <div style={{ fontSize: 12, color: "#ccc", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Recent H2H</div>
-                        <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
-                          {deepInsights.h2h.map((r, i) => {
-                            const parts = r.match(/^(.+?)\s+(\d+)-(\d+)\s+(.+)$/);
-                            if (!parts) return <div key={i} style={{ width: 28, height: 28, borderRadius: "50%", background: "#333" }} />;
-                            const hg = parseInt(parts[2]);
-                            const ag = parseInt(parts[3]);
-                            const matchHome = parts[1].trim();
-                            const hn = (s) => (s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
-                            const homeTeamWon = (hn(matchHome) === hn(homeTeam) && hg > ag) || (hn(matchHome) !== hn(homeTeam) && ag > hg);
-                            const awayTeamWon = (hn(matchHome) === hn(awayTeam) && hg > ag) || (hn(matchHome) !== hn(awayTeam) && ag > hg);
-                            const bg = hg === ag ? "#555" : homeTeamWon ? "#4ade80" : "#f59e0b";
-                            const label = hg === ag ? "D" : homeTeamWon ? "W" : "L";
-                            return (
-                              <div key={i} style={{ width: 28, height: 28, borderRadius: "50%", background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 900, color: "#0a0a0f" }}>{label}</div>
-                            );
-                          })}
+
+                    {deepInsights.h2h?.length > 0 && (() => {
+                      const parseH2H = (r) => {
+                        const parts = r.match(/^(.+?)\s+(\d+)-(\d+)\s+(.+)$/);
+                        if (!parts) return null;
+                        return { home: parts[1].trim(), hg: parseInt(parts[2]), ag: parseInt(parts[3]), away: parts[4].trim() };
+                      };
+                      const norm = s => (s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+
+                      const getResult = (match, perspective) => {
+                        if (!match) return "D";
+                        const { home, hg, ag } = match;
+                        if (hg === ag) return "D";
+                        const perspWon = (norm(home) === norm(perspective) && hg > ag) || (norm(home) !== norm(perspective) && ag > hg);
+                        return perspWon ? "W" : "L";
+                      };
+
+                      const parsed = deepInsights.h2h.map(parseH2H).filter(Boolean);
+                      const homeRecord = parsed.reduce((acc, m) => {
+                        const r = getResult(m, homeTeam);
+                        if (r === "W") acc.w++; else if (r === "D") acc.d++; else acc.l++;
+                        acc.pts += r === "W" ? 3 : r === "D" ? 1 : 0;
+                        return acc;
+                      }, { w: 0, d: 0, l: 0, pts: 0 });
+                      const awayRecord = parsed.reduce((acc, m) => {
+                        const r = getResult(m, awayTeam);
+                        if (r === "W") acc.w++; else if (r === "D") acc.d++; else acc.l++;
+                        acc.pts += r === "W" ? 3 : r === "D" ? 1 : 0;
+                        return acc;
+                      }, { w: 0, d: 0, l: 0, pts: 0 });
+
+                      const dotColor = (r) => r === "W" ? "#4ade80" : r === "D" ? "#60a5fa" : "#f87171";
+
+                      const TeamH2HRow = ({ team, record, h2hResults }) => (
+                        <div style={{ background: "#13131f", borderRadius: 8, padding: "12px 14px", marginBottom: 8 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                            <span style={{ fontSize: 13, fontWeight: 800, color: "#f0f0f0" }}>{team}</span>
+                            <span style={{ fontSize: 11, color: "#555" }}>PPG: <span style={{ color: "#f0f0f0", fontWeight: 700 }}>{parsed.length ? (record.pts / parsed.length).toFixed(2) : "0.00"}</span></span>
+                          </div>
+                          <div style={{ display: "flex", gap: 5, marginBottom: 10 }}>
+                            {h2hResults.map((r, i) => (
+                              <div key={i} style={{ width: 24, height: 24, borderRadius: 4, background: dotColor(r), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, color: "#0a0a0f" }}>{r}</div>
+                            ))}
+                          </div>
+                          <div style={{ display: "flex", gap: 16, fontSize: 11 }}>
+                            <span style={{ color: "#4ade80" }}>W {record.w}</span>
+                            <span style={{ color: "#60a5fa" }}>D {record.d}</span>
+                            <span style={{ color: "#f87171" }}>L {record.l}</span>
+                          </div>
                         </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 9, color: "#555" }}>
-                          <span style={{ color: "#4ade80" }}>🟢 {homeTeam.split(" ")[0]} win</span>
-                          <span>⚫ Draw</span>
-                          <span style={{ color: "#f59e0b" }}>🟡 {awayTeam.split(" ")[0]} win</span>
+                      );
+
+                      return (
+                        <div style={{ marginBottom: 10 }}>
+                          <div style={{ fontSize: 12, color: "#ccc", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Recent H2H</div>
+                          <TeamH2HRow team={homeTeam} record={homeRecord} h2hResults={parsed.map(m => getResult(m, homeTeam))} />
+                          <TeamH2HRow team={awayTeam} record={awayRecord} h2hResults={parsed.map(m => getResult(m, awayTeam))} />
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
 
                     {deepInsights.comparison?.formHome && (() => {
                       const hRaw = parseFloat(deepInsights.comparison.formHome) || 0;
