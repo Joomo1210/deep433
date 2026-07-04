@@ -222,28 +222,75 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
     if (!cardRef.current) return;
     setDownloading(true);
     try {
-      const script = document.createElement("script");
-      script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
-      document.head.appendChild(script);
-      await new Promise((resolve, reject) => { script.onload = resolve; script.onerror = reject; });
+      if (!window.html2canvas) {
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+        document.head.appendChild(s);
+        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
+      }
       const canvas = await window.html2canvas(cardRef.current, {
         backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false,
       });
       const link = document.createElement("a");
-      link.download = `deep433-${homeTeam}-vs-${awayTeam}.png`;
+      link.download = ;
       link.href = canvas.toDataURL("image/png");
       link.click();
-    } catch (err) {
-      alert("Download failed — try screenshotting manually");
-    }
+    } catch { alert("Download failed — try screenshotting manually"); }
     setDownloading(false);
   };
 
   const stats = [
-    { label: "Attack", home: deepInsights?.comparison?.attackHome, away: deepInsights?.comparison?.attackAway },
+    { label: "Attack",  home: deepInsights?.comparison?.attackHome,  away: deepInsights?.comparison?.attackAway },
     { label: "Defence", home: deepInsights?.comparison?.defenceHome, away: deepInsights?.comparison?.defenceAway },
-    { label: "Form", home: deepInsights?.comparison?.formHome, away: deepInsights?.comparison?.formAway },
+    { label: "Form",    home: deepInsights?.comparison?.formHome,    away: deepInsights?.comparison?.formAway },
   ].filter(s => s.home && s.away);
+
+  const TeamLogo = ({ src, size = 48 }) => src
+    ? <img src={src} alt="" crossOrigin="anonymous" style={{ width: size, height: size, objectFit: "contain", display: "block" }} />
+    : null;
+
+  const CardHeader = () => (
+    <>
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
+      <div style={{ position: "absolute", top: 12, right: 14, zIndex: 2, display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ fontSize: 11, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
+        <span style={{ fontSize: 9, color: "#555" }}>deep433.com</span>
+      </div>
+      {/* Competition context */}
+      <div style={{ textAlign: "center", paddingTop: 18, paddingBottom: 4 }}>
+        <span style={{ fontSize: 9, color: "#888", letterSpacing: 2, textTransform: "uppercase", fontWeight: 600 }}>{leagueLabel}</span>
+      </div>
+    </>
+  );
+
+  const StatsSection = () => (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ fontSize: 9, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>📊 Deep Insights</div>
+      {stats.map(s => {
+        const hv = parseFloat(s.home) || 0;
+        const av = parseFloat(s.away) || 0;
+        const total = hv + av || 1;
+        const hp = Math.round((hv / total) * 100);
+        const ap = 100 - hp;
+        return (
+          <div key={s.label}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+              <span style={{ fontSize: 18, fontWeight: 900, color: "#4ade80" }}>{hp}%</span>
+              <span style={{ fontSize: 9, color: "#aaa", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>{s.label}</span>
+              <span style={{ fontSize: 18, fontWeight: 900, color: "#f59e0b" }}>{ap}%</span>
+            </div>
+            <div style={{ display: "flex", height: 6, borderRadius: 3, overflow: "hidden" }}>
+              <div style={{ width: hp + "%", background: "#4ade80" }} />
+              <div style={{ width: ap + "%", background: "#f59e0b", opacity: 0.6 }} />
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3, fontSize: 9, color: "#444" }}>
+              <span>{homeTeam.split(" ")[0]}</span><span>{awayTeam.split(" ")[0]}</span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)", zIndex: 60, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 16, overflowY: "auto" }}>
@@ -253,104 +300,84 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
             {v === "square" ? "1:1" : "16:9"}
           </button>
         ))}
-        <button onClick={downloadImage} disabled={downloading} style={{ background: "linear-gradient(135deg, #4ade80, #22c55e)", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 800, padding: "6px 16px", opacity: downloading ? 0.6 : 1 }}>
+        <button onClick={downloadImage} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 800, padding: "6px 16px", opacity: downloading ? 0.6 : 1 }}>
           {downloading ? "Generating..." : "⬇ Download PNG"}
         </button>
         <button onClick={onClose} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "6px 12px" }}>✕ Close</button>
       </div>
 
-      <div ref={cardRef} style={{ width: isLandscape ? Math.min(760, window.innerWidth - 32) : Math.min(480, window.innerWidth - 32), aspectRatio: isLandscape ? "16/9" : "1/1", background: "linear-gradient(145deg, #0a0a0f 0%, #0d0d1a 50%, #0a0f0a 100%)", borderRadius: 14, overflow: "hidden", position: "relative", display: "flex", flexDirection: isLandscape ? "row" : "column", border: "1px solid #1e1e30" }}>
-        <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(74,222,128,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(74,222,128,0.03) 1px, transparent 1px)", backgroundSize: "40px 40px", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg, #4ade80, #a855f7, #f59e0b)" }} />
-        <div style={{ position: "absolute", top: 12, right: 14, zIndex: 2 }}>
-          <span style={{ fontSize: 11, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
-          <span style={{ fontSize: 9, color: "#555", marginLeft: 6 }}>deep433.com</span>
-        </div>
+      <div
+        ref={cardRef}
+        style={{
+          width: isLandscape ? Math.min(760, window.innerWidth - 32) : Math.min(480, window.innerWidth - 32),
+          aspectRatio: isLandscape ? "16/9" : "1/1",
+          background: "linear-gradient(145deg, #0a0a0f 0%, #0d0d1a 60%, #0a0f0a 100%)",
+          borderRadius: 14, overflow: "hidden", position: "relative",
+          display: "flex", flexDirection: isLandscape ? "row" : "column",
+          border: "1px solid #1e1e30",
+        }}
+      >
+        <CardHeader />
 
         {isLandscape ? (
+          // ── LANDSCAPE 16:9 ──────────────────────────────────────────
           <>
-            <div style={{ width: "42%", padding: "22px 18px", display: "flex", flexDirection: "column", justifyContent: "space-between", borderRight: "1px solid #1a1a2a" }}>
-              <div>
-                <div style={{ fontSize: 10, color: "#aaa", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10, marginTop: 10, fontWeight: 600 }}>{leagueLabel}</div>
-                <div style={{ fontSize: 17, fontWeight: 900, color: "#f0f0f0", lineHeight: 1.2, marginBottom: 16, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <TeamFlag team={homeTeam} size={18} /> {homeTeam} <span style={{ color: "#333" }}>vs</span> <TeamFlag team={awayTeam} size={18} /> {awayTeam}
+            {/* Left: teams + prediction */}
+            <div style={{ width: "45%", padding: "36px 20px 20px", display: "flex", flexDirection: "column", justifyContent: "space-between", borderRight: "1px solid #1a1a2a" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 8 }}>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><TeamLogo src={homeLogo} size={44} /></div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: "#4ade80", marginBottom: 4 }}>{homeTeam}</div>
+                  <div style={{ fontSize: 52, fontWeight: 900, color: "#4ade80", lineHeight: 1 }}>{userPrediction.split("-")[0]}</div>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  {[{ label: "👤 Your Call", val: userPrediction, color: "#4ade80" }, { label: "🤖 AI Says", val: aiPrediction, color: "#f59e0b" }].map(p => (
-                    <div key={p.label} style={{ background: p.color + "0a", border: "1px solid " + p.color + "33", borderRadius: 8, padding: "10px 8px", textAlign: "center" }}>
-                      <div style={{ fontSize: 8, color: p.color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>{p.label}</div>
-                      <div style={{ fontSize: 30, fontWeight: 900, color: p.color }}>{p.val}</div>
-                    </div>
-                  ))}
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 10, color: "#4ade80", fontWeight: 700, letterSpacing: 1, marginBottom: 4 }}>YOUR CALL</div>
+                  <div style={{ fontSize: 16, color: "#333", marginBottom: 6 }}>—</div>
+                  <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, background: "rgba(129,140,248,0.08)", border: "1px solid rgba(129,140,248,0.2)", borderRadius: 5, padding: "3px 8px", whiteSpace: "nowrap" }}>AI {aiPrediction}</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><TeamLogo src={awayLogo} size={44} /></div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: "#f59e0b", marginBottom: 4 }}>{awayTeam}</div>
+                  <div style={{ fontSize: 52, fontWeight: 900, color: "#f59e0b", lineHeight: 1 }}>{userPrediction.split("-")[1]}</div>
                 </div>
               </div>
-
             </div>
-            <div style={{ flex: 1, padding: "22px 18px", display: "flex", flexDirection: "column", justifyContent: "space-around", paddingTop: 32 }}>
-              {stats.map(s => (
-                <div key={s.label}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
-                    <span style={{ fontSize: 22, fontWeight: 900, color: "#4ade80" }}>{capStatShare(s.home, s.away)}</span>
-                    <span style={{ fontSize: 9, color: "#aaa", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>{s.label}</span>
-                    <span style={{ fontSize: 22, fontWeight: 900, color: "#f59e0b" }}>{capStatShare(s.away, s.home)}</span>
-                  </div>
-                  <StatBarShare leftVal={s.home} rightVal={s.away} />
-                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3, fontSize: 9, color: "#444" }}>
-                    <span>{homeTeam.split(" ")[0]}</span><span>{awayTeam.split(" ")[0]}</span>
-                  </div>
-                </div>
-              ))}
+            {/* Right: stats */}
+            <div style={{ flex: 1, padding: "36px 20px 20px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              <StatsSection />
             </div>
           </>
         ) : (
-          <div style={{ flex: 1, padding: "24px 20px", display: "flex", flexDirection: "column", gap: 16, paddingTop: 32 }}>
-            <div>
-              <div style={{ fontSize: 10, color: "#aaa", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8, fontWeight: 600 }}>{leagueLabel}</div>
-              {/* YOUR PREDICTION badge */}
-              <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
-                <div style={{ background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.3)", borderRadius: 20, padding: "3px 14px", fontSize: 9, color: "#4ade80", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" }}>👤 Your Prediction</div>
+          // ── SQUARE 1:1 ──────────────────────────────────────────────
+          <div style={{ flex: 1, padding: "20px", display: "flex", flexDirection: "column", gap: 14, paddingTop: 36 }}>
+            {/* Teams + hero scores */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 8 }}>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><TeamLogo src={homeLogo} size={44} /></div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: "#4ade80", marginBottom: 4 }}>{homeTeam}</div>
+                <div style={{ fontSize: 54, fontWeight: 900, color: "#4ade80", lineHeight: 1 }}>{userPrediction.split("-")[0]}</div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 6 }}>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 6 }}>
-                    {homeLogo && <img src={homeLogo} alt="" crossOrigin="anonymous" style={{ width: 22, height: 22, objectFit: "contain" }} />}
-                    <span style={{ fontSize: 13, fontWeight: 900, color: "#4ade80" }}>{homeTeam}</span>
-                  </div>
-                  <div style={{ fontSize: 44, fontWeight: 900, color: "#4ade80", lineHeight: 1 }}>{userPrediction.split("-")[0]}</div>
-                </div>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 16, color: "#888", fontWeight: 700, marginBottom: 8 }}>vs</div>
-                  <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 700, background: "rgba(129,140,248,0.1)", border: "1px solid rgba(129,140,248,0.3)", borderRadius: 6, padding: "4px 10px" }}>🤖 AI: {aiPrediction}</div>
-                </div>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 6 }}>
-                    <span style={{ fontSize: 13, fontWeight: 900, color: "#f59e0b" }}>{awayTeam}</span>
-                    {awayLogo && <img src={awayLogo} alt="" crossOrigin="anonymous" style={{ width: 22, height: 22, objectFit: "contain" }} />}
-                  </div>
-                  <div style={{ fontSize: 44, fontWeight: 900, color: "#f59e0b", lineHeight: 1 }}>{userPrediction.split("-")[1]}</div>
-                </div>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 10, color: "#4ade80", fontWeight: 700, letterSpacing: 1, marginBottom: 4 }}>YOUR CALL</div>
+                <div style={{ fontSize: 16, color: "#333", marginBottom: 6 }}>—</div>
+                <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, background: "rgba(129,140,248,0.08)", border: "1px solid rgba(129,140,248,0.2)", borderRadius: 5, padding: "3px 8px", whiteSpace: "nowrap" }}>AI {aiPrediction}</div>
+              </div>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><TeamLogo src={awayLogo} size={44} /></div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: "#f59e0b", marginBottom: 4 }}>{awayTeam}</div>
+                <div style={{ fontSize: 54, fontWeight: 900, color: "#f59e0b", lineHeight: 1 }}>{userPrediction.split("-")[1]}</div>
               </div>
             </div>
             <div style={{ height: 1, background: "#1a1a2a" }} />
-            <div style={{ fontSize: 9, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>📊 Deep Insights</div>
-            {stats.map(s => (
-              <div key={s.label}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                  <span style={{ fontSize: 20, fontWeight: 900, color: "#4ade80" }}>{capStatShare(s.home, s.away)}</span>
-                  <span style={{ fontSize: 9, color: "#aaa", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>{s.label}</span>
-                  <span style={{ fontSize: 20, fontWeight: 900, color: "#f59e0b" }}>{capStatShare(s.away, s.home)}</span>
-                </div>
-                <StatBarShare leftVal={s.home} rightVal={s.away} />
-              </div>
-            ))}
-
+            <StatsSection />
           </div>
         )}
       </div>
-      <div style={{ fontSize: 10, color: "#555", marginTop: 10 }}>Tap Download PNG to save and share on X / Instagram</div>
+      <div style={{ fontSize: 10, color: "#555", marginTop: 10 }}>Tap Download PNG to save and share</div>
     </div>
   );
 }
+
 
 function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineupNames, awayLineupNames, lineupSource }) {
   const homeFlag = TEAM_FLAGS[homeTeam] || "🏳️";
