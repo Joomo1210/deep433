@@ -541,6 +541,8 @@ export default function FootballPredictor() {
   const [liveEvents, setLiveEvents] = useState({});
   const [expandedLive, setExpandedLive] = useState(null);
   const [showShareCard, setShowShareCard] = useState(false);
+  const [selectedHomeLogo, setSelectedHomeLogo] = useState(null);
+  const [selectedAwayLogo, setSelectedAwayLogo] = useState(null);
   const [userRole, setUserRole] = useState("user");
   const [fixtures, setFixtures] = useState([]);
   const [fixturesLoading, setFixturesLoading] = useState(false); // fixtureId of expanded match
@@ -698,6 +700,8 @@ export default function FootballPredictor() {
     setHomeTeam(fix.home);
     setAwayTeam(fix.away);
     setFixtureSearch("");
+    setSelectedHomeLogo(fix.homeLogo || null);
+    setSelectedAwayLogo(fix.awayLogo || null);
   };
 
   const hasExistingPrediction = (homeTeam, awayTeam) => {
@@ -753,7 +757,7 @@ export default function FootballPredictor() {
   const resetPredict = () => {
     setStep(1); setResult(null); setHomeTeam(""); setAwayTeam("");
     setUserHome(""); setUserAway(""); setUserPrediction(""); setError(""); setFixtureSearch("");
-    setSelectedFixtureId(null); setDeepInsights(null);
+    setSelectedFixtureId(null); setDeepInsights(null); setSelectedHomeLogo(null); setSelectedAwayLogo(null);
   };
 
   const logResult = async (id, score) => {
@@ -1909,8 +1913,8 @@ export default function FootballPredictor() {
         <SocialShareCard
           homeTeam={homeTeam}
           awayTeam={awayTeam}
-          homeLogo={findFixture(homeTeam, awayTeam)?.homeLogo || TEAM_LOGOS[homeTeam] || null}
-          awayLogo={findFixture(homeTeam, awayTeam)?.awayLogo || TEAM_LOGOS[awayTeam] || null}
+          homeLogo={selectedHomeLogo || findFixture(homeTeam, awayTeam)?.homeLogo || TEAM_LOGOS[homeTeam] || null}
+          awayLogo={selectedAwayLogo || findFixture(homeTeam, awayTeam)?.awayLogo || TEAM_LOGOS[awayTeam] || null}
           userPrediction={userPrediction}
           aiPrediction={result?.scoreline || ""}
           leagueLabel={leagueLabel}
