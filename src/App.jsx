@@ -530,7 +530,8 @@ export default function FootballPredictor() {
   const [liveData, setLiveData] = useState([]);
   const [liveEvents, setLiveEvents] = useState({});
   const [expandedLive, setExpandedLive] = useState(null);
-  const [showShareCard, setShowShareCard] = useState(false); // fixtureId of expanded match
+  const [showShareCard, setShowShareCard] = useState(false);
+  const [userRole, setUserRole] = useState("user"); // fixtureId of expanded match
   const [confirmedLineup, setConfirmedLineup] = useState(null);
   const [lineupFetching, setLineupFetching] = useState(false);
   const [viewingPitch, setViewingPitch] = useState(null);
@@ -590,11 +591,11 @@ export default function FootballPredictor() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session); setAuthLoading(false);
-      if (session) loadHistory(session.user.id);
+      if (session) { loadHistory(session.user.id); loadUserRole(session.user.id); }
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (session) loadHistory(session.user.id);
+      if (session) { loadHistory(session.user.id); loadUserRole(session.user.id); }
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -640,6 +641,11 @@ export default function FootballPredictor() {
   const loadHistory = async (userId) => {
     const { data } = await supabase.from("predictions").select("*, confirmed_lineup").eq("user_id", userId).order("created_at", { ascending: false });
     if (data) setHistory(data);
+  };
+
+  const loadUserRole = async (userId) => {
+    const { data } = await supabase.from("profiles").select("role").eq("id", userId).single();
+    if (data?.role) setUserRole(data.role);
   };
 
   const signOut = async () => {
@@ -875,12 +881,12 @@ export default function FootballPredictor() {
   };
 
   const TABS = [
-    { id: "predict",  label: "⚡ Predict" },
-    { id: "scores",   label: "🔴 Scores" },
-    { id: "graphics", label: "📊 Graphics" },
-    { id: "standings",label: "🏆 You vs AI" },
-    { id: "badges",   label: "🏅 Badges" },
-    { id: "history",  label: "📋 History" },
+    { id: "predict",   label: "⚡ Predict" },
+    { id: "scores",    label: "🔴 Scores" },
+    ...(userRole === "admin" ? [{ id: "graphics", label: "📊 Graphics" }] : []),
+    { id: "standings", label: "🏆 You vs AI" },
+    { id: "badges",    label: "🏅 Badges" },
+    { id: "history",   label: "📋 History" },
   ];
 
   if (authLoading) return (
@@ -1475,7 +1481,15 @@ export default function FootballPredictor() {
           </>
         )}
 
-        {tab === "graphics" && <DataGraphics />}
+        {tab === "graphics" && (
+          userRole === "admin"
+            ? <DataGraphics />
+            : <div className="card" style={{ textAlign: "center", padding: "40px 24px" }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>📊</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "#f0f0f0", marginBottom: 8 }}>Authorised Users Only</div>
+                <div style={{ fontSize: 13, color: "#555", lineHeight: 1.6 }}>This section is available to authorised Deep433 users. Contact us to request access.</div>
+              </div>
+        )}
 
         {tab === "standings" && (
           <>
