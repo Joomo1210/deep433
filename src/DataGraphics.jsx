@@ -687,6 +687,186 @@ function TeamStatsGraphic() {
   );
 }
 
+// ─── RECAP CARD ──────────────────────────────────────────────────────────────
+function RecapGraphic() {
+  const cardRef = useRef(null);
+  const [selectedFixture, setSelectedFixture] = useState(null);
+  const [finalScore, setFinalScore] = useState("");
+  const [yourPrediction, setYourPrediction] = useState("");
+  const [aiPrediction, setAiPrediction] = useState("");
+  const [variant, setVariant] = useState("square");
+  const [downloading, setDownloading] = useState(false);
+
+  const isLandscape = variant === "landscape";
+
+  const download = async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      if (!window.html2canvas) {
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+        document.head.appendChild(s);
+        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
+      }
+      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
+      const link = document.createElement("a");
+      link.download = `deep433-recap-${selectedFixture?.home}-vs-${selectedFixture?.away}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const [fs0, fs1] = (finalScore || "0-0").split("-").map(n => parseInt(n) || 0);
+  const [yp0, yp1] = (yourPrediction || "0-0").split("-").map(n => parseInt(n) || 0);
+  const [ai0, ai1] = (aiPrediction || "0-0").split("-").map(n => parseInt(n) || 0);
+
+  const getResult = (pred0, pred1) => {
+    const homeWon = fs0 > fs1;
+    const awayWon = fs1 > fs0;
+    const predHomeWon = pred0 > pred1;
+    const predAwayWon = pred1 > pred0;
+    if (fs0 === pred0 && fs1 === pred1) return { label: "EXACT ✓", color: "#4ade80" };
+    if ((homeWon && predHomeWon) || (awayWon && predAwayWon) || (fs0 === fs1 && pred0 === pred1)) return { label: "OUTCOME ✓", color: "#f59e0b" };
+    return { label: "MISSED ✗", color: "#f87171" };
+  };
+
+  const yourResult = finalScore && yourPrediction ? getResult(yp0, yp1) : null;
+  const aiResult = finalScore && aiPrediction ? getResult(ai0, ai1) : null;
+
+  const CardContent = () => (
+    <div style={{
+      width: isLandscape ? Math.min(760, window.innerWidth - 32) : Math.min(480, window.innerWidth - 32),
+      aspectRatio: isLandscape ? "16/9" : "1/1",
+      background: "linear-gradient(145deg, #0a0a0f 0%, #0d0d1a 60%, #0a0f0a 100%)",
+      borderRadius: 14, overflow: "hidden", position: "relative",
+      display: "flex", flexDirection: isLandscape ? "row" : "column",
+      border: "1px solid #1e1e30", fontFamily: "'Inter',sans-serif",
+    }}>
+      {/* Brand bar */}
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
+      <div style={{ position: "absolute", top: 12, right: 14, zIndex: 2, display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ fontSize: 11, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
+        <span style={{ fontSize: 9, color: "#555" }}>deep433.com</span>
+      </div>
+
+      {isLandscape ? (
+        <>
+          {/* Left: final score hero */}
+          <div style={{ width: "45%", padding: "36px 20px 20px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", borderRight: "1px solid #1a1a2a" }}>
+            <div style={{ fontSize: 9, color: "#888", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>{selectedFixture?.round || "Match Recap"}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 12 }}>
+              {selectedFixture?.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 44, height: 44, objectFit: "contain" }} />}
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 9, color: "#555", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Full Time</div>
+                <div style={{ fontSize: 64, fontWeight: 900, color: "#f0f0f0", lineHeight: 1 }}>{fs0}-{fs1}</div>
+              </div>
+              {selectedFixture?.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 44, height: 44, objectFit: "contain" }} />}
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", width: "100%", fontSize: 12, fontWeight: 700, color: "#888" }}>
+              <span style={{ color: "#4ade80" }}>{selectedFixture?.home}</span>
+              <span style={{ color: "#f59e0b" }}>{selectedFixture?.away}</span>
+            </div>
+          </div>
+          {/* Right: predictions */}
+          <div style={{ flex: 1, padding: "36px 20px 20px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 14 }}>
+            <div style={{ fontSize: 10, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Predictions</div>
+            {[{ label: "👤 Your Call", pred: yourPrediction, result: yourResult, color: "#4ade80" }, { label: "🤖 AI Predicted", pred: aiPrediction, result: aiResult, color: "#f59e0b" }].map(p => (
+              <div key={p.label} style={{ background: "#13131f", borderRadius: 10, padding: "12px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <div style={{ fontSize: 10, color: p.color, fontWeight: 700, marginBottom: 4 }}>{p.label}</div>
+                  <div style={{ fontSize: 28, fontWeight: 900, color: p.color }}>{p.pred || "—"}</div>
+                </div>
+                {p.result && <div style={{ fontSize: 11, fontWeight: 800, color: p.result.color, background: p.result.color + "11", border: `1px solid ${p.result.color}33`, borderRadius: 6, padding: "4px 10px" }}>{p.result.label}</div>}
+              </div>
+            ))}
+          </div>
+        </>
+      ) : (
+        <div style={{ flex: 1, padding: "20px", display: "flex", flexDirection: "column", gap: 14, paddingTop: 36 }}>
+          {/* Final score — dominant hero */}
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 9, color: "#888", letterSpacing: 2, textTransform: "uppercase", marginBottom: 8 }}>{selectedFixture?.round || "Match Recap"}</div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 8 }}>
+              {selectedFixture?.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 44, height: 44, objectFit: "contain" }} />}
+              <div>
+                <div style={{ fontSize: 9, color: "#555", textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }}>Full Time</div>
+                <div style={{ fontSize: 68, fontWeight: 900, color: "#f0f0f0", lineHeight: 1 }}>{fs0}-{fs1}</div>
+              </div>
+              {selectedFixture?.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 44, height: 44, objectFit: "contain" }} />}
+            </div>
+            <div style={{ display: "flex", justifyContent: "center", gap: 24, fontSize: 12, fontWeight: 700 }}>
+              <span style={{ color: "#4ade80" }}>{selectedFixture?.home}</span>
+              <span style={{ color: "#f59e0b" }}>{selectedFixture?.away}</span>
+            </div>
+          </div>
+          <div style={{ height: 1, background: "#1a1a2a" }} />
+          {/* Predictions */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            {[{ label: "👤 Your Call", pred: yourPrediction, result: yourResult, color: "#4ade80" }, { label: "🤖 AI Predicted", pred: aiPrediction, result: aiResult, color: "#f59e0b" }].map(p => (
+              <div key={p.label} style={{ background: "#13131f", borderRadius: 10, padding: "12px 10px", textAlign: "center" }}>
+                <div style={{ fontSize: 10, color: p.color, fontWeight: 700, marginBottom: 6 }}>{p.label}</div>
+                <div style={{ fontSize: 28, fontWeight: 900, color: p.color, marginBottom: 6 }}>{p.pred || "—"}</div>
+                {p.result && <div style={{ fontSize: 10, fontWeight: 800, color: p.result.color }}>{p.result.label}</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {!selectedFixture ? (
+        <FixturePicker onSelect={f => setSelectedFixture(f)} />
+      ) : (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
+            <button onClick={() => setSelectedFixture(null)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "4px 10px" }}>Change</button>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+            {[
+              { label: "Final Score", value: finalScore, setter: setFinalScore, placeholder: "e.g. 2-1" },
+              { label: "Your Prediction", value: yourPrediction, setter: setYourPrediction, placeholder: "e.g. 1-2" },
+              { label: "AI Prediction", value: aiPrediction, setter: setAiPrediction, placeholder: "e.g. 2-0" },
+            ].map(f => (
+              <div key={f.label}>
+                <div style={{ fontSize: 10, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{f.label}</div>
+                <input
+                  placeholder={f.placeholder}
+                  value={f.value}
+                  onChange={e => f.setter(e.target.value)}
+                  style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 10px", outline: "none", fontFamily: "inherit", textAlign: "center", fontWeight: 800 }}
+                />
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: "flex", gap: 8 }}>
+            {["square", "landscape"].map(v => (
+              <button key={v} onClick={() => setVariant(v)} style={{ flex: 1, background: variant === v ? "#4ade8022" : "none", border: `1px solid ${variant === v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: variant === v ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "8px" }}>
+                {v === "square" ? "1:1 Square" : "16:9 Landscape"}
+              </button>
+            ))}
+          </div>
+
+          <div ref={cardRef}>
+            <CardContent />
+          </div>
+
+          <button onClick={download} disabled={downloading || !finalScore} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%", opacity: !finalScore ? 0.4 : 1 }}>
+            {downloading ? "Generating..." : "⬇ Download Recap Card"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── MAIN EXPORT ─────────────────────────────────────────────────────────────
 export default function DataGraphics() {
   const [activeSection, setActiveSection] = useState("match");
@@ -696,6 +876,7 @@ export default function DataGraphics() {
     { id: "player", label: "⭐ Player Ratings" },
     { id: "top",    label: "🥇 Leaderboard" },
     { id: "team",   label: "🛡 Team Stats" },
+    { id: "recap",  label: "📋 Recap" },
   ];
 
   return (
@@ -714,6 +895,7 @@ export default function DataGraphics() {
       {activeSection === "player" && <PlayerRatingsGraphic />}
       {activeSection === "top"    && <TopScorersGraphic />}
       {activeSection === "team"   && <TeamStatsGraphic />}
+      {activeSection === "recap"  && <RecapGraphic />}
     </div>
   );
 }
