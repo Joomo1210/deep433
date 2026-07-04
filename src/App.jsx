@@ -77,15 +77,18 @@ const TEAM_CODES = {
   "Cape Verde Islands": "cv",
 };
 
-function TeamFlag({ team, size = 20 }) {
-  const code = TEAM_CODES[team];
-  if (!code) return null;
+// Team logo cache — populated from API-Football fixture responses
+const TEAM_LOGOS = {};
+
+function TeamFlag({ team, logo, size = 20 }) {
+  const src = logo || TEAM_LOGOS[team];
+  if (!src) return null;
   return (
     <img
-      src={`https://flagcdn.com/w40/${code}.png`}
+      src={src}
       alt=""
       crossOrigin="anonymous"
-      style={{ width: size, height: Math.round(size * 0.67), objectFit: "cover", borderRadius: 3, display: "block", flexShrink: 0 }}
+      style={{ width: size, height: size, objectFit: "contain", display: "block", flexShrink: 0 }}
     />
   );
 }
@@ -281,12 +284,7 @@ function SocialShareCard({ homeTeam, awayTeam, userPrediction, aiPrediction, lea
                   ))}
                 </div>
               </div>
-              {deepInsights?.h2h?.length > 0 && (
-                <div>
-                  <div style={{ fontSize: 9, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>H2H Last 5</div>
-                  <H2HSummaryShare h2h={deepInsights.h2h} homeTeam={homeTeam} awayTeam={awayTeam} />
-                </div>
-              )}
+
             </div>
             <div style={{ flex: 1, padding: "22px 18px", display: "flex", flexDirection: "column", justifyContent: "space-around", paddingTop: 32 }}>
               {stats.map(s => (
@@ -345,12 +343,7 @@ function SocialShareCard({ homeTeam, awayTeam, userPrediction, aiPrediction, lea
                 <StatBarShare leftVal={s.home} rightVal={s.away} />
               </div>
             ))}
-            {deepInsights?.h2h?.length > 0 && (
-              <>
-                <div style={{ height: 1, background: "#1a1a2a" }} />
-                <H2HSummaryShare h2h={deepInsights.h2h} homeTeam={homeTeam} awayTeam={awayTeam} />
-              </>
-            )}
+
           </div>
         )}
       </div>
@@ -626,7 +619,15 @@ export default function FootballPredictor() {
     setFixtures([]);
     fetch(`/api/fixtures?leagueId=${selectedLeague}`)
       .then(r => r.json())
-      .then(d => { setFixtures(d.fixtures || []); })
+      .then(d => {
+        const fixtureList = d.fixtures || [];
+        // Cache team logos from API response
+        fixtureList.forEach(f => {
+          if (f.home && f.homeLogo) TEAM_LOGOS[f.home] = f.homeLogo;
+          if (f.away && f.awayLogo) TEAM_LOGOS[f.away] = f.awayLogo;
+        });
+        setFixtures(fixtureList);
+      })
       .catch(() => {})
       .finally(() => setFixturesLoading(false));
   }, [selectedLeague, session]);
@@ -1170,10 +1171,7 @@ export default function FootballPredictor() {
                             style={{ marginBottom: 5, opacity: isLocked ? 0.4 : 1, cursor: isLocked ? "default" : "pointer" }}
                           >
                             <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
-                              {f.homeLogo
-                                ? <img src={f.homeLogo} alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
-                                : <span style={{ fontSize: 16 }}>{TEAM_FLAGS[f.home] || "🏳️"}</span>
-                              }
+                              <img src={f.homeLogo || ""} alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
                               <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{f.home}</span>
                             </div>
                             <div style={{ textAlign: "center", minWidth: 60 }}>
@@ -1189,10 +1187,7 @@ export default function FootballPredictor() {
                             </div>
                             <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, justifyContent: "flex-end" }}>
                               <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{f.away}</span>
-                              {f.awayLogo
-                                ? <img src={f.awayLogo} alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
-                                : <span style={{ fontSize: 16 }}>{TEAM_FLAGS[f.away] || "🏳️"}</span>
-                              }
+                              <img src={f.awayLogo || ""} alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
                             </div>
                           </div>
                         );
@@ -1436,25 +1431,33 @@ export default function FootballPredictor() {
                       </div>
                     )}
 
-                    {/* Form dots */}
-                    {deepInsights.form?.home && (
-                      <div style={{ marginBottom: 10 }}>
-                        <div style={{ fontSize: 12, color: "#ccc", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Recent Form</div>
-                        {[
-                          { team: homeTeam, form: deepInsights.form.home, color: "#4ade80" },
-                          { team: awayTeam, form: deepInsights.form.away, color: "#f59e0b" },
-                        ].map(({ team, form, color }) => (
-                          <div key={team} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                            <span style={{ fontSize: 11, fontWeight: 700, color, minWidth: 70, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{team.split(" ")[0]}</span>
-                            <div style={{ display: "flex", gap: 4 }}>
-                              {(form || "").split("").slice(0, 5).map((r, i) => (
-                                <div key={i} style={{ width: 22, height: 22, borderRadius: "50%", background: r === "W" ? "#4ade80" : r === "D" ? "#60a5fa" : "#f87171", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, color: "#0a0a0f" }}>{r}</div>
-                              ))}
+                    {deepInsights.comparison?.formHome && (() => {
+                      const hRaw = parseFloat(deepInsights.comparison.formHome) || 0;
+                      const aRaw = parseFloat(deepInsights.comparison.formAway) || 0;
+                      const total = hRaw + aRaw || 1;
+                      const hNorm = Math.round((hRaw / total) * 100);
+                      const aNorm = 100 - hNorm;
+                      return (
+                        <div style={{ background: "#13131f", borderRadius: 8, padding: "12px 14px", marginBottom: 10 }}>
+                          <div style={{ fontSize: 12, color: "#ccc", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Current Form Index</div>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                            <div style={{ textAlign: "center" }}>
+                              <div style={{ fontSize: 12, color: "#4ade80", marginBottom: 4, fontWeight: 700 }}>{homeTeam}</div>
+                              <div style={{ fontSize: 22, fontWeight: 800, color: "#f0f0f0" }}>{hNorm}%</div>
+                            </div>
+                            <div style={{ fontSize: 13, color: "#ffffff", fontWeight: 700 }}>vs</div>
+                            <div style={{ textAlign: "center" }}>
+                              <div style={{ fontSize: 12, color: "#f59e0b", marginBottom: 4, fontWeight: 700 }}>{awayTeam}</div>
+                              <div style={{ fontSize: 22, fontWeight: 800, color: "#f0f0f0" }}>{aNorm}%</div>
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    )}
+                          <div style={{ display: "flex", height: 6, borderRadius: 3, overflow: "hidden" }}>
+                            <div style={{ width: hNorm + "%", background: "#4ade80" }} />
+                            <div style={{ width: aNorm + "%", background: "#f59e0b", opacity: 0.6 }} />
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                   </div>
                 )}
@@ -1528,7 +1531,7 @@ export default function FootballPredictor() {
                   {/* Match header */}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", padding: "14px 16px", gap: 8 }}>
                     <div style={{ textAlign: "center" }}>
-                      <TeamFlag team={f.home} size={24} />
+                      <TeamFlag team={f.home} logo={f.homeLogo} size={24} />
                       <div style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", marginTop: 4 }}>{f.home}</div>
                       <div style={{ fontSize: 36, fontWeight: 900, color: isFinished ? "#888" : "#f0f0f0", marginTop: 2 }}>{isLive || isFinished ? (f.score.home ?? 0) : ""}</div>
                     </div>
@@ -1540,7 +1543,7 @@ export default function FootballPredictor() {
                       )}
                     </div>
                     <div style={{ textAlign: "center" }}>
-                      <TeamFlag team={f.away} size={24} />
+                      <TeamFlag team={f.away} logo={f.awayLogo} size={24} />
                       <div style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", marginTop: 4 }}>{f.away}</div>
                       <div style={{ fontSize: 36, fontWeight: 900, color: isFinished ? "#888" : "#f0f0f0", marginTop: 2 }}>{isLive || isFinished ? (f.score.away ?? 0) : ""}</div>
                     </div>
