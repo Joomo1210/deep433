@@ -1379,31 +1379,6 @@ export default function FootballPredictor() {
                       )}
                     </div>
 
-                    {deepInsights.comparison?.formHome && (() => {
-                      const hRaw = parseFloat(deepInsights.comparison.formHome) || 0;
-                      const aRaw = parseFloat(deepInsights.comparison.formAway) || 0;
-                      const total = hRaw + aRaw || 1;
-                      const hNorm = Math.round((hRaw / total) * 100);
-                      const aNorm = 100 - hNorm;
-                      return (
-                        <div style={{ background: "#13131f", borderRadius: 8, padding: "12px 14px", marginBottom: 10 }}>
-                          <div style={{ fontSize: 12, color: "#ccc", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Current Form Index</div>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <div style={{ textAlign: "center" }}>
-                              <div style={{ fontSize: 12, color: "#4ade80", marginBottom: 6, fontWeight: 700 }}>{homeTeam}</div>
-                              <div style={{ fontSize: 22, fontWeight: 800, color: "#f0f0f0" }}>{hNorm}%</div>
-                            </div>
-                            <div style={{ fontSize: 13, color: "#ffffff", fontWeight: 700 }}>vs</div>
-                            <div style={{ textAlign: "center" }}>
-                              <div style={{ fontSize: 12, color: "#f59e0b", marginBottom: 6, fontWeight: 700 }}>{awayTeam}</div>
-                              <div style={{ fontSize: 22, fontWeight: 800, color: "#f0f0f0" }}>{aNorm}%</div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })()}
-
-
                     {deepInsights.h2h?.length > 0 && (() => {
                       const parseH2H = (r) => {
                         const parts = r.match(/^(.+?)\s+(\d+)-(\d+)\s+(.+)$/);
