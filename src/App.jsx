@@ -212,7 +212,7 @@ function H2HSummaryShare({ h2h, homeTeam, awayTeam }) {
   );
 }
 
-function SocialShareCard({ homeTeam, awayTeam, userPrediction, aiPrediction, leagueLabel, deepInsights, onClose }) {
+function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPrediction, aiPrediction, leagueLabel, deepInsights, onClose }) {
   const cardRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
   const [variant, setVariant] = useState("square");
@@ -313,7 +313,7 @@ function SocialShareCard({ homeTeam, awayTeam, userPrediction, aiPrediction, lea
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 6 }}>
                 <div style={{ textAlign: "center" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 6 }}>
-                    <TeamFlag team={homeTeam} size={20} />
+                    {homeLogo && <img src={homeLogo} alt="" crossOrigin="anonymous" style={{ width: 22, height: 22, objectFit: "contain" }} />}
                     <span style={{ fontSize: 13, fontWeight: 900, color: "#4ade80" }}>{homeTeam}</span>
                   </div>
                   <div style={{ fontSize: 44, fontWeight: 900, color: "#4ade80", lineHeight: 1 }}>{userPrediction.split("-")[0]}</div>
@@ -325,7 +325,7 @@ function SocialShareCard({ homeTeam, awayTeam, userPrediction, aiPrediction, lea
                 <div style={{ textAlign: "center" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 6 }}>
                     <span style={{ fontSize: 13, fontWeight: 900, color: "#f59e0b" }}>{awayTeam}</span>
-                    <TeamFlag team={awayTeam} size={20} />
+                    {awayLogo && <img src={awayLogo} alt="" crossOrigin="anonymous" style={{ width: 22, height: 22, objectFit: "contain" }} />}
                   </div>
                   <div style={{ fontSize: 44, fontWeight: 900, color: "#f59e0b", lineHeight: 1 }}>{userPrediction.split("-")[1]}</div>
                 </div>
@@ -1909,6 +1909,8 @@ export default function FootballPredictor() {
         <SocialShareCard
           homeTeam={homeTeam}
           awayTeam={awayTeam}
+          homeLogo={findFixture(homeTeam, awayTeam)?.homeLogo || TEAM_LOGOS[homeTeam] || null}
+          awayLogo={findFixture(homeTeam, awayTeam)?.awayLogo || TEAM_LOGOS[awayTeam] || null}
           userPrediction={userPrediction}
           aiPrediction={result?.scoreline || ""}
           leagueLabel={leagueLabel}
