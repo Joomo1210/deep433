@@ -38,24 +38,6 @@ const LEAGUES = [
   { id: "copamerica", label: "Copa America",        short: "Copa America" },
 ];
 
-const WC_FIXTURES = [
-  { date: "Sun 28 Jun", kickoff: "2026-06-28T19:00:00Z", home: "South Africa", away: "Canada", group: "Round of 32", venue: "SoFi Stadium" },
-  { date: "Mon 29 Jun", kickoff: "2026-06-29T17:00:00Z", home: "Brazil", away: "Japan", group: "Round of 32", venue: "NRG Stadium" },
-  { date: "Mon 29 Jun", kickoff: "2026-06-29T20:30:00Z", home: "Germany", away: "Paraguay", group: "Round of 32", venue: "Gillette Stadium" },
-  { date: "Tue 30 Jun", kickoff: "2026-06-30T01:00:00Z", home: "Netherlands", away: "Morocco", group: "Round of 32", venue: "Estadio BBVA" },
-  { date: "Tue 30 Jun", kickoff: "2026-06-30T17:00:00Z", home: "Côte d'Ivoire", away: "Norway", group: "Round of 32", venue: "AT&T Stadium" },
-  { date: "Tue 30 Jun", kickoff: "2026-06-30T21:00:00Z", home: "France", away: "Sweden", group: "Round of 32", venue: "MetLife Stadium" },
-  { date: "Wed 1 Jul", kickoff: "2026-07-01T01:00:00Z", home: "Mexico", away: "Ecuador", group: "Round of 32", venue: "Estadio Azteca" },
-  { date: "Wed 1 Jul", kickoff: "2026-07-01T16:00:00Z", home: "England", away: "Congo DR", group: "Round of 32", venue: "Mercedes-Benz Stadium" },
-  { date: "Thu 3 Jul", kickoff: "2026-07-02T21:00:00Z", home: "Portugal", away: "Croatia", group: "Round of 32", venue: "Toronto Stadium" },
-  { date: "Thu 2 Jul", kickoff: "2026-07-02T00:00:00Z", home: "USA", away: "Bosnia and Herzegovina", group: "Round of 32", venue: "Levi's Stadium" },
-  { date: "Thu 2 Jul", kickoff: "2026-07-02T19:00:00Z", home: "Spain", away: "Austria", group: "Round of 32", venue: "SoFi Stadium" },
-  { date: "Fri 3 Jul", kickoff: "2026-07-03T03:00:00Z", home: "Switzerland", away: "Algeria", group: "Round of 32", venue: "BC Place" },
-  { date: "Fri 3 Jul", kickoff: "2026-07-03T18:00:00Z", home: "Australia", away: "Egypt", group: "Round of 32", venue: "AT&T Stadium" },
-  { date: "Fri 3 Jul", kickoff: "2026-07-03T22:00:00Z", home: "Argentina", away: "Cape Verde Islands", group: "Round of 32", venue: "Hard Rock Stadium" },
-  { date: "Sat 4 Jul", kickoff: "2026-07-04T01:30:00Z", home: "Colombia", away: "Ghana", group: "Round of 32", venue: "Arrowhead Stadium" },
-];
-
 const BADGE_DEFS = [
   { icon: "⚽", name: "Sunday League Scout", desc: "First prediction made", color: "#888", condition: (s) => s.total >= 1 },
   { icon: "🤖", name: "AI Beater", desc: "Beat the AI once", color: "#60a5fa", condition: (s) => s.beatAI >= 1 },
@@ -531,7 +513,9 @@ export default function FootballPredictor() {
   const [liveEvents, setLiveEvents] = useState({});
   const [expandedLive, setExpandedLive] = useState(null);
   const [showShareCard, setShowShareCard] = useState(false);
-  const [userRole, setUserRole] = useState("user"); // fixtureId of expanded match
+  const [userRole, setUserRole] = useState("user");
+  const [fixtures, setFixtures] = useState([]);
+  const [fixturesLoading, setFixturesLoading] = useState(false); // fixtureId of expanded match
   const [confirmedLineup, setConfirmedLineup] = useState(null);
   const [lineupFetching, setLineupFetching] = useState(false);
   const [viewingPitch, setViewingPitch] = useState(null);
@@ -554,7 +538,7 @@ export default function FootballPredictor() {
   const findFixture = (homeTeam, awayTeam) => {
     const h = normalize(homeTeam);
     const a = normalize(awayTeam);
-    return WC_FIXTURES.find(f =>
+    return fixtures.find(f =>
       (normalize(f.home) === h && normalize(f.away) === a) ||
       (normalize(f.home) === a && normalize(f.away) === h)
     );
@@ -599,6 +583,18 @@ export default function FootballPredictor() {
     });
     return () => subscription.unsubscribe();
   }, []);
+
+  // Fetch fixtures for the selected league
+  useEffect(() => {
+    if (!session) return;
+    setFixturesLoading(true);
+    setFixtures([]);
+    fetch(`/api/fixtures?leagueId=${selectedLeague}`)
+      .then(r => r.json())
+      .then(d => { setFixtures(d.fixtures || []); })
+      .catch(() => {})
+      .finally(() => setFixturesLoading(false));
+  }, [selectedLeague, session]);
 
   // Poll live scores every 3 minutes for the currently selected league
   useEffect(() => {
@@ -755,13 +751,25 @@ export default function FootballPredictor() {
   const copyShare = () => { navigator.clipboard.writeText(shareText).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }); };
 
   // Group fixtures by date, filtered by search
+  // Group fixtures by date label (Today / Tomorrow / Fri 4 Jul etc.)
+  const getDateLabel = (dateStr) => {
+    const now = new Date();
+    const today = now.toISOString().split("T")[0];
+    const tomorrow = new Date(now.getTime() + 86400000).toISOString().split("T")[0];
+    if (dateStr === today) return "Today";
+    if (dateStr === tomorrow) return "Tomorrow";
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+  };
+
   const filteredFixtures = fixtureSearch.trim()
-    ? WC_FIXTURES.filter(f => f.home.toLowerCase().includes(fixtureSearch.toLowerCase()) || f.away.toLowerCase().includes(fixtureSearch.toLowerCase()))
-    : WC_FIXTURES;
+    ? fixtures.filter(f => f.home.toLowerCase().includes(fixtureSearch.toLowerCase()) || f.away.toLowerCase().includes(fixtureSearch.toLowerCase()))
+    : fixtures;
 
   const fixturesByDate = filteredFixtures.reduce((acc, f) => {
-    if (!acc[f.date]) acc[f.date] = [];
-    acc[f.date].push(f);
+    const label = getDateLabel(f.date);
+    if (!acc[label]) acc[label] = [];
+    acc[label].push(f);
     return acc;
   }, {});
 
@@ -1103,36 +1111,61 @@ export default function FootballPredictor() {
                 </div>
 
                 {/* World Cup fixture quick-pick */}
-                {isWorldCup && (
-                  <>
-                    <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>🏆 Or pick a World Cup fixture</div>
-                    <input className="search-input" placeholder="🔍 Search team..." value={fixtureSearch} onChange={e => setFixtureSearch(e.target.value)} style={{ marginBottom: 12 }} />
-                    <div style={{ maxHeight: 320, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
-                      {Object.entries(fixturesByDate).map(([date, fixtures]) => (
-                        <div key={date}>
-                          <div style={{ fontSize: 10, color: "#444", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6, marginTop: 4 }}>{date}</div>
-                          {fixtures.map((f, i) => (
-                            <div key={i} className={`fixture-row${homeTeam === f.home && awayTeam === f.away ? " selected" : ""}`} onClick={() => {
-                              const status = getMatchStatus(f.home, f.away);
-                              if (status === "upcoming" || status === "unknown") selectFixture(f);
-                            }} style={{ marginBottom: 5, opacity: (getMatchStatus(f.home, f.away) === "finished" || getMatchStatus(f.home, f.away) === "live") ? 0.4 : 1, cursor: (getMatchStatus(f.home, f.away) === "finished" || getMatchStatus(f.home, f.away) === "live") ? "default" : "pointer" }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
-                                <span style={{ fontSize: 16 }}>{TEAM_FLAGS[f.home] || "🏳️"}</span>
-                                <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{f.home}</span>
-                              </div>
-                              <div style={{ fontSize: 11, color: "#555", fontWeight: 700 }}>vs</div>
-                              <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, justifyContent: "flex-end" }}>
-                                <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{f.away}</span>
-                                <span style={{ fontSize: 16 }}>{TEAM_FLAGS[f.away] || "🏳️"}</span>
-                              </div>
-                              <div style={{ fontSize: 10, color: "#555", minWidth: 60, textAlign: "right" }}>{f.group}</div>
-                            </div>
-                          ))}
-                        </div>
-                      ))}
-                    </div>
-                  </>
+                {/* Live fixture picker — works for all leagues */}
+                <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Or pick a fixture</div>
+                <input className="search-input" placeholder="🔍 Search team..." value={fixtureSearch} onChange={e => setFixtureSearch(e.target.value)} style={{ marginBottom: 12 }} />
+
+                {fixturesLoading && (
+                  <div style={{ textAlign: "center", color: "#555", fontSize: 13, padding: "20px 0" }}>Loading fixtures...</div>
                 )}
+
+                {!fixturesLoading && fixtures.length === 0 && (
+                  <div style={{ textAlign: "center", color: "#444", fontSize: 13, padding: "20px 0" }}>No upcoming fixtures found for this competition</div>
+                )}
+
+                <div style={{ maxHeight: 320, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
+                  {Object.entries(fixturesByDate).map(([date, dateFixtures]) => (
+                    <div key={date}>
+                      <div style={{ fontSize: 10, color: date === "Today" ? "#4ade80" : date === "Tomorrow" ? "#f59e0b" : "#444", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6, marginTop: 4 }}>{date}</div>
+                      {dateFixtures.map((f, i) => {
+                        const status = getMatchStatus(f.home, f.away);
+                        const isLocked = status === "finished" || status === "live";
+                        return (
+                          <div key={i} className={`fixture-row${homeTeam === f.home && awayTeam === f.away ? " selected" : ""}`}
+                            onClick={() => { if (!isLocked) selectFixture(f); }}
+                            style={{ marginBottom: 5, opacity: isLocked ? 0.4 : 1, cursor: isLocked ? "default" : "pointer" }}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
+                              {f.homeLogo
+                                ? <img src={f.homeLogo} alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
+                                : <span style={{ fontSize: 16 }}>{TEAM_FLAGS[f.home] || "🏳️"}</span>
+                              }
+                              <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{f.home}</span>
+                            </div>
+                            <div style={{ textAlign: "center", minWidth: 60 }}>
+                              {isLocked && status === "finished"
+                                ? <span style={{ fontSize: 12, fontWeight: 800, color: "#555" }}>{f.score.home}-{f.score.away}</span>
+                                : status === "live"
+                                ? <span style={{ fontSize: 10, color: "#ef4444", fontWeight: 700 }}>🔴 LIVE</span>
+                                : <span style={{ fontSize: 10, color: "#555" }}>
+                                    {new Date(f.kickoff).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} BST
+                                  </span>
+                              }
+                              <div style={{ fontSize: 9, color: "#333", marginTop: 2 }}>{f.round}</div>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, justifyContent: "flex-end" }}>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{f.away}</span>
+                              {f.awayLogo
+                                ? <img src={f.awayLogo} alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
+                                : <span style={{ fontSize: 16 }}>{TEAM_FLAGS[f.away] || "🏳️"}</span>
+                              }
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
 
                 {error && <div style={{ color: "#f87171", fontSize: 13, margin: "12px 0" }}>{error}</div>}
                 <button className="predict-btn" onClick={goToStep2} disabled={!homeTeam || !awayTeam} style={{ marginTop: 16 }}>
