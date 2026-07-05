@@ -51,7 +51,7 @@ export default async function handler(req, res) {
     const data = await r.json();
     const all = data.response || [];
 
-    // Filter to knockout rounds only (exclude group stage)
+    // Filter to knockout rounds only
     const knockout = all.filter(f => {
       const round = (f.league?.round || "").toLowerCase();
       return ROUND_ORDER.some(ro => round.includes(ro));
@@ -93,12 +93,21 @@ export default async function handler(req, res) {
       rounds[f.round].push(f);
     });
 
-    // Return as ordered array of rounds
-    const bracketRounds = Object.entries(rounds)
+    const allRounds = Object.entries(rounds)
       .sort(([, a], [, b]) => a[0].roundOrder - b[0].roundOrder)
       .map(([round, matches]) => ({ round, matches }));
 
-    res.status(200).json({ available: true, rounds: bracketRounds });
+    // Find current active round — earliest round with live or upcoming matches
+    const currentIdx = allRounds.findIndex(r =>
+      r.matches.some(m => m.status === "live" || m.status === "upcoming")
+    );
+
+    // Show current + next round. If all done, show last two rounds.
+    const displayRounds = currentIdx === -1
+      ? allRounds.slice(-2)
+      : allRounds.slice(currentIdx, currentIdx + 2);
+
+    res.status(200).json({ available: true, rounds: displayRounds });
   } catch (err) {
     res.status(500).json({ available: false, error: err.message });
   }
