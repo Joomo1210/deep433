@@ -29,21 +29,19 @@ export default async function handler(req, res) {
   // ─────────────────────────────────────────────────────────────────────────
 
   // ── Fetch live squads from API-Football using fixtureId ──────────────────
-  const fetchWithTimeout = (url, options, ms = 5000) => {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), ms);
-    return fetch(url, { ...options, signal: controller.signal })
-      .finally(() => clearTimeout(timer));
-  };
+  const safeGet = (url, headers) => Promise.race([
+    fetch(url, { headers }).then(r => r.json()).catch(() => null),
+    new Promise(resolve => setTimeout(() => resolve(null), 4000))
+  ]);
 
   async function fetchLiveSquad(teamId) {
     if (!teamId) return null;
     try {
-      const r = await fetchWithTimeout(`https://v3.football.api-sports.io/players/squads?team=${teamId}`, {
-        headers: { 'x-apisports-key': process.env.API_FOOTBALL_KEY }
-      });
-      const data = await r.json();
-      const players = data.response?.[0]?.players || [];
+      const data = await safeGet(
+        `https://v3.football.api-sports.io/players/squads?team=${teamId}`,
+        { 'x-apisports-key': process.env.API_FOOTBALL_KEY }
+      );
+      const players = data?.response?.[0]?.players || [];
       if (!players.length) return null;
       const byPos = { GK: [], DEF: [], MID: [], ATT: [] };
       players.forEach(p => {
@@ -53,13 +51,12 @@ export default async function handler(req, res) {
         else if (pos === 'Midfielder') byPos.MID.push(p.name);
         else if (pos === 'Attacker') byPos.ATT.push(p.name);
       });
-      const all = [
+      return [
         ...byPos.GK.map(n => `GK: ${n}`),
         ...byPos.DEF.map(n => `DEF: ${n}`),
         ...byPos.MID.map(n => `MID: ${n}`),
         ...byPos.ATT.map(n => `FWD: ${n}`),
-      ];
-      return all.join(', ');
+      ].join(', ') || null;
     } catch { return null; }
   }
 
@@ -69,11 +66,11 @@ export default async function handler(req, res) {
 
   if (fixtureId) {
     try {
-      const fixR = await fetchWithTimeout(`https://v3.football.api-sports.io/fixtures?id=${fixtureId}`, {
-        headers: { 'x-apisports-key': process.env.API_FOOTBALL_KEY }
-      });
-      const fixData = await fixR.json();
-      const fix = fixData.response?.[0];
+      const fixData = await safeGet(
+        `https://v3.football.api-sports.io/fixtures?id=${fixtureId}`,
+        { 'x-apisports-key': process.env.API_FOOTBALL_KEY }
+      );
+      const fix = fixData?.response?.[0];
       if (fix) {
         const homeId = fix.teams?.home?.id;
         const awayId = fix.teams?.away?.id;
@@ -115,8 +112,8 @@ Do NOT invent players. Do NOT use players from other teams. Only use names exact
 
     // Process injuries
     try {
-      if (injuryRes.status === "fulfilled" && injuryRes.value.ok) {
-        const injuryData = await injuryRes.value.json();
+      if (injuryRes.status === "fulfilled" && injuryRes.value) {
+        const injuryData = injuryRes.value;
         const injuries = injuryData.response || [];
         if (injuries.length) {
           const homeTeamId = injuries[0]?.team?.id;
@@ -139,8 +136,8 @@ Do NOT invent players. Do NOT use players from other teams. Only use names exact
 
     // Process insights/predictions
     try {
-      if (insightsRes.status === "fulfilled" && insightsRes.value.ok) {
-        const insightsData = await insightsRes.value.json();
+      if (insightsRes.status === "fulfilled" && insightsRes.value) {
+        const insightsData = insightsRes.value;
         const pred = insightsData.response?.[0];
         if (pred) {
           const pct = pred.predictions?.percent;
