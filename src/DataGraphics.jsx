@@ -1410,12 +1410,14 @@ function MatchPitchViewGraphic() {
     setDownloading(false);
   };
 
-  // Group players by grid row
+  // Grid format from API: "row:col" where row=depth, col=horizontal position
   const groupByRow = (players) => {
     const rows = {};
     (players || []).forEach(p => {
       if (!p.grid) return;
-      const [col, row] = p.grid.split(":").map(Number);
+      const parts = p.grid.split(":");
+      const row = parseInt(parts[0]);
+      const col = parseInt(parts[1]);
       if (!rows[row]) rows[row] = [];
       rows[row].push({ ...p, col });
     });
