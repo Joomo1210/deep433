@@ -1034,9 +1034,9 @@ function BracketGraphic({ history = [] }) {
               <span style={{ fontSize: 7, color: "#555" }}>deep433.com</span>
             </div>
             <div style={{ textAlign: "center", marginBottom: 14 }}>
-              <span style={{ fontSize: 9, color: "#888", textTransform: "uppercase", letterSpacing: 2 }}>
-                {CUP_LEAGUES.find(l => l.id === leagueId)?.label} · Bracket
-              </span>
+              <div style={{ fontSize: 13, color: "#f0f0f0", fontWeight: 900, textTransform: "uppercase", letterSpacing: 2 }}>
+                {CUP_LEAGUES.find(l => l.id === leagueId)?.label}
+              </div>
             </div>
 
             <div style={{ display: "flex", alignItems: "center", overflowX: "auto" }}>
