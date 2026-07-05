@@ -1358,12 +1358,224 @@ function DeepInsightsGraphic() {
   );
 }
 
+// ─── MATCH PITCH VIEW GRAPHIC ────────────────────────────────────────────────
+function MatchPitchViewGraphic() {
+  const cardRef = useRef(null);
+  const [selectedFixture, setSelectedFixture] = useState(null);
+  const [lineup, setLineup] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSelect = async (f) => {
+    setSelectedFixture(f);
+    setLineup(null);
+    setError("");
+    if (!f.fixtureId) { setError("No fixture ID available"); return; }
+    setLoading(true);
+    try {
+      const r = await fetch(`/api/match-lineup?fixtureId=${f.fixtureId}`);
+      const d = await r.json();
+      if (!d.home?.players?.length) throw new Error("Lineup not confirmed yet — check back closer to kickoff");
+      setLineup(d);
+    } catch (e) { setError(e.message); }
+    setLoading(false);
+  };
+
+  const download = async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      if (!window.html2canvas) {
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+        document.head.appendChild(s);
+        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
+      }
+      const canvas = await window.html2canvas(cardRef.current, {
+        backgroundColor: "#0a3d1f", scale: 2, useCORS: true, logging: false,
+        allowTaint: false,
+      });
+      const link = document.createElement("a");
+      link.download = `deep433-lineup-${selectedFixture?.home}-vs-${selectedFixture?.away}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch { alert("Download failed — try screenshotting manually"); }
+    setDownloading(false);
+  };
+
+  // Group players by grid row
+  const groupByRow = (players) => {
+    const rows = {};
+    (players || []).forEach(p => {
+      if (!p.grid) return;
+      const [col, row] = p.grid.split(":").map(Number);
+      if (!rows[row]) rows[row] = [];
+      rows[row].push({ ...p, col });
+    });
+    return Object.entries(rows)
+      .sort(([a], [b]) => Number(a) - Number(b))
+      .map(([, players]) => players.sort((a, b) => a.col - b.col));
+  };
+
+  const PlayerNode = ({ player, color }) => (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, width: 52 }}>
+      <div style={{ position: "relative" }}>
+        {player.photo ? (
+          <img
+            src={player.photo}
+            alt=""
+            crossOrigin="anonymous"
+            style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", border: `2px solid ${color}`, display: "block" }}
+          />
+        ) : (
+          <div style={{ width: 36, height: 36, borderRadius: "50%", background: color + "33", border: `2px solid ${color}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ fontSize: 12, fontWeight: 900, color }}>{player.number}</span>
+          </div>
+        )}
+        <div style={{ position: "absolute", bottom: -2, right: -2, background: color, borderRadius: "50%", width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <span style={{ fontSize: 8, fontWeight: 900, color: "#0a0a0f" }}>{player.number}</span>
+        </div>
+      </div>
+      <div style={{ fontSize: 8, fontWeight: 700, color: "#f0f0f0", textAlign: "center", lineHeight: 1.2, maxWidth: 52, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {player.name?.split(" ").slice(-1)[0]}
+      </div>
+    </div>
+  );
+
+  const TeamRows = ({ players, color, reverse = false }) => {
+    const rows = groupByRow(players);
+    const displayRows = reverse ? [...rows].reverse() : rows;
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "8px 0" }}>
+        {displayRows.map((row, ri) => (
+          <div key={ri} style={{ display: "flex", justifyContent: "space-around", alignItems: "center" }}>
+            {row.map((p, pi) => <PlayerNode key={pi} player={p} color={color} />)}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {!selectedFixture ? (
+        <FixturePicker onSelect={handleSelect} />
+      ) : (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
+            <button onClick={() => { setSelectedFixture(null); setLineup(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "4px 10px" }}>Change</button>
+          </div>
+
+          {loading && <div style={{ textAlign: "center", color: "#555", fontSize: 13, padding: "20px 0" }}>Loading lineup...</div>}
+          {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
+
+          {lineup && (
+            <>
+              <div
+                ref={cardRef}
+                style={{
+                  position: "relative",
+                  width: "100%",
+                  maxWidth: 420,
+                  margin: "0 auto",
+                  borderRadius: 14,
+                  overflow: "hidden",
+                  fontFamily: "'Inter',sans-serif",
+                }}
+              >
+                {/* Pitch background SVG */}
+                <svg viewBox="0 0 420 680" xmlns="http://www.w3.org/2000/svg" style={{ display: "block", width: "100%" }}>
+                  {/* Pitch */}
+                  <rect width="420" height="680" fill="#0a3d1f" />
+                  {/* Pitch outline */}
+                  <rect x="20" y="20" width="380" height="640" fill="none" stroke="#1a6b3a" strokeWidth="2" rx="2" />
+                  {/* Centre line */}
+                  <line x1="20" y1="340" x2="400" y2="340" stroke="#1a6b3a" strokeWidth="2" />
+                  {/* Centre circle */}
+                  <circle cx="210" cy="340" r="55" fill="none" stroke="#1a6b3a" strokeWidth="2" />
+                  <circle cx="210" cy="340" r="3" fill="#1a6b3a" />
+                  {/* Top penalty area */}
+                  <rect x="100" y="20" width="220" height="90" fill="none" stroke="#1a6b3a" strokeWidth="2" />
+                  <rect x="155" y="20" width="110" height="40" fill="none" stroke="#1a6b3a" strokeWidth="2" />
+                  <circle cx="210" cy="95" r="4" fill="#1a6b3a" />
+                  {/* Top penalty arc */}
+                  <path d="M 170 110 A 55 55 0 0 1 250 110" fill="none" stroke="#1a6b3a" strokeWidth="2" />
+                  {/* Bottom penalty area */}
+                  <rect x="100" y="570" width="220" height="90" fill="none" stroke="#1a6b3a" strokeWidth="2" />
+                  <rect x="155" y="640" width="110" height="40" fill="none" stroke="#1a6b3a" strokeWidth="2" />
+                  <circle cx="210" cy="585" r="4" fill="#1a6b3a" />
+                  {/* Bottom penalty arc */}
+                  <path d="M 170 570 A 55 55 0 0 0 250 570" fill="none" stroke="#1a6b3a" strokeWidth="2" />
+                  {/* Grass stripes */}
+                  {[0,1,2,3,4,5,6].map(i => (
+                    <rect key={i} x="20" y={20 + i * 91} width="380" height="45" fill={i % 2 === 0 ? "rgba(255,255,255,0.02)" : "transparent"} />
+                  ))}
+                </svg>
+
+                {/* Players overlaid on pitch */}
+                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", padding: "24px 8px" }}>
+                  {/* Brand */}
+                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
+                  <div style={{ position: "absolute", top: 8, right: 10, display: "flex", alignItems: "center", gap: 4 }}>
+                    <span style={{ fontSize: 8, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
+                  </div>
+
+                  {/* Watermark */}
+                  <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+                    <div style={{ fontSize: 52, fontWeight: 900, color: "#4ade80", opacity: 0.04, letterSpacing: 4, transform: "rotate(-15deg)", userSelect: "none" }}>DEEP433</div>
+                  </div>
+
+                  {/* Home team header */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4, paddingLeft: 4 }}>
+                    {selectedFixture.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 18, height: 18, objectFit: "contain" }} />}
+                    <span style={{ fontSize: 10, fontWeight: 800, color: "#4ade80" }}>{selectedFixture.home}</span>
+                    <span style={{ fontSize: 9, color: "#555" }}>{lineup.home?.formation}</span>
+                  </div>
+
+                  {/* Home team players */}
+                  <div style={{ flex: 1 }}>
+                    <TeamRows players={lineup.home?.players} color="#4ade80" reverse={false} />
+                  </div>
+
+                  {/* Centre line label */}
+                  <div style={{ textAlign: "center", padding: "4px 0" }}>
+                    <span style={{ fontSize: 8, color: "#1a6b3a", fontWeight: 700, letterSpacing: 2 }}>· · · · · · · · · · · · · ·</span>
+                  </div>
+
+                  {/* Away team players */}
+                  <div style={{ flex: 1 }}>
+                    <TeamRows players={lineup.away?.players} color="#f59e0b" reverse={true} />
+                  </div>
+
+                  {/* Away team header */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, paddingLeft: 4 }}>
+                    {selectedFixture.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 18, height: 18, objectFit: "contain" }} />}
+                    <span style={{ fontSize: 10, fontWeight: 800, color: "#f59e0b" }}>{selectedFixture.away}</span>
+                    <span style={{ fontSize: 9, color: "#555" }}>{lineup.away?.formation}</span>
+                  </div>
+                </div>
+              </div>
+
+              <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%" }}>
+                {downloading ? "Generating..." : "⬇ Download Pitch View PNG"}
+              </button>
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── MAIN EXPORT ─────────────────────────────────────────────────────────────
 export default function DataGraphics({ history = [], supabase }) {
   const [activeSection, setActiveSection] = useState("match");
 
   const sections = [
     { id: "insights", label: "📊 Deep Insights" },
+    { id: "pitch",    label: "⚽ Pitch View" },
     { id: "match",    label: "📈 Match Stats" },
     { id: "player",   label: "⭐ Player Ratings" },
     { id: "top",      label: "🥇 Leaderboard" },
@@ -1385,6 +1597,7 @@ export default function DataGraphics({ history = [], supabase }) {
       </div>
 
       {activeSection === "insights" && <DeepInsightsGraphic />}
+      {activeSection === "pitch"    && <MatchPitchViewGraphic />}
       {activeSection === "match"    && <MatchStatsGraphic />}
       {activeSection === "player"   && <PlayerRatingsGraphic />}
       {activeSection === "top"      && <TopScorersGraphic />}
