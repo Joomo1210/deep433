@@ -839,8 +839,14 @@ export default function FootballPredictor() {
   // Group fixtures by date label (Today / Tomorrow / Fri 4 Jul etc.)
   const getDateLabel = (dateStr) => {
     const now = new Date();
-    const today = now.toISOString().split("T")[0];
-    const tomorrow = new Date(now.getTime() + 86400000).toISOString().split("T")[0];
+    const localDate = (d) => {
+      const yr = d.getFullYear();
+      const mo = String(d.getMonth()+1).padStart(2,"0");
+      const dy = String(d.getDate()).padStart(2,"0");
+      return `${yr}-${mo}-${dy}`;
+    };
+    const today = localDate(now);
+    const tomorrow = localDate(new Date(now.getTime() + 86400000));
     if (dateStr === today) return "Today";
     if (dateStr === tomorrow) return "Tomorrow";
     const d = new Date(dateStr);
