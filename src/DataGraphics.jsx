@@ -877,16 +877,260 @@ function RecapGraphic({ history = [] }) {
   );
 }
 
+// ─── BRACKET GRAPHIC ─────────────────────────────────────────────────────────
+function BracketGraphic({ history = [] }) {
+  const cardRef = useRef(null);
+  const [leagueId, setLeagueId] = useState("wc2026");
+  const [rounds, setRounds] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedQF, setSelectedQF] = useState(null); // index of QF match to highlight
+  const [downloading, setDownloading] = useState(false);
+  const [variant, setVariant] = useState("square");
+
+  const CUP_LEAGUES = [
+    { id: "wc2026",     label: "World Cup 2026" },
+    { id: "ucl",        label: "Champions League" },
+    { id: "uel",        label: "Europa League" },
+    { id: "facup",      label: "FA Cup" },
+    { id: "copadelrey", label: "Copa del Rey" },
+    { id: "afcon",      label: "AFCON" },
+    { id: "copamerica", label: "Copa America" },
+  ];
+
+  const fetchBracket = async (lid) => {
+    setLoading(true); setRounds([]); setSelectedQF(null);
+    try {
+      const r = await fetch(`/api/bracket?leagueId=${lid}`);
+      const d = await r.json();
+      setRounds(d.rounds || []);
+    } catch {}
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchBracket(leagueId); }, [leagueId]);
+
+  const download = async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      if (!window.html2canvas) {
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+        document.head.appendChild(s);
+        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
+      }
+      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
+      const link = document.createElement("a");
+      link.download = `deep433-bracket-${leagueId}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const norm = s => (s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+
+  const getUserPred = (m) => history.find(h =>
+    (norm(h.home_team) === norm(m.home) && norm(h.away_team) === norm(m.away)) ||
+    (norm(h.home_team) === norm(m.away) && norm(h.away_team) === norm(m.home))
+  );
+
+  const MatchNode = ({ m, highlight, size = "normal" }) => {
+    const isFinished = m.status === "finished";
+    const isLive = m.status === "live";
+    const homeWon = isFinished && m.score.home > m.score.away;
+    const awayWon = isFinished && m.score.away > m.score.home;
+    const userPred = getUserPred(m);
+    const logoSize = size === "large" ? 28 : 18;
+    const fontSize = size === "large" ? 13 : 11;
+    const scoreFontSize = size === "large" ? 16 : 13;
+
+    return (
+      <div style={{
+        background: "#13131f",
+        border: `1.5px solid ${highlight ? "#4ade80" : isLive ? "#ef4444" : "#1e1e30"}`,
+        borderRadius: 10, overflow: "hidden", width: size === "large" ? 180 : 160,
+        boxShadow: highlight ? "0 0 12px rgba(74,222,128,0.3)" : "none",
+      }}>
+        {isLive && <div style={{ height: 2, background: "#ef4444", width: "100%" }} />}
+        {[
+          { name: m.home, logo: m.homeLogo, score: m.score.home, won: homeWon },
+          { name: m.away, logo: m.awayLogo, score: m.score.away, won: awayWon },
+        ].map((team, ti) => (
+          <div key={ti} style={{
+            display: "flex", alignItems: "center", gap: 6, padding: "7px 8px",
+            background: team.won ? "#4ade8010" : "transparent",
+            borderBottom: ti === 0 ? "1px solid #0f0f1a" : "none",
+          }}>
+            {team.logo
+              ? <img src={team.logo} alt="" crossOrigin="anonymous" style={{ width: logoSize, height: logoSize, objectFit: "contain", flexShrink: 0 }} />
+              : <div style={{ width: logoSize, height: logoSize, background: "#1a1a2a", borderRadius: "50%", flexShrink: 0 }} />
+            }
+            <span style={{ fontSize, fontWeight: team.won ? 800 : 600, color: team.won ? "#4ade80" : "#f0f0f0", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {team.name || "TBD"}
+            </span>
+            {(isLive || isFinished) && (
+              <span style={{ fontSize: scoreFontSize, fontWeight: 900, color: team.won ? "#4ade80" : "#888" }}>
+                {team.score ?? 0}
+              </span>
+            )}
+          </div>
+        ))}
+        <div style={{ padding: "3px 8px", background: "#0d0d18", display: "flex", justifyContent: "space-between" }}>
+          <span style={{ fontSize: 8, color: isLive ? "#ef4444" : "#555", fontWeight: 700 }}>
+            {isLive ? `🔴 LIVE` : isFinished ? m.statusRaw : new Date(m.kickoff).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+          </span>
+          {userPred && <span style={{ fontSize: 8, color: "#4ade80" }}>✓ {userPred.user_prediction}</span>}
+        </div>
+      </div>
+    );
+  };
+
+  // Find the focused 3-node block: pick two feeder matches + one QF/next round match
+  // Group rounds into pairs for the focused card
+  const qfRound = rounds.find(r => r.round?.toLowerCase().includes("quarter"));
+  const r16Round = rounds.find(r => r.round?.toLowerCase().includes("round of 16") || r.round?.toLowerCase().includes("round of 32"));
+  const focusedMatches = qfRound?.matches || [];
+
+  const isLandscape = variant === "landscape";
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {/* League selector */}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {CUP_LEAGUES.map(l => (
+          <button key={l.id} onClick={() => setLeagueId(l.id)} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
+            {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
+            {l.label}
+          </button>
+        ))}
+      </div>
+
+      {loading && <div style={{ textAlign: "center", color: "#555", fontSize: 13, padding: "20px 0" }}>Loading bracket...</div>}
+
+      {!loading && rounds.length > 0 && (
+        <>
+          {/* Pick QF match to feature */}
+          {focusedMatches.length > 0 && (
+            <div>
+              <div style={{ fontSize: 11, color: "#aaa", fontWeight: 700, marginBottom: 8 }}>Select match to feature on card:</div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {focusedMatches.map((m, i) => (
+                  <button key={i} onClick={() => setSelectedQF(i)} style={{ background: selectedQF === i ? "#a855f722" : "none", border: `1px solid ${selectedQF === i ? "#a855f7" : "#2a2a3a"}`, borderRadius: 8, color: selectedQF === i ? "#a855f7" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "6px 12px" }}>
+                    {m.home?.split(" ").slice(-1)[0] || "TBD"} vs {m.away?.split(" ").slice(-1)[0] || "TBD"}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Variant selector */}
+          <div style={{ display: "flex", gap: 8 }}>
+            {["square", "landscape"].map(v => (
+              <button key={v} onClick={() => setVariant(v)} style={{ flex: 1, background: variant === v ? "#4ade8022" : "none", border: `1px solid ${variant === v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: variant === v ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "8px" }}>
+                {v === "square" ? "1:1 Square" : "16:9 Landscape"}
+              </button>
+            ))}
+          </div>
+
+          {/* Bracket share card */}
+          <div
+            ref={cardRef}
+            style={{
+              background: "linear-gradient(145deg, #0a0a0f 0%, #0d0d1a 60%, #0a0f0a 100%)",
+              border: "1px solid #1e1e30", borderRadius: 14, overflow: "hidden",
+              position: "relative", padding: "28px 20px 20px",
+              width: isLandscape ? Math.min(700, window.innerWidth - 32) : Math.min(420, window.innerWidth - 32),
+              aspectRatio: isLandscape ? "16/9" : "1/1",
+              display: "flex", flexDirection: "column", justifyContent: "space-between",
+              fontFamily: "'Inter',sans-serif",
+            }}
+          >
+            {/* Brand */}
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
+            <div style={{ position: "absolute", top: 12, right: 14, display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 10, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
+              <span style={{ fontSize: 8, color: "#555" }}>deep433.com</span>
+            </div>
+
+            {/* Competition + round header */}
+            <div style={{ textAlign: "center", marginBottom: 16 }}>
+              <div style={{ fontSize: 10, color: "#888", textTransform: "uppercase", letterSpacing: 2, marginBottom: 4 }}>
+                {CUP_LEAGUES.find(l => l.id === leagueId)?.label}
+              </div>
+              {selectedQF !== null && focusedMatches[selectedQF] && (
+                <div style={{ fontSize: 13, fontWeight: 900, color: "#a855f7", textTransform: "uppercase", letterSpacing: 1 }}>
+                  {qfRound?.round || "Knockout Stage"}
+                </div>
+              )}
+            </div>
+
+            {/* 3-node block: two R16 feeders → one QF */}
+            {selectedQF !== null && focusedMatches[selectedQF] ? (() => {
+              const qfMatch = focusedMatches[selectedQF];
+              // Find R16 feeders — matches whose winner would play in this QF
+              // Use index: QF match i pulls from R16 matches 2i and 2i+1
+              const feeder1 = r16Round?.matches[selectedQF * 2] || null;
+              const feeder2 = r16Round?.matches[selectedQF * 2 + 1] || null;
+
+              return (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, flex: 1 }}>
+                  {/* Two feeder matches */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {[feeder1, feeder2].map((m, i) => m ? (
+                      <MatchNode key={i} m={m} highlight={!!getUserPred(m)} size="normal" />
+                    ) : (
+                      <div key={i} style={{ width: 160, height: 72, background: "#13131f", borderRadius: 10, border: "1px solid #1e1e30", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <span style={{ fontSize: 10, color: "#333" }}>TBD</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Arrow */}
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, color: "#2a2a3a" }}>
+                    <div style={{ width: 30, height: 1, background: "#2a2a3a" }} />
+                    <div style={{ fontSize: 14, color: "#333" }}>→</div>
+                    <div style={{ width: 30, height: 1, background: "#2a2a3a" }} />
+                  </div>
+
+                  {/* QF match */}
+                  <MatchNode m={qfMatch} highlight={!!getUserPred(qfMatch)} size="large" />
+                </div>
+              );
+            })() : (
+              <div style={{ textAlign: "center", color: "#555", fontSize: 13, flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                Select a match above to generate the card
+              </div>
+            )}
+
+            {/* Footer */}
+            <div style={{ textAlign: "center", marginTop: 12 }}>
+              <span style={{ fontSize: 9, color: "#333", letterSpacing: 1 }}>
+                🟢 Green border = your prediction · deep433.com
+              </span>
+            </div>
+          </div>
+
+          <button onClick={download} disabled={downloading || selectedQF === null} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%", opacity: selectedQF === null ? 0.4 : 1 }}>
+            {downloading ? "Generating..." : "⬇ Download Bracket Card"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── MAIN EXPORT ─────────────────────────────────────────────────────────────
 export default function DataGraphics({ history = [], supabase }) {
   const [activeSection, setActiveSection] = useState("match");
 
   const sections = [
-    { id: "match",  label: "📊 Match Stats" },
-    { id: "player", label: "⭐ Player Ratings" },
-    { id: "top",    label: "🥇 Leaderboard" },
-    { id: "team",   label: "🛡 Team Stats" },
-    { id: "recap",  label: "📋 Recap" },
+    { id: "match",   label: "📊 Match Stats" },
+    { id: "player",  label: "⭐ Player Ratings" },
+    { id: "top",     label: "🥇 Leaderboard" },
+    { id: "team",    label: "🛡 Team Stats" },
+    { id: "recap",   label: "📋 Recap" },
+    { id: "bracket", label: "🏆 Bracket" },
   ];
 
   return (
@@ -901,11 +1145,12 @@ export default function DataGraphics({ history = [], supabase }) {
         ))}
       </div>
 
-      {activeSection === "match"  && <MatchStatsGraphic />}
-      {activeSection === "player" && <PlayerRatingsGraphic />}
-      {activeSection === "top"    && <TopScorersGraphic />}
-      {activeSection === "team"   && <TeamStatsGraphic />}
-      {activeSection === "recap"  && <RecapGraphic history={history} />}
+      {activeSection === "match"   && <MatchStatsGraphic />}
+      {activeSection === "player"  && <PlayerRatingsGraphic />}
+      {activeSection === "top"     && <TopScorersGraphic />}
+      {activeSection === "team"    && <TeamStatsGraphic />}
+      {activeSection === "recap"   && <RecapGraphic history={history} />}
+      {activeSection === "bracket" && <BracketGraphic history={history} />}
     </div>
   );
 }
