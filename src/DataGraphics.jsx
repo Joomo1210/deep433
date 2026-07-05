@@ -29,9 +29,15 @@ function FixturePicker({ onSelect }) {
 
   const getDateLabel = (dateStr) => {
     const now = new Date();
-    const today = now.toISOString().split("T")[0];
-    const yesterday = new Date(now.getTime() - 86400000).toISOString().split("T")[0];
-    const tomorrow = new Date(now.getTime() + 86400000).toISOString().split("T")[0];
+    const localDate = (d) => {
+      const yr = d.getFullYear();
+      const mo = String(d.getMonth()+1).padStart(2,"0");
+      const dy = String(d.getDate()).padStart(2,"0");
+      return `${yr}-${mo}-${dy}`;
+    };
+    const today = localDate(now);
+    const yesterday = localDate(new Date(now.getTime() - 86400000));
+    const tomorrow = localDate(new Date(now.getTime() + 86400000));
     if (dateStr === today) return "Today";
     if (dateStr === yesterday) return "Yesterday";
     if (dateStr === tomorrow) return "Tomorrow";
@@ -1374,7 +1380,7 @@ function MatchPitchViewGraphic() {
     if (!f.fixtureId) { setError("No fixture ID available"); return; }
     setLoading(true);
     try {
-      const r = await fetch(`/api/match-lineup?fixtureId=${f.fixtureId}`);
+      const r = await fetch(`/api/pitch-lineup?fixtureId=${f.fixtureId}`);
       const d = await r.json();
       if (!d.home?.players?.length) throw new Error("Lineup not confirmed yet — check back closer to kickoff");
       setLineup(d);
