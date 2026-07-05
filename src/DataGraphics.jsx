@@ -745,8 +745,7 @@ function RecapGraphic({ history = [] }) {
   const getOutcome = (pred) => {
     if (!pred || !finalScore) return null;
     const [p0, p1] = pred.split("-").map(n => parseInt(n) || 0);
-    const correct = (fs0 > fs1 && p0 > p1) || (fs1 > fs0 && p1 > p0) || (fs0 === fs1 && p0 === p1);
-    return correct ? "✅" : "❌";
+    return (p0 === fs0 && p1 === fs1) ? "✅" : "❌";
   };
 
   const yourResult = getOutcome(yourPrediction);
