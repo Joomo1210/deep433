@@ -1175,17 +1175,201 @@ function BracketGraphic({ history = [] }) {
 
 
 
+// ─── DEEP INSIGHTS GRAPHIC ───────────────────────────────────────────────────
+function DeepInsightsGraphic() {
+  const cardRef = useRef(null);
+  const [selectedFixture, setSelectedFixture] = useState(null);
+  const [insights, setInsights] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSelect = async (f) => {
+    setSelectedFixture(f);
+    setInsights(null);
+    setError("");
+    if (!f.fixtureId) { setError("No fixture ID available"); return; }
+    setLoading(true);
+    try {
+      const r = await fetch(`/api/fixture-insights?fixtureId=${f.fixtureId}&home=${encodeURIComponent(f.home)}&away=${encodeURIComponent(f.away)}`);
+      const d = await r.json();
+      if (!d.comparison) throw new Error("No insights available for this fixture yet");
+      setInsights(d);
+    } catch (e) { setError(e.message); }
+    setLoading(false);
+  };
+
+  const download = async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      if (!window.html2canvas) {
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+        document.head.appendChild(s);
+        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
+      }
+      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
+      const link = document.createElement("a");
+      link.download = `deep433-insights-${selectedFixture?.home}-vs-${selectedFixture?.away}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const norm100 = (a, b) => {
+    const av = parseFloat(a) || 0;
+    const bv = parseFloat(b) || 0;
+    const total = av + bv || 1;
+    return { a: Math.round((av / total) * 100), b: Math.round((bv / total) * 100) };
+  };
+
+  const StatBar = ({ label, homeVal, awayVal, home, away }) => {
+    const { a, b } = norm100(homeVal, awayVal);
+    return (
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+          <span style={{ fontSize: 20, fontWeight: 900, color: "#4ade80" }}>{a}%</span>
+          <span style={{ fontSize: 10, color: "#aaa", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{label}</span>
+          <span style={{ fontSize: 20, fontWeight: 900, color: "#f59e0b" }}>{b}%</span>
+        </div>
+        <div style={{ display: "flex", height: 8, borderRadius: 4, overflow: "hidden" }}>
+          <div style={{ width: `${a}%`, background: "#4ade80" }} />
+          <div style={{ width: `${b}%`, background: "#f59e0b", opacity: 0.6 }} />
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3, fontSize: 9, color: "#444" }}>
+          <span>{home?.split(" ")[0]}</span><span>{away?.split(" ")[0]}</span>
+        </div>
+      </div>
+    );
+  };
+
+  const dotColor = (r) => r === "W" ? "#4ade80" : r === "D" ? "#60a5fa" : "#f87171";
+
+  const H2HRow = ({ team, results, ppg, logo }) => (
+    <div style={{ background: "#0d0d18", borderRadius: 8, padding: "10px 12px", marginBottom: 8 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {logo && <img src={logo} alt="" crossOrigin="anonymous" style={{ width: 20, height: 20, objectFit: "contain" }} />}
+          <span style={{ fontSize: 12, fontWeight: 800, color: "#f0f0f0" }}>{team}</span>
+        </div>
+        <span style={{ fontSize: 10, color: "#555" }}>PPG: <span style={{ color: "#f0f0f0", fontWeight: 700 }}>{ppg}</span></span>
+      </div>
+      <div style={{ display: "flex", gap: 5 }}>
+        {results.map((r, i) => (
+          <div key={i} style={{ width: 24, height: 24, borderRadius: 4, background: dotColor(r), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, color: "#0a0a0f" }}>{r}</div>
+        ))}
+        <div style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center" }}>
+          <span style={{ fontSize: 10, color: "#4ade80" }}>W {results.filter(r => r === "W").length}</span>
+          <span style={{ fontSize: 10, color: "#60a5fa" }}>D {results.filter(r => r === "D").length}</span>
+          <span style={{ fontSize: 10, color: "#f87171" }}>L {results.filter(r => r === "L").length}</span>
+        </div>
+      </div>
+    </div>
+  );
+
+  const parseH2H = (h2h, homeTeam, awayTeam) => {
+    const norm = s => (s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+    return h2h.map(r => {
+      const parts = r.match(/^(.+?)\s+(\d+)-(\d+)\s+(.+)$/);
+      if (!parts) return { result: "D" };
+      const matchHome = parts[1].trim();
+      const hg = parseInt(parts[2]);
+      const ag = parseInt(parts[3]);
+      if (hg === ag) return "D";
+      const homeTeamWon = (norm(matchHome) === norm(homeTeam) && hg > ag) || (norm(matchHome) !== norm(homeTeam) && ag > hg);
+      return homeTeamWon ? "W" : "L";
+    });
+  };
+
+  const home = selectedFixture?.home;
+  const away = selectedFixture?.away;
+  const h2hResults = insights?.h2h?.length ? parseH2H(insights.h2h, home, away) : [];
+  const awayResults = h2hResults.map(r => r === "W" ? "L" : r === "L" ? "W" : "D");
+  const homePPG = h2hResults.length ? (h2hResults.reduce((a, r) => a + (r === "W" ? 3 : r === "D" ? 1 : 0), 0) / h2hResults.length).toFixed(2) : "0.00";
+  const awayPPG = awayResults.length ? (awayResults.reduce((a, r) => a + (r === "W" ? 3 : r === "D" ? 1 : 0), 0) / awayResults.length).toFixed(2) : "0.00";
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {!selectedFixture ? (
+        <FixturePicker onSelect={handleSelect} />
+      ) : (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
+            <button onClick={() => { setSelectedFixture(null); setInsights(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "4px 10px" }}>Change</button>
+          </div>
+
+          {loading && <div style={{ textAlign: "center", color: "#555", fontSize: 13, padding: "20px 0" }}>Loading insights...</div>}
+          {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
+
+          {insights && (
+            <>
+              <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+                <div style={{ padding: "22px 18px 18px" }}>
+                  {/* Match header */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, marginTop: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      {selectedFixture.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
+                      <span style={{ fontSize: 14, fontWeight: 900, color: "#4ade80" }}>{home}</span>
+                    </div>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: 9, color: "#555", textTransform: "uppercase", letterSpacing: 1 }}>{selectedFixture.round}</div>
+                      <div style={{ fontSize: 11, color: "#333", fontWeight: 700 }}>vs</div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 14, fontWeight: 900, color: "#f59e0b" }}>{away}</span>
+                      {selectedFixture.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
+                    </div>
+                  </div>
+
+                  <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 12 }}>📊 Deep Insights</div>
+
+                  {/* Stat bars */}
+                  {insights.comparison?.attackHome && (
+                    <StatBar label="Attack" homeVal={insights.comparison.attackHome} awayVal={insights.comparison.attackAway} home={home} away={away} />
+                  )}
+                  {insights.comparison?.defenceHome && (
+                    <StatBar label="Defence" homeVal={insights.comparison.defenceHome} awayVal={insights.comparison.defenceAway} home={home} away={away} />
+                  )}
+                  {insights.comparison?.formHome && (
+                    <StatBar label="Form" homeVal={insights.comparison.formHome} awayVal={insights.comparison.formAway} home={home} away={away} />
+                  )}
+
+                  {/* H2H */}
+                  {h2hResults.length > 0 && (
+                    <>
+                      <div style={{ fontSize: 10, color: "#aaa", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8, marginTop: 4 }}>Recent H2H</div>
+                      <H2HRow team={home} results={h2hResults} ppg={homePPG} logo={selectedFixture.homeLogo} />
+                      <H2HRow team={away} results={awayResults} ppg={awayPPG} logo={selectedFixture.awayLogo} />
+                    </>
+                  )}
+                </div>
+              </GraphicCard>
+              <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%" }}>
+                {downloading ? "Generating..." : "⬇ Download PNG"}
+              </button>
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── MAIN EXPORT ─────────────────────────────────────────────────────────────
 export default function DataGraphics({ history = [], supabase }) {
   const [activeSection, setActiveSection] = useState("match");
 
   const sections = [
-    { id: "match",   label: "📊 Match Stats" },
-    { id: "player",  label: "⭐ Player Ratings" },
-    { id: "top",     label: "🥇 Leaderboard" },
-    { id: "team",    label: "🛡 Team Stats" },
-    { id: "recap",   label: "📋 Recap" },
-    { id: "bracket", label: "🏆 Bracket" },
+    { id: "insights", label: "📊 Deep Insights" },
+    { id: "match",    label: "📈 Match Stats" },
+    { id: "player",   label: "⭐ Player Ratings" },
+    { id: "top",      label: "🥇 Leaderboard" },
+    { id: "team",     label: "🛡 Team Stats" },
+    { id: "recap",    label: "📋 Recap" },
+    { id: "bracket",  label: "🏆 Bracket" },
   ];
 
   return (
@@ -1200,12 +1384,13 @@ export default function DataGraphics({ history = [], supabase }) {
         ))}
       </div>
 
-      {activeSection === "match"   && <MatchStatsGraphic />}
-      {activeSection === "player"  && <PlayerRatingsGraphic />}
-      {activeSection === "top"     && <TopScorersGraphic />}
-      {activeSection === "team"    && <TeamStatsGraphic />}
-      {activeSection === "recap"   && <RecapGraphic history={history} />}
-      {activeSection === "bracket" && <BracketGraphic history={history} />}
+      {activeSection === "insights" && <DeepInsightsGraphic />}
+      {activeSection === "match"    && <MatchStatsGraphic />}
+      {activeSection === "player"   && <PlayerRatingsGraphic />}
+      {activeSection === "top"      && <TopScorersGraphic />}
+      {activeSection === "team"     && <TeamStatsGraphic />}
+      {activeSection === "recap"    && <RecapGraphic history={history} />}
+      {activeSection === "bracket"  && <BracketGraphic history={history} />}
     </div>
   );
 }
