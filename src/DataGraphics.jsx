@@ -1380,7 +1380,7 @@ function MatchPitchViewGraphic() {
     if (!f.fixtureId) { setError("No fixture ID available"); return; }
     setLoading(true);
     try {
-      const r = await fetch(`/api/pitch-lineup?fixtureId=${f.fixtureId}`);
+      const r = await fetch(`/api/match-lineup?fixtureId=${f.fixtureId}`);
       const d = await r.json();
       if (!d.home?.players?.length) throw new Error("Lineup not confirmed yet — check back closer to kickoff");
       setLineup(d);
