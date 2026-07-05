@@ -688,16 +688,34 @@ function TeamStatsGraphic() {
 }
 
 // ─── RECAP CARD ──────────────────────────────────────────────────────────────
-function RecapGraphic() {
+function RecapGraphic({ history = [] }) {
   const cardRef = useRef(null);
   const [selectedFixture, setSelectedFixture] = useState(null);
-  const [finalScore, setFinalScore] = useState("");
-  const [yourPrediction, setYourPrediction] = useState("");
-  const [aiPrediction, setAiPrediction] = useState("");
   const [variant, setVariant] = useState("square");
   const [downloading, setDownloading] = useState(false);
+  const [matchData, setMatchData] = useState(null);
+  const [error, setError] = useState("");
 
   const isLandscape = variant === "landscape";
+
+  const handleSelect = (f) => {
+    setSelectedFixture(f);
+    setError("");
+    setMatchData(null);
+    const fs = (f.score?.home != null && f.score?.away != null)
+      ? `${f.score.home}-${f.score.away}` : null;
+    if (!fs) { setError("No final score available — match may not be finished yet."); return; }
+    const norm = s => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const pred = history.find(h =>
+      (norm(h.home_team) === norm(f.home) && norm(h.away_team) === norm(f.away)) ||
+      (norm(h.home_team) === norm(f.away) && norm(h.away_team) === norm(f.home))
+    );
+    setMatchData({
+      finalScore: fs,
+      yourPrediction: pred?.user_prediction || null,
+      aiPrediction: pred?.ai_prediction || null,
+    });
+  };
 
   const download = async () => {
     if (!cardRef.current) return;
@@ -718,21 +736,21 @@ function RecapGraphic() {
     setDownloading(false);
   };
 
-  const [fs0, fs1] = (finalScore || "0-0").split("-").map(n => parseInt(n) || 0);
-  const [yp0, yp1] = (yourPrediction || "0-0").split("-").map(n => parseInt(n) || 0);
-  const [ai0, ai1] = (aiPrediction || "0-0").split("-").map(n => parseInt(n) || 0);
+  const fs = matchData?.finalScore || "0-0";
+  const [fs0, fs1] = fs.split("-").map(n => parseInt(n) || 0);
+  const yourPrediction = matchData?.yourPrediction;
+  const aiPrediction = matchData?.aiPrediction;
+  const finalScore = matchData?.finalScore;
 
-  const getResult = (pred0, pred1) => {
-    const homeWon = fs0 > fs1;
-    const awayWon = fs1 > fs0;
-    const predHomeWon = pred0 > pred1;
-    const predAwayWon = pred1 > pred0;
-    const correct = (homeWon && predHomeWon) || (awayWon && predAwayWon) || (fs0 === fs1 && pred0 === pred1);
-    return correct ? { label: "✅", color: "#4ade80" } : { label: "❌", color: "#f87171" };
+  const getOutcome = (pred) => {
+    if (!pred || !finalScore) return null;
+    const [p0, p1] = pred.split("-").map(n => parseInt(n) || 0);
+    const correct = (fs0 > fs1 && p0 > p1) || (fs1 > fs0 && p1 > p0) || (fs0 === fs1 && p0 === p1);
+    return correct ? "✅" : "❌";
   };
 
-  const yourResult = finalScore && yourPrediction ? getResult(yp0, yp1) : null;
-  const aiResult = finalScore && aiPrediction ? getResult(ai0, ai1) : null;
+  const yourResult = getOutcome(yourPrediction);
+  const aiResult = getOutcome(aiPrediction);
 
   const CardContent = () => (
     <div style={{
@@ -777,7 +795,7 @@ function RecapGraphic() {
                   <div style={{ fontSize: 10, color: p.color, fontWeight: 700, marginBottom: 4 }}>{p.label}</div>
                   <div style={{ fontSize: 28, fontWeight: 900, color: p.color }}>{p.pred || "—"}</div>
                 </div>
-                {p.result && <div style={{ fontSize: 11, fontWeight: 800, color: p.result.color, background: p.result.color + "11", border: `1px solid ${p.result.color}33`, borderRadius: 6, padding: "4px 10px" }}>{p.result.label}</div>}
+                {p.result && <div style={{ fontSize: 20, fontWeight: 900 }}>{p.result}</div>}
               </div>
             ))}
           </div>
@@ -807,19 +825,9 @@ function RecapGraphic() {
               <div key={p.label} style={{ background: "#13131f", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
                 <div style={{ fontSize: 9, color: p.color, fontWeight: 700, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>{p.label}</div>
                 <div style={{ fontSize: 26, fontWeight: 900, color: p.color, marginBottom: 4 }}>{p.pred || "—"}</div>
-                {p.result && <div style={{ fontSize: 16, fontWeight: 900 }}>{p.result.label}</div>}
+                {p.result && <div style={{ fontSize: 18, fontWeight: 900 }}>{p.result}</div>}
               </div>
             ))}
-          </div>
-          <div style={{ height: 1, background: "#1a1a2a" }} />
-          {/* Final result — dominant hero at bottom */}
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 9, color: "#555", textTransform: "uppercase", letterSpacing: 2, marginBottom: 6 }}>Final Result</div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16 }}>
-              {selectedFixture?.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 36, height: 36, objectFit: "contain" }} />}
-              <div style={{ fontSize: 64, fontWeight: 900, color: "#f0f0f0", lineHeight: 1 }}>{fs0}-{fs1}</div>
-              {selectedFixture?.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 36, height: 36, objectFit: "contain" }} />}
-            </div>
           </div>
         </div>
       )}
@@ -829,47 +837,41 @@ function RecapGraphic() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       {!selectedFixture ? (
-        <FixturePicker onSelect={f => setSelectedFixture(f)} />
+        <FixturePicker onSelect={handleSelect} />
       ) : (
         <>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
-            <button onClick={() => setSelectedFixture(null)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "4px 10px" }}>Change</button>
+            <button onClick={() => { setSelectedFixture(null); setMatchData(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "4px 10px" }}>Change</button>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-            {[
-              { label: "Final Score", value: finalScore, setter: setFinalScore, placeholder: "e.g. 2-1" },
-              { label: "Your Prediction", value: yourPrediction, setter: setYourPrediction, placeholder: "e.g. 1-2" },
-              { label: "AI Prediction", value: aiPrediction, setter: setAiPrediction, placeholder: "e.g. 2-0" },
-            ].map(f => (
-              <div key={f.label}>
-                <div style={{ fontSize: 10, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{f.label}</div>
-                <input
-                  placeholder={f.placeholder}
-                  value={f.value}
-                  onChange={e => f.setter(e.target.value)}
-                  style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 10px", outline: "none", fontFamily: "inherit", textAlign: "center", fontWeight: 800 }}
-                />
+          {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
+
+          {matchData && !matchData.yourPrediction && (
+            <div style={{ fontSize: 12, color: "#f59e0b", background: "#f59e0b11", border: "1px solid #f59e0b33", borderRadius: 8, padding: "10px 14px" }}>
+              ⚠️ No prediction found for this match in your history. Make a prediction first to use the Recap card.
+            </div>
+          )}
+
+          {matchData && (
+            <>
+              <div style={{ display: "flex", gap: 8 }}>
+                {["square", "landscape"].map(v => (
+                  <button key={v} onClick={() => setVariant(v)} style={{ flex: 1, background: variant === v ? "#4ade8022" : "none", border: `1px solid ${variant === v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: variant === v ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "8px" }}>
+                    {v === "square" ? "1:1 Square" : "16:9 Landscape"}
+                  </button>
+                ))}
               </div>
-            ))}
-          </div>
 
-          <div style={{ display: "flex", gap: 8 }}>
-            {["square", "landscape"].map(v => (
-              <button key={v} onClick={() => setVariant(v)} style={{ flex: 1, background: variant === v ? "#4ade8022" : "none", border: `1px solid ${variant === v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: variant === v ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "8px" }}>
-                {v === "square" ? "1:1 Square" : "16:9 Landscape"}
+              <div ref={cardRef}>
+                <CardContent />
+              </div>
+
+              <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%" }}>
+                {downloading ? "Generating..." : "⬇ Download Recap Card"}
               </button>
-            ))}
-          </div>
-
-          <div ref={cardRef}>
-            <CardContent />
-          </div>
-
-          <button onClick={download} disabled={downloading || !finalScore} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%", opacity: !finalScore ? 0.4 : 1 }}>
-            {downloading ? "Generating..." : "⬇ Download Recap Card"}
-          </button>
+            </>
+          )}
         </>
       )}
     </div>
@@ -877,7 +879,7 @@ function RecapGraphic() {
 }
 
 // ─── MAIN EXPORT ─────────────────────────────────────────────────────────────
-export default function DataGraphics() {
+export default function DataGraphics({ history = [], supabase }) {
   const [activeSection, setActiveSection] = useState("match");
 
   const sections = [
@@ -904,7 +906,7 @@ export default function DataGraphics() {
       {activeSection === "player" && <PlayerRatingsGraphic />}
       {activeSection === "top"    && <TopScorersGraphic />}
       {activeSection === "team"   && <TeamStatsGraphic />}
-      {activeSection === "recap"  && <RecapGraphic />}
+      {activeSection === "recap"  && <RecapGraphic history={history} />}
     </div>
   );
 }
