@@ -883,11 +883,16 @@ function BracketGraphic({ history = [] }) {
   const [leagueId, setLeagueId] = useState("wc2026");
   const [rounds, setRounds] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [feeder1Idx, setFeeder1Idx] = useState("");
-  const [feeder2Idx, setFeeder2Idx] = useState("");
-  const [mainMatchIdx, setMainMatchIdx] = useState("");
   const [downloading, setDownloading] = useState(false);
-  const [variant, setVariant] = useState("square");
+
+  // Manual match selectors: 4 QF + 2 SF + 1 Final
+  const [qf1, setQf1] = useState("");
+  const [qf2, setQf2] = useState("");
+  const [qf3, setQf3] = useState("");
+  const [qf4, setQf4] = useState("");
+  const [sf1, setSf1] = useState("");
+  const [sf2, setSf2] = useState("");
+  const [fin, setFin] = useState("");
 
   const CUP_LEAGUES = [
     { id: "wc2026",     label: "World Cup 2026" },
@@ -900,7 +905,9 @@ function BracketGraphic({ history = [] }) {
   ];
 
   const fetchBracket = async (lid) => {
-    setLoading(true); setRounds([]); setFeeder1Idx(""); setFeeder2Idx(""); setMainMatchIdx("");
+    setLoading(true); setRounds([]);
+    setQf1(""); setQf2(""); setQf3(""); setQf4("");
+    setSf1(""); setSf2(""); setFin("");
     try {
       const r = await fetch(`/api/bracket?leagueId=${lid}`);
       const d = await r.json();
@@ -910,6 +917,19 @@ function BracketGraphic({ history = [] }) {
   };
 
   useEffect(() => { fetchBracket(leagueId); }, [leagueId]);
+
+  const norm = s => (s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+  const getUserPred = (m) => m && history.find(h =>
+    (norm(h.home_team) === norm(m.home) && norm(h.away_team) === norm(m.away)) ||
+    (norm(h.home_team) === norm(m.away) && norm(h.away_team) === norm(m.home))
+  );
+
+  const getMatch = (val) => {
+    if (!val) return null;
+    const [roundName, mi] = val.split(":::");
+    const r = rounds.find(r => r.round === roundName);
+    return r?.matches[parseInt(mi)] || null;
+  };
 
   const download = async () => {
     if (!cardRef.current) return;
@@ -930,71 +950,87 @@ function BracketGraphic({ history = [] }) {
     setDownloading(false);
   };
 
-  const norm = s => (s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
-
-  const getUserPred = (m) => history.find(h =>
-    (norm(h.home_team) === norm(m.home) && norm(h.away_team) === norm(m.away)) ||
-    (norm(h.home_team) === norm(m.away) && norm(h.away_team) === norm(m.home))
-  );
-
-  const MatchNode = ({ m, highlight, size = "normal" }) => {
-    const isFinished = m.status === "finished";
-    const isLive = m.status === "live";
-    const homeWon = isFinished && m.score.home > m.score.away;
-    const awayWon = isFinished && m.score.away > m.score.home;
-    const userPred = getUserPred(m);
-    const logoSize = size === "large" ? 28 : 18;
-    const fontSize = size === "large" ? 13 : 11;
-    const scoreFontSize = size === "large" ? 16 : 13;
+  // Compact match node for the bracket card
+  const Node = ({ val, w = 150 }) => {
+    const m = getMatch(val);
+    const pred = getUserPred(m);
+    const isF = m?.status === "finished";
+    const isL = m?.status === "live";
+    const hw = isF && m.score.home > m.score.away;
+    const aw = isF && m.score.away > m.score.home;
 
     return (
       <div style={{
-        background: "#13131f",
-        border: `1.5px solid ${highlight ? "#4ade80" : isLive ? "#ef4444" : "#1e1e30"}`,
-        borderRadius: 10, overflow: "hidden", width: size === "large" ? 180 : 160,
-        boxShadow: highlight ? "0 0 12px rgba(74,222,128,0.3)" : "none",
+        width: w, background: "#13131f",
+        border: `1.5px solid ${pred ? "#4ade80" : isL ? "#ef4444" : "#1e1e30"}`,
+        borderRadius: 8, overflow: "hidden",
+        boxShadow: pred ? "0 0 10px rgba(74,222,128,0.25)" : "none",
       }}>
-        {isLive && <div style={{ height: 2, background: "#ef4444", width: "100%" }} />}
+        {isL && <div style={{ height: 2, background: "#ef4444" }} />}
         {[
-          { name: m.home, logo: m.homeLogo, score: m.score.home, won: homeWon },
-          { name: m.away, logo: m.awayLogo, score: m.score.away, won: awayWon },
-        ].map((team, ti) => (
-          <div key={ti} style={{
-            display: "flex", alignItems: "center", gap: 6, padding: "7px 8px",
-            background: team.won ? "#4ade8010" : "transparent",
-            borderBottom: ti === 0 ? "1px solid #0f0f1a" : "none",
+          { name: m?.home, logo: m?.homeLogo, score: m?.score?.home, won: hw },
+          { name: m?.away, logo: m?.awayLogo, score: m?.score?.away, won: aw },
+        ].map((t, i) => (
+          <div key={i} style={{
+            display: "flex", alignItems: "center", gap: 5, padding: "5px 7px",
+            background: t.won ? "#4ade8012" : "transparent",
+            borderBottom: i === 0 ? "1px solid #0f0f1a" : "none",
           }}>
-            {team.logo
-              ? <img src={team.logo} alt="" crossOrigin="anonymous" style={{ width: logoSize, height: logoSize, objectFit: "contain", flexShrink: 0 }} />
-              : <div style={{ width: logoSize, height: logoSize, background: "#1a1a2a", borderRadius: "50%", flexShrink: 0 }} />
+            {t.logo
+              ? <img src={t.logo} alt="" crossOrigin="anonymous" style={{ width: 16, height: 16, objectFit: "contain", flexShrink: 0 }} />
+              : <div style={{ width: 16, height: 16, background: "#1a1a2a", borderRadius: "50%", flexShrink: 0 }} />
             }
-            <span style={{ fontSize, fontWeight: team.won ? 800 : 600, color: team.won ? "#4ade80" : "#f0f0f0", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {team.name || "TBD"}
+            <span style={{ fontSize: 10, fontWeight: t.won ? 800 : 600, color: t.won ? "#4ade80" : "#f0f0f0", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {t.name || "TBD"}
             </span>
-            {(isLive || isFinished) && (
-              <span style={{ fontSize: scoreFontSize, fontWeight: 900, color: team.won ? "#4ade80" : "#888" }}>
-                {team.score ?? 0}
-              </span>
+            {(isF || isL) && (
+              <span style={{ fontSize: 11, fontWeight: 900, color: t.won ? "#4ade80" : "#888" }}>{t.score ?? 0}</span>
             )}
           </div>
         ))}
-        <div style={{ padding: "3px 8px", background: "#0d0d18", display: "flex", justifyContent: "space-between" }}>
-          <span style={{ fontSize: 8, color: isLive ? "#ef4444" : "#555", fontWeight: 700 }}>
-            {isLive ? `🔴 LIVE` : isFinished ? m.statusRaw : new Date(m.kickoff).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+        <div style={{ padding: "2px 7px", background: "#0d0d18", display: "flex", justifyContent: "space-between" }}>
+          <span style={{ fontSize: 7, color: isL ? "#ef4444" : "#555", fontWeight: 700 }}>
+            {!m ? "Select" : isL ? "🔴 LIVE" : isF ? m.statusRaw : new Date(m.kickoff).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
           </span>
-          {userPred && <span style={{ fontSize: 8, color: "#4ade80" }}>✓ {userPred.user_prediction}</span>}
+          {pred && <span style={{ fontSize: 7, color: "#4ade80" }}>✓ {pred.user_prediction}</span>}
         </div>
       </div>
     );
   };
 
-  // Find the focused 3-node block: pick two feeder matches + one QF/next round match
-  // Group rounds into pairs for the focused card
-  const qfRound = rounds.find(r => r.round?.toLowerCase().includes("quarter"));
-  const r16Round = rounds.find(r => r.round?.toLowerCase().includes("round of 16") || r.round?.toLowerCase().includes("round of 32"));
-  const focusedMatches = qfRound?.matches || [];
+  // Connector lines
+  const Arrow = ({ vertical = false }) => (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+      {vertical
+        ? <div style={{ width: 1, height: 20, background: "#2a2a3a" }} />
+        : <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+            <div style={{ width: 16, height: 1, background: "#2a2a3a" }} />
+            <span style={{ fontSize: 10, color: "#333" }}>›</span>
+          </div>
+      }
+    </div>
+  );
 
-  const isLandscape = variant === "landscape";
+  // Match selector dropdown
+  const Selector = ({ label, value, setter }) => (
+    <div>
+      <div style={{ fontSize: 9, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>{label}</div>
+      <select value={value} onChange={e => setter(e.target.value)} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "7px 10px", outline: "none", fontFamily: "inherit" }}>
+        <option value="">— Select —</option>
+        {rounds.map(r => (
+          <optgroup key={r.round} label={r.round}>
+            {r.matches.map((m, i) => (
+              <option key={m.fixtureId} value={`${r.round}:::${i}`}>
+                {m.home || "TBD"} vs {m.away || "TBD"} {m.status === "finished" ? `(${m.score.home}-${m.score.away})` : ""}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+    </div>
+  );
+
+  const hasAny = qf1 || qf2 || qf3 || qf4 || sf1 || sf2 || fin;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -1008,141 +1044,90 @@ function BracketGraphic({ history = [] }) {
         ))}
       </div>
 
-      {loading && <div style={{ textAlign: "center", color: "#555", fontSize: 13, padding: "20px 0" }}>Loading bracket...</div>}
+      {loading && <div style={{ textAlign: "center", color: "#555", fontSize: 13, padding: "20px 0" }}>Loading...</div>}
 
       {!loading && rounds.length > 0 && (
         <>
-          {/* Manual selection of all 3 matches */}
-          {rounds.length > 0 && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {[
-                { label: "Feeder Match 1 (left top)", key: "feeder1", setter: "setFeeder1" },
-                { label: "Feeder Match 2 (left bottom)", key: "feeder2", setter: "setFeeder2" },
-                { label: "Main Match (right)", key: "mainMatch", setter: "setMainMatch" },
-              ].map(({ label, key }) => (
-                <div key={key}>
-                  <div style={{ fontSize: 10, color: "#aaa", fontWeight: 700, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
-                  <select
-                    value={key === "feeder1" ? feeder1Idx : key === "feeder2" ? feeder2Idx : mainMatchIdx}
-                    onChange={e => {
-                      const val = e.target.value;
-                      if (key === "feeder1") setFeeder1Idx(val);
-                      else if (key === "feeder2") setFeeder2Idx(val);
-                      else setMainMatchIdx(val);
-                    }}
-                    style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
-                  >
-                    <option value="">— Select match —</option>
-                    {rounds.map(r => (
-                      <optgroup key={r.round} label={r.round}>
-                        {r.matches.map((m, i) => (
-                          <option key={m.fixtureId} value={`${r.round}:::${i}`}>
-                            {m.home || "TBD"} vs {m.away || "TBD"} {m.status === "finished" ? `(${m.score.home}-${m.score.away})` : ""}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Variant selector */}
-          <div style={{ display: "flex", gap: 8 }}>
-            {["square", "landscape"].map(v => (
-              <button key={v} onClick={() => setVariant(v)} style={{ flex: 1, background: variant === v ? "#4ade8022" : "none", border: `1px solid ${variant === v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: variant === v ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "8px" }}>
-                {v === "square" ? "1:1 Square" : "16:9 Landscape"}
-              </button>
-            ))}
+          {/* Match selectors */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <Selector label="QF Match 1 (top left)" value={qf1} setter={setQf1} />
+            <Selector label="QF Match 2 (bottom left)" value={qf2} setter={setQf2} />
+            <Selector label="QF Match 3 (top right)" value={qf3} setter={setQf3} />
+            <Selector label="QF Match 4 (bottom right)" value={qf4} setter={setQf4} />
+            <Selector label="SF Match 1 (top)" value={sf1} setter={setSf1} />
+            <Selector label="SF Match 2 (bottom)" value={sf2} setter={setSf2} />
+            <Selector label="Final" value={fin} setter={setFin} />
           </div>
 
-          {/* Bracket share card */}
-          <div
-            ref={cardRef}
-            style={{
-              background: "linear-gradient(145deg, #0a0a0f 0%, #0d0d1a 60%, #0a0f0a 100%)",
-              border: "1px solid #1e1e30", borderRadius: 14, overflow: "hidden",
-              position: "relative", padding: "28px 20px 20px",
-              width: isLandscape ? Math.min(700, window.innerWidth - 32) : Math.min(420, window.innerWidth - 32),
-              aspectRatio: isLandscape ? "16/9" : "1/1",
-              display: "flex", flexDirection: "column", justifyContent: "space-between",
-              fontFamily: "'Inter',sans-serif",
-            }}
-          >
+          {/* Bracket card */}
+          <div ref={cardRef} style={{
+            background: "linear-gradient(145deg, #0a0a0f 0%, #0d0d1a 60%, #0a0f0a 100%)",
+            border: "1px solid #1e1e30", borderRadius: 14, overflow: "hidden",
+            position: "relative", padding: "28px 16px 16px",
+            fontFamily: "'Inter',sans-serif",
+          }}>
             {/* Brand */}
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
-            <div style={{ position: "absolute", top: 12, right: 14, display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ fontSize: 10, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
-              <span style={{ fontSize: 8, color: "#555" }}>deep433.com</span>
+            <div style={{ position: "absolute", top: 10, right: 12, display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 9, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
+              <span style={{ fontSize: 7, color: "#555" }}>deep433.com</span>
             </div>
-
-            {/* Competition + round header */}
-            <div style={{ textAlign: "center", marginBottom: 16 }}>
-              <div style={{ fontSize: 10, color: "#888", textTransform: "uppercase", letterSpacing: 2, marginBottom: 4 }}>
-                {CUP_LEAGUES.find(l => l.id === leagueId)?.label}
-              </div>
-              {mainMatchIdx && (() => {
-                const [roundName] = mainMatchIdx.split(":::");
-                return <div style={{ fontSize: 13, fontWeight: 900, color: "#a855f7", textTransform: "uppercase", letterSpacing: 1 }}>{roundName}</div>;
-              })()}
-            </div>
-
-            {/* 3-node block */}
-            {(() => {
-              const getMatch = (idx) => {
-                if (!idx) return null;
-                const [roundName, mi] = idx.split(":::");
-                const r = rounds.find(r => r.round === roundName);
-                return r?.matches[parseInt(mi)] || null;
-              };
-              const f1 = getMatch(feeder1Idx);
-              const f2 = getMatch(feeder2Idx);
-              const main = getMatch(mainMatchIdx);
-              const ready = f1 || f2 || main;
-
-              if (!ready) return (
-                <div style={{ textAlign: "center", color: "#555", fontSize: 13, flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  Select matches above to generate the card
-                </div>
-              );
-
-              return (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, flex: 1 }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    {[f1, f2].map((m, i) => m ? (
-                      <MatchNode key={i} m={m} highlight={!!getUserPred(m)} size="normal" />
-                    ) : (
-                      <div key={i} style={{ width: 160, height: 72, background: "#13131f", borderRadius: 10, border: "1px solid #1e1e30", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <span style={{ fontSize: 10, color: "#333" }}>Select match</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                    <div style={{ width: 24, height: 1, background: "#2a2a3a" }} />
-                    <span style={{ fontSize: 16, color: "#333" }}>→</span>
-                    <div style={{ width: 24, height: 1, background: "#2a2a3a" }} />
-                  </div>
-                  {main ? (
-                    <MatchNode m={main} highlight={!!getUserPred(main)} size="large" />
-                  ) : (
-                    <div style={{ width: 180, height: 90, background: "#13131f", borderRadius: 10, border: "1px solid #1e1e30", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <span style={{ fontSize: 10, color: "#333" }}>Select main match</span>
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
-
-            {/* Footer */}
-            <div style={{ textAlign: "center", marginTop: 12 }}>
-              <span style={{ fontSize: 9, color: "#333", letterSpacing: 1 }}>
-                🟢 Green border = your prediction · deep433.com
+            <div style={{ textAlign: "center", marginBottom: 12 }}>
+              <span style={{ fontSize: 9, color: "#888", textTransform: "uppercase", letterSpacing: 2 }}>
+                {CUP_LEAGUES.find(l => l.id === leagueId)?.label} · Bracket
               </span>
+            </div>
+
+            {/* Bracket layout: QF → SF → Final */}
+            <div style={{ display: "flex", alignItems: "center", gap: 0, overflowX: "auto" }}>
+
+              {/* QF column */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 0, flexShrink: 0 }}>
+                {/* Top half */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4, paddingBottom: 16 }}>
+                  <Node val={qf1} />
+                  <Arrow vertical />
+                  <Node val={qf2} />
+                </div>
+                {/* Bottom half */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4, paddingTop: 16 }}>
+                  <Node val={qf3} />
+                  <Arrow vertical />
+                  <Node val={qf4} />
+                </div>
+              </div>
+
+              {/* QF → SF connectors */}
+              <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-around", height: "100%", gap: 0, flexShrink: 0 }}>
+                <Arrow />
+                <div style={{ height: 60 }} />
+                <Arrow />
+              </div>
+
+              {/* SF column */}
+              <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-around", gap: 60, flexShrink: 0 }}>
+                <Node val={sf1} w={160} />
+                <Node val={sf2} w={160} />
+              </div>
+
+              {/* SF → Final connector */}
+              <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignSelf: "stretch", flexShrink: 0 }}>
+                <Arrow />
+              </div>
+
+              {/* Final */}
+              <div style={{ flexShrink: 0 }}>
+                <div style={{ fontSize: 9, color: "#f59e0b", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, textAlign: "center", marginBottom: 6 }}>🏆 Final</div>
+                <Node val={fin} w={170} />
+              </div>
+            </div>
+
+            <div style={{ textAlign: "center", marginTop: 10 }}>
+              <span style={{ fontSize: 8, color: "#333" }}>🟢 Green border = your prediction</span>
             </div>
           </div>
 
-          <button onClick={download} disabled={downloading || (!feeder1Idx && !feeder2Idx && !mainMatchIdx)} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%", opacity: (!feeder1Idx && !feeder2Idx && !mainMatchIdx) ? 0.4 : 1 }}>
+          <button onClick={download} disabled={downloading || !hasAny} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%", opacity: !hasAny ? 0.4 : 1 }}>
             {downloading ? "Generating..." : "⬇ Download Bracket Card"}
           </button>
         </>
@@ -1150,6 +1135,8 @@ function BracketGraphic({ history = [] }) {
     </div>
   );
 }
+
+
 
 // ─── MAIN EXPORT ─────────────────────────────────────────────────────────────
 export default function DataGraphics({ history = [], supabase }) {
