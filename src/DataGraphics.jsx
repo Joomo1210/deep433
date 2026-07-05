@@ -1036,8 +1036,8 @@ function BracketGraphic({ history = [] }) {
                     {rounds.map(r => (
                       <optgroup key={r.round} label={r.round}>
                         {r.matches.map((m, i) => (
-                          <option key={m.fixtureId} value={}>
-                            {m.home || "TBD"} vs {m.away || "TBD"} {m.status === "finished" ?  : ""}
+                          <option key={m.fixtureId} value={`${r.round}:::${i}`}>
+                            {m.home || "TBD"} vs {m.away || "TBD"} {m.status === "finished" ? `(${m.score.home}-${m.score.away})` : ""}
                           </option>
                         ))}
                       </optgroup>
