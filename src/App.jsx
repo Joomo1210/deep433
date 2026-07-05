@@ -1625,7 +1625,7 @@ export default function FootballPredictor() {
 
         {tab === "graphics" && (
           userRole === "admin"
-            ? <DataGraphics />
+            ? <DataGraphics history={history} supabase={supabase} />
             : <div className="card" style={{ textAlign: "center", padding: "40px 24px" }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>📊</div>
                 <div style={{ fontSize: 16, fontWeight: 800, color: "#f0f0f0", marginBottom: 8 }}>Authorised Users Only</div>
