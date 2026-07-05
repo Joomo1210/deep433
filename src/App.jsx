@@ -232,7 +232,7 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
         backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false,
       });
       const link = document.createElement("a");
-      link.download = ;
+      link.download = `deep433-${homeTeam}-vs-${awayTeam}.png`;
       link.href = canvas.toDataURL("image/png");
       link.click();
     } catch { alert("Download failed — try screenshotting manually"); }
