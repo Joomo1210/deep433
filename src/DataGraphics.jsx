@@ -1382,7 +1382,7 @@ function MatchPitchViewGraphic() {
     try {
       const r = await fetch(`/api/match-lineup?fixtureId=${f.fixtureId}`);
       const d = await r.json();
-      if (!d.home?.players?.length) throw new Error("Lineup not confirmed yet — check back closer to kickoff");
+      if (!d.available || !d.home?.players?.length) throw new Error("Lineup not confirmed yet — check back closer to kickoff");
       setLineup(d);
     } catch (e) { setError(e.message); }
     setLoading(false);
@@ -1435,13 +1435,15 @@ function MatchPitchViewGraphic() {
             style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", border: `2px solid ${color}`, display: "block" }}
           />
         ) : (
-          <div style={{ width: 36, height: 36, borderRadius: "50%", background: color + "33", border: `2px solid ${color}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <span style={{ fontSize: 12, fontWeight: 900, color }}>{player.number}</span>
+          <div style={{ width: 36, height: 36, borderRadius: "50%", background: color + "22", border: `2px solid ${color}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ fontSize: 13, fontWeight: 900, color }}>{player.number}</span>
           </div>
         )}
-        <div style={{ position: "absolute", bottom: -2, right: -2, background: color, borderRadius: "50%", width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <span style={{ fontSize: 8, fontWeight: 900, color: "#0a0a0f" }}>{player.number}</span>
-        </div>
+        {player.photo && (
+          <div style={{ position: "absolute", bottom: -2, right: -2, background: color, borderRadius: "50%", width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ fontSize: 7, fontWeight: 900, color: "#0a0a0f" }}>{player.number}</span>
+          </div>
+        )}
       </div>
       <div style={{ fontSize: 8, fontWeight: 700, color: "#f0f0f0", textAlign: "center", lineHeight: 1.2, maxWidth: 52, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
         {player.name?.split(" ").slice(-1)[0]}
