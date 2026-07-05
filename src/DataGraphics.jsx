@@ -727,9 +727,8 @@ function RecapGraphic() {
     const awayWon = fs1 > fs0;
     const predHomeWon = pred0 > pred1;
     const predAwayWon = pred1 > pred0;
-    if (fs0 === pred0 && fs1 === pred1) return { label: "EXACT ✓", color: "#4ade80" };
-    if ((homeWon && predHomeWon) || (awayWon && predAwayWon) || (fs0 === fs1 && pred0 === pred1)) return { label: "OUTCOME ✓", color: "#f59e0b" };
-    return { label: "MISSED ✗", color: "#f87171" };
+    const correct = (homeWon && predHomeWon) || (awayWon && predAwayWon) || (fs0 === fs1 && pred0 === pred1);
+    return correct ? { label: "✅", color: "#4ade80" } : { label: "❌", color: "#f87171" };
   };
 
   const yourResult = finalScore && yourPrediction ? getResult(yp0, yp1) : null;
@@ -755,7 +754,7 @@ function RecapGraphic() {
         <>
           {/* Left: final score hero */}
           <div style={{ width: "45%", padding: "36px 20px 20px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", borderRight: "1px solid #1a1a2a" }}>
-            <div style={{ fontSize: 9, color: "#888", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>{selectedFixture?.round || "Match Recap"}</div>
+            <div style={{ fontSize: 11, color: "#f0f0f0", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12, fontWeight: 900 }}>{selectedFixture?.round || "Match Recap"}</div>
             <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 12 }}>
               {selectedFixture?.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 44, height: 44, objectFit: "contain" }} />}
               <div style={{ textAlign: "center" }}>
@@ -787,7 +786,7 @@ function RecapGraphic() {
         <div style={{ flex: 1, padding: "20px", display: "flex", flexDirection: "column", gap: 14, paddingTop: 36 }}>
           {/* Final score — dominant hero */}
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 9, color: "#888", letterSpacing: 2, textTransform: "uppercase", marginBottom: 8 }}>{selectedFixture?.round || "Match Recap"}</div>
+            <div style={{ fontSize: 11, color: "#f0f0f0", letterSpacing: 2, textTransform: "uppercase", marginBottom: 8, fontWeight: 900 }}>{selectedFixture?.round || "Match Recap"}</div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 8 }}>
               {selectedFixture?.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 44, height: 44, objectFit: "contain" }} />}
               <div>
@@ -802,15 +801,25 @@ function RecapGraphic() {
             </div>
           </div>
           <div style={{ height: 1, background: "#1a1a2a" }} />
-          {/* Predictions */}
+          {/* Predictions side by side */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            {[{ label: "👤 Your Call", pred: yourPrediction, result: yourResult, color: "#4ade80" }, { label: "🤖 AI Predicted", pred: aiPrediction, result: aiResult, color: "#f59e0b" }].map(p => (
-              <div key={p.label} style={{ background: "#13131f", borderRadius: 10, padding: "12px 10px", textAlign: "center" }}>
-                <div style={{ fontSize: 10, color: p.color, fontWeight: 700, marginBottom: 6 }}>{p.label}</div>
-                <div style={{ fontSize: 28, fontWeight: 900, color: p.color, marginBottom: 6 }}>{p.pred || "—"}</div>
-                {p.result && <div style={{ fontSize: 10, fontWeight: 800, color: p.result.color }}>{p.result.label}</div>}
+            {[{ label: "👤 Your Call", pred: yourPrediction, result: yourResult, color: "#4ade80" }, { label: "🤖 AI Predicted", pred: aiPrediction, result: aiResult, color: "#818cf8" }].map(p => (
+              <div key={p.label} style={{ background: "#13131f", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
+                <div style={{ fontSize: 9, color: p.color, fontWeight: 700, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>{p.label}</div>
+                <div style={{ fontSize: 26, fontWeight: 900, color: p.color, marginBottom: 4 }}>{p.pred || "—"}</div>
+                {p.result && <div style={{ fontSize: 16, fontWeight: 900 }}>{p.result.label}</div>}
               </div>
             ))}
+          </div>
+          <div style={{ height: 1, background: "#1a1a2a" }} />
+          {/* Final result — dominant hero at bottom */}
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 9, color: "#555", textTransform: "uppercase", letterSpacing: 2, marginBottom: 6 }}>Final Result</div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16 }}>
+              {selectedFixture?.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 36, height: 36, objectFit: "contain" }} />}
+              <div style={{ fontSize: 64, fontWeight: 900, color: "#f0f0f0", lineHeight: 1 }}>{fs0}-{fs1}</div>
+              {selectedFixture?.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 36, height: 36, objectFit: "contain" }} />}
+            </div>
           </div>
         </div>
       )}
