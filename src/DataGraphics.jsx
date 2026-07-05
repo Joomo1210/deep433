@@ -165,7 +165,22 @@ function GraphicCard({ children, cardRef, label }) {
           <span style={{ fontSize: 10, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
           <span style={{ fontSize: 8, color: "#555" }}>deep433.com</span>
         </div>
-        {children}
+        {/* Centre background watermark */}
+        <div style={{
+          position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
+          pointerEvents: "none", zIndex: 0,
+        }}>
+          <div style={{
+            fontSize: 72, fontWeight: 900, color: "#4ade80", opacity: 0.04,
+            letterSpacing: 6, textTransform: "uppercase", userSelect: "none",
+            transform: "rotate(-15deg)", whiteSpace: "nowrap",
+          }}>
+            DEEP433
+          </div>
+        </div>
+        <div style={{ position: "relative", zIndex: 1 }}>
+          {children}
+        </div>
       </div>
       <div style={{ fontSize: 10, color: "#555", textAlign: "center", marginTop: 8 }}>{label}</div>
     </div>
