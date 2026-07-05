@@ -454,7 +454,33 @@ function TopScorersGraphic() {
 
   const typeLabels = { scorers: "Top Scorers", assists: "Top Assists", cards: "Most Booked" };
   const typeIcons =  { scorers: "⚽", assists: "🎯", cards: "🟨" };
-  const typeValues = { scorers: (p) => `${p.goals} goals`, assists: (p) => `${p.assists} assists`, cards: (p) => `${(p.yellowCards || 0)}🟨 ${p.redCards || 0}🟥` };
+  const statLabel =  { scorers: "GOALS", assists: "ASSISTS", cards: "CARDS" };
+
+  const getStatValue = (p) => {
+    if (type === "scorers") return p.goals || 0;
+    if (type === "assists") return p.assists || 0;
+    return (p.yellowCards || 0);
+  };
+
+  const getSecondary = (p) => {
+    if (type === "scorers") return p.appearances ? `${p.appearances} apps` : null;
+    if (type === "assists") return p.appearances ? `${p.appearances} apps` : null;
+    return p.redCards ? `${p.redCards}🟥` : null;
+  };
+
+  const rankColor = (i) => {
+    if (i === 0) return "#FFD700"; // Gold
+    if (i === 1) return "#C0C0C0"; // Silver
+    if (i === 2) return "#CD7F32"; // Bronze
+    return "#555";
+  };
+
+  const rankBg = (i) => {
+    if (i === 0) return "linear-gradient(135deg, rgba(255,215,0,0.08), rgba(255,215,0,0.02))";
+    if (i === 1) return "linear-gradient(135deg, rgba(192,192,192,0.06), rgba(192,192,192,0.01))";
+    if (i === 2) return "linear-gradient(135deg, rgba(205,127,50,0.06), rgba(205,127,50,0.01))";
+    return "transparent";
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -482,28 +508,52 @@ function TopScorersGraphic() {
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "22px 18px 18px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, marginTop: 8 }}>
+              {/* Header */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, marginTop: 8 }}>
                 {LEAGUE_LOGOS[leagueId] && <img src={LEAGUE_LOGOS[leagueId]} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 900, color: "#f0f0f0" }}>{typeLabels[type]}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 15, fontWeight: 900, color: "#f0f0f0" }}>{typeLabels[type]}</div>
                   <div style={{ fontSize: 10, color: "#555" }}>{LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label}</div>
                 </div>
+                <div style={{ fontSize: 9, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{statLabel[type]}</div>
               </div>
-              <div style={{ height: 1, background: "#1a1a2a", marginBottom: 12 }} />
-              {data.players.map((p, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid #0f0f1a" }}>
-                  <div style={{ width: 22, textAlign: "center", fontSize: 13, color: i < 3 ? "#f59e0b" : "#555", fontWeight: 900 }}>{i + 1}</div>
-                  {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
-                      {p.teamLogo && <img src={p.teamLogo} alt="" crossOrigin="anonymous" style={{ width: 14, height: 14, objectFit: "contain" }} />}
-                      <span style={{ fontSize: 10, color: "#555" }}>{p.team}</span>
+              <div style={{ height: 1, background: "#1a1a2a", marginBottom: 8 }} />
+
+              {data.players.map((p, i) => {
+                const isTop3 = i < 3;
+                const secondary = getSecondary(p);
+                return (
+                  <div key={i} style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    padding: isTop3 ? "10px 8px" : "7px 4px",
+                    borderBottom: "1px solid #0f0f1a",
+                    background: rankBg(i),
+                    borderRadius: isTop3 ? 8 : 0,
+                    marginBottom: isTop3 ? 4 : 0,
+                    border: i === 0 ? "1px solid rgba(255,215,0,0.15)" : i === 1 ? "1px solid rgba(192,192,192,0.1)" : i === 2 ? "1px solid rgba(205,127,50,0.1)" : "none",
+                  }}>
+                    {/* Rank */}
+                    <div style={{ width: 24, textAlign: "center", fontSize: isTop3 ? 16 : 12, color: rankColor(i), fontWeight: 900, flexShrink: 0 }}>
+                      {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
+                    </div>
+                    {/* Photo */}
+                    {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: isTop3 ? 36 : 28, height: isTop3 ? 36 : 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: isTop3 ? `1.5px solid ${rankColor(i)}44` : "none" }} />}
+                    {/* Name + team */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: isTop3 ? 14 : 12, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
+                        {p.teamLogo && <img src={p.teamLogo} alt="" crossOrigin="anonymous" style={{ width: 12, height: 12, objectFit: "contain" }} />}
+                        <span style={{ fontSize: 10, color: "#555" }}>{p.team}</span>
+                        {secondary && <span style={{ fontSize: 9, color: "#444", marginLeft: 4 }}>· {secondary}</span>}
+                      </div>
+                    </div>
+                    {/* Stat value */}
+                    <div style={{ fontSize: isTop3 ? 28 : 20, fontWeight: 900, color: "#4ade80", minWidth: 36, textAlign: "right", flexShrink: 0 }}>
+                      {getStatValue(p)}
                     </div>
                   </div>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: "#4ade80", minWidth: 50, textAlign: "right" }}>{typeValues[type](p)}</div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </GraphicCard>
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%" }}>
