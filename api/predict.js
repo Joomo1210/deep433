@@ -29,10 +29,17 @@ export default async function handler(req, res) {
   // ─────────────────────────────────────────────────────────────────────────
 
   // ── Fetch live squads from API-Football using fixtureId ──────────────────
+  const fetchWithTimeout = (url, options, ms = 5000) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), ms);
+    return fetch(url, { ...options, signal: controller.signal })
+      .finally(() => clearTimeout(timer));
+  };
+
   async function fetchLiveSquad(teamId) {
     if (!teamId) return null;
     try {
-      const r = await fetch(`https://v3.football.api-sports.io/players/squads?team=${teamId}`, {
+      const r = await fetchWithTimeout(`https://v3.football.api-sports.io/players/squads?team=${teamId}`, {
         headers: { 'x-apisports-key': process.env.API_FOOTBALL_KEY }
       });
       const data = await r.json();
@@ -62,7 +69,7 @@ export default async function handler(req, res) {
 
   if (fixtureId) {
     try {
-      const fixR = await fetch(`https://v3.football.api-sports.io/fixtures?id=${fixtureId}`, {
+      const fixR = await fetchWithTimeout(`https://v3.football.api-sports.io/fixtures?id=${fixtureId}`, {
         headers: { 'x-apisports-key': process.env.API_FOOTBALL_KEY }
       });
       const fixData = await fixR.json();
