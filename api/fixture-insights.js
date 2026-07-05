@@ -55,6 +55,17 @@ export default async function handler(req, res) {
     const homeForm = pred.teams?.home?.last_5?.form || "";
     const awayForm = pred.teams?.away?.last_5?.form || "";
 
+    // Normalise comparison values to always sum to 100%
+    const norm = (a, b) => {
+      const av = Math.max(parseFloat(a) || 0, 5);
+      const bv = Math.max(parseFloat(b) || 0, 5);
+      const total = av + bv;
+      return { a: Math.round((av / total) * 100) + "%", b: Math.round((bv / total) * 100) + "%" };
+    };
+    const atk  = norm(comp.att?.home,  comp.att?.away);
+    const def  = norm(comp.def?.home,  comp.def?.away);
+    const form = norm(comp.form?.home, comp.form?.away);
+
     return res.status(200).json({
       available: true,
       winner,
@@ -70,12 +81,12 @@ export default async function handler(req, res) {
         away: goalsAway,
       },
       comparison: {
-        attackHome: comp.att?.home,
-        attackAway: comp.att?.away,
-        defenceHome: comp.def?.home,
-        defenceAway: comp.def?.away,
-        formHome: comp.form?.home,
-        formAway: comp.form?.away,
+        attackHome: atk.a,
+        attackAway: atk.b,
+        defenceHome: def.a,
+        defenceAway: def.b,
+        formHome: form.a,
+        formAway: form.b,
         h2hHome: comp.h2h?.home,
         h2hAway: comp.h2h?.away,
       },
