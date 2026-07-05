@@ -885,18 +885,23 @@ function BracketGraphic({ history = [] }) {
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
+  // 7 manual selectors: 4 QF + 2 SF + 1 Final
+  const [sel, setSel] = useState({ qf1:"", qf2:"", qf3:"", qf4:"", sf1:"", sf2:"", fin:"" });
+  const setS = (key) => (val) => setSel(prev => ({ ...prev, [key]: val }));
+
   const CUP_LEAGUES = [
-    { id: "wc2026",     label: "World Cup 2026" },
-    { id: "ucl",        label: "Champions League" },
-    { id: "uel",        label: "Europa League" },
-    { id: "facup",      label: "FA Cup" },
+    { id: "wc2026", label: "World Cup 2026" },
+    { id: "ucl",    label: "Champions League" },
+    { id: "uel",    label: "Europa League" },
+    { id: "facup",  label: "FA Cup" },
     { id: "copadelrey", label: "Copa del Rey" },
-    { id: "afcon",      label: "AFCON" },
+    { id: "afcon",  label: "AFCON" },
     { id: "copamerica", label: "Copa America" },
   ];
 
   useEffect(() => {
     setLoading(true); setRounds([]);
+    setSel({ qf1:"", qf2:"", qf3:"", qf4:"", sf1:"", sf2:"", fin:"" });
     fetch(`/api/bracket?leagueId=${leagueId}`)
       .then(r => r.json())
       .then(d => setRounds(d.rounds || []))
@@ -909,6 +914,13 @@ function BracketGraphic({ history = [] }) {
     (norm(h.home_team) === norm(m.home) && norm(h.away_team) === norm(m.away)) ||
     (norm(h.home_team) === norm(m.away) && norm(h.away_team) === norm(m.home))
   );
+
+  const getMatch = (val) => {
+    if (!val) return null;
+    const [roundName, mi] = val.split(":::");
+    const r = rounds.find(r => r.round === roundName);
+    return r?.matches[parseInt(mi)] || null;
+  };
 
   const download = async () => {
     if (!cardRef.current) return;
@@ -929,46 +941,28 @@ function BracketGraphic({ history = [] }) {
     setDownloading(false);
   };
 
-  const MatchNode = ({ m, width = 155 }) => {
-    if (!m) return (
-      <div style={{ width, background: "#0d0d18", border: "1px dashed #1e1e30", borderRadius: 8, padding: "10px 8px", textAlign: "center" }}>
-        <span style={{ fontSize: 9, color: "#333" }}>TBD</span>
-      </div>
-    );
+  const Node = ({ val, w = 155 }) => {
+    const m = getMatch(val);
     const pred = getUserPred(m);
-    const isF = m.status === "finished";
-    const isL = m.status === "live";
+    const isF = m?.status === "finished";
+    const isL = m?.status === "live";
     const hw = isF && m.score.home > m.score.away;
     const aw = isF && m.score.away > m.score.home;
 
+    if (!m) return (
+      <div style={{ width: w, background: "#0d0d18", border: "1px dashed #1e1e30", borderRadius: 8, padding: "14px 8px", textAlign: "center" }}>
+        <span style={{ fontSize: 9, color: "#333" }}>Select match</span>
+      </div>
+    );
+
     return (
-      <div style={{
-        width, background: "#13131f",
-        border: `1.5px solid ${pred ? "#4ade80" : isL ? "#ef4444" : "#1e1e30"}`,
-        borderRadius: 8, overflow: "hidden",
-        boxShadow: pred ? "0 0 8px rgba(74,222,128,0.2)" : "none",
-        flexShrink: 0,
-      }}>
+      <div style={{ width: w, background: "#13131f", border: `1.5px solid ${pred ? "#4ade80" : isL ? "#ef4444" : "#1e1e30"}`, borderRadius: 8, overflow: "hidden", boxShadow: pred ? "0 0 8px rgba(74,222,128,0.2)" : "none", flexShrink: 0 }}>
         {isL && <div style={{ height: 2, background: "#ef4444" }} />}
-        {[
-          { name: m.home, logo: m.homeLogo, score: m.score?.home, won: hw },
-          { name: m.away, logo: m.awayLogo, score: m.score?.away, won: aw },
-        ].map((t, i) => (
-          <div key={i} style={{
-            display: "flex", alignItems: "center", gap: 5, padding: "5px 7px",
-            background: t.won ? "#4ade8012" : "transparent",
-            borderBottom: i === 0 ? "1px solid #0f0f1a" : "none",
-          }}>
-            {t.logo
-              ? <img src={t.logo} alt="" crossOrigin="anonymous" style={{ width: 16, height: 16, objectFit: "contain", flexShrink: 0 }} />
-              : <div style={{ width: 16, height: 16, background: "#1a1a2a", borderRadius: "50%", flexShrink: 0 }} />
-            }
-            <span style={{ fontSize: 10, fontWeight: t.won ? 800 : 600, color: t.won ? "#4ade80" : "#f0f0f0", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {t.name || "TBD"}
-            </span>
-            {(isF || isL) && (
-              <span style={{ fontSize: 11, fontWeight: 900, color: t.won ? "#4ade80" : "#888" }}>{t.score ?? 0}</span>
-            )}
+        {[{ name: m.home, logo: m.homeLogo, score: m.score?.home, won: hw }, { name: m.away, logo: m.awayLogo, score: m.score?.away, won: aw }].map((t, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 7px", background: t.won ? "#4ade8012" : "transparent", borderBottom: i === 0 ? "1px solid #0f0f1a" : "none" }}>
+            {t.logo ? <img src={t.logo} alt="" crossOrigin="anonymous" style={{ width: 16, height: 16, objectFit: "contain", flexShrink: 0 }} /> : <div style={{ width: 16, height: 16, background: "#1a1a2a", borderRadius: "50%", flexShrink: 0 }} />}
+            <span style={{ fontSize: 10, fontWeight: t.won ? 800 : 600, color: t.won ? "#4ade80" : "#f0f0f0", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name || "TBD"}</span>
+            {(isF || isL) && <span style={{ fontSize: 11, fontWeight: 900, color: t.won ? "#4ade80" : "#888" }}>{t.score ?? 0}</span>}
           </div>
         ))}
         <div style={{ padding: "2px 7px", background: "#0d0d18", display: "flex", justifyContent: "space-between" }}>
@@ -981,44 +975,35 @@ function BracketGraphic({ history = [] }) {
     );
   };
 
-  const Connector = ({ double = false }) => (
-    <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-around", alignItems: "center", padding: "0 4px", flexShrink: 0 }}>
-      {double ? (
-        <>
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <div style={{ width: 12, height: 1, background: "#2a2a3a" }} />
-            <span style={{ fontSize: 10, color: "#333" }}>›</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <div style={{ width: 12, height: 1, background: "#2a2a3a" }} />
-            <span style={{ fontSize: 10, color: "#333" }}>›</span>
-          </div>
-        </>
-      ) : (
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <div style={{ width: 12, height: 1, background: "#2a2a3a" }} />
-          <span style={{ fontSize: 10, color: "#333" }}>›</span>
-        </div>
-      )}
+  const Arr = () => (
+    <div style={{ display: "flex", alignItems: "center", padding: "0 4px", flexShrink: 0 }}>
+      <div style={{ width: 10, height: 1, background: "#2a2a3a" }} />
+      <span style={{ fontSize: 10, color: "#333" }}>›</span>
     </div>
   );
 
-  const RoundLabel = ({ label, color = "#4ade80" }) => (
-    <div style={{ fontSize: 8, fontWeight: 800, color, textTransform: "uppercase", letterSpacing: 1.5, textAlign: "center", marginBottom: 6 }}>{label}</div>
+  const DropDown = ({ label, skey }) => (
+    <div>
+      <div style={{ fontSize: 9, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>{label}</div>
+      <select value={sel[skey]} onChange={e => setS(skey)(e.target.value)} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "7px 10px", outline: "none", fontFamily: "inherit" }}>
+        <option value="">— Select —</option>
+        {rounds.map(r => (
+          <optgroup key={r.round} label={r.round}>
+            {r.matches.map((m, i) => (
+              <option key={m.fixtureId} value={`${r.round}:::${i}`}>
+                {m.home || "TBD"} vs {m.away || "TBD"} {m.status === "finished" ? `(${m.score.home}-${m.score.away})` : ""}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+    </div>
   );
 
-  // Pair matches within each round for bracket display
-  const pairMatches = (matches) => {
-    const pairs = [];
-    for (let i = 0; i < matches.length; i += 2) {
-      pairs.push([matches[i], matches[i+1] || null]);
-    }
-    return pairs;
-  };
+  const hasAny = Object.values(sel).some(v => v);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      {/* League selector */}
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         {CUP_LEAGUES.map(l => (
           <button key={l.id} onClick={() => setLeagueId(l.id)} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
@@ -1028,17 +1013,21 @@ function BracketGraphic({ history = [] }) {
         ))}
       </div>
 
-      {loading && <div style={{ textAlign: "center", color: "#555", fontSize: 13, padding: "20px 0" }}>Loading bracket...</div>}
+      {loading && <div style={{ textAlign: "center", color: "#555", fontSize: 13, padding: "20px 0" }}>Loading...</div>}
 
       {!loading && rounds.length > 0 && (
         <>
-          {/* Bracket card — horizontally scrollable */}
-          <div ref={cardRef} style={{
-            background: "linear-gradient(145deg, #0a0a0f 0%, #0d0d1a 60%, #0a0f0a 100%)",
-            border: "1px solid #1e1e30", borderRadius: 14,
-            position: "relative", padding: "28px 16px 16px",
-            fontFamily: "'Inter',sans-serif", overflowX: "auto",
-          }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <DropDown label="QF Match 1 (top left)" skey="qf1" />
+            <DropDown label="QF Match 2 (bottom left)" skey="qf2" />
+            <DropDown label="QF Match 3 (top right)" skey="qf3" />
+            <DropDown label="QF Match 4 (bottom right)" skey="qf4" />
+            <DropDown label="SF Match 1 (top)" skey="sf1" />
+            <DropDown label="SF Match 2 (bottom)" skey="sf2" />
+            <DropDown label="🏆 Final" skey="fin" />
+          </div>
+
+          <div ref={cardRef} style={{ background: "linear-gradient(145deg, #0a0a0f 0%, #0d0d1a 60%, #0a0f0a 100%)", border: "1px solid #1e1e30", borderRadius: 14, overflow: "hidden", position: "relative", padding: "28px 16px 16px", fontFamily: "'Inter',sans-serif" }}>
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
             <div style={{ position: "absolute", top: 10, right: 12, display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ fontSize: 9, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
@@ -1046,36 +1035,42 @@ function BracketGraphic({ history = [] }) {
             </div>
             <div style={{ textAlign: "center", marginBottom: 14 }}>
               <span style={{ fontSize: 9, color: "#888", textTransform: "uppercase", letterSpacing: 2 }}>
-                {CUP_LEAGUES.find(l => l.id === leagueId)?.label} · Tournament Bracket
+                {CUP_LEAGUES.find(l => l.id === leagueId)?.label} · Bracket
               </span>
             </div>
 
-            {/* Bracket rounds side by side */}
-            <div style={{ display: "flex", alignItems: "center", gap: 0, minWidth: "max-content" }}>
-              {rounds.map((round, ri) => {
-                const isLast = ri === rounds.length - 1;
-                const pairs = pairMatches(round.matches);
-                const roundColor = ri === rounds.length - 1 ? "#f59e0b" : ri === rounds.length - 2 ? "#a855f7" : "#4ade80";
-
-                return (
-                  <div key={round.round} style={{ display: "flex", alignItems: "center" }}>
-                    {/* Round column */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                      <RoundLabel label={round.round} color={roundColor} />
-                      <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-around", gap: 12 }}>
-                        {round.matches.map((m, mi) => (
-                          <MatchNode key={m.fixtureId || mi} m={m} width={ri === rounds.length - 1 ? 170 : 155} />
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Connector to next round */}
-                    {!isLast && (
-                      <Connector double={round.matches.length > rounds[ri+1]?.matches.length} />
-                    )}
+            <div style={{ display: "flex", alignItems: "center", overflowX: "auto" }}>
+              {/* QF column */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 0, flexShrink: 0 }}>
+                <div style={{ fontSize: 8, color: "#4ade80", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, textAlign: "center", marginBottom: 6 }}>Quarter-Final</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4, paddingBottom: 12 }}>
+                    <Node val={sel.qf1} />
+                    <Node val={sel.qf2} />
                   </div>
-                );
-              })}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4, paddingTop: 12 }}>
+                    <Node val={sel.qf3} />
+                    <Node val={sel.qf4} />
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-around", gap: 60, padding: "0 2px", flexShrink: 0 }}>
+                <Arr /><Arr />
+              </div>
+              {/* SF column */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 0, flexShrink: 0 }}>
+                <div style={{ fontSize: 8, color: "#a855f7", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, textAlign: "center", marginBottom: 6 }}>Semi-Final</div>
+                <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-around", gap: 48 }}>
+                  <Node val={sel.sf1} />
+                  <Node val={sel.sf2} />
+                </div>
+              </div>
+              <div style={{ padding: "0 2px", flexShrink: 0, alignSelf: "center" }}><Arr /></div>
+              {/* Final */}
+              <div style={{ flexShrink: 0 }}>
+                <div style={{ fontSize: 8, color: "#f59e0b", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, textAlign: "center", marginBottom: 6 }}>🏆 Final</div>
+                <Node val={sel.fin} w={170} />
+              </div>
             </div>
 
             <div style={{ textAlign: "center", marginTop: 10 }}>
@@ -1083,7 +1078,7 @@ function BracketGraphic({ history = [] }) {
             </div>
           </div>
 
-          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%" }}>
+          <button onClick={download} disabled={downloading || !hasAny} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%", opacity: !hasAny ? 0.4 : 1 }}>
             {downloading ? "Generating..." : "⬇ Download Bracket Card"}
           </button>
         </>
@@ -1091,6 +1086,7 @@ function BracketGraphic({ history = [] }) {
     </div>
   );
 }
+
 
 
 // ─── MAIN EXPORT ─────────────────────────────────────────────────────────────
