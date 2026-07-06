@@ -258,7 +258,7 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
       </div>
       {/* Centre watermark */}
       <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", zIndex: 0 }}>
-        <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: "55%", opacity: 0.06, filter: "grayscale(100%)", objectFit: "contain", transform: "rotate(-15deg)", userSelect: "none" }} />
+        <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: "55%", height: "55%", opacity: 0.12, objectFit: "contain", borderRadius: "50%", userSelect: "none" }} />
       </div>
       {/* Competition context */}
       <div style={{ textAlign: "center", paddingTop: 18, paddingBottom: 4 }}>
