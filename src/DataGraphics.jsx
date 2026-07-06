@@ -790,7 +790,7 @@ function RecapGraphic({ history = [] }) {
 
   const isLandscape = variant === "landscape";
 
-  const handleSelect = (f) => {
+  const handleSelect = async (f) => {
     setSelectedFixture(f);
     setError("");
     setMatchData(null);
@@ -802,10 +802,38 @@ function RecapGraphic({ history = [] }) {
       (norm(h.home_team) === norm(f.home) && norm(h.away_team) === norm(f.away)) ||
       (norm(h.home_team) === norm(f.away) && norm(h.away_team) === norm(f.home))
     );
+
+    // Fetch goalscorers from match stats
+    let homeGoals = [];
+    let awayGoals = [];
+    if (f.fixtureId) {
+      try {
+        const r = await fetch(`/api/match-stats?fixtureId=${f.fixtureId}`);
+        const d = await r.json();
+        // Also fetch events for goalscorers
+        const er = await fetch(`/api/live-scores?leagueId=wc2026&date=${f.date}`);
+        const ed = await er.json();
+        const liveMatch = (ed.matches || []).find(m =>
+          norm(m.home) === norm(f.home) || norm(m.away) === norm(f.home)
+        );
+        if (liveMatch?.events) {
+          liveMatch.events.filter(e => e.type === "Goal").forEach(e => {
+            const scorer = `${e.label?.split("(")[0]?.trim()} ${e.minute}'`;
+            if (norm(e.team) === norm(f.home)) homeGoals.push(scorer);
+            else awayGoals.push(scorer);
+          });
+        }
+      } catch {}
+    }
+
     setMatchData({
       finalScore: fs,
       yourPrediction: pred?.user_prediction || null,
       aiPrediction: pred?.ai_prediction || null,
+      homeGoals,
+      awayGoals,
+      competition: "World Cup 2026",
+      round: f.round || "",
     });
   };
 
@@ -835,9 +863,15 @@ function RecapGraphic({ history = [] }) {
   const finalScore = matchData?.finalScore;
 
   const getOutcome = (pred) => {
-    if (!pred || !finalScore) return null;
+    if (!pred || !matchData?.finalScore) return null;
     const [p0, p1] = pred.split("-").map(n => parseInt(n) || 0);
-    return (p0 === fs0 && p1 === fs1) ? "✅" : "❌";
+    if (p0 === fs0 && p1 === fs1) return { icon: "✅", label: "Exact", color: "#4ade80" };
+    const homeWon = fs0 > fs1;
+    const awayWon = fs1 > fs0;
+    const draw = fs0 === fs1;
+    const correct = (homeWon && p0 > p1) || (awayWon && p1 > p0) || (draw && p0 === p1);
+    if (correct) return { icon: "🟡", label: "Outcome ✓", color: "#f59e0b" };
+    return { icon: "❌", label: "Missed", color: "#f87171" };
   };
 
   const yourResult = getOutcome(yourPrediction);
@@ -858,27 +892,42 @@ function RecapGraphic({ history = [] }) {
         <span style={{ fontSize: 11, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
         <span style={{ fontSize: 9, color: "#555" }}>deep433.com</span>
       </div>
+      {/* Watermark */}
+      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", zIndex: 0 }}>
+        <div style={{ fontSize: 60, fontWeight: 900, color: "#4ade80", opacity: 0.04, letterSpacing: 4, transform: "rotate(-15deg)", userSelect: "none" }}>DEEP433</div>
+      </div>
 
       {isLandscape ? (
         <>
           {/* Left: final score hero */}
-          <div style={{ width: "45%", padding: "36px 20px 20px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", borderRight: "1px solid #1a1a2a" }}>
-            <div style={{ fontSize: 11, color: "#f0f0f0", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12, fontWeight: 900 }}>{selectedFixture?.round || "Match Recap"}</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 12 }}>
+          <div style={{ width: "50%", padding: "36px 20px 20px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", borderRight: "1px solid #1a1a2a", position: "relative", zIndex: 1 }}>
+            {/* Enhanced header */}
+            <div style={{ textAlign: "center", marginBottom: 12 }}>
+              <div style={{ fontSize: 8, color: "#555", letterSpacing: 2, textTransform: "uppercase" }}>{matchData?.competition}</div>
+              <div style={{ fontSize: 11, color: "#f0f0f0", letterSpacing: 2, textTransform: "uppercase", fontWeight: 900 }}>{selectedFixture?.round}</div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 8 }}>
               {selectedFixture?.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 44, height: 44, objectFit: "contain" }} />}
               <div style={{ textAlign: "center" }}>
                 <div style={{ fontSize: 9, color: "#555", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Full Time</div>
-                <div style={{ fontSize: 64, fontWeight: 900, color: "#f0f0f0", lineHeight: 1 }}>{fs0}-{fs1}</div>
+                <div style={{ fontSize: 56, fontWeight: 900, color: "#f0f0f0", lineHeight: 1 }}>{fs0}-{fs1}</div>
               </div>
               {selectedFixture?.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 44, height: 44, objectFit: "contain" }} />}
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", width: "100%", fontSize: 12, fontWeight: 700, color: "#888" }}>
-              <span style={{ color: "#4ade80" }}>{selectedFixture?.home}</span>
-              <span style={{ color: "#f59e0b" }}>{selectedFixture?.away}</span>
+            {/* Team names + goalscorers */}
+            <div style={{ display: "flex", justifyContent: "space-between", width: "100%", gap: 8 }}>
+              <div style={{ textAlign: "left", flex: 1 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#4ade80" }}>{selectedFixture?.home}</div>
+                {matchData?.homeGoals?.map((g, i) => <div key={i} style={{ fontSize: 9, color: "#555", marginTop: 2 }}>{g}</div>)}
+              </div>
+              <div style={{ textAlign: "right", flex: 1 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#f59e0b" }}>{selectedFixture?.away}</div>
+                {matchData?.awayGoals?.map((g, i) => <div key={i} style={{ fontSize: 9, color: "#555", marginTop: 2 }}>{g}</div>)}
+              </div>
             </div>
           </div>
           {/* Right: predictions */}
-          <div style={{ flex: 1, padding: "36px 20px 20px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 14 }}>
+          <div style={{ flex: 1, padding: "36px 20px 20px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 12, position: "relative", zIndex: 1 }}>
             <div style={{ fontSize: 10, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Predictions</div>
             {[{ label: "👤 Your Call", pred: yourPrediction, result: yourResult, color: "#4ade80" }, { label: "🤖 AI Predicted", pred: aiPrediction, result: aiResult, color: "#f59e0b" }].map(p => (
               <div key={p.label} style={{ background: "#13131f", borderRadius: 10, padding: "12px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -886,37 +935,55 @@ function RecapGraphic({ history = [] }) {
                   <div style={{ fontSize: 10, color: p.color, fontWeight: 700, marginBottom: 4 }}>{p.label}</div>
                   <div style={{ fontSize: 28, fontWeight: 900, color: p.color }}>{p.pred || "—"}</div>
                 </div>
-                {p.result && <div style={{ fontSize: 20, fontWeight: 900 }}>{p.result}</div>}
+                {p.result && (
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 20 }}>{p.result.icon}</div>
+                    <div style={{ fontSize: 8, color: p.result.color, fontWeight: 700, marginTop: 2 }}>{p.result.label}</div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         </>
       ) : (
-        <div style={{ flex: 1, padding: "20px", display: "flex", flexDirection: "column", gap: 14, paddingTop: 36 }}>
-          {/* Final score — dominant hero */}
+        <div style={{ flex: 1, padding: "20px", display: "flex", flexDirection: "column", gap: 12, paddingTop: 32, position: "relative", zIndex: 1 }}>
+          {/* Enhanced header + final score */}
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 11, color: "#f0f0f0", letterSpacing: 2, textTransform: "uppercase", marginBottom: 8, fontWeight: 900 }}>{selectedFixture?.round || "Match Recap"}</div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 8 }}>
-              {selectedFixture?.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 44, height: 44, objectFit: "contain" }} />}
+            <div style={{ fontSize: 8, color: "#555", letterSpacing: 2, textTransform: "uppercase", marginBottom: 2 }}>{matchData?.competition}</div>
+            <div style={{ fontSize: 10, color: "#f0f0f0", letterSpacing: 2, textTransform: "uppercase", marginBottom: 8, fontWeight: 900 }}>{selectedFixture?.round}</div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 6 }}>
+              {selectedFixture?.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 40, height: 40, objectFit: "contain" }} />}
               <div>
-                <div style={{ fontSize: 9, color: "#555", textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }}>Full Time</div>
-                <div style={{ fontSize: 68, fontWeight: 900, color: "#f0f0f0", lineHeight: 1 }}>{fs0}-{fs1}</div>
+                <div style={{ fontSize: 8, color: "#555", textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }}>Full Time</div>
+                <div style={{ fontSize: 56, fontWeight: 900, color: "#f0f0f0", lineHeight: 1 }}>{fs0}-{fs1}</div>
               </div>
-              {selectedFixture?.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 44, height: 44, objectFit: "contain" }} />}
+              {selectedFixture?.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 40, height: 40, objectFit: "contain" }} />}
             </div>
-            <div style={{ display: "flex", justifyContent: "center", gap: 24, fontSize: 12, fontWeight: 700 }}>
-              <span style={{ color: "#4ade80" }}>{selectedFixture?.home}</span>
-              <span style={{ color: "#f59e0b" }}>{selectedFixture?.away}</span>
+            {/* Team names + goalscorers */}
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginTop: 4 }}>
+              <div style={{ textAlign: "left", flex: 1 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#4ade80" }}>{selectedFixture?.home}</div>
+                {matchData?.homeGoals?.map((g, i) => <div key={i} style={{ fontSize: 8, color: "#555", marginTop: 1 }}>{g}</div>)}
+              </div>
+              <div style={{ textAlign: "right", flex: 1 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#f59e0b" }}>{selectedFixture?.away}</div>
+                {matchData?.awayGoals?.map((g, i) => <div key={i} style={{ fontSize: 8, color: "#555", marginTop: 1 }}>{g}</div>)}
+              </div>
             </div>
           </div>
           <div style={{ height: 1, background: "#1a1a2a" }} />
-          {/* Predictions side by side */}
+          {/* Predictions */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             {[{ label: "👤 Your Call", pred: yourPrediction, result: yourResult, color: "#4ade80" }, { label: "🤖 AI Predicted", pred: aiPrediction, result: aiResult, color: "#818cf8" }].map(p => (
               <div key={p.label} style={{ background: "#13131f", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
                 <div style={{ fontSize: 9, color: p.color, fontWeight: 700, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>{p.label}</div>
-                <div style={{ fontSize: 26, fontWeight: 900, color: p.color, marginBottom: 4 }}>{p.pred || "—"}</div>
-                {p.result && <div style={{ fontSize: 18, fontWeight: 900 }}>{p.result}</div>}
+                <div style={{ fontSize: 24, fontWeight: 900, color: p.color, marginBottom: 4 }}>{p.pred || "—"}</div>
+                {p.result && (
+                  <>
+                    <div style={{ fontSize: 16 }}>{p.result.icon}</div>
+                    <div style={{ fontSize: 8, color: p.result.color, fontWeight: 700, marginTop: 2 }}>{p.result.label}</div>
+                  </>
+                )}
               </div>
             ))}
           </div>
