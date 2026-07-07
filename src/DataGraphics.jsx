@@ -1281,40 +1281,51 @@ function BracketGraphic({ history = [] }) {
               </div>
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", overflowX: "auto" }}>
-              {/* QF column */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 0, flexShrink: 0 }}>
-                <div style={{ fontSize: 10, color: "#4ade80", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5, textAlign: "center", marginBottom: 8 }}>Quarter-Final</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4, paddingBottom: 12 }}>
-                    <Node val={sel.qf1} />
-                    <Node val={sel.qf2} />
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4, paddingTop: 12 }}>
-                    <Node val={sel.qf3} />
-                    <Node val={sel.qf4} />
-                  </div>
+            <div style={{ position: "relative", width: "100%", maxWidth: 460, margin: "0 auto", padding: "10px 0" }}>
+              {/* Grid: 3 columns x 2 rows, Final spans center */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 170px 1fr", gridTemplateRows: "auto auto", gap: "16px 12px", alignItems: "center" }}>
+
+                {/* Top-left: QF1 */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                  <div style={{ fontSize: 9, color: "#4ade80", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Quarter-Final</div>
+                  <Node val={sel.qf1} w={140} />
+                </div>
+
+                {/* Top-center: SF1 */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <div style={{ fontSize: 9, color: "#c084fc", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Semi-Final</div>
+                  <Node val={sel.sf1} w={150} />
+                </div>
+
+                {/* Top-right: QF3 */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+                  <div style={{ fontSize: 9, color: "#4ade80", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Quarter-Final</div>
+                  <Node val={sel.qf3} w={140} />
+                </div>
+
+                {/* Bottom-left: QF2 */}
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <Node val={sel.qf2} w={140} />
+                </div>
+
+                {/* Bottom-center: SF2 */}
+                <div style={{ display: "flex", justifyContent: "center" }}>
+                  <Node val={sel.sf2} w={150} />
+                </div>
+
+                {/* Bottom-right: QF4 */}
+                <div style={{ display: "flex", justifyContent: "flex-start" }}>
+                  <Node val={sel.qf4} w={140} />
                 </div>
               </div>
-              <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-around", gap: 60, padding: "0 2px", flexShrink: 0 }}>
-                <Arr /><Arr />
-              </div>
-              {/* SF column */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 0, flexShrink: 0 }}>
-                <div style={{ fontSize: 10, color: "#c084fc", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5, textAlign: "center", marginBottom: 8 }}>Semi-Final</div>
-                <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-around", gap: 48 }}>
-                  <Node val={sel.sf1} />
-                  <Node val={sel.sf2} />
-                </div>
-              </div>
-              <div style={{ padding: "0 2px", flexShrink: 0, alignSelf: "center" }}><Arr /></div>
-              {/* Final */}
-              <div style={{ flexShrink: 0 }}>
+
+              {/* Final — dead centre, overlaid */}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 20 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, marginBottom: 8 }}>
-                  <TrophyIcon size={16} />
-                  <span style={{ fontSize: 11, color: "#fbbf24", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5 }}>Final</span>
+                  <TrophyIcon size={18} />
+                  <span style={{ fontSize: 12, color: "#fbbf24", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5 }}>Final</span>
                 </div>
-                <Node val={sel.fin} w={170} />
+                <Node val={sel.fin} w={180} />
               </div>
             </div>
 
