@@ -818,14 +818,21 @@ function RecapGraphic({ history = [] }) {
         const statsData = await statsRes.json();
         const eventsData = await eventsRes.json();
 
-        // Extract goals and cards with icons
-        (eventsData.events || []).filter(e => e.type === "Goal" || e.type === "Card").forEach(e => {
-          const surname = e.label?.split(" ").slice(-1)[0]?.replace(/[()]/g, "").trim();
-          const time = `${e.minute}'`;
-          const entry = `${e.icon} ${surname} ${time}`;
-          if (norm(e.team) === norm(f.home)) homeGoals.push(entry);
-          else awayGoals.push(entry);
-        });
+        // Extract goals (excluding missed penalties) and cards
+        (eventsData.events || [])
+          .filter(e => {
+            if (e.type === "Goal" && e.detail === "Missed Penalty") return false;
+            return e.type === "Goal" || e.type === "Card";
+          })
+          .forEach(e => {
+            // Scorer is before the bracket e.g. "Kane (Bellingham)" -> "Kane"
+            const scorerFull = e.label?.split("(")[0]?.trim() || "";
+            const surname = scorerFull.split(" ").slice(-1)[0]?.trim();
+            const time = `${e.minute}'`;
+            const entry = `${e.icon} ${surname} ${time}`;
+            if (norm(e.team) === norm(f.home)) homeGoals.push(entry);
+            else awayGoals.push(entry);
+          });
 
         // Generate key stat from match stats
         if (statsData.available) {
