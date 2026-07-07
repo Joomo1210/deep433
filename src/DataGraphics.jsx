@@ -810,25 +810,22 @@ function RecapGraphic({ history = [] }) {
 
     if (f.fixtureId) {
       try {
-        // Fetch match stats and live scores in parallel
-        const [statsRes, liveRes] = await Promise.all([
+        // Fetch match stats and events in parallel
+        const [statsRes, eventsRes] = await Promise.all([
           fetch(`/api/match-stats?fixtureId=${f.fixtureId}`),
-          fetch(`/api/live-scores?leagueId=wc2026&date=${f.date}`),
+          fetch(`/api/match-events?fixtureId=${f.fixtureId}`),
         ]);
         const statsData = await statsRes.json();
-        const liveData = await liveRes.json();
+        const eventsData = await eventsRes.json();
 
-        // Extract goalscorers from live events
-        const liveMatch = (liveData.matches || []).find(m =>
-          norm(m.home) === norm(f.home) || norm(m.away) === norm(f.home)
-        );
-        if (liveMatch?.events) {
-          liveMatch.events.filter(e => e.type === "Goal").forEach(e => {
-            const scorer = `${e.label?.split("(")[0]?.trim()} ${e.minute}'`;
-            if (norm(e.team) === norm(f.home)) homeGoals.push(scorer);
-            else awayGoals.push(scorer);
-          });
-        }
+        // Extract goalscorers — format: "Surname 43'"
+        (eventsData.events || []).filter(e => e.type === "Goal").forEach(e => {
+          const surname = e.label?.split(" ").pop()?.split("(")[0]?.trim();
+          const time = `${e.minute}'${e.extra || ""}`;
+          const scorer = `${surname} ${time}`;
+          if (norm(e.team) === norm(f.home)) homeGoals.push(scorer);
+          else awayGoals.push(scorer);
+        });
 
         // Generate key stat from match stats
         if (statsData.available) {
