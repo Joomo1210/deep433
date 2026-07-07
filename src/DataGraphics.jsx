@@ -977,7 +977,7 @@ function RecapGraphic({ history = [] }) {
                 </div>
               )}
               {selectedFixture?.venue && (
-                <div style={{ fontSize: 9, color: "#555" }}>📍 {selectedFixture.venue}{selectedFixture.city ? `, ${selectedFixture.city}" : ""}</div>
+                <div style={{ fontSize: 9, color: "#555" }}>📍 {selectedFixture.venue}{selectedFixture.city ? ", " + selectedFixture.city : ""}</div>
               )}
             </div>
           </div>
@@ -1033,7 +1033,7 @@ function RecapGraphic({ history = [] }) {
               </div>
             )}
             {selectedFixture?.venue && (
-              <div style={{ fontSize: 9, color: "#555" }}>📍 {selectedFixture.venue}{selectedFixture.city ? `, ${selectedFixture.city}" : ""}</div>
+              <div style={{ fontSize: 9, color: "#555" }}>📍 {selectedFixture.venue}{selectedFixture.city ? ", " + selectedFixture.city : ""}</div>
             )}
           </div>
         </div>
