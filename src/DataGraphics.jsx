@@ -1165,26 +1165,26 @@ function BracketGraphic({ history = [] }) {
     const aw = isF && m.score.away > m.score.home;
 
     if (!m) return (
-      <div style={{ width: w, background: "#0d0d18", border: "1px dashed #1e1e30", borderRadius: 8, padding: "14px 8px", textAlign: "center" }}>
-        <span style={{ fontSize: 9, color: "#333" }}>Select match</span>
+      <div style={{ width: w, background: "#161622", border: "1px dashed #2a2a3a", borderRadius: 8, padding: "14px 8px", textAlign: "center" }}>
+        <span style={{ fontSize: 10, color: "#666", fontWeight: 600 }}>Select match</span>
       </div>
     );
 
     return (
-      <div style={{ width: w, background: "#13131f", border: `1.5px solid ${pred ? "#4ade80" : isL ? "#ef4444" : "#1e1e30"}`, borderRadius: 8, overflow: "hidden", boxShadow: pred ? "0 0 8px rgba(74,222,128,0.2)" : "none", flexShrink: 0 }}>
+      <div style={{ width: w, background: "#181826", border: `2px solid ${pred ? "#4ade80" : isL ? "#ef4444" : "#333"}`, borderRadius: 8, overflow: "hidden", boxShadow: pred ? "0 0 10px rgba(74,222,128,0.35)" : "none", flexShrink: 0 }}>
         {isL && <div style={{ height: 2, background: "#ef4444" }} />}
         {[{ name: m.home, logo: m.homeLogo, score: m.score?.home, won: hw }, { name: m.away, logo: m.awayLogo, score: m.score?.away, won: aw }].map((t, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 7px", background: t.won ? "#4ade8012" : "transparent", borderBottom: i === 0 ? "1px solid #0f0f1a" : "none" }}>
-            {t.logo ? <img src={t.logo} alt="" crossOrigin="anonymous" style={{ width: 16, height: 16, objectFit: "contain", flexShrink: 0 }} /> : <div style={{ width: 16, height: 16, background: "#1a1a2a", borderRadius: "50%", flexShrink: 0 }} />}
-            <span style={{ fontSize: 10, fontWeight: t.won ? 800 : 600, color: t.won ? "#4ade80" : "#f0f0f0", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name || "TBD"}</span>
-            {(isF || isL) && <span style={{ fontSize: 11, fontWeight: 900, color: t.won ? "#4ade80" : "#888" }}>{t.score ?? 0}</span>}
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 8px", background: t.won ? "#4ade8020" : "transparent", borderBottom: i === 0 ? "1px solid #26263a" : "none" }}>
+            {t.logo ? <img src={t.logo} alt="" crossOrigin="anonymous" style={{ width: 18, height: 18, objectFit: "contain", flexShrink: 0 }} /> : <div style={{ width: 18, height: 18, background: "#26263a", borderRadius: "50%", flexShrink: 0 }} />}
+            <span style={{ fontSize: 11, fontWeight: t.won ? 900 : 700, color: t.won ? "#4ade80" : "#f5f5f5", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name || "TBD"}</span>
+            {(isF || isL) && <span style={{ fontSize: 13, fontWeight: 900, color: t.won ? "#4ade80" : "#ccc" }}>{t.score ?? 0}</span>}
           </div>
         ))}
-        <div style={{ padding: "2px 7px", background: "#0d0d18", display: "flex", justifyContent: "space-between" }}>
-          <span style={{ fontSize: 7, color: isL ? "#ef4444" : "#555", fontWeight: 700 }}>
+        <div style={{ padding: "3px 8px", background: "#0d0d18", display: "flex", justifyContent: "space-between" }}>
+          <span style={{ fontSize: 8, color: isL ? "#ff6b6b" : "#999", fontWeight: 700 }}>
             {isL ? "🔴 LIVE" : isF ? m.statusRaw : new Date(m.kickoff).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
           </span>
-          {pred && <span style={{ fontSize: 7, color: "#4ade80" }}>✓ {pred.user_prediction}</span>}
+          {pred && <span style={{ fontSize: 8, color: "#4ade80", fontWeight: 700 }}>✓ {pred.user_prediction}</span>}
         </div>
       </div>
     );
@@ -1192,8 +1192,8 @@ function BracketGraphic({ history = [] }) {
 
   const Arr = () => (
     <div style={{ display: "flex", alignItems: "center", padding: "0 4px", flexShrink: 0 }}>
-      <div style={{ width: 10, height: 1, background: "#2a2a3a" }} />
-      <span style={{ fontSize: 10, color: "#333" }}>›</span>
+      <div style={{ width: 10, height: 2, background: "#4a4a5a" }} />
+      <span style={{ fontSize: 13, color: "#888", fontWeight: 900 }}>›</span>
     </div>
   );
 
@@ -1257,7 +1257,7 @@ function BracketGraphic({ history = [] }) {
             <div style={{ display: "flex", alignItems: "center", overflowX: "auto" }}>
               {/* QF column */}
               <div style={{ display: "flex", flexDirection: "column", gap: 0, flexShrink: 0 }}>
-                <div style={{ fontSize: 8, color: "#4ade80", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, textAlign: "center", marginBottom: 6 }}>Quarter-Final</div>
+                <div style={{ fontSize: 10, color: "#4ade80", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5, textAlign: "center", marginBottom: 8 }}>Quarter-Final</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: 4, paddingBottom: 12 }}>
                     <Node val={sel.qf1} />
@@ -1274,7 +1274,7 @@ function BracketGraphic({ history = [] }) {
               </div>
               {/* SF column */}
               <div style={{ display: "flex", flexDirection: "column", gap: 0, flexShrink: 0 }}>
-                <div style={{ fontSize: 8, color: "#a855f7", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, textAlign: "center", marginBottom: 6 }}>Semi-Final</div>
+                <div style={{ fontSize: 10, color: "#c084fc", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5, textAlign: "center", marginBottom: 8 }}>Semi-Final</div>
                 <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-around", gap: 48 }}>
                   <Node val={sel.sf1} />
                   <Node val={sel.sf2} />
@@ -1283,13 +1283,13 @@ function BracketGraphic({ history = [] }) {
               <div style={{ padding: "0 2px", flexShrink: 0, alignSelf: "center" }}><Arr /></div>
               {/* Final */}
               <div style={{ flexShrink: 0 }}>
-                <div style={{ fontSize: 8, color: "#f59e0b", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, textAlign: "center", marginBottom: 6 }}>🏆 Final</div>
+                <div style={{ fontSize: 11, color: "#fbbf24", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5, textAlign: "center", marginBottom: 8 }}>🏆 Final</div>
                 <Node val={sel.fin} w={170} />
               </div>
             </div>
 
             <div style={{ textAlign: "center", marginTop: 10 }}>
-              <span style={{ fontSize: 7, color: "#333" }}>🟢 Green border = your prediction · deep433.com</span>
+              <span style={{ fontSize: 9, color: "#999", fontWeight: 600 }}>🟢 Green border = your prediction · deep433.com</span>
             </div>
           </div>
 
