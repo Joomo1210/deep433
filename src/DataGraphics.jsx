@@ -818,13 +818,13 @@ function RecapGraphic({ history = [] }) {
         const statsData = await statsRes.json();
         const eventsData = await eventsRes.json();
 
-        // Extract goalscorers — format: "Surname 43'"
-        (eventsData.events || []).filter(e => e.type === "Goal").forEach(e => {
-          const surname = e.label?.split(" ").pop()?.split("(")[0]?.trim();
-          const time = `${e.minute}'${e.extra || ""}`;
-          const scorer = `${surname} ${time}`;
-          if (norm(e.team) === norm(f.home)) homeGoals.push(scorer);
-          else awayGoals.push(scorer);
+        // Extract goals and cards with icons
+        (eventsData.events || []).filter(e => e.type === "Goal" || e.type === "Card").forEach(e => {
+          const surname = e.label?.split(" ").slice(-1)[0]?.replace(/[()]/g, "").trim();
+          const time = `${e.minute}'`;
+          const entry = `${e.icon} ${surname} ${time}`;
+          if (norm(e.team) === norm(f.home)) homeGoals.push(entry);
+          else awayGoals.push(entry);
         });
 
         // Generate key stat from match stats
