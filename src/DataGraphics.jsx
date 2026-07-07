@@ -169,7 +169,7 @@ function GraphicCard({ children, cardRef, label }) {
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
         <div style={{ position: "absolute", top: 12, right: 14, zIndex: 2, display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ fontSize: 10, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
-          <span style={{ fontSize: 8, color: "#555" }}>deep433.com</span>
+          <span style={{ fontSize: 9, color: "#888", fontWeight: 600 }}>deep433.com</span>
         </div>
         {/* Centre background watermark */}
         <div style={{
@@ -923,7 +923,7 @@ function RecapGraphic({ history = [] }) {
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
       <div style={{ position: "absolute", top: 12, right: 14, zIndex: 2, display: "flex", alignItems: "center", gap: 6 }}>
         <span style={{ fontSize: 11, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
-        <span style={{ fontSize: 9, color: "#555" }}>deep433.com</span>
+        <span style={{ fontSize: 10, color: "#888", fontWeight: 600 }}>deep433.com</span>
       </div>
       {/* Logo watermark */}
       <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", zIndex: 0 }}>
@@ -984,7 +984,7 @@ function RecapGraphic({ history = [] }) {
                 </div>
               )}
               {selectedFixture?.venue && (
-                <div style={{ fontSize: 9, color: "#555" }}>📍 {selectedFixture.venue}{selectedFixture.city ? ", " + selectedFixture.city : ""}</div>
+                <div style={{ fontSize: 10, color: "#888", fontWeight: 600 }}>📍 {selectedFixture.venue}{selectedFixture.city ? ", " + selectedFixture.city : ""}</div>
               )}
             </div>
           </div>
@@ -1040,7 +1040,7 @@ function RecapGraphic({ history = [] }) {
               </div>
             )}
             {selectedFixture?.venue && (
-              <div style={{ fontSize: 9, color: "#555" }}>📍 {selectedFixture.venue}{selectedFixture.city ? ", " + selectedFixture.city : ""}</div>
+              <div style={{ fontSize: 10, color: "#888", fontWeight: 600 }}>📍 {selectedFixture.venue}{selectedFixture.city ? ", " + selectedFixture.city : ""}</div>
             )}
           </div>
         </div>
@@ -1246,7 +1246,7 @@ function BracketGraphic({ history = [] }) {
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
             <div style={{ position: "absolute", top: 10, right: 12, display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ fontSize: 9, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
-              <span style={{ fontSize: 7, color: "#555" }}>deep433.com</span>
+              <span style={{ fontSize: 8, color: "#888", fontWeight: 600 }}>deep433.com</span>
             </div>
             <div style={{ textAlign: "center", marginBottom: 14 }}>
               <div style={{ fontSize: 13, color: "#f0f0f0", fontWeight: 900, textTransform: "uppercase", letterSpacing: 2 }}>
