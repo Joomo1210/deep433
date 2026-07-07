@@ -254,7 +254,7 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
       <div style={{ position: "absolute", top: 12, right: 14, zIndex: 2, display: "flex", alignItems: "center", gap: 6 }}>
         <span style={{ fontSize: 11, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
-        <span style={{ fontSize: 9, color: "#555" }}>deep433.com</span>
+        <span style={{ fontSize: 10, color: "#888", fontWeight: 600 }}>deep433.com</span>
       </div>
       {/* Centre watermark */}
       <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", zIndex: 0 }}>
