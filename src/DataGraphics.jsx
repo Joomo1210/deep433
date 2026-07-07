@@ -1156,6 +1156,33 @@ function BracketGraphic({ history = [] }) {
     setDownloading(false);
   };
 
+  const TrophyIcon = ({ size = 24 }) => (
+    <svg width={size} height={size} viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+      {/* Globe/top of trophy */}
+      <circle cx="50" cy="22" r="11" fill="#FFD700" stroke="#B8860B" strokeWidth="1.5" />
+      <circle cx="50" cy="19" r="4" fill="#FFF3B0" opacity="0.7" />
+      {/* Spiral bands rising from base to globe — FIFA trophy's signature look */}
+      <path d="M38 78 C 30 68, 30 58, 40 50 C 50 42, 50 34, 44 28"
+            fill="none" stroke="#FFD700" strokeWidth="6" strokeLinecap="round" />
+      <path d="M62 78 C 70 68, 70 58, 60 50 C 50 42, 50 34, 56 28"
+            fill="none" stroke="#FFD700" strokeWidth="6" strokeLinecap="round" />
+      <path d="M50 80 C 50 68, 50 58, 50 50 C 50 42, 50 36, 50 30"
+            fill="none" stroke="#FFD700" strokeWidth="6" strokeLinecap="round" />
+      {/* Outline strokes for depth */}
+      <path d="M38 78 C 30 68, 30 58, 40 50 C 50 42, 50 34, 44 28"
+            fill="none" stroke="#B8860B" strokeWidth="1.2" strokeLinecap="round" />
+      <path d="M62 78 C 70 68, 70 58, 60 50 C 50 42, 50 34, 56 28"
+            fill="none" stroke="#B8860B" strokeWidth="1.2" strokeLinecap="round" />
+      {/* Base cone widening down */}
+      <path d="M35 80 L65 80 L58 96 L42 96 Z" fill="#FFD700" stroke="#B8860B" strokeWidth="1.5" />
+      {/* Pedestal */}
+      <rect x="38" y="96" width="24" height="6" fill="#2a2a3a" />
+      <rect x="32" y="102" width="36" height="8" rx="2" fill="#1a1a2a" stroke="#333" strokeWidth="1" />
+      {/* Shine accents */}
+      <path d="M46 32 C 44 40, 44 48, 48 54" fill="none" stroke="#FFF3B0" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
+    </svg>
+  );
+
   const Node = ({ val, w = 155 }) => {
     const m = getMatch(val);
     const pred = getUserPred(m);
@@ -1283,7 +1310,10 @@ function BracketGraphic({ history = [] }) {
               <div style={{ padding: "0 2px", flexShrink: 0, alignSelf: "center" }}><Arr /></div>
               {/* Final */}
               <div style={{ flexShrink: 0 }}>
-                <div style={{ fontSize: 11, color: "#fbbf24", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5, textAlign: "center", marginBottom: 8 }}>🏆 Final</div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, marginBottom: 8 }}>
+                  <TrophyIcon size={16} />
+                  <span style={{ fontSize: 11, color: "#fbbf24", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5 }}>Final</span>
+                </div>
                 <Node val={sel.fin} w={170} />
               </div>
             </div>
