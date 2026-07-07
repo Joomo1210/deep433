@@ -69,6 +69,7 @@ export default async function handler(req, res) {
             fixtureId: f.fixture?.id,
             round: f.league?.round,
             venue: f.fixture?.venue?.name,
+            city: f.fixture?.venue?.city,
             score: {
               home: f.goals?.home,
               away: f.goals?.away,
