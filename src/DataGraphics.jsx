@@ -944,11 +944,11 @@ function RecapGraphic({ history = [] }) {
             <div style={{ display: "flex", justifyContent: "space-between", width: "100%", gap: 8 }}>
               <div style={{ textAlign: "left", flex: 1 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: "#4ade80" }}>{selectedFixture?.home}</div>
-                {matchData?.homeGoals?.map((g, i) => <div key={i} style={{ fontSize: 9, color: "#555", marginTop: 2 }}>{g}</div>)}
+                {matchData?.homeGoals?.map((g, i) => <div key={i} style={{ fontSize: 10, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
               </div>
               <div style={{ textAlign: "right", flex: 1 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: "#f59e0b" }}>{selectedFixture?.away}</div>
-                {matchData?.awayGoals?.map((g, i) => <div key={i} style={{ fontSize: 9, color: "#555", marginTop: 2 }}>{g}</div>)}
+                {matchData?.awayGoals?.map((g, i) => <div key={i} style={{ fontSize: 10, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
               </div>
             </div>
           </div>
@@ -969,12 +969,17 @@ function RecapGraphic({ history = [] }) {
                 )}
               </div>
             ))}
-            {matchData?.keyStat && (
-              <div style={{ background: "#0d0d18", borderRadius: 8, padding: "7px 12px", textAlign: "center" }}>
-                <span style={{ fontSize: 9, color: "#818cf8", fontWeight: 700 }}>📊 </span>
-                <span style={{ fontSize: 9, color: "#888" }}>{matchData.keyStat}</span>
-              </div>
-            )}
+            <div style={{ background: "#0d0d18", borderRadius: 8, padding: "8px 12px", textAlign: "center" }}>
+              {matchData?.keyStat && (
+                <div style={{ marginBottom: selectedFixture?.venue ? 4 : 0 }}>
+                  <span style={{ fontSize: 11, color: "#818cf8", fontWeight: 700 }}>📊 </span>
+                  <span style={{ fontSize: 11, color: "#ccc", fontWeight: 600 }}>{matchData.keyStat}</span>
+                </div>
+              )}
+              {selectedFixture?.venue && (
+                <div style={{ fontSize: 9, color: "#555" }}>📍 {selectedFixture.venue}</div>
+              )}
+            </div>
           </div>
         </>
       ) : (
@@ -995,11 +1000,11 @@ function RecapGraphic({ history = [] }) {
             <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginTop: 4 }}>
               <div style={{ textAlign: "left", flex: 1 }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: "#4ade80" }}>{selectedFixture?.home}</div>
-                {matchData?.homeGoals?.map((g, i) => <div key={i} style={{ fontSize: 8, color: "#555", marginTop: 1 }}>{g}</div>)}
+                {matchData?.homeGoals?.map((g, i) => <div key={i} style={{ fontSize: 10, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
               </div>
               <div style={{ textAlign: "right", flex: 1 }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: "#f59e0b" }}>{selectedFixture?.away}</div>
-                {matchData?.awayGoals?.map((g, i) => <div key={i} style={{ fontSize: 8, color: "#555", marginTop: 1 }}>{g}</div>)}
+                {matchData?.awayGoals?.map((g, i) => <div key={i} style={{ fontSize: 10, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
               </div>
             </div>
           </div>
@@ -1019,13 +1024,18 @@ function RecapGraphic({ history = [] }) {
               </div>
             ))}
           </div>
-          {/* Key stat banner */}
-          {matchData?.keyStat && (
-            <div style={{ background: "#0d0d18", borderRadius: 8, padding: "7px 12px", textAlign: "center", borderTop: "1px solid #1a1a2a" }}>
-              <span style={{ fontSize: 9, color: "#818cf8", fontWeight: 700 }}>📊 </span>
-              <span style={{ fontSize: 9, color: "#888" }}>{matchData.keyStat}</span>
-            </div>
-          )}
+          {/* Key stat + venue banner */}
+          <div style={{ background: "#0d0d18", borderRadius: 8, padding: "8px 12px", textAlign: "center" }}>
+            {matchData?.keyStat && (
+              <div style={{ marginBottom: selectedFixture?.venue ? 4 : 0 }}>
+                <span style={{ fontSize: 11, color: "#818cf8", fontWeight: 700 }}>📊 </span>
+                <span style={{ fontSize: 11, color: "#ccc", fontWeight: 600 }}>{matchData.keyStat}</span>
+              </div>
+            )}
+            {selectedFixture?.venue && (
+              <div style={{ fontSize: 9, color: "#555" }}>📍 {selectedFixture.venue}</div>
+            )}
+          </div>
         </div>
       )}
     </div>
