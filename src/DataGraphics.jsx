@@ -806,14 +806,20 @@ function RecapGraphic({ history = [] }) {
     // Fetch goalscorers from match stats
     let homeGoals = [];
     let awayGoals = [];
+    let keyStat = null;
+
     if (f.fixtureId) {
       try {
-        const r = await fetch(`/api/match-stats?fixtureId=${f.fixtureId}`);
-        const d = await r.json();
-        // Also fetch events for goalscorers
-        const er = await fetch(`/api/live-scores?leagueId=wc2026&date=${f.date}`);
-        const ed = await er.json();
-        const liveMatch = (ed.matches || []).find(m =>
+        // Fetch match stats and live scores in parallel
+        const [statsRes, liveRes] = await Promise.all([
+          fetch(`/api/match-stats?fixtureId=${f.fixtureId}`),
+          fetch(`/api/live-scores?leagueId=wc2026&date=${f.date}`),
+        ]);
+        const statsData = await statsRes.json();
+        const liveData = await liveRes.json();
+
+        // Extract goalscorers from live events
+        const liveMatch = (liveData.matches || []).find(m =>
           norm(m.home) === norm(f.home) || norm(m.away) === norm(f.home)
         );
         if (liveMatch?.events) {
@@ -822,6 +828,28 @@ function RecapGraphic({ history = [] }) {
             if (norm(e.team) === norm(f.home)) homeGoals.push(scorer);
             else awayGoals.push(scorer);
           });
+        }
+
+        // Generate key stat from match stats
+        if (statsData.available) {
+          const home = statsData.home;
+          const away = statsData.away;
+          const homePoss = parseFloat(home.stats?.possession) || 0;
+          const awayPoss = parseFloat(away.stats?.possession) || 0;
+          const homeShotsOn = home.stats?.shotsOnGoal || 0;
+          const awayShotsOn = away.stats?.shotsOnGoal || 0;
+          const homeSaves = home.stats?.saves || 0;
+          const awaySaves = away.stats?.saves || 0;
+
+          // Pick the most interesting stat
+          if (homePoss >= 65) keyStat = `${home.team} dominated with ${homePoss}% possession`;
+          else if (awayPoss >= 65) keyStat = `${away.team} dominated with ${awayPoss}% possession`;
+          else if (awaySaves >= 5) keyStat = `${away.team} keeper made ${awaySaves} saves`;
+          else if (homeSaves >= 5) keyStat = `${home.team} keeper made ${homeSaves} saves`;
+          else if (homeShotsOn + awayShotsOn <= 4) keyStat = `Only ${homeShotsOn + awayShotsOn} shots on target — a tight affair`;
+          else if (homeShotsOn >= 8) keyStat = `${home.team} fired ${homeShotsOn} shots on target`;
+          else if (awayShotsOn >= 8) keyStat = `${away.team} fired ${awayShotsOn} shots on target`;
+          else keyStat = `${home.team} ${homePoss}% · ${away.team} ${awayPoss}% possession`;
         }
       } catch {}
     }
@@ -832,6 +860,7 @@ function RecapGraphic({ history = [] }) {
       aiPrediction: pred?.ai_prediction || null,
       homeGoals,
       awayGoals,
+      keyStat,
       competition: "World Cup 2026",
       round: f.round || "",
     });
@@ -943,6 +972,12 @@ function RecapGraphic({ history = [] }) {
                 )}
               </div>
             ))}
+            {matchData?.keyStat && (
+              <div style={{ background: "#0d0d18", borderRadius: 8, padding: "7px 12px", textAlign: "center" }}>
+                <span style={{ fontSize: 9, color: "#818cf8", fontWeight: 700 }}>📊 </span>
+                <span style={{ fontSize: 9, color: "#888" }}>{matchData.keyStat}</span>
+              </div>
+            )}
           </div>
         </>
       ) : (
@@ -987,6 +1022,13 @@ function RecapGraphic({ history = [] }) {
               </div>
             ))}
           </div>
+          {/* Key stat banner */}
+          {matchData?.keyStat && (
+            <div style={{ background: "#0d0d18", borderRadius: 8, padding: "7px 12px", textAlign: "center", borderTop: "1px solid #1a1a2a" }}>
+              <span style={{ fontSize: 9, color: "#818cf8", fontWeight: 700 }}>📊 </span>
+              <span style={{ fontSize: 9, color: "#888" }}>{matchData.keyStat}</span>
+            </div>
+          )}
         </div>
       )}
     </div>
