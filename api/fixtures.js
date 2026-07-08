@@ -26,13 +26,43 @@ function mapStatus(short) {
 }
 
 export default async function handler(req, res) {
-  const { leagueId } = req.query;
+  const { leagueId, full } = req.query;
   if (!leagueId) return res.status(400).json({ error: "leagueId required" });
 
   const league = LEAGUE_MAP[leagueId];
   if (!league) return res.status(400).json({ error: "Unknown league" });
 
   const apiKey = process.env.API_FOOTBALL_KEY;
+
+  // Full mode: fetch entire season in one call (for stats aggregation, e.g. clean sheets)
+  if (full === "true") {
+    try {
+      const r = await fetch(`https://v3.football.api-sports.io/fixtures?league=${league.id}&season=${league.season}`, {
+        headers: { "x-apisports-key": apiKey }
+      });
+      const data = await r.json();
+      const fixtures = (data.response || []).map(f => ({
+        home: f.teams?.home?.name,
+        away: f.teams?.away?.name,
+        homeLogo: f.teams?.home?.logo,
+        awayLogo: f.teams?.away?.logo,
+        status: mapStatus(f.fixture?.status?.short),
+        statusRaw: f.fixture?.status?.short,
+        elapsed: f.fixture?.status?.elapsed,
+        kickoff: f.fixture?.date,
+        date: f.fixture?.date?.split("T")[0],
+        fixtureId: f.fixture?.id,
+        round: f.league?.round,
+        venue: f.fixture?.venue?.name,
+        city: f.fixture?.venue?.city,
+        score: { home: f.goals?.home, away: f.goals?.away },
+      }));
+      return res.status(200).json({ fixtures });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
   const now = new Date();
 
   // Fetch yesterday through next 10 days to capture ongoing tournaments
