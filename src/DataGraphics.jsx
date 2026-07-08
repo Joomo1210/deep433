@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 
 const LEAGUE_OPTIONS = [
-  { id: "wc2026", label: "World Cup 2026" },
+  { id: "wc2026", label: "FIFA World Cup 2026" },
   { id: "pl",     label: "Premier League" },
   { id: "laliga", label: "La Liga" },
   { id: "seriea", label: "Serie A" },
@@ -974,7 +974,7 @@ function RecapGraphic({ history = [] }) {
       homeGoals,
       awayGoals,
       keyStat,
-      competition: "World Cup 2026",
+      competition: "FIFA World Cup 2026",
       round: f.round || "",
     });
   };
@@ -1214,7 +1214,7 @@ function BracketGraphic({ history = [] }) {
   const setS = (key) => (val) => setSel(prev => ({ ...prev, [key]: val }));
 
   const CUP_LEAGUES = [
-    { id: "wc2026", label: "World Cup 2026" },
+    { id: "wc2026", label: "FIFA World Cup 2026" },
     { id: "ucl",    label: "Champions League" },
     { id: "uel",    label: "Europa League" },
     { id: "facup",  label: "FA Cup" },
@@ -2146,7 +2146,10 @@ function MatchH2HGraphic() {
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "22px 18px 18px" }}>
               <div style={{ textAlign: "center", marginBottom: 12 }}>
-                <span style={{ fontSize: 9, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5 }}>
+                <div style={{ fontSize: 11, color: "#f0f0f0", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 3 }}>
+                  🏆 FIFA World Cup 2026
+                </div>
+                <span style={{ fontSize: 9, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>
                   📋 {selectedFixture.home} vs {selectedFixture.away}
                 </span>
               </div>
