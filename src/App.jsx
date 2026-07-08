@@ -495,9 +495,9 @@ function AuthScreen() {
     setLoading(true); setError(""); setMessage("");
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({ email, password });
-        if (error) throw error;
-        setMessage("Check your email to confirm your account!");
+        setError("New signups are currently paused. Check back soon!");
+        setLoading(false);
+        return;
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -539,7 +539,9 @@ function AuthScreen() {
             {loading ? "..." : mode === "login" ? "Sign In" : "Create Account"}
           </button>
           <div style={{ textAlign: "center", fontSize: 13, color: "#555" }}>
-            {mode === "login" ? (<>Don't have an account? <button onClick={() => { setMode("signup"); setError(""); setMessage(""); }} style={{ background: "none", border: "none", color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700 }}>Sign up free</button></>) : (<>Already have an account? <button onClick={() => { setMode("login"); setError(""); setMessage(""); }} style={{ background: "none", border: "none", color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700 }}>Sign in</button></>)}
+            {mode === "login" ? (
+              <span style={{ color: "#555" }}>New signups are currently paused</span>
+            ) : (<>Already have an account? <button onClick={() => { setMode("login"); setError(""); setMessage(""); }} style={{ background: "none", border: "none", color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700 }}>Sign in</button></>)}
           </div>
         </div>
       </div>
