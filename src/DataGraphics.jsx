@@ -2054,7 +2054,7 @@ function GoldenGloveGraphic() {
   const fetchCleanSheets = async () => {
     setLoading(true); setError(""); setStandings(null);
     try {
-      const r = await fetch(`/api/fixtures?leagueId=${leagueId}`);
+      const r = await fetch(`/api/fixtures?leagueId=${leagueId}&full=true`);
       const d = await r.json();
       const fixtures = (d.fixtures || []).filter(f => f.status === "finished");
 
