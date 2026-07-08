@@ -256,9 +256,9 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
         <span style={{ fontSize: 11, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
         <span style={{ fontSize: 10, color: "#888", fontWeight: 600 }}>deep433.com</span>
       </div>
-      {/* Centre watermark */}
-      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", zIndex: 0 }}>
-        <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: "55%", height: "55%", opacity: 0.12, objectFit: "contain", borderRadius: "50%", userSelect: "none" }} />
+      {/* Corner watermark */}
+      <div style={{ position: "absolute", bottom: 10, left: 10, pointerEvents: "none", zIndex: 0 }}>
+        <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 34, height: 34, opacity: 0.35, objectFit: "contain", borderRadius: "50%", userSelect: "none" }} />
       </div>
       {/* Competition context */}
       <div style={{ textAlign: "center", paddingTop: 18, paddingBottom: 4 }}>
@@ -722,7 +722,7 @@ export default function FootballPredictor() {
     }
     setAwardsSubmitting(true);
     setAwardsError("");
-    const { data, error } = await supabase.from("tournament_predictions").insert({
+    const { data, error } = await supabase.from("tournament_predictions").upsert({
       user_id: session.user.id,
       league_id: awardsLeague,
       semi_finalist_1: sf1,
@@ -732,7 +732,8 @@ export default function FootballPredictor() {
       finalist_1: finalist1,
       finalist_2: finalist2,
       winner,
-    }).select().single();
+      submitted_at: new Date().toISOString(),
+    }, { onConflict: "user_id,league_id" }).select().single();
     if (error) setAwardsError(error.message);
     else setTournamentPred(data);
     setAwardsSubmitting(false);
@@ -1898,8 +1899,8 @@ export default function FootballPredictor() {
                     <span style={{ fontSize: 9, color: "#888", fontWeight: 600 }}>deep433.com</span>
                   </div>
                   {/* Logo watermark */}
-                  <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
-                    <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: "55%", height: "55%", opacity: 0.12, objectFit: "contain", borderRadius: "50%", userSelect: "none" }} />
+                  <div style={{ position: "absolute", bottom: 12, left: 12, pointerEvents: "none" }}>
+                    <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, opacity: 0.35, objectFit: "contain", borderRadius: "50%", userSelect: "none" }} />
                   </div>
 
                   <div style={{ textAlign: "center", marginBottom: 16, marginTop: 6, position: "relative", zIndex: 1 }}>
@@ -1956,6 +1957,18 @@ export default function FootballPredictor() {
 
                 <button onClick={downloadAwardsCard} disabled={awardsDownloading} style={{ marginTop: 12, background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%" }}>
                   {awardsDownloading ? "Generating..." : "⬇ Download Prediction Card"}
+                </button>
+                <button onClick={() => {
+                  setAwardsForm({
+                    sf1: tournamentPred.semi_finalist_1, sf2: tournamentPred.semi_finalist_2,
+                    sf3: tournamentPred.semi_finalist_3, sf4: tournamentPred.semi_finalist_4,
+                    finalist1: tournamentPred.finalist_1, finalist2: tournamentPred.finalist_2,
+                    winner: tournamentPred.winner,
+                  });
+                  setAwardsStep(1);
+                  setTournamentPred(null);
+                }} style={{ marginTop: 8, background: "none", border: "1px solid #2a2a3a", borderRadius: 8, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "10px", width: "100%" }}>
+                  ✏️ Edit Prediction
                 </button>
               </>
             )}
