@@ -254,7 +254,7 @@ function BentoBox({ title, icon, color, children, span }) {
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
         <span style={{ fontSize: 12 }}>{icon}</span>
-        <span style={{ fontSize: 10, color, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 }}>{title}</span>
+        <span style={{ fontSize: 11, color, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 }}>{title}</span>
       </div>
       {children}
     </div>
@@ -1960,10 +1960,10 @@ function PlayerH2HGraphic() {
     const p1Better = higherIsBetter ? v1 > v2 : v1 < v2;
     const p2Better = higherIsBetter ? v2 > v1 : v2 < v1;
     return (
-      <div style={{ display: "flex", alignItems: "center", padding: "9px 0", borderBottom: "1px solid #0f0f1a" }}>
-        <span style={{ flex: 1, textAlign: "right", fontSize: 16, fontWeight: 900, color: p1Better ? "#4ade80" : "#888", paddingRight: 12 }}>{val1 ?? "—"}</span>
-        <span style={{ fontSize: 9, color: "#666", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, width: 90, textAlign: "center" }}>{label}</span>
-        <span style={{ flex: 1, textAlign: "left", fontSize: 16, fontWeight: 900, color: p2Better ? "#f59e0b" : "#888", paddingLeft: 12 }}>{val2 ?? "—"}</span>
+      <div style={{ display: "flex", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #0f0f1a" }}>
+        <span style={{ flex: 1, textAlign: "right", fontSize: 18, fontWeight: p1Better ? 900 : 700, color: "#4ade80", opacity: p1Better ? 1 : 0.65, paddingRight: 12 }}>{val1 ?? "—"}</span>
+        <span style={{ fontSize: 10, color: "#999", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, width: 90, textAlign: "center" }}>{label}</span>
+        <span style={{ flex: 1, textAlign: "left", fontSize: 18, fontWeight: p2Better ? 900 : 700, color: "#f59e0b", opacity: p2Better ? 1 : 0.65, paddingLeft: 12 }}>{val2 ?? "—"}</span>
       </div>
     );
   };
@@ -2006,7 +2006,7 @@ function PlayerH2HGraphic() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16, marginTop: 8 }}>
                 <div style={{ textAlign: "center" }}>
                   {player1.photo && <img src={player1.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 8px" }} />}
-                  <div style={{ fontSize: 13, fontWeight: 900, color: "#4ade80" }}>{player1.name}</div>
+                  <div style={{ fontSize: 15, fontWeight: 900, color: "#4ade80" }}>{player1.name}</div>
                   <div style={{ fontSize: 9, color: "#555", marginTop: 2 }}>{player1.team}</div>
                 </div>
                 <div style={{ textAlign: "center", padding: "0 8px" }}>
@@ -2014,7 +2014,7 @@ function PlayerH2HGraphic() {
                 </div>
                 <div style={{ textAlign: "center" }}>
                   {player2.photo && <img src={player2.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #f59e0b", margin: "0 auto 8px" }} />}
-                  <div style={{ fontSize: 13, fontWeight: 900, color: "#f59e0b" }}>{player2.name}</div>
+                  <div style={{ fontSize: 15, fontWeight: 900, color: "#f59e0b" }}>{player2.name}</div>
                   <div style={{ fontSize: 9, color: "#555", marginTop: 2 }}>{player2.team}</div>
                 </div>
               </div>
@@ -2096,10 +2096,10 @@ function MatchH2HGraphic() {
     const p1Better = higherIsBetter ? v1 > v2 : v1 < v2;
     const p2Better = higherIsBetter ? v2 > v1 : v2 < v1;
     return (
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <span style={{ fontSize: 14, fontWeight: 900, color: p1Better ? "#4ade80" : "#aaa" }}>{val1 != null ? val1 + unit : "—"}</span>
-        <span style={{ fontSize: 9, color: "#888", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
-        <span style={{ fontSize: 14, fontWeight: 900, color: p2Better ? "#f59e0b" : "#aaa" }}>{val2 != null ? val2 + unit : "—"}</span>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 9 }}>
+        <span style={{ fontSize: 18, fontWeight: p1Better ? 900 : 700, color: "#4ade80", opacity: p1Better ? 1 : 0.65 }}>{val1 != null ? val1 + unit : "—"}</span>
+        <span style={{ fontSize: 10, color: "#999", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
+        <span style={{ fontSize: 18, fontWeight: p2Better ? 900 : 700, color: "#f59e0b", opacity: p2Better ? 1 : 0.65 }}>{val2 != null ? val2 + unit : "—"}</span>
       </div>
     );
   };
@@ -2154,7 +2154,7 @@ function MatchH2HGraphic() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16 }}>
                 <div style={{ textAlign: "center" }}>
                   {player1.photo && <img src={player1.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 8px" }} />}
-                  <div style={{ fontSize: 13, fontWeight: 900, color: "#4ade80" }}>{player1.name}</div>
+                  <div style={{ fontSize: 15, fontWeight: 900, color: "#4ade80" }}>{player1.name}</div>
                   <div style={{ fontSize: 9, color: "#555", marginTop: 2 }}>{matchPlayers.home.team}</div>
                 </div>
                 <div style={{ textAlign: "center", padding: "0 8px" }}>
@@ -2162,7 +2162,7 @@ function MatchH2HGraphic() {
                 </div>
                 <div style={{ textAlign: "center" }}>
                   {player2.photo && <img src={player2.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #f59e0b", margin: "0 auto 8px" }} />}
-                  <div style={{ fontSize: 13, fontWeight: 900, color: "#f59e0b" }}>{player2.name}</div>
+                  <div style={{ fontSize: 15, fontWeight: 900, color: "#f59e0b" }}>{player2.name}</div>
                   <div style={{ fontSize: 9, color: "#555", marginTop: 2 }}>{matchPlayers.away.team}</div>
                 </div>
               </div>
