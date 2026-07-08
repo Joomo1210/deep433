@@ -583,7 +583,8 @@ export default function FootballPredictor() {
   const [remainingTeams, setRemainingTeams] = useState([]);
   const [awardsLoading, setAwardsLoading] = useState(false);
   const [tournamentPred, setTournamentPred] = useState(null);
-  const [awardsForm, setAwardsForm] = useState({ winner: "", runnerUp: "", sf1: "", sf2: "" });
+  const [awardsStep, setAwardsStep] = useState(1); // 1=SF, 2=Finalists, 3=Winner
+  const [awardsForm, setAwardsForm] = useState({ sf1: "", sf2: "", sf3: "", sf4: "", finalist1: "", finalist2: "", winner: "" });
   const [awardsSubmitting, setAwardsSubmitting] = useState(false);
   const [awardsError, setAwardsError] = useState(""); // fixtureId of expanded match
   const [confirmedLineup, setConfirmedLineup] = useState(null);
@@ -672,7 +673,8 @@ export default function FootballPredictor() {
     setAwardsLoading(true);
     setAwardsError("");
     setTournamentPred(null);
-    setAwardsForm({ winner: "", runnerUp: "", sf1: "", sf2: "" });
+    setAwardsStep(1);
+    setAwardsForm({ sf1: "", sf2: "", sf3: "", sf4: "", finalist1: "", finalist2: "", winner: "" });
 
     Promise.all([
       fetch(`/api/bracket?leagueId=${awardsLeague}`).then(r => r.json()),
@@ -692,9 +694,9 @@ export default function FootballPredictor() {
   }, [tab, awardsLeague, session]);
 
   const submitTournamentPrediction = async () => {
-    const { winner, runnerUp, sf1, sf2 } = awardsForm;
-    if (!winner || !runnerUp || !sf1 || !sf2) {
-      setAwardsError("Please select all four positions");
+    const { sf1, sf2, sf3, sf4, finalist1, finalist2, winner } = awardsForm;
+    if (!sf1 || !sf2 || !sf3 || !sf4 || !finalist1 || !finalist2 || !winner) {
+      setAwardsError("Please complete all selections");
       return;
     }
     setAwardsSubmitting(true);
@@ -702,10 +704,13 @@ export default function FootballPredictor() {
     const { data, error } = await supabase.from("tournament_predictions").insert({
       user_id: session.user.id,
       league_id: awardsLeague,
-      winner,
-      runner_up: runnerUp,
       semi_finalist_1: sf1,
       semi_finalist_2: sf2,
+      semi_finalist_3: sf3,
+      semi_finalist_4: sf4,
+      finalist_1: finalist1,
+      finalist_2: finalist2,
+      winner,
     }).select().single();
     if (error) setAwardsError(error.message);
     else setTournamentPred(data);
@@ -1863,9 +1868,11 @@ export default function FootballPredictor() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   {[
                     { label: "🏆 Winner", value: tournamentPred.winner, color: "#fbbf24" },
-                    { label: "🥈 Runner-up", value: tournamentPred.runner_up, color: "#c0c0c0" },
+                    { label: "🥈 Runner-up", value: [tournamentPred.finalist_1, tournamentPred.finalist_2].find(f => f !== tournamentPred.winner), color: "#c0c0c0" },
                     { label: "Semi-Finalist", value: tournamentPred.semi_finalist_1, color: "#818cf8" },
                     { label: "Semi-Finalist", value: tournamentPred.semi_finalist_2, color: "#818cf8" },
+                    { label: "Semi-Finalist", value: tournamentPred.semi_finalist_3, color: "#818cf8" },
+                    { label: "Semi-Finalist", value: tournamentPred.semi_finalist_4, color: "#818cf8" },
                   ].map((row, i) => (
                     <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "12px 16px" }}>
                       <span style={{ fontSize: 12, color: row.color, fontWeight: 700 }}>{row.label}</span>
@@ -1881,33 +1888,94 @@ export default function FootballPredictor() {
 
             {!awardsLoading && !tournamentPred && remainingTeams.length > 0 && (
               <div className="card" style={{ padding: "24px" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>Predict the outcome</div>
-                <div style={{ fontSize: 11, color: "#555", marginBottom: 20 }}>Pick your Winner, Runner-up, and Semi-Finalists. This can only be submitted once per competition.</div>
+                {/* Step indicator */}
+                <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
+                  {[1, 2, 3].map(s => (
+                    <div key={s} style={{ flex: 1, height: 4, borderRadius: 2, background: awardsStep >= s ? "#4ade80" : "#2a2a3a" }} />
+                  ))}
+                </div>
 
-                {[
-                  { key: "winner", label: "🏆 Winner" },
-                  { key: "runnerUp", label: "🥈 Runner-up" },
-                  { key: "sf1", label: "Semi-Finalist 1" },
-                  { key: "sf2", label: "Semi-Finalist 2" },
-                ].map(f => (
-                  <div key={f.key} style={{ marginBottom: 14 }}>
-                    <div style={{ fontSize: 11, color: "#aaa", fontWeight: 700, marginBottom: 6 }}>{f.label}</div>
-                    <select
-                      value={awardsForm[f.key]}
-                      onChange={e => setAwardsForm(prev => ({ ...prev, [f.key]: e.target.value }))}
-                      style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "10px 14px", outline: "none", fontFamily: "inherit" }}
-                    >
-                      <option value="">— Select team —</option>
-                      {remainingTeams.map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                  </div>
-                ))}
+                {awardsStep === 1 && (
+                  <>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>Step 1 of 3 — Semi-Finalists</div>
+                    <div style={{ fontSize: 11, color: "#555", marginBottom: 20 }}>Pick the 4 teams you predict will reach the Semi-Finals.</div>
+                    {["sf1", "sf2", "sf3", "sf4"].map((key, i) => (
+                      <div key={key} style={{ marginBottom: 14 }}>
+                        <div style={{ fontSize: 11, color: "#818cf8", fontWeight: 700, marginBottom: 6 }}>Semi-Finalist {i + 1}</div>
+                        <select
+                          value={awardsForm[key]}
+                          onChange={e => setAwardsForm(prev => ({ ...prev, [key]: e.target.value }))}
+                          style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "10px 14px", outline: "none", fontFamily: "inherit" }}
+                        >
+                          <option value="">— Select team —</option>
+                          {remainingTeams.filter(t => ![awardsForm.sf1, awardsForm.sf2, awardsForm.sf3, awardsForm.sf4].includes(t) || awardsForm[key] === t).map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                      </div>
+                    ))}
+                    {awardsError && <div style={{ color: "#f87171", fontSize: 12, marginBottom: 12 }}>{awardsError}</div>}
+                    <button onClick={() => {
+                      if (!awardsForm.sf1 || !awardsForm.sf2 || !awardsForm.sf3 || !awardsForm.sf4) { setAwardsError("Select all 4 semi-finalists"); return; }
+                      setAwardsError(""); setAwardsStep(2);
+                    }} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%" }}>
+                      Next: Pick Finalists →
+                    </button>
+                  </>
+                )}
 
-                {awardsError && <div style={{ color: "#f87171", fontSize: 12, marginBottom: 12 }}>{awardsError}</div>}
+                {awardsStep === 2 && (
+                  <>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>Step 2 of 3 — Finalists</div>
+                    <div style={{ fontSize: 11, color: "#555", marginBottom: 20 }}>Which 2 of your semi-finalists reach the Final?</div>
+                    {["finalist1", "finalist2"].map((key, i) => (
+                      <div key={key} style={{ marginBottom: 14 }}>
+                        <div style={{ fontSize: 11, color: "#c084fc", fontWeight: 700, marginBottom: 6 }}>Finalist {i + 1}</div>
+                        <select
+                          value={awardsForm[key]}
+                          onChange={e => setAwardsForm(prev => ({ ...prev, [key]: e.target.value }))}
+                          style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "10px 14px", outline: "none", fontFamily: "inherit" }}
+                        >
+                          <option value="">— Select team —</option>
+                          {[awardsForm.sf1, awardsForm.sf2, awardsForm.sf3, awardsForm.sf4].filter(t => t && (![awardsForm.finalist1, awardsForm.finalist2].includes(t) || awardsForm[key] === t)).map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                      </div>
+                    ))}
+                    {awardsError && <div style={{ color: "#f87171", fontSize: 12, marginBottom: 12 }}>{awardsError}</div>}
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button onClick={() => setAwardsStep(1)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 8, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "12px 20px" }}>← Back</button>
+                      <button onClick={() => {
+                        if (!awardsForm.finalist1 || !awardsForm.finalist2) { setAwardsError("Select both finalists"); return; }
+                        setAwardsError(""); setAwardsStep(3);
+                      }} style={{ flex: 1, background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px" }}>
+                        Next: Pick Winner →
+                      </button>
+                    </div>
+                  </>
+                )}
 
-                <button onClick={submitTournamentPrediction} disabled={awardsSubmitting} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%" }}>
-                  {awardsSubmitting ? "Submitting..." : "🔒 Submit Final Prediction"}
-                </button>
+                {awardsStep === 3 && (
+                  <>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>Step 3 of 3 — Winner</div>
+                    <div style={{ fontSize: 11, color: "#555", marginBottom: 20 }}>Who lifts the trophy?</div>
+                    <div style={{ marginBottom: 14 }}>
+                      <div style={{ fontSize: 11, color: "#fbbf24", fontWeight: 700, marginBottom: 6 }}>🏆 Winner</div>
+                      <select
+                        value={awardsForm.winner}
+                        onChange={e => setAwardsForm(prev => ({ ...prev, winner: e.target.value }))}
+                        style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "10px 14px", outline: "none", fontFamily: "inherit" }}
+                      >
+                        <option value="">— Select team —</option>
+                        {[awardsForm.finalist1, awardsForm.finalist2].filter(Boolean).map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                    </div>
+                    {awardsError && <div style={{ color: "#f87171", fontSize: 12, marginBottom: 12 }}>{awardsError}</div>}
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button onClick={() => setAwardsStep(2)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 8, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "12px 20px" }}>← Back</button>
+                      <button onClick={submitTournamentPrediction} disabled={awardsSubmitting} style={{ flex: 1, background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px" }}>
+                        {awardsSubmitting ? "Submitting..." : "🔒 Submit Final Prediction"}
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
