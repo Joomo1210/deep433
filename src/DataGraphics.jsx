@@ -2128,14 +2128,6 @@ function GoldenGloveGraphic() {
     setDownloading(false);
   };
 
-  const rankColor = (i) => i === 0 ? "#FFD700" : i === 1 ? "#C0C0C0" : i === 2 ? "#CD7F32" : "#555";
-  const rankBg = (i) => {
-    if (i === 0) return "linear-gradient(135deg, rgba(255,215,0,0.08), rgba(255,215,0,0.02))";
-    if (i === 1) return "linear-gradient(135deg, rgba(192,192,192,0.06), rgba(192,192,192,0.01))";
-    if (i === 2) return "linear-gradient(135deg, rgba(205,127,50,0.06), rgba(205,127,50,0.01))";
-    return "transparent";
-  };
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -2156,7 +2148,7 @@ function GoldenGloveGraphic() {
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "22px 18px 18px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, marginTop: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18, marginTop: 8 }}>
                 {LEAGUE_LOGOS[leagueId] && <img src={LEAGUE_LOGOS[leagueId]} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 15, fontWeight: 900, color: "#f0f0f0" }}>🧤 Golden Glove Race</div>
@@ -2164,34 +2156,30 @@ function GoldenGloveGraphic() {
                 </div>
                 <div style={{ fontSize: 9, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Clean Sheets</div>
               </div>
-              <div style={{ height: 1, background: "#1a1a2a", marginBottom: 8 }} />
 
-              {standings.map((team, i) => {
-                const isTop3 = i < 3;
-                return (
-                  <div key={team.name} style={{
-                    display: "flex", alignItems: "center", gap: 10,
-                    padding: isTop3 ? "10px 8px" : "7px 4px",
-                    borderBottom: "1px solid #0f0f1a",
-                    background: rankBg(i),
-                    borderRadius: isTop3 ? 8 : 0,
-                    marginBottom: isTop3 ? 4 : 0,
-                    border: i === 0 ? "1px solid rgba(255,215,0,0.15)" : i === 1 ? "1px solid rgba(192,192,192,0.1)" : i === 2 ? "1px solid rgba(205,127,50,0.1)" : "none",
-                  }}>
-                    <div style={{ width: 22, textAlign: "center", fontSize: isTop3 ? 16 : 12, color: rankColor(i), fontWeight: 900, flexShrink: 0 }}>
-                      {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
+              {(() => {
+                const maxCS = Math.max(...standings.map(t => t.cleanSheets), 1);
+                return standings.map((team, i) => {
+                  const barPct = (team.cleanSheets / maxCS) * 100;
+                  return (
+                    <div key={team.name} style={{ marginBottom: 14 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
+                        {team.logo && <img src={team.logo} alt="" crossOrigin="anonymous" style={{ width: 22, height: 22, objectFit: "contain", flexShrink: 0 }} />}
+                        <span style={{ fontSize: 13, fontWeight: 800, color: "#f0f0f0", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{team.name}</span>
+                        <span style={{ fontSize: 18, fontWeight: 900, color: "#4ade80" }}>{team.cleanSheets}</span>
+                      </div>
+                      <div style={{ height: 8, background: "#1a1a24", borderRadius: 4, overflow: "hidden" }}>
+                        <div style={{
+                          width: `${Math.max(barPct, 4)}%`, height: "100%",
+                          background: "linear-gradient(90deg, #22c55e, #4ade80)",
+                          borderRadius: 4,
+                        }} />
+                      </div>
+                      <div style={{ fontSize: 9, color: "#555", marginTop: 3 }}>{team.played} played · {team.goalsConceded} conceded</div>
                     </div>
-                    {team.logo && <img src={team.logo} alt="" crossOrigin="anonymous" style={{ width: isTop3 ? 32 : 24, height: isTop3 ? 32 : 24, objectFit: "contain", flexShrink: 0 }} />}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: isTop3 ? 14 : 12, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{team.name}</div>
-                      <div style={{ fontSize: 10, color: "#555", marginTop: 2 }}>{team.played} played · {team.goalsConceded} conceded</div>
-                    </div>
-                    <div style={{ fontSize: isTop3 ? 28 : 20, fontWeight: 900, color: "#4ade80", minWidth: 36, textAlign: "right" }}>
-                      {team.cleanSheets}
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                });
+              })()}
             </div>
           </GraphicCard>
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%" }}>
