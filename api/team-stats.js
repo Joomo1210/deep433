@@ -1,6 +1,8 @@
 // /api/team-stats.js
-// Fetches season statistics for a specific team in a league
-// Usage: /api/team-stats?leagueId=pl&teamId=33
+// Multi-mode endpoint:
+// mode=stats (default): /api/team-stats?leagueId=pl&teamId=33
+// mode=teamsearch: /api/team-stats?mode=teamsearch&query=Arsenal
+// mode=playersearch: /api/team-stats?mode=playersearch&query=Messi&leagueId=wc2026
 
 const LEAGUE_MAP = {
   wc2026:      { id: 1,   season: 2026 },
@@ -13,13 +15,74 @@ const LEAGUE_MAP = {
 };
 
 export default async function handler(req, res) {
-  const { leagueId, teamId } = req.query;
+  const { mode, leagueId, teamId, query } = req.query;
+  const apiKey = process.env.API_FOOTBALL_KEY;
+
+  // ── Team name search ──
+  if (mode === "teamsearch") {
+    if (!query || query.length < 3) return res.status(200).json({ teams: [] });
+    try {
+      const r = await fetch(`https://v3.football.api-sports.io/teams?search=${encodeURIComponent(query)}`, {
+        headers: { "x-apisports-key": apiKey }
+      });
+      const data = await r.json();
+      const teams = (data.response || []).slice(0, 8).map(t => ({
+        id: t.team?.id,
+        name: t.team?.name,
+        logo: t.team?.logo,
+        country: t.team?.country,
+      }));
+      return res.status(200).json({ teams });
+    } catch (err) {
+      return res.status(200).json({ teams: [], error: err.message });
+    }
+  }
+
+  // ── Player name search ──
+  if (mode === "playersearch") {
+    if (!query || query.length < 3) return res.status(200).json({ players: [] });
+    const league = LEAGUE_MAP[leagueId];
+    if (!league) return res.status(400).json({ error: "Unknown league" });
+    try {
+      const r = await fetch(`https://v3.football.api-sports.io/players?search=${encodeURIComponent(query)}&league=${league.id}&season=${league.season}`, {
+        headers: { "x-apisports-key": apiKey }
+      });
+      const data = await r.json();
+      const players = (data.response || []).slice(0, 8).map(p => ({
+        id: p.player?.id,
+        name: p.player?.name,
+        photo: p.player?.photo,
+        nationality: p.player?.nationality,
+        team: p.statistics?.[0]?.team?.name,
+        teamLogo: p.statistics?.[0]?.team?.logo,
+        position: p.statistics?.[0]?.games?.position,
+        goals: p.statistics?.[0]?.goals?.total || 0,
+        assists: p.statistics?.[0]?.goals?.assists || 0,
+        rating: p.statistics?.[0]?.games?.rating,
+        appearances: p.statistics?.[0]?.games?.appearences || 0,
+        minutes: p.statistics?.[0]?.games?.minutes || 0,
+        shots: p.statistics?.[0]?.shots?.total || 0,
+        shotsOnTarget: p.statistics?.[0]?.shots?.on || 0,
+        keyPasses: p.statistics?.[0]?.passes?.key || 0,
+        passAccuracy: p.statistics?.[0]?.passes?.accuracy,
+        dribbles: p.statistics?.[0]?.dribbles?.success || 0,
+        tackles: p.statistics?.[0]?.tackles?.total || 0,
+        duelsWon: p.statistics?.[0]?.duels?.won || 0,
+        yellowCards: p.statistics?.[0]?.cards?.yellow || 0,
+        redCards: p.statistics?.[0]?.cards?.red || 0,
+      }));
+      return res.status(200).json({ players });
+    } catch (err) {
+      return res.status(200).json({ players: [], error: err.message });
+    }
+  }
+
+  // ── Default: team season statistics ──
   if (!leagueId || !teamId) return res.status(400).json({ error: "leagueId and teamId required" });
 
   const league = LEAGUE_MAP[leagueId];
   if (!league) return res.status(400).json({ error: "Unknown league" });
 
-  const apiKey = process.env.API_FOOTBALL_KEY;
   try {
     const r = await fetch(`https://v3.football.api-sports.io/teams/statistics?league=${league.id}&season=${league.season}&team=${teamId}`, {
       headers: { "x-apisports-key": apiKey }
