@@ -2198,7 +2198,7 @@ function MatchH2HGraphic() {
                 </BentoBox>
               </div>
 
-              <BentoBox title="Involvement" icon="⏱️" color="#f59e0b">
+              <BentoBox title="Involvement" icon="⏱️" color="#c084fc">
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                   <MatchCompareRow label="Minutes" val1={player1.minutesPlayed} val2={player2.minutesPlayed} />
                   <MatchCompareRow label="Tackles" val1={player1.tackles} val2={player2.tackles} />
