@@ -2090,16 +2090,16 @@ function MatchH2HGraphic() {
     setDownloading(false);
   };
 
-  const MatchCompareRow = ({ label, val1, val2, higherIsBetter = true }) => {
+  const MatchCompareRow = ({ label, val1, val2, higherIsBetter = true, unit = "" }) => {
     const v1 = parseFloat(val1) || 0;
     const v2 = parseFloat(val2) || 0;
     const p1Better = higherIsBetter ? v1 > v2 : v1 < v2;
     const p2Better = higherIsBetter ? v2 > v1 : v2 < v1;
     return (
-      <div style={{ display: "flex", alignItems: "center", padding: "9px 0", borderBottom: "1px solid #0f0f1a" }}>
-        <span style={{ flex: 1, textAlign: "right", fontSize: 16, fontWeight: 900, color: p1Better ? "#4ade80" : "#888", paddingRight: 12 }}>{val1 ?? "—"}</span>
-        <span style={{ fontSize: 9, color: "#666", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, width: 90, textAlign: "center" }}>{label}</span>
-        <span style={{ flex: 1, textAlign: "left", fontSize: 16, fontWeight: 900, color: p2Better ? "#f59e0b" : "#888", paddingLeft: 12 }}>{val2 ?? "—"}</span>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        <span style={{ fontSize: 14, fontWeight: 900, color: p1Better ? "#4ade80" : "#aaa" }}>{val1 != null ? val1 + unit : "—"}</span>
+        <span style={{ fontSize: 9, color: "#888", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
+        <span style={{ fontSize: 14, fontWeight: 900, color: p2Better ? "#f59e0b" : "#aaa" }}>{val2 != null ? val2 + unit : "—"}</span>
       </div>
     );
   };
@@ -2167,19 +2167,44 @@ function MatchH2HGraphic() {
                 </div>
               </div>
 
-              <div style={{ height: 1, background: "#1a1a2a", marginBottom: 8 }} />
+              <div style={{ height: 1, background: "#1a1a2a", marginBottom: 10 }} />
 
-              <MatchCompareRow label="Rating" val1={player1.rating ? parseFloat(player1.rating).toFixed(1) : "—"} val2={player2.rating ? parseFloat(player2.rating).toFixed(1) : "—"} />
-              <MatchCompareRow label="Goals" val1={player1.goals} val2={player2.goals} />
-              <MatchCompareRow label="Assists" val1={player1.assists} val2={player2.assists} />
-              <MatchCompareRow label="Minutes" val1={player1.minutesPlayed} val2={player2.minutesPlayed} />
-              <MatchCompareRow label="Shots" val1={player1.shots} val2={player2.shots} />
-              <MatchCompareRow label="On Target" val1={player1.shotsOnGoal} val2={player2.shotsOnGoal} />
-              <MatchCompareRow label="Key Passes" val1={player1.keyPasses} val2={player2.keyPasses} />
-              <MatchCompareRow label="Pass Acc" val1={player1.passAccuracy} val2={player2.passAccuracy} />
-              <MatchCompareRow label="Dribbles" val1={player1.dribbles} val2={player2.dribbles} />
-              <MatchCompareRow label="Tackles" val1={player1.tackles} val2={player2.tackles} />
-              <MatchCompareRow label="Cards" val1={player1.yellowCards} val2={player2.yellowCards} higherIsBetter={false} />
+              {/* HERO: Rating comparison */}
+              <div style={{
+                background: "linear-gradient(135deg, #4ade8014, #f59e0b0e)",
+                border: "1px solid #4ade8033",
+                borderRadius: 12, padding: "14px 16px", marginBottom: 10,
+              }}>
+                <div style={{ fontSize: 9, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8, textAlign: "center" }}>⭐ Match Rating</div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: 32, fontWeight: 900, color: "#4ade80" }}>{player1.rating ? parseFloat(player1.rating).toFixed(1) : "—"}</span>
+                  <span style={{ fontSize: 32, fontWeight: 900, color: "#f59e0b" }}>{player2.rating ? parseFloat(player2.rating).toFixed(1) : "—"}</span>
+                </div>
+              </div>
+
+              {/* Bento grid — 2x2 */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                <BentoBox title="Attack" icon="🎯" color="#4ade80">
+                  <MatchCompareRow label="Goals" val1={player1.goals} val2={player2.goals} />
+                  <MatchCompareRow label="Assists" val1={player1.assists} val2={player2.assists} />
+                  <MatchCompareRow label="Shots" val1={player1.shots} val2={player2.shots} />
+                  <MatchCompareRow label="On Target" val1={player1.shotsOnGoal} val2={player2.shotsOnGoal} />
+                </BentoBox>
+
+                <BentoBox title="Creativity" icon="🎨" color="#818cf8">
+                  <MatchCompareRow label="Key Passes" val1={player1.keyPasses} val2={player2.keyPasses} />
+                  <MatchCompareRow label="Pass Acc" val1={player1.passAccuracy} val2={player2.passAccuracy} unit="%" />
+                  <MatchCompareRow label="Dribbles" val1={player1.dribbles} val2={player2.dribbles} />
+                </BentoBox>
+              </div>
+
+              <BentoBox title="Involvement" icon="⏱️" color="#f59e0b">
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                  <MatchCompareRow label="Minutes" val1={player1.minutesPlayed} val2={player2.minutesPlayed} />
+                  <MatchCompareRow label="Tackles" val1={player1.tackles} val2={player2.tackles} />
+                </div>
+                <MatchCompareRow label="Cards" val1={player1.yellowCards} val2={player2.yellowCards} higherIsBetter={false} />
+              </BentoBox>
             </div>
           </GraphicCard>
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%" }}>
