@@ -2140,7 +2140,7 @@ function GoldenGloveGraphic() {
       </div>
 
       <button onClick={fetchCleanSheets} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
-        {loading ? "Loading..." : "🧤 Load Golden Glove Race"}
+        {loading ? "Loading..." : "Load Golden Glove Race"}
       </button>
       {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
 
@@ -2151,7 +2151,7 @@ function GoldenGloveGraphic() {
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18, marginTop: 8 }}>
                 {LEAGUE_LOGOS[leagueId] && <img src={LEAGUE_LOGOS[leagueId]} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 15, fontWeight: 900, color: "#f0f0f0" }}>🧤 Golden Glove Race</div>
+                  <div style={{ fontSize: 15, fontWeight: 900, color: "#f0f0f0" }}>Golden Glove Race</div>
                   <div style={{ fontSize: 10, color: "#555" }}>{LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label}</div>
                 </div>
                 <div style={{ fontSize: 9, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Clean Sheets</div>
@@ -2376,7 +2376,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "pitch",    label: "⚽ Pitch View" },
     { id: "h2h",      label: "🆚 Player H2H" },
     { id: "matchh2h", label: "📋 Match H2H" },
-    { id: "glove",    label: "🧤 Golden Glove" },
+    { id: "glove",    label: "Golden Glove" },
     { id: "match",    label: "📈 Match Stats" },
     { id: "player",   label: "⭐ Player Ratings" },
     { id: "top",      label: "🥇 Leaderboard" },
