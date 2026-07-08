@@ -2042,6 +2042,145 @@ function PlayerH2HGraphic() {
   );
 }
 
+// ─── GOLDEN GLOVE RACE (CLEAN SHEETS) ────────────────────────────────────────
+function GoldenGloveGraphic() {
+  const cardRef = useRef(null);
+  const [leagueId, setLeagueId] = useState("wc2026");
+  const [standings, setStandings] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState("");
+
+  const fetchCleanSheets = async () => {
+    setLoading(true); setError(""); setStandings(null);
+    try {
+      const r = await fetch(`/api/fixtures?leagueId=${leagueId}`);
+      const d = await r.json();
+      const fixtures = (d.fixtures || []).filter(f => f.status === "finished");
+
+      if (!fixtures.length) throw new Error("No completed fixtures yet for this competition");
+
+      // Aggregate clean sheets per team
+      const teamMap = {};
+      fixtures.forEach(f => {
+        const homeGoals = f.score?.home ?? 0;
+        const awayGoals = f.score?.away ?? 0;
+
+        if (!teamMap[f.home]) teamMap[f.home] = { name: f.home, logo: f.homeLogo, cleanSheets: 0, played: 0, goalsConceded: 0 };
+        if (!teamMap[f.away]) teamMap[f.away] = { name: f.away, logo: f.awayLogo, cleanSheets: 0, played: 0, goalsConceded: 0 };
+
+        teamMap[f.home].played++;
+        teamMap[f.away].played++;
+        teamMap[f.home].goalsConceded += awayGoals;
+        teamMap[f.away].goalsConceded += homeGoals;
+
+        if (awayGoals === 0) teamMap[f.home].cleanSheets++;
+        if (homeGoals === 0) teamMap[f.away].cleanSheets++;
+      });
+
+      const sorted = Object.values(teamMap)
+        .sort((a, b) => b.cleanSheets - a.cleanSheets || a.goalsConceded - b.goalsConceded)
+        .slice(0, 10);
+
+      setStandings(sorted);
+    } catch (e) { setError(e.message); }
+    setLoading(false);
+  };
+
+  const download = async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      if (!window.html2canvas) {
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+        document.head.appendChild(s);
+        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
+      }
+      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
+      const link = document.createElement("a");
+      link.download = `deep433-golden-glove-${leagueId}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const rankColor = (i) => i === 0 ? "#FFD700" : i === 1 ? "#C0C0C0" : i === 2 ? "#CD7F32" : "#555";
+  const rankBg = (i) => {
+    if (i === 0) return "linear-gradient(135deg, rgba(255,215,0,0.08), rgba(255,215,0,0.02))";
+    if (i === 1) return "linear-gradient(135deg, rgba(192,192,192,0.06), rgba(192,192,192,0.01))";
+    if (i === 2) return "linear-gradient(135deg, rgba(205,127,50,0.06), rgba(205,127,50,0.01))";
+    return "transparent";
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {LEAGUE_OPTIONS.map(l => (
+          <button key={l.id} onClick={() => { setLeagueId(l.id); setStandings(null); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
+            {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
+            {l.label}
+          </button>
+        ))}
+      </div>
+
+      <button onClick={fetchCleanSheets} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
+        {loading ? "Loading..." : "🧤 Load Golden Glove Race"}
+      </button>
+      {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
+
+      {standings && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "22px 18px 18px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, marginTop: 8 }}>
+                {LEAGUE_LOGOS[leagueId] && <img src={LEAGUE_LOGOS[leagueId]} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 15, fontWeight: 900, color: "#f0f0f0" }}>🧤 Golden Glove Race</div>
+                  <div style={{ fontSize: 10, color: "#555" }}>{LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label}</div>
+                </div>
+                <div style={{ fontSize: 9, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Clean Sheets</div>
+              </div>
+              <div style={{ height: 1, background: "#1a1a2a", marginBottom: 8 }} />
+
+              {standings.map((team, i) => {
+                const isTop3 = i < 3;
+                return (
+                  <div key={team.name} style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    padding: isTop3 ? "10px 8px" : "7px 4px",
+                    borderBottom: "1px solid #0f0f1a",
+                    background: rankBg(i),
+                    borderRadius: isTop3 ? 8 : 0,
+                    marginBottom: isTop3 ? 4 : 0,
+                    border: i === 0 ? "1px solid rgba(255,215,0,0.15)" : i === 1 ? "1px solid rgba(192,192,192,0.1)" : i === 2 ? "1px solid rgba(205,127,50,0.1)" : "none",
+                  }}>
+                    <div style={{ width: 22, textAlign: "center", fontSize: isTop3 ? 16 : 12, color: rankColor(i), fontWeight: 900, flexShrink: 0 }}>
+                      {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
+                    </div>
+                    {team.logo && <img src={team.logo} alt="" crossOrigin="anonymous" style={{ width: isTop3 ? 32 : 24, height: isTop3 ? 32 : 24, objectFit: "contain", flexShrink: 0 }} />}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: isTop3 ? 14 : 12, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{team.name}</div>
+                      <div style={{ fontSize: 10, color: "#555", marginTop: 2 }}>{team.played} played · {team.goalsConceded} conceded</div>
+                    </div>
+                    <div style={{ fontSize: isTop3 ? 28 : 20, fontWeight: 900, color: "#4ade80", minWidth: 36, textAlign: "right" }}>
+                      {team.cleanSheets}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </GraphicCard>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── MAIN EXPORT ─────────────────────────────────────────────────────────────
 // ─── MATCH HEAD-TO-HEAD GRAPHIC ──────────────────────────────────────────────
 function MatchH2HGraphic() {
@@ -2227,6 +2366,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "pitch",    label: "⚽ Pitch View" },
     { id: "h2h",      label: "🆚 Player H2H" },
     { id: "matchh2h", label: "📋 Match H2H" },
+    { id: "glove",    label: "🧤 Golden Glove" },
     { id: "match",    label: "📈 Match Stats" },
     { id: "player",   label: "⭐ Player Ratings" },
     { id: "top",      label: "🥇 Leaderboard" },
@@ -2251,6 +2391,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "pitch"    && <MatchPitchViewGraphic />}
       {activeSection === "h2h"      && <PlayerH2HGraphic />}
       {activeSection === "matchh2h" && <MatchH2HGraphic />}
+      {activeSection === "glove"    && <GoldenGloveGraphic />}
       {activeSection === "match"    && <MatchStatsGraphic />}
       {activeSection === "player"   && <PlayerRatingsGraphic />}
       {activeSection === "top"      && <TopScorersGraphic />}
