@@ -1852,6 +1852,157 @@ function MatchPitchViewGraphic() {
   );
 }
 
+// ─── PLAYER HEAD-TO-HEAD GRAPHIC ─────────────────────────────────────────────
+function PlayerH2HGraphic() {
+  const cardRef = useRef(null);
+  const [leagueId, setLeagueId] = useState("wc2026");
+  const [search1, setSearch1] = useState("");
+  const [search2, setSearch2] = useState("");
+  const [suggestions1, setSuggestions1] = useState([]);
+  const [suggestions2, setSuggestions2] = useState([]);
+  const [player1, setPlayer1] = useState(null);
+  const [player2, setPlayer2] = useState(null);
+  const [searching1, setSearching1] = useState(false);
+  const [searching2, setSearching2] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const searchPlayer = async (query, slot) => {
+    if (query.length < 3) {
+      slot === 1 ? setSuggestions1([]) : setSuggestions2([]);
+      return;
+    }
+    slot === 1 ? setSearching1(true) : setSearching2(true);
+    try {
+      const r = await fetch(`/api/team-search?type=player&query=${encodeURIComponent(query)}&leagueId=${leagueId}`);
+      const d = await r.json();
+      slot === 1 ? setSuggestions1(d.players || []) : setSuggestions2(d.players || []);
+    } catch {}
+    slot === 1 ? setSearching1(false) : setSearching2(false);
+  };
+
+  const download = async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      if (!window.html2canvas) {
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+        document.head.appendChild(s);
+        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
+      }
+      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
+      const link = document.createElement("a");
+      link.download = `deep433-h2h-${player1?.name}-vs-${player2?.name}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const CompareRow = ({ label, val1, val2, higherIsBetter = true }) => {
+    const v1 = parseFloat(val1) || 0;
+    const v2 = parseFloat(val2) || 0;
+    const p1Better = higherIsBetter ? v1 > v2 : v1 < v2;
+    const p2Better = higherIsBetter ? v2 > v1 : v2 < v1;
+    return (
+      <div style={{ display: "flex", alignItems: "center", padding: "9px 0", borderBottom: "1px solid #0f0f1a" }}>
+        <span style={{ flex: 1, textAlign: "right", fontSize: 16, fontWeight: 900, color: p1Better ? "#4ade80" : "#888", paddingRight: 12 }}>{val1 ?? "—"}</span>
+        <span style={{ fontSize: 9, color: "#666", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, width: 90, textAlign: "center" }}>{label}</span>
+        <span style={{ flex: 1, textAlign: "left", fontSize: 16, fontWeight: 900, color: p2Better ? "#f59e0b" : "#888", paddingLeft: 12 }}>{val2 ?? "—"}</span>
+      </div>
+    );
+  };
+
+  const PlayerSearchBox = ({ label, search, setSearch, suggestions, setSuggestions, player, setPlayer, searching, slot, color }) => (
+    <div style={{ position: "relative" }}>
+      <div style={{ fontSize: 10, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{label}</div>
+      <input
+        placeholder="Search player..."
+        value={player ? player.name : search}
+        onChange={e => {
+          setSearch(e.target.value);
+          setPlayer(null);
+          searchPlayer(e.target.value, slot);
+        }}
+        style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${player ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+      />
+      {searching && <div style={{ position: "absolute", right: 10, top: 38, fontSize: 10, color: "#555" }}>...</div>}
+      {suggestions.length > 0 && !player && (
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, zIndex: 20, marginTop: 4, maxHeight: 220, overflowY: "auto" }}>
+          {suggestions.map(p => (
+            <div key={p.id} onClick={() => { setPlayer(p); setSearch(p.name); setSuggestions([]); }} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", cursor: "pointer", borderBottom: "1px solid #1a1a2a" }}>
+              {p.photo && <img src={p.photo} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover" }} />}
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>{p.name}</div>
+                <div style={{ fontSize: 10, color: "#555" }}>{p.team}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {LEAGUE_OPTIONS.slice(0, 7).map(l => (
+          <button key={l.id} onClick={() => { setLeagueId(l.id); setPlayer1(null); setPlayer2(null); setSearch1(""); setSearch2(""); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "5px 12px" }}>
+            {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
+            {l.label}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <PlayerSearchBox label="Player 1" search={search1} setSearch={setSearch1} suggestions={suggestions1} setSuggestions={setSuggestions1} player={player1} setPlayer={setPlayer1} searching={searching1} slot={1} color="#4ade80" />
+        <PlayerSearchBox label="Player 2" search={search2} setSearch={setSearch2} suggestions={suggestions2} setSuggestions={setSuggestions2} player={player2} setPlayer={setPlayer2} searching={searching2} slot={2} color="#f59e0b" />
+      </div>
+
+      {player1 && player2 && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "22px 18px 18px" }}>
+              {/* Player headers */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16, marginTop: 8 }}>
+                <div style={{ textAlign: "center" }}>
+                  {player1.photo && <img src={player1.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 8px" }} />}
+                  <div style={{ fontSize: 13, fontWeight: 900, color: "#4ade80" }}>{player1.name}</div>
+                  <div style={{ fontSize: 9, color: "#555", marginTop: 2 }}>{player1.team}</div>
+                </div>
+                <div style={{ textAlign: "center", padding: "0 8px" }}>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: "#333" }}>VS</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  {player2.photo && <img src={player2.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #f59e0b", margin: "0 auto 8px" }} />}
+                  <div style={{ fontSize: 13, fontWeight: 900, color: "#f59e0b" }}>{player2.name}</div>
+                  <div style={{ fontSize: 9, color: "#555", marginTop: 2 }}>{player2.team}</div>
+                </div>
+              </div>
+
+              <div style={{ height: 1, background: "#1a1a2a", marginBottom: 8 }} />
+
+              <CompareRow label="Rating" val1={player1.rating ? parseFloat(player1.rating).toFixed(1) : "—"} val2={player2.rating ? parseFloat(player2.rating).toFixed(1) : "—"} />
+              <CompareRow label="Goals" val1={player1.goals} val2={player2.goals} />
+              <CompareRow label="Assists" val1={player1.assists} val2={player2.assists} />
+              <CompareRow label="Apps" val1={player1.appearances} val2={player2.appearances} />
+              <CompareRow label="Shots" val1={player1.shots} val2={player2.shots} />
+              <CompareRow label="On Target" val1={player1.shotsOnTarget} val2={player2.shotsOnTarget} />
+              <CompareRow label="Key Passes" val1={player1.keyPasses} val2={player2.keyPasses} />
+              <CompareRow label="Dribbles" val1={player1.dribbles} val2={player2.dribbles} />
+              <CompareRow label="Tackles" val1={player1.tackles} val2={player2.tackles} />
+              <CompareRow label="Cards" val1={player1.yellowCards} val2={player2.yellowCards} higherIsBetter={false} />
+            </div>
+          </GraphicCard>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── MAIN EXPORT ─────────────────────────────────────────────────────────────
 export default function DataGraphics({ history = [], supabase }) {
   const [activeSection, setActiveSection] = useState("match");
@@ -1859,6 +2010,7 @@ export default function DataGraphics({ history = [], supabase }) {
   const sections = [
     { id: "insights", label: "📊 Deep Insights" },
     { id: "pitch",    label: "⚽ Pitch View" },
+    { id: "h2h",      label: "🆚 Player H2H" },
     { id: "match",    label: "📈 Match Stats" },
     { id: "player",   label: "⭐ Player Ratings" },
     { id: "top",      label: "🥇 Leaderboard" },
@@ -1881,6 +2033,7 @@ export default function DataGraphics({ history = [], supabase }) {
 
       {activeSection === "insights" && <DeepInsightsGraphic />}
       {activeSection === "pitch"    && <MatchPitchViewGraphic />}
+      {activeSection === "h2h"      && <PlayerH2HGraphic />}
       {activeSection === "match"    && <MatchStatsGraphic />}
       {activeSection === "player"   && <PlayerRatingsGraphic />}
       {activeSection === "top"      && <TopScorersGraphic />}
