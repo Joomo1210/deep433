@@ -586,7 +586,9 @@ export default function FootballPredictor() {
   const [awardsStep, setAwardsStep] = useState(1); // 1=SF, 2=Finalists, 3=Winner
   const [awardsForm, setAwardsForm] = useState({ sf1: "", sf2: "", sf3: "", sf4: "", finalist1: "", finalist2: "", winner: "" });
   const [awardsSubmitting, setAwardsSubmitting] = useState(false);
-  const [awardsError, setAwardsError] = useState(""); // fixtureId of expanded match
+  const [awardsError, setAwardsError] = useState("");
+  const [awardsDownloading, setAwardsDownloading] = useState(false);
+  const awardsCardRef = useRef(null);
   const [confirmedLineup, setConfirmedLineup] = useState(null);
   const [lineupFetching, setLineupFetching] = useState(false);
   const [viewingPitch, setViewingPitch] = useState(null);
@@ -692,6 +694,25 @@ export default function FootballPredictor() {
       if (predResult.data) setTournamentPred(predResult.data);
     }).catch(() => setAwardsError("Failed to load teams")).finally(() => setAwardsLoading(false));
   }, [tab, awardsLeague, session]);
+
+  const downloadAwardsCard = async () => {
+    if (!awardsCardRef.current) return;
+    setAwardsDownloading(true);
+    try {
+      if (!window.html2canvas) {
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+        document.head.appendChild(s);
+        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
+      }
+      const canvas = await window.html2canvas(awardsCardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
+      const link = document.createElement("a");
+      link.download = `deep433-season-awards-${awardsLeague}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch { alert("Download failed — try screenshotting manually"); }
+    setAwardsDownloading(false);
+  };
 
   const submitTournamentPrediction = async () => {
     const { sf1, sf2, sf3, sf4, finalist1, finalist2, winner } = awardsForm;
@@ -1861,29 +1882,82 @@ export default function FootballPredictor() {
             )}
 
             {!awardsLoading && tournamentPred && (
-              <div className="card" style={{ padding: "24px" }}>
-                <div style={{ fontSize: 12, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 16, textAlign: "center" }}>
-                  🎖 Your Season Awards Pick — Locked
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {[
-                    { label: "🏆 Winner", value: tournamentPred.winner, color: "#fbbf24" },
-                    { label: "🥈 Runner-up", value: [tournamentPred.finalist_1, tournamentPred.finalist_2].find(f => f !== tournamentPred.winner), color: "#c0c0c0" },
-                    { label: "Semi-Finalist", value: tournamentPred.semi_finalist_1, color: "#818cf8" },
-                    { label: "Semi-Finalist", value: tournamentPred.semi_finalist_2, color: "#818cf8" },
-                    { label: "Semi-Finalist", value: tournamentPred.semi_finalist_3, color: "#818cf8" },
-                    { label: "Semi-Finalist", value: tournamentPred.semi_finalist_4, color: "#818cf8" },
-                  ].map((row, i) => (
-                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "12px 16px" }}>
-                      <span style={{ fontSize: 12, color: row.color, fontWeight: 700 }}>{row.label}</span>
-                      <span style={{ fontSize: 14, color: "#f0f0f0", fontWeight: 800 }}>{row.value}</span>
+              <>
+                <div
+                  ref={awardsCardRef}
+                  style={{
+                    background: "linear-gradient(145deg, #0a0a0f 0%, #0d0d1a 60%, #0a0f0a 100%)",
+                    border: "1px solid #1e1e30", borderRadius: 14, overflow: "hidden",
+                    position: "relative", padding: "28px 20px 20px",
+                    fontFamily: "'Inter',sans-serif",
+                  }}
+                >
+                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
+                  <div style={{ position: "absolute", top: 12, right: 14, display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontSize: 10, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
+                    <span style={{ fontSize: 9, color: "#888", fontWeight: 600 }}>deep433.com</span>
+                  </div>
+                  {/* Logo watermark */}
+                  <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+                    <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: "55%", height: "55%", opacity: 0.12, objectFit: "contain", borderRadius: "50%", userSelect: "none" }} />
+                  </div>
+
+                  <div style={{ textAlign: "center", marginBottom: 16, marginTop: 6, position: "relative", zIndex: 1 }}>
+                    <div style={{ fontSize: 13, color: "#f0f0f0", fontWeight: 900, textTransform: "uppercase", letterSpacing: 2 }}>
+                      {LEAGUES.find(l => l.id === awardsLeague)?.label || awardsLeague}
                     </div>
-                  ))}
+                    <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginTop: 2 }}>🎖 My Season Awards Pick</div>
+                  </div>
+
+                  {/* Winner — hero */}
+                  <div style={{ textAlign: "center", marginBottom: 16, position: "relative", zIndex: 1 }}>
+                    <div style={{ fontSize: 9, color: "#fbbf24", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>🏆 Winner</div>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+                      <TeamFlag team={tournamentPred.winner} logo={TEAM_LOGOS[tournamentPred.winner]} size={40} />
+                      <span style={{ fontSize: 20, fontWeight: 900, color: "#fbbf24" }}>{tournamentPred.winner}</span>
+                    </div>
+                  </div>
+
+                  <div style={{ height: 1, background: "#1a1a2a", marginBottom: 14, position: "relative", zIndex: 1 }} />
+
+                  {/* Runner-up */}
+                  <div style={{ textAlign: "center", marginBottom: 14, position: "relative", zIndex: 1 }}>
+                    <div style={{ fontSize: 9, color: "#c0c0c0", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>🥈 Runner-up</div>
+                    {(() => {
+                      const runnerUp = [tournamentPred.finalist_1, tournamentPred.finalist_2].find(f => f !== tournamentPred.winner);
+                      return (
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                          <TeamFlag team={runnerUp} logo={TEAM_LOGOS[runnerUp]} size={28} />
+                          <span style={{ fontSize: 15, fontWeight: 800, color: "#f0f0f0" }}>{runnerUp}</span>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  <div style={{ height: 1, background: "#1a1a2a", marginBottom: 14, position: "relative", zIndex: 1 }} />
+
+                  {/* Semi-finalists */}
+                  <div style={{ position: "relative", zIndex: 1 }}>
+                    <div style={{ fontSize: 9, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, textAlign: "center", marginBottom: 10 }}>Semi-Finalists</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                      {[tournamentPred.semi_finalist_1, tournamentPred.semi_finalist_2, tournamentPred.semi_finalist_3, tournamentPred.semi_finalist_4].map((team, i) => (
+                        <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, background: "#13131f", borderRadius: 8, padding: "8px 10px" }}>
+                          <TeamFlag team={team} logo={TEAM_LOGOS[team]} size={18} />
+                          <span style={{ fontSize: 11, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{team}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div style={{ fontSize: 9, color: "#444", textAlign: "center", marginTop: 16, position: "relative", zIndex: 1 }}>
+                    Submitted {new Date(tournamentPred.submitted_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                  </div>
                 </div>
-                <div style={{ fontSize: 10, color: "#444", textAlign: "center", marginTop: 14 }}>
-                  Submitted {new Date(tournamentPred.submitted_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })} · One prediction per competition
-                </div>
-              </div>
+
+                <button onClick={downloadAwardsCard} disabled={awardsDownloading} style={{ marginTop: 12, background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%" }}>
+                  {awardsDownloading ? "Generating..." : "⬇ Download Prediction Card"}
+                </button>
+              </>
             )}
 
             {!awardsLoading && !tournamentPred && remainingTeams.length > 0 && (
