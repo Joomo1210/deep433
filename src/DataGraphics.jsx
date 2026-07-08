@@ -733,7 +733,7 @@ function TeamStatsGraphic() {
     if (query.length < 3) { setTeamSuggestions([]); return; }
     setSearching(true);
     try {
-      const r = await fetch(`/api/team-search?query=${encodeURIComponent(query)}`);
+      const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
       const d = await r.json();
       setTeamSuggestions(d.teams || []);
     } catch {}
@@ -1905,7 +1905,7 @@ function PlayerH2HGraphic() {
     }
     slot === 1 ? setSearching1(true) : setSearching2(true);
     try {
-      const r = await fetch(`/api/team-search?type=player&query=${encodeURIComponent(query)}&leagueId=${leagueId}`);
+      const r = await fetch(`/api/team-stats?mode=playersearch&query=${encodeURIComponent(query)}&leagueId=${leagueId}`);
       const d = await r.json();
       slot === 1 ? setSuggestions1(d.players || []) : setSuggestions2(d.players || []);
     } catch {}
