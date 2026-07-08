@@ -1,0 +1,76 @@
+// /api/team-search.js
+// Searches for teams OR players by name using API-Football
+// Usage: /api/team-search?query=Arsenal (teams)
+// Usage: /api/team-search?query=Messi&type=player&leagueId=wc2026 (players)
+
+const LEAGUE_MAP = {
+  wc2026:      { id: 1,   season: 2026 },
+  pl:          { id: 39,  season: 2025 },
+  laliga:      { id: 140, season: 2025 },
+  seriea:      { id: 135, season: 2025 },
+  bundesliga:  { id: 78,  season: 2025 },
+  ligue1:      { id: 61,  season: 2025 },
+  ucl:         { id: 2,   season: 2025 },
+};
+
+export default async function handler(req, res) {
+  const { query, type, leagueId } = req.query;
+  if (!query || query.length < 3) return res.status(200).json({ teams: [], players: [] });
+
+  const apiKey = process.env.API_FOOTBALL_KEY;
+
+  // ── Player search mode ──
+  if (type === "player") {
+    const league = LEAGUE_MAP[leagueId];
+    if (!league) return res.status(400).json({ error: "Unknown league" });
+    try {
+      const r = await fetch(`https://v3.football.api-sports.io/players?search=${encodeURIComponent(query)}&league=${league.id}&season=${league.season}`, {
+        headers: { "x-apisports-key": apiKey }
+      });
+      const data = await r.json();
+      const players = (data.response || []).slice(0, 8).map(p => ({
+        id: p.player?.id,
+        name: p.player?.name,
+        photo: p.player?.photo,
+        nationality: p.player?.nationality,
+        team: p.statistics?.[0]?.team?.name,
+        teamLogo: p.statistics?.[0]?.team?.logo,
+        position: p.statistics?.[0]?.games?.position,
+        goals: p.statistics?.[0]?.goals?.total || 0,
+        assists: p.statistics?.[0]?.goals?.assists || 0,
+        rating: p.statistics?.[0]?.games?.rating,
+        appearances: p.statistics?.[0]?.games?.appearences || 0,
+        minutes: p.statistics?.[0]?.games?.minutes || 0,
+        shots: p.statistics?.[0]?.shots?.total || 0,
+        shotsOnTarget: p.statistics?.[0]?.shots?.on || 0,
+        keyPasses: p.statistics?.[0]?.passes?.key || 0,
+        passAccuracy: p.statistics?.[0]?.passes?.accuracy,
+        dribbles: p.statistics?.[0]?.dribbles?.success || 0,
+        tackles: p.statistics?.[0]?.tackles?.total || 0,
+        duelsWon: p.statistics?.[0]?.duels?.won || 0,
+        yellowCards: p.statistics?.[0]?.cards?.yellow || 0,
+        redCards: p.statistics?.[0]?.cards?.red || 0,
+      }));
+      return res.status(200).json({ players });
+    } catch (err) {
+      return res.status(200).json({ players: [], error: err.message });
+    }
+  }
+
+  // ── Team search mode (default) ──
+  try {
+    const r = await fetch(`https://v3.football.api-sports.io/teams?search=${encodeURIComponent(query)}`, {
+      headers: { "x-apisports-key": apiKey }
+    });
+    const data = await r.json();
+    const teams = (data.response || []).slice(0, 8).map(t => ({
+      id: t.team?.id,
+      name: t.team?.name,
+      logo: t.team?.logo,
+      country: t.team?.country,
+    }));
+    res.status(200).json({ teams });
+  } catch (err) {
+    res.status(200).json({ teams: [], error: err.message });
+  }
+}
