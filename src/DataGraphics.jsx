@@ -1897,6 +1897,8 @@ function PlayerH2HGraphic() {
   const [searching1, setSearching1] = useState(false);
   const [searching2, setSearching2] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [statsMode, setStatsMode] = useState("competition"); // competition | season
+  const [seasonLoading, setSeasonLoading] = useState(false);
 
   const searchPlayer = async (query, slot) => {
     if (query.length < 3) {
@@ -1910,6 +1912,27 @@ function PlayerH2HGraphic() {
       slot === 1 ? setSuggestions1(d.players || []) : setSuggestions2(d.players || []);
     } catch {}
     slot === 1 ? setSearching1(false) : setSearching2(false);
+  };
+
+  // Fetch season-aggregated stats when toggled to Season mode
+  const fetchSeasonStats = async (player, setPlayer) => {
+    if (!player?.id) return;
+    setSeasonLoading(true);
+    try {
+      const season = leagueId === "wc2026" ? 2026 : 2025;
+      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${player.id}&season=${season}`);
+      const d = await r.json();
+      if (d.available) setPlayer(prev => ({ ...prev, ...d, _seasonData: d }));
+    } catch {}
+    setSeasonLoading(false);
+  };
+
+  const toggleStatsMode = async (newMode) => {
+    setStatsMode(newMode);
+    if (newMode === "season") {
+      if (player1 && !player1._seasonData) await fetchSeasonStats(player1, setPlayer1);
+      if (player2 && !player2._seasonData) await fetchSeasonStats(player2, setPlayer2);
+    }
   };
 
   const download = async () => {
@@ -1964,8 +1987,21 @@ function PlayerH2HGraphic() {
 
       {player1 && player2 && (
         <>
+          <div style={{ display: "flex", gap: 8 }}>
+            {["competition", "season"].map(m => (
+              <button key={m} onClick={() => toggleStatsMode(m)} disabled={seasonLoading} style={{ flex: 1, background: statsMode === m ? "#4ade8022" : "none", border: `1px solid ${statsMode === m ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: statsMode === m ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "8px", textTransform: "capitalize" }}>
+                {seasonLoading && m === "season" ? "Loading..." : m === "competition" ? "🏆 This Competition" : "📅 Full Season"}
+              </button>
+            ))}
+          </div>
+
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "22px 18px 18px" }}>
+              <div style={{ textAlign: "center", marginBottom: 12 }}>
+                <span style={{ fontSize: 9, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5 }}>
+                  {statsMode === "season" ? "📅 Full Season Comparison" : `🏆 ${LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label} Stats`}
+                </span>
+              </div>
               {/* Player headers */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16, marginTop: 8 }}>
                 <div style={{ textAlign: "center" }}>
