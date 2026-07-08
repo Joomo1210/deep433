@@ -1034,9 +1034,9 @@ function RecapGraphic({ history = [] }) {
         <span style={{ fontSize: 11, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
         <span style={{ fontSize: 10, color: "#888", fontWeight: 600 }}>deep433.com</span>
       </div>
-      {/* Logo watermark */}
-      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", zIndex: 0 }}>
-        <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: "55%", height: "55%", opacity: 0.12, objectFit: "contain", borderRadius: "50%", userSelect: "none" }} />
+      {/* Logo watermark — corner */}
+      <div style={{ position: "absolute", bottom: 10, left: 10, pointerEvents: "none", zIndex: 0 }}>
+        <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, opacity: 0.35, objectFit: "contain", borderRadius: "50%", userSelect: "none" }} />
       </div>
 
       {isLandscape ? (
@@ -1805,9 +1805,9 @@ function MatchPitchViewGraphic() {
                     <span style={{ fontSize: 8, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
                   </div>
 
-                  {/* Watermark */}
-                  <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
-                    <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: "55%", height: "55%", opacity: 0.12, objectFit: "contain", borderRadius: "50%", userSelect: "none" }} />
+                  {/* Watermark — corner */}
+                  <div style={{ position: "absolute", bottom: 10, left: 10, pointerEvents: "none" }}>
+                    <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 26, height: 26, opacity: 0.35, objectFit: "contain", borderRadius: "50%", userSelect: "none" }} />
                   </div>
 
                   {/* Home team header */}
