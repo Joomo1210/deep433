@@ -38,6 +38,56 @@ export default async function handler(req, res) {
     }
   }
 
+  // ── Player season stats (aggregated across all competitions) ──
+  if (mode === "playerseason") {
+    const { playerId, season } = req.query;
+    if (!playerId || !season) return res.status(400).json({ error: "playerId and season required" });
+    try {
+      const r = await fetch(`https://v3.football.api-sports.io/players?id=${playerId}&season=${season}`, {
+        headers: { "x-apisports-key": apiKey }
+      });
+      const data = await r.json();
+      const entry = data.response?.[0];
+      if (!entry) return res.status(200).json({ available: false });
+
+      const statsArr = entry.statistics || [];
+      const sum = (path) => statsArr.reduce((acc, s) => {
+        const val = path.split(".").reduce((o, k) => o?.[k], s);
+        return acc + (parseFloat(val) || 0);
+      }, 0);
+      const ratingsAvg = () => {
+        const ratings = statsArr.map(s => parseFloat(s.games?.rating)).filter(r => !isNaN(r));
+        return ratings.length ? (ratings.reduce((a, b) => a + b, 0) / ratings.length) : null;
+      };
+
+      return res.status(200).json({
+        available: true,
+        id: entry.player?.id,
+        name: entry.player?.name,
+        photo: entry.player?.photo,
+        nationality: entry.player?.nationality,
+        team: statsArr[0]?.team?.name,
+        teamLogo: statsArr[0]?.team?.logo,
+        position: statsArr[0]?.games?.position,
+        goals: sum("goals.total"),
+        assists: sum("goals.assists"),
+        rating: ratingsAvg(),
+        appearances: sum("games.appearences"),
+        minutes: sum("games.minutes"),
+        shots: sum("shots.total"),
+        shotsOnTarget: sum("shots.on"),
+        keyPasses: sum("passes.key"),
+        dribbles: sum("dribbles.success"),
+        tackles: sum("tackles.total"),
+        yellowCards: sum("cards.yellow"),
+        redCards: sum("cards.red"),
+        competitions: statsArr.length,
+      });
+    } catch (err) {
+      return res.status(200).json({ available: false, error: err.message });
+    }
+  }
+
   // ── Player name search ──
   if (mode === "playersearch") {
     if (!query || query.length < 3) return res.status(200).json({ players: [] });
