@@ -2051,6 +2051,8 @@ function GoldenGloveGraphic() {
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState("");
 
+  const KNOCKOUT_LEAGUES = ["wc2026", "ucl", "uel", "facup", "copadelrey", "afcon", "copamerica"];
+
   const fetchCleanSheets = async () => {
     setLoading(true); setError(""); setStandings(null);
     try {
@@ -2078,7 +2080,27 @@ function GoldenGloveGraphic() {
         if (homeGoals === 0) teamMap[f.away].cleanSheets++;
       });
 
-      const sorted = Object.values(teamMap)
+      // For knockout competitions, filter to only currently-active teams
+      let activeNames = null;
+      if (KNOCKOUT_LEAGUES.includes(leagueId)) {
+        try {
+          const br = await fetch(`/api/bracket?leagueId=${leagueId}`);
+          const bd = await br.json();
+          const names = new Set();
+          (bd.rounds || []).forEach(round => {
+            round.matches.forEach(m => {
+              if (m.home) names.add(m.home);
+              if (m.away) names.add(m.away);
+            });
+          });
+          if (names.size > 0) activeNames = names;
+        } catch {}
+      }
+
+      let teams = Object.values(teamMap);
+      if (activeNames) teams = teams.filter(t => activeNames.has(t.name));
+
+      const sorted = teams
         .sort((a, b) => b.cleanSheets - a.cleanSheets || a.goalsConceded - b.goalsConceded)
         .slice(0, 10);
 
