@@ -2043,6 +2043,154 @@ function PlayerH2HGraphic() {
 }
 
 // ─── MAIN EXPORT ─────────────────────────────────────────────────────────────
+// ─── MATCH HEAD-TO-HEAD GRAPHIC ──────────────────────────────────────────────
+function MatchH2HGraphic() {
+  const cardRef = useRef(null);
+  const [selectedFixture, setSelectedFixture] = useState(null);
+  const [matchPlayers, setMatchPlayers] = useState(null);
+  const [player1, setPlayer1] = useState(null);
+  const [player2, setPlayer2] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSelect = async (f) => {
+    setSelectedFixture(f);
+    setMatchPlayers(null);
+    setPlayer1(null);
+    setPlayer2(null);
+    setError("");
+    if (!f.fixtureId) { setError("No fixture ID available"); return; }
+    setLoading(true);
+    try {
+      const r = await fetch(`/api/player-ratings?fixtureId=${f.fixtureId}`);
+      const d = await r.json();
+      if (!d.available) throw new Error("Player stats not available yet — check back after the match");
+      setMatchPlayers(d);
+    } catch (e) { setError(e.message); }
+    setLoading(false);
+  };
+
+  const download = async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      if (!window.html2canvas) {
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+        document.head.appendChild(s);
+        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
+      }
+      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
+      const link = document.createElement("a");
+      link.download = `deep433-matchh2h-${player1?.name}-vs-${player2?.name}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const MatchCompareRow = ({ label, val1, val2, higherIsBetter = true }) => {
+    const v1 = parseFloat(val1) || 0;
+    const v2 = parseFloat(val2) || 0;
+    const p1Better = higherIsBetter ? v1 > v2 : v1 < v2;
+    const p2Better = higherIsBetter ? v2 > v1 : v2 < v1;
+    return (
+      <div style={{ display: "flex", alignItems: "center", padding: "9px 0", borderBottom: "1px solid #0f0f1a" }}>
+        <span style={{ flex: 1, textAlign: "right", fontSize: 16, fontWeight: 900, color: p1Better ? "#4ade80" : "#888", paddingRight: 12 }}>{val1 ?? "—"}</span>
+        <span style={{ fontSize: 9, color: "#666", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, width: 90, textAlign: "center" }}>{label}</span>
+        <span style={{ flex: 1, textAlign: "left", fontSize: 16, fontWeight: 900, color: p2Better ? "#f59e0b" : "#888", paddingLeft: 12 }}>{val2 ?? "—"}</span>
+      </div>
+    );
+  };
+
+  const PlayerPicker = ({ team, selected, onSelect, color }) => (
+    <div>
+      <div style={{ fontSize: 10, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{team?.team}</div>
+      <select
+        value={selected?.name || ""}
+        onChange={e => onSelect(team?.players?.find(p => p.name === e.target.value) || null)}
+        style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${selected ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+      >
+        <option value="">— Select player —</option>
+        {team?.players?.map(p => <option key={p.name} value={p.name}>{p.name} ({p.rating ? parseFloat(p.rating).toFixed(1) : "—"})</option>)}
+      </select>
+    </div>
+  );
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {!selectedFixture ? (
+        <FixturePicker onSelect={handleSelect} />
+      ) : (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
+            <button onClick={() => { setSelectedFixture(null); setMatchPlayers(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "4px 10px" }}>Change</button>
+          </div>
+
+          {loading && <div style={{ textAlign: "center", color: "#555", fontSize: 13, padding: "20px 0" }}>Loading player stats...</div>}
+          {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
+
+          {matchPlayers && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <PlayerPicker team={matchPlayers.home} selected={player1} onSelect={setPlayer1} color="#4ade80" />
+              <PlayerPicker team={matchPlayers.away} selected={player2} onSelect={setPlayer2} color="#f59e0b" />
+            </div>
+          )}
+        </>
+      )}
+
+      {player1 && player2 && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "22px 18px 18px" }}>
+              <div style={{ textAlign: "center", marginBottom: 12 }}>
+                <span style={{ fontSize: 9, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5 }}>
+                  📋 {selectedFixture.home} vs {selectedFixture.away}
+                </span>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16 }}>
+                <div style={{ textAlign: "center" }}>
+                  {player1.photo && <img src={player1.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 8px" }} />}
+                  <div style={{ fontSize: 13, fontWeight: 900, color: "#4ade80" }}>{player1.name}</div>
+                  <div style={{ fontSize: 9, color: "#555", marginTop: 2 }}>{matchPlayers.home.team}</div>
+                </div>
+                <div style={{ textAlign: "center", padding: "0 8px" }}>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: "#333" }}>VS</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  {player2.photo && <img src={player2.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #f59e0b", margin: "0 auto 8px" }} />}
+                  <div style={{ fontSize: 13, fontWeight: 900, color: "#f59e0b" }}>{player2.name}</div>
+                  <div style={{ fontSize: 9, color: "#555", marginTop: 2 }}>{matchPlayers.away.team}</div>
+                </div>
+              </div>
+
+              <div style={{ height: 1, background: "#1a1a2a", marginBottom: 8 }} />
+
+              <MatchCompareRow label="Rating" val1={player1.rating ? parseFloat(player1.rating).toFixed(1) : "—"} val2={player2.rating ? parseFloat(player2.rating).toFixed(1) : "—"} />
+              <MatchCompareRow label="Goals" val1={player1.goals} val2={player2.goals} />
+              <MatchCompareRow label="Assists" val1={player1.assists} val2={player2.assists} />
+              <MatchCompareRow label="Minutes" val1={player1.minutesPlayed} val2={player2.minutesPlayed} />
+              <MatchCompareRow label="Shots" val1={player1.shots} val2={player2.shots} />
+              <MatchCompareRow label="On Target" val1={player1.shotsOnGoal} val2={player2.shotsOnGoal} />
+              <MatchCompareRow label="Key Passes" val1={player1.keyPasses} val2={player2.keyPasses} />
+              <MatchCompareRow label="Pass Acc" val1={player1.passAccuracy} val2={player2.passAccuracy} />
+              <MatchCompareRow label="Dribbles" val1={player1.dribbles} val2={player2.dribbles} />
+              <MatchCompareRow label="Tackles" val1={player1.tackles} val2={player2.tackles} />
+              <MatchCompareRow label="Cards" val1={player1.yellowCards} val2={player2.yellowCards} higherIsBetter={false} />
+            </div>
+          </GraphicCard>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function DataGraphics({ history = [], supabase }) {
   const [activeSection, setActiveSection] = useState("match");
 
@@ -2050,6 +2198,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "insights", label: "📊 Deep Insights" },
     { id: "pitch",    label: "⚽ Pitch View" },
     { id: "h2h",      label: "🆚 Player H2H" },
+    { id: "matchh2h", label: "📋 Match H2H" },
     { id: "match",    label: "📈 Match Stats" },
     { id: "player",   label: "⭐ Player Ratings" },
     { id: "top",      label: "🥇 Leaderboard" },
@@ -2073,6 +2222,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "insights" && <DeepInsightsGraphic />}
       {activeSection === "pitch"    && <MatchPitchViewGraphic />}
       {activeSection === "h2h"      && <PlayerH2HGraphic />}
+      {activeSection === "matchh2h" && <MatchH2HGraphic />}
       {activeSection === "match"    && <MatchStatsGraphic />}
       {activeSection === "player"   && <PlayerRatingsGraphic />}
       {activeSection === "top"      && <TopScorersGraphic />}
