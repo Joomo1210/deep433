@@ -194,6 +194,73 @@ function GraphicCard({ children, cardRef, label }) {
 }
 
 // ─── MATCH STATS GRAPHIC ────────────────────────────────────────────────────
+// ─── Animated count-up hook ──────────────────────────────────────────────────
+function useCountUp(target, duration = 900, trigger = true) {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    if (!trigger) { setValue(target); return; }
+    let raf;
+    const start = performance.now();
+    const from = 0;
+    const to = parseFloat(target) || 0;
+    const tick = (now) => {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+      setValue(from + (to - from) * eased);
+      if (progress < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration, trigger]);
+  return value;
+}
+
+// ─── Animated comparison bar (home vs away) ──────────────────────────────────
+function AnimatedStatBar({ label, homeVal, awayVal, unit = "", animate }) {
+  const hv = parseFloat(homeVal) || 0;
+  const av = parseFloat(awayVal) || 0;
+  const total = hv + av || 1;
+  const homePct = (hv / total) * 100;
+  const awayPct = 100 - homePct;
+  const [expanded, setExpanded] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setExpanded(true), 60); return () => clearTimeout(t); }, []);
+  const displayHv = useCountUp(hv, 900, animate);
+  const displayAv = useCountUp(av, 900, animate);
+
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+        <span style={{ fontSize: 15, fontWeight: 900, color: "#4ade80" }}>{displayHv.toFixed(unit === "%" ? 0 : (Number.isInteger(hv) ? 0 : 1))}{unit}</span>
+        <span style={{ fontSize: 9, color: "#aaa", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
+        <span style={{ fontSize: 15, fontWeight: 900, color: "#f59e0b" }}>{displayAv.toFixed(unit === "%" ? 0 : (Number.isInteger(av) ? 0 : 1))}{unit}</span>
+      </div>
+      <div style={{ display: "flex", height: 6, borderRadius: 3, overflow: "hidden", background: "#1a1a24" }}>
+        <div style={{ width: expanded ? `${homePct}%` : "0%", background: "#4ade80", transition: "width 0.9s cubic-bezier(0.16,1,0.3,1)" }} />
+        <div style={{ width: expanded ? `${awayPct}%` : "0%", background: "#f59e0b", opacity: 0.6, transition: "width 0.9s cubic-bezier(0.16,1,0.3,1) 0.05s" }} />
+      </div>
+    </div>
+  );
+}
+
+// ─── Bento box wrapper ────────────────────────────────────────────────────────
+function BentoBox({ title, icon, color, children, span }) {
+  return (
+    <div style={{
+      background: "#13131f",
+      border: `1px solid ${color}22`,
+      borderRadius: 10,
+      padding: "12px 14px",
+      gridColumn: span ? "span " + span : undefined,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+        <span style={{ fontSize: 12 }}>{icon}</span>
+        <span style={{ fontSize: 10, color, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 }}>{title}</span>
+      </div>
+      {children}
+    </div>
+  );
+}
+
 function MatchStatsGraphic() {
   const cardRef = useRef(null);
   const [fixtureId, setFixtureId] = useState("");
@@ -202,6 +269,7 @@ function MatchStatsGraphic() {
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState("");
+  const [animate, setAnimate] = useState(true);
 
   const handleSelect = (f) => {
     setSelectedFixture(f);
@@ -219,6 +287,7 @@ function MatchStatsGraphic() {
       const d = await r.json();
       if (!d.available) throw new Error("No stats available for this fixture yet — try after kickoff");
       setData(d);
+      setAnimate(true);
     } catch (e) { setError(e.message); }
     setLoading(false);
   };
@@ -226,6 +295,9 @@ function MatchStatsGraphic() {
   const download = async () => {
     if (!cardRef.current) return;
     setDownloading(true);
+    // Ensure bars/numbers are in their settled state before capturing
+    setAnimate(false);
+    await new Promise(res => setTimeout(res, 120));
     try {
       if (!window.html2canvas) {
         const s = document.createElement("script");
@@ -243,17 +315,6 @@ function MatchStatsGraphic() {
   };
 
   const s = data;
-  const KEY_STATS = [
-    { key: "possession",   label: "Possession",    icon: "⚽" },
-    { key: "shotsTotal",   label: "Total Shots",   icon: "🎯" },
-    { key: "shotsOnGoal",  label: "Shots on Target", icon: "🥅" },
-    { key: "corners",      label: "Corners",       icon: "🚩" },
-    { key: "fouls",        label: "Fouls",         icon: "⚠️" },
-    { key: "saves",        label: "Saves",         icon: "🧤" },
-    { key: "passAccuracy", label: "Pass Accuracy", icon: "🎯" },
-    { key: "yellowCards",  label: "Yellow Cards",  icon: "🟨" },
-    { key: "offsides",     label: "Offsides",      icon: "🚫" },
-  ];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -278,29 +339,52 @@ function MatchStatsGraphic() {
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "22px 18px 18px" }}>
+              {/* Team header */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16, marginTop: 8 }}>
                 <div style={{ textAlign: "center" }}>
-                  {s.home.logo && <img src={s.home.logo} alt="" crossOrigin="anonymous" style={{ width: 36, height: 36, objectFit: "contain", marginBottom: 4, display: "block", margin: "0 auto 6px" }} />}
-                  <div style={{ fontSize: 13, fontWeight: 800, color: "#4ade80" }}>{s.home.team}</div>
+                  {s.home.logo && <img src={s.home.logo} alt="" crossOrigin="anonymous" style={{ width: 34, height: 34, objectFit: "contain", marginBottom: 4, display: "block", margin: "0 auto 6px" }} />}
+                  <div style={{ fontSize: 12, fontWeight: 800, color: "#4ade80" }}>{s.home.team}</div>
                 </div>
                 <div style={{ textAlign: "center", padding: "0 12px" }}>
-                  <div style={{ fontSize: 10, color: "#555", textTransform: "uppercase", letterSpacing: 1 }}>Match Stats</div>
+                  <div style={{ fontSize: 9, color: "#888", textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Match Stats</div>
                 </div>
                 <div style={{ textAlign: "center" }}>
-                  {s.away.logo && <img src={s.away.logo} alt="" crossOrigin="anonymous" style={{ width: 36, height: 36, objectFit: "contain", marginBottom: 4, display: "block", margin: "0 auto 6px" }} />}
-                  <div style={{ fontSize: 13, fontWeight: 800, color: "#f59e0b" }}>{s.away.team}</div>
+                  {s.away.logo && <img src={s.away.logo} alt="" crossOrigin="anonymous" style={{ width: 34, height: 34, objectFit: "contain", marginBottom: 4, display: "block", margin: "0 auto 6px" }} />}
+                  <div style={{ fontSize: 12, fontWeight: 800, color: "#f59e0b" }}>{s.away.team}</div>
                 </div>
               </div>
-              <div style={{ height: 1, background: "#1a1a2a", marginBottom: 14 }} />
-              {KEY_STATS.map(stat => (
-                <StatRow
-                  key={stat.key}
-                  label={stat.label}
-                  icon={stat.icon}
-                  home={s.home.stats[stat.key]}
-                  away={s.away.stats[stat.key]}
-                />
-              ))}
+
+              {/* HERO: Possession — large signature card */}
+              <div style={{
+                background: "linear-gradient(135deg, #4ade8014, #f59e0b0e)",
+                border: "1px solid #4ade8033",
+                borderRadius: 12, padding: "16px 18px", marginBottom: 10,
+              }}>
+                <div style={{ fontSize: 9, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 10, textAlign: "center" }}>⚽ Possession</div>
+                <PossessionHero home={s.home.stats.possession} awayVal={s.away.stats.possession} animate={animate} />
+              </div>
+
+              {/* Bento grid — 2x2 */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                <BentoBox title="Attack" icon="🎯" color="#4ade80">
+                  <AnimatedStatBar label="Total Shots" homeVal={s.home.stats.shotsTotal} awayVal={s.away.stats.shotsTotal} animate={animate} />
+                  <AnimatedStatBar label="On Target" homeVal={s.home.stats.shotsOnGoal} awayVal={s.away.stats.shotsOnGoal} animate={animate} />
+                  <AnimatedStatBar label="Corners" homeVal={s.home.stats.corners} awayVal={s.away.stats.corners} animate={animate} />
+                </BentoBox>
+
+                <BentoBox title="Discipline" icon="🟨" color="#f59e0b">
+                  <AnimatedStatBar label="Fouls" homeVal={s.home.stats.fouls} awayVal={s.away.stats.fouls} animate={animate} />
+                  <AnimatedStatBar label="Yellow Cards" homeVal={s.home.stats.yellowCards} awayVal={s.away.stats.yellowCards} animate={animate} />
+                  <AnimatedStatBar label="Offsides" homeVal={s.home.stats.offsides} awayVal={s.away.stats.offsides} animate={animate} />
+                </BentoBox>
+              </div>
+
+              <BentoBox title="Efficiency" icon="🧤" color="#818cf8">
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                  <AnimatedStatBar label="Pass Accuracy" homeVal={s.home.stats.passAccuracy} awayVal={s.away.stats.passAccuracy} unit="%" animate={animate} />
+                  <AnimatedStatBar label="Saves" homeVal={s.home.stats.saves} awayVal={s.away.stats.saves} animate={animate} />
+                </div>
+              </BentoBox>
             </div>
           </GraphicCard>
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%" }}>
@@ -308,6 +392,31 @@ function MatchStatsGraphic() {
           </button>
         </>
       )}
+    </div>
+  );
+}
+
+// ─── Possession hero — large animated numbers + bar ──────────────────────────
+function PossessionHero({ home, awayVal, animate }) {
+  const hv = parseFloat(home) || 50;
+  const av = parseFloat(awayVal) || (100 - hv);
+  const total = hv + av || 1;
+  const homePct = (hv / total) * 100;
+  const [expanded, setExpanded] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setExpanded(true), 60); return () => clearTimeout(t); }, []);
+  const displayHv = useCountUp(homePct, 1000, animate);
+  const displayAv = useCountUp(100 - homePct, 1000, animate);
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+        <span style={{ fontSize: 32, fontWeight: 900, color: "#4ade80", lineHeight: 1 }}>{Math.round(displayHv)}%</span>
+        <span style={{ fontSize: 32, fontWeight: 900, color: "#f59e0b", lineHeight: 1 }}>{Math.round(displayAv)}%</span>
+      </div>
+      <div style={{ display: "flex", height: 10, borderRadius: 5, overflow: "hidden", background: "#1a1a24" }}>
+        <div style={{ width: expanded ? `${homePct}%` : "0%", background: "linear-gradient(90deg,#22c55e,#4ade80)", transition: "width 1s cubic-bezier(0.16,1,0.3,1)" }} />
+        <div style={{ width: expanded ? `${100 - homePct}%` : "0%", background: "linear-gradient(90deg,#f59e0b,#fbbf24)", opacity: 0.7, transition: "width 1s cubic-bezier(0.16,1,0.3,1) 0.05s" }} />
+      </div>
     </div>
   );
 }
