@@ -1853,6 +1853,38 @@ function MatchPitchViewGraphic() {
 }
 
 // ─── PLAYER HEAD-TO-HEAD GRAPHIC ─────────────────────────────────────────────
+  function PlayerSearchBox({ label, search, setSearch, suggestions, setSuggestions, player, setPlayer, searching, slot, color, onSearch }) {
+  return (
+    <div style={{ position: "relative" }}>
+      <div style={{ fontSize: 10, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{label}</div>
+      <input
+        placeholder="Search player..."
+        value={player ? player.name : search}
+        onChange={e => {
+          setSearch(e.target.value);
+          setPlayer(null);
+          onSearch(e.target.value, slot);
+        }}
+        style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${player ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+      />
+      {searching && <div style={{ position: "absolute", right: 10, top: 38, fontSize: 10, color: "#555" }}>...</div>}
+      {suggestions.length > 0 && !player && (
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, zIndex: 20, marginTop: 4, maxHeight: 220, overflowY: "auto" }}>
+          {suggestions.map(p => (
+            <div key={p.id} onClick={() => { setPlayer(p); setSearch(p.name); setSuggestions([]); }} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", cursor: "pointer", borderBottom: "1px solid #1a1a2a" }}>
+              {p.photo && <img src={p.photo} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover" }} />}
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>{p.name}</div>
+                <div style={{ fontSize: 10, color: "#555" }}>{p.team}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PlayerH2HGraphic() {
   const cardRef = useRef(null);
   const [leagueId, setLeagueId] = useState("wc2026");
@@ -1913,35 +1945,6 @@ function PlayerH2HGraphic() {
     );
   };
 
-  const PlayerSearchBox = ({ label, search, setSearch, suggestions, setSuggestions, player, setPlayer, searching, slot, color }) => (
-    <div style={{ position: "relative" }}>
-      <div style={{ fontSize: 10, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{label}</div>
-      <input
-        placeholder="Search player..."
-        value={player ? player.name : search}
-        onChange={e => {
-          setSearch(e.target.value);
-          setPlayer(null);
-          searchPlayer(e.target.value, slot);
-        }}
-        style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${player ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
-      />
-      {searching && <div style={{ position: "absolute", right: 10, top: 38, fontSize: 10, color: "#555" }}>...</div>}
-      {suggestions.length > 0 && !player && (
-        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, zIndex: 20, marginTop: 4, maxHeight: 220, overflowY: "auto" }}>
-          {suggestions.map(p => (
-            <div key={p.id} onClick={() => { setPlayer(p); setSearch(p.name); setSuggestions([]); }} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", cursor: "pointer", borderBottom: "1px solid #1a1a2a" }}>
-              {p.photo && <img src={p.photo} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover" }} />}
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>{p.name}</div>
-                <div style={{ fontSize: 10, color: "#555" }}>{p.team}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -1955,8 +1958,8 @@ function PlayerH2HGraphic() {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        <PlayerSearchBox label="Player 1" search={search1} setSearch={setSearch1} suggestions={suggestions1} setSuggestions={setSuggestions1} player={player1} setPlayer={setPlayer1} searching={searching1} slot={1} color="#4ade80" />
-        <PlayerSearchBox label="Player 2" search={search2} setSearch={setSearch2} suggestions={suggestions2} setSuggestions={setSuggestions2} player={player2} setPlayer={setPlayer2} searching={searching2} slot={2} color="#f59e0b" />
+        <PlayerSearchBox label="Player 1" search={search1} setSearch={setSearch1} suggestions={suggestions1} setSuggestions={setSuggestions1} player={player1} setPlayer={setPlayer1} searching={searching1} slot={1} color="#4ade80" onSearch={searchPlayer} />
+        <PlayerSearchBox label="Player 2" search={search2} setSearch={setSearch2} suggestions={suggestions2} setSuggestions={setSuggestions2} player={player2} setPlayer={setPlayer2} searching={searching2} slot={2} color="#f59e0b" onSearch={searchPlayer} />
       </div>
 
       {player1 && player2 && (
