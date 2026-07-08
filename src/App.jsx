@@ -578,7 +578,14 @@ export default function FootballPredictor() {
   const [fixtures, setFixtures] = useState([]);
   const [fixturesLoading, setFixturesLoading] = useState(false);
   const [bracketRounds, setBracketRounds] = useState([]);
-  const [bracketLoading, setBracketLoading] = useState(false); // fixtureId of expanded match
+  const [bracketLoading, setBracketLoading] = useState(false);
+  const [awardsLeague, setAwardsLeague] = useState("wc2026");
+  const [remainingTeams, setRemainingTeams] = useState([]);
+  const [awardsLoading, setAwardsLoading] = useState(false);
+  const [tournamentPred, setTournamentPred] = useState(null);
+  const [awardsForm, setAwardsForm] = useState({ winner: "", runnerUp: "", sf1: "", sf2: "" });
+  const [awardsSubmitting, setAwardsSubmitting] = useState(false);
+  const [awardsError, setAwardsError] = useState(""); // fixtureId of expanded match
   const [confirmedLineup, setConfirmedLineup] = useState(null);
   const [lineupFetching, setLineupFetching] = useState(false);
   const [viewingPitch, setViewingPitch] = useState(null);
@@ -658,6 +665,52 @@ export default function FootballPredictor() {
       .catch(() => {})
       .finally(() => setBracketLoading(false));
   }, [tab, selectedLeague, session]);
+
+  // Fetch remaining teams + existing prediction for Season Awards tab
+  useEffect(() => {
+    if (tab !== "awards" || !session) return;
+    setAwardsLoading(true);
+    setAwardsError("");
+    setTournamentPred(null);
+    setAwardsForm({ winner: "", runnerUp: "", sf1: "", sf2: "" });
+
+    Promise.all([
+      fetch(`/api/bracket?leagueId=${awardsLeague}`).then(r => r.json()),
+      supabase.from("tournament_predictions").select("*").eq("user_id", session.user.id).eq("league_id", awardsLeague).maybeSingle(),
+    ]).then(([bracketData, predResult]) => {
+      // Extract unique team names from all rounds
+      const teams = new Set();
+      (bracketData.rounds || []).forEach(r => {
+        r.matches.forEach(m => {
+          if (m.home) teams.add(m.home);
+          if (m.away) teams.add(m.away);
+        });
+      });
+      setRemainingTeams([...teams].sort());
+      if (predResult.data) setTournamentPred(predResult.data);
+    }).catch(() => setAwardsError("Failed to load teams")).finally(() => setAwardsLoading(false));
+  }, [tab, awardsLeague, session]);
+
+  const submitTournamentPrediction = async () => {
+    const { winner, runnerUp, sf1, sf2 } = awardsForm;
+    if (!winner || !runnerUp || !sf1 || !sf2) {
+      setAwardsError("Please select all four positions");
+      return;
+    }
+    setAwardsSubmitting(true);
+    setAwardsError("");
+    const { data, error } = await supabase.from("tournament_predictions").insert({
+      user_id: session.user.id,
+      league_id: awardsLeague,
+      winner,
+      runner_up: runnerUp,
+      semi_finalist_1: sf1,
+      semi_finalist_2: sf2,
+    }).select().single();
+    if (error) setAwardsError(error.message);
+    else setTournamentPred(data);
+    setAwardsSubmitting(false);
+  };
 
   // Fetch fixtures for the selected league
   useEffect(() => {
@@ -983,6 +1036,7 @@ export default function FootballPredictor() {
     { id: "predict",   label: "⚡ Predict" },
     { id: "scores",    label: "🔴 Scores" },
     { id: "bracket",   label: "🏆 Bracket" },
+    { id: "awards",    label: "🎖 Season Awards" },
     ...(userRole === "admin" ? [{ id: "graphics", label: "📊 Graphics" }] : []),
     { id: "standings", label: "🏆 You vs AI" },
     { id: "badges",    label: "🏅 Badges" },
@@ -1773,6 +1827,93 @@ export default function FootballPredictor() {
             <div style={{ fontSize: 11, color: "#555", textAlign: "center" }}>
               Scroll horizontally to see all rounds · Green border = your prediction
             </div>
+          </>
+        )}
+
+        {tab === "awards" && (
+          <>
+            {/* Cup competition selector */}
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {[
+                { id: "wc2026",     label: "World Cup 2026" },
+                { id: "ucl",        label: "Champions League" },
+                { id: "uel",        label: "Europa League" },
+                { id: "facup",      label: "FA Cup" },
+                { id: "copadelrey", label: "Copa del Rey" },
+                { id: "afcon",      label: "AFCON" },
+                { id: "copamerica", label: "Copa America" },
+              ].map(l => (
+                <button key={l.id} className={`league-btn${awardsLeague === l.id ? " active" : ""}`}
+                  onClick={() => setAwardsLeague(l.id)}>
+                  {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt={l.label} style={{ width: 16, height: 16, objectFit: "contain", marginRight: 5, verticalAlign: "middle" }} crossOrigin="anonymous" />}
+                  {l.label}
+                </button>
+              ))}
+            </div>
+
+            {awardsLoading && (
+              <div style={{ textAlign: "center", color: "#555", fontSize: 13, padding: "30px 0" }}>Loading...</div>
+            )}
+
+            {!awardsLoading && tournamentPred && (
+              <div className="card" style={{ padding: "24px" }}>
+                <div style={{ fontSize: 12, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 16, textAlign: "center" }}>
+                  🎖 Your Season Awards Pick — Locked
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {[
+                    { label: "🏆 Winner", value: tournamentPred.winner, color: "#fbbf24" },
+                    { label: "🥈 Runner-up", value: tournamentPred.runner_up, color: "#c0c0c0" },
+                    { label: "Semi-Finalist", value: tournamentPred.semi_finalist_1, color: "#818cf8" },
+                    { label: "Semi-Finalist", value: tournamentPred.semi_finalist_2, color: "#818cf8" },
+                  ].map((row, i) => (
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "12px 16px" }}>
+                      <span style={{ fontSize: 12, color: row.color, fontWeight: 700 }}>{row.label}</span>
+                      <span style={{ fontSize: 14, color: "#f0f0f0", fontWeight: 800 }}>{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ fontSize: 10, color: "#444", textAlign: "center", marginTop: 14 }}>
+                  Submitted {new Date(tournamentPred.submitted_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })} · One prediction per competition
+                </div>
+              </div>
+            )}
+
+            {!awardsLoading && !tournamentPred && remainingTeams.length > 0 && (
+              <div className="card" style={{ padding: "24px" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>Predict the outcome</div>
+                <div style={{ fontSize: 11, color: "#555", marginBottom: 20 }}>Pick your Winner, Runner-up, and Semi-Finalists. This can only be submitted once per competition.</div>
+
+                {[
+                  { key: "winner", label: "🏆 Winner" },
+                  { key: "runnerUp", label: "🥈 Runner-up" },
+                  { key: "sf1", label: "Semi-Finalist 1" },
+                  { key: "sf2", label: "Semi-Finalist 2" },
+                ].map(f => (
+                  <div key={f.key} style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 11, color: "#aaa", fontWeight: 700, marginBottom: 6 }}>{f.label}</div>
+                    <select
+                      value={awardsForm[f.key]}
+                      onChange={e => setAwardsForm(prev => ({ ...prev, [f.key]: e.target.value }))}
+                      style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "10px 14px", outline: "none", fontFamily: "inherit" }}
+                    >
+                      <option value="">— Select team —</option>
+                      {remainingTeams.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                ))}
+
+                {awardsError && <div style={{ color: "#f87171", fontSize: 12, marginBottom: 12 }}>{awardsError}</div>}
+
+                <button onClick={submitTournamentPrediction} disabled={awardsSubmitting} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%" }}>
+                  {awardsSubmitting ? "Submitting..." : "🔒 Submit Final Prediction"}
+                </button>
+              </div>
+            )}
+
+            {!awardsLoading && !tournamentPred && remainingTeams.length === 0 && (
+              <div style={{ textAlign: "center", color: "#444", fontSize: 13, padding: "30px 0" }}>No teams found for this competition</div>
+            )}
           </>
         )}
 
