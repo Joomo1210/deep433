@@ -2166,16 +2166,16 @@ function GoldenGloveGraphic() {
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
                         {team.logo && <img src={team.logo} alt="" crossOrigin="anonymous" style={{ width: 22, height: 22, objectFit: "contain", flexShrink: 0 }} />}
                         <span style={{ fontSize: 13, fontWeight: 800, color: "#f0f0f0", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{team.name}</span>
-                        <span style={{ fontSize: 18, fontWeight: 900, color: "#4ade80" }}>{team.cleanSheets}</span>
+                        <span style={{ fontSize: 18, fontWeight: 900, color: "#FFD700" }}>{team.cleanSheets}</span>
                       </div>
                       <div style={{ height: 8, background: "#1a1a24", borderRadius: 4, overflow: "hidden" }}>
                         <div style={{
                           width: `${Math.max(barPct, 4)}%`, height: "100%",
-                          background: "linear-gradient(90deg, #22c55e, #4ade80)",
+                          background: "linear-gradient(90deg, #B8860B, #FFD700)",
                           borderRadius: 4,
                         }} />
                       </div>
-                      <div style={{ fontSize: 9, color: "#555", marginTop: 3 }}>{team.played} played · {team.goalsConceded} conceded</div>
+                      <div style={{ fontSize: 10, color: "#999", marginTop: 3, fontWeight: 600 }}>{team.played} played · {team.goalsConceded} conceded</div>
                     </div>
                   );
                 });
