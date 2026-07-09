@@ -177,34 +177,34 @@ function H2HSummaryShare({ h2h, homeTeam, awayTeam }) {
       <div style={{ display: "flex", justifyContent: "space-around", marginBottom: 10 }}>
         <div style={{ textAlign: "center" }}>
           <div style={{ fontSize: 26, fontWeight: 900, color: "#4ade80" }}>{hw}</div>
-          <div style={{ fontSize: 9, color: "#4ade80", marginTop: 2 }}>{homeTeam.split(" ")[0]}</div>
+          <div style={{ fontSize: 12, color: "#4ade80", marginTop: 2 }}>{homeTeam.split(" ")[0]}</div>
         </div>
         <div style={{ textAlign: "center" }}>
           <div style={{ fontSize: 26, fontWeight: 900, color: "#a78bfa" }}>{d}</div>
-          <div style={{ fontSize: 9, color: "#a78bfa", marginTop: 2 }}>Draws</div>
+          <div style={{ fontSize: 12, color: "#a78bfa", marginTop: 2 }}>Draws</div>
         </div>
         <div style={{ textAlign: "center" }}>
           <div style={{ fontSize: 26, fontWeight: 900, color: "#f59e0b" }}>{aw}</div>
-          <div style={{ fontSize: 9, color: "#f59e0b", marginTop: 2 }}>{awayTeam.split(" ")[0]}</div>
+          <div style={{ fontSize: 12, color: "#f59e0b", marginTop: 2 }}>{awayTeam.split(" ")[0]}</div>
         </div>
       </div>
       <div style={{ display: "flex", gap: 5, justifyContent: "center", marginBottom: 8 }}>
         {dots.map((dot, i) => (
-          <div key={i} style={{ width: 26, height: 26, borderRadius: "50%", background: dot === "W" ? "#4ade80" : dot === "L" ? "#f59e0b" : "#a78bfa", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 900, color: "#0a0a0f" }}>{dot}</div>
+          <div key={i} style={{ width: 26, height: 26, borderRadius: "50%", background: dot === "W" ? "#4ade80" : dot === "L" ? "#f59e0b" : "#a78bfa", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: "#0a0a0f" }}>{dot}</div>
         ))}
       </div>
       {/* Raw list fallback */}
       {h2h.map((r, i) => {
         const p = parse(r);
-        if (!p) return <div key={i} style={{ fontSize: 10, color: "#444", textAlign: "center" }}>{r}</div>;
+        if (!p) return <div key={i} style={{ fontSize: 13, color: "#444", textAlign: "center" }}>{r}</div>;
         const { hg, ag } = p;
         const homeColor = hg > ag ? "#4ade80" : hg < ag ? "#f87171" : "#aaa";
         const awayColor = ag > hg ? "#4ade80" : ag < hg ? "#f87171" : "#aaa";
         return (
           <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "3px 0", borderBottom: "1px solid #1a1a2a" }}>
-            <span style={{ fontSize: 10, fontWeight: 700, color: homeColor, flex: 1 }}>{p.homeTeam}</span>
-            <span style={{ fontSize: 12, fontWeight: 900, color: "#f0f0f0", margin: "0 8px" }}>{hg}-{ag}</span>
-            <span style={{ fontSize: 10, fontWeight: 700, color: awayColor, flex: 1, textAlign: "right" }}>{p.awayTeam}</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: homeColor, flex: 1 }}>{p.homeTeam}</span>
+            <span style={{ fontSize: 15, fontWeight: 900, color: "#f0f0f0", margin: "0 8px" }}>{hg}-{ag}</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: awayColor, flex: 1, textAlign: "right" }}>{p.awayTeam}</span>
           </div>
         );
       })}
@@ -253,8 +253,8 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
     <>
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
       <div style={{ position: "absolute", top: 12, right: 14, zIndex: 2, display: "flex", alignItems: "center", gap: 6 }}>
-        <span style={{ fontSize: 11, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
-        <span style={{ fontSize: 10, color: "#888", fontWeight: 600 }}>deep433.com</span>
+        <span style={{ fontSize: 14, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
+        <span style={{ fontSize: 13, color: "#888", fontWeight: 600 }}>deep433.com</span>
       </div>
       {/* Corner watermark */}
       <div style={{ position: "absolute", bottom: 10, left: 10, pointerEvents: "none", zIndex: 0 }}>
@@ -262,14 +262,14 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
       </div>
       {/* Competition context */}
       <div style={{ textAlign: "center", paddingTop: 18, paddingBottom: 4 }}>
-        <span style={{ fontSize: 9, color: "#888", letterSpacing: 2, textTransform: "uppercase", fontWeight: 600 }}>{leagueLabel}</span>
+        <span style={{ fontSize: 12, color: "#888", letterSpacing: 2, textTransform: "uppercase", fontWeight: 600 }}>{leagueLabel}</span>
       </div>
     </>
   );
 
   const StatsSection = () => (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      <div style={{ fontSize: 9, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>📊 Deep Insights</div>
+      <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>📊 Deep Insights</div>
       {stats.map(s => {
         const hv = parseFloat(s.home) || 0;
         const av = parseFloat(s.away) || 0;
@@ -279,15 +279,15 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
         return (
           <div key={s.label}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-              <span style={{ fontSize: 18, fontWeight: 900, color: "#4ade80" }}>{hp}%</span>
-              <span style={{ fontSize: 9, color: "#aaa", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>{s.label}</span>
-              <span style={{ fontSize: 18, fontWeight: 900, color: "#f59e0b" }}>{ap}%</span>
+              <span style={{ fontSize: 20, fontWeight: 900, color: "#4ade80" }}>{hp}%</span>
+              <span style={{ fontSize: 12, color: "#aaa", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>{s.label}</span>
+              <span style={{ fontSize: 20, fontWeight: 900, color: "#f59e0b" }}>{ap}%</span>
             </div>
             <div style={{ display: "flex", height: 6, borderRadius: 3, overflow: "hidden" }}>
               <div style={{ width: hp + "%", background: "#4ade80" }} />
               <div style={{ width: ap + "%", background: "#f59e0b", opacity: 0.6 }} />
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3, fontSize: 9, color: "#444" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3, fontSize: 12, color: "#444" }}>
               <span>{homeTeam.split(" ")[0]}</span><span>{awayTeam.split(" ")[0]}</span>
             </div>
           </div>
@@ -300,14 +300,14 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)", zIndex: 60, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 16, overflowY: "auto" }}>
       <div style={{ display: "flex", gap: 8, marginBottom: 12, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
         {["square", "landscape"].map(v => (
-          <button key={v} onClick={() => setVariant(v)} style={{ background: variant === v ? "#4ade80" : "none", border: "1px solid " + (variant === v ? "#4ade80" : "#333"), borderRadius: 6, color: variant === v ? "#0a0f0a" : "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 14px" }}>
+          <button key={v} onClick={() => setVariant(v)} style={{ background: variant === v ? "#4ade80" : "none", border: "1px solid " + (variant === v ? "#4ade80" : "#333"), borderRadius: 6, color: variant === v ? "#0a0f0a" : "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "6px 14px" }}>
             {v === "square" ? "1:1" : "16:9"}
           </button>
         ))}
-        <button onClick={downloadImage} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 800, padding: "6px 16px", opacity: downloading ? 0.6 : 1 }}>
+        <button onClick={downloadImage} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 800, padding: "6px 16px", opacity: downloading ? 0.6 : 1 }}>
           {downloading ? "Generating..." : "⬇ Download PNG"}
         </button>
-        <button onClick={onClose} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "6px 12px" }}>✕ Close</button>
+        <button onClick={onClose} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 15, padding: "6px 12px" }}>✕ Close</button>
       </div>
 
       <div
@@ -331,17 +331,17 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 8 }}>
                 <div style={{ textAlign: "center" }}>
                   <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><TeamLogo src={homeLogo} size={44} /></div>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: "#4ade80", marginBottom: 4 }}>{homeTeam}</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "#4ade80", marginBottom: 4 }}>{homeTeam}</div>
                   <div style={{ fontSize: 52, fontWeight: 900, color: "#4ade80", lineHeight: 1 }}>{userPrediction.split("-")[0]}</div>
                 </div>
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 10, color: "#4ade80", fontWeight: 700, letterSpacing: 1, marginBottom: 4 }}>YOUR CALL</div>
-                  <div style={{ fontSize: 16, color: "#333", marginBottom: 6 }}>—</div>
-                  <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, background: "rgba(129,140,248,0.08)", border: "1px solid rgba(129,140,248,0.2)", borderRadius: 5, padding: "3px 8px", whiteSpace: "nowrap" }}>AI {aiPrediction}</div>
+                  <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 700, letterSpacing: 1, marginBottom: 4 }}>YOUR CALL</div>
+                  <div style={{ fontSize: 18, color: "#333", marginBottom: 6 }}>—</div>
+                  <div style={{ fontSize: 13, color: "#818cf8", fontWeight: 700, background: "rgba(129,140,248,0.08)", border: "1px solid rgba(129,140,248,0.2)", borderRadius: 5, padding: "3px 8px", whiteSpace: "nowrap" }}>AI {aiPrediction}</div>
                 </div>
                 <div style={{ textAlign: "center" }}>
                   <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><TeamLogo src={awayLogo} size={44} /></div>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: "#f59e0b", marginBottom: 4 }}>{awayTeam}</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "#f59e0b", marginBottom: 4 }}>{awayTeam}</div>
                   <div style={{ fontSize: 52, fontWeight: 900, color: "#f59e0b", lineHeight: 1 }}>{userPrediction.split("-")[1]}</div>
                 </div>
               </div>
@@ -358,17 +358,17 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
             <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 8 }}>
               <div style={{ textAlign: "center" }}>
                 <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><TeamLogo src={homeLogo} size={44} /></div>
-                <div style={{ fontSize: 12, fontWeight: 800, color: "#4ade80", marginBottom: 4 }}>{homeTeam}</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "#4ade80", marginBottom: 4 }}>{homeTeam}</div>
                 <div style={{ fontSize: 54, fontWeight: 900, color: "#4ade80", lineHeight: 1 }}>{userPrediction.split("-")[0]}</div>
               </div>
               <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 10, color: "#4ade80", fontWeight: 700, letterSpacing: 1, marginBottom: 4 }}>YOUR CALL</div>
-                <div style={{ fontSize: 16, color: "#333", marginBottom: 6 }}>—</div>
-                <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, background: "rgba(129,140,248,0.08)", border: "1px solid rgba(129,140,248,0.2)", borderRadius: 5, padding: "3px 8px", whiteSpace: "nowrap" }}>AI {aiPrediction}</div>
+                <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 700, letterSpacing: 1, marginBottom: 4 }}>YOUR CALL</div>
+                <div style={{ fontSize: 18, color: "#333", marginBottom: 6 }}>—</div>
+                <div style={{ fontSize: 13, color: "#818cf8", fontWeight: 700, background: "rgba(129,140,248,0.08)", border: "1px solid rgba(129,140,248,0.2)", borderRadius: 5, padding: "3px 8px", whiteSpace: "nowrap" }}>AI {aiPrediction}</div>
               </div>
               <div style={{ textAlign: "center" }}>
                 <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><TeamLogo src={awayLogo} size={44} /></div>
-                <div style={{ fontSize: 12, fontWeight: 800, color: "#f59e0b", marginBottom: 4 }}>{awayTeam}</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "#f59e0b", marginBottom: 4 }}>{awayTeam}</div>
                 <div style={{ fontSize: 54, fontWeight: 900, color: "#f59e0b", lineHeight: 1 }}>{userPrediction.split("-")[1]}</div>
               </div>
             </div>
@@ -377,7 +377,7 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
           </div>
         )}
       </div>
-      <div style={{ fontSize: 10, color: "#555", marginTop: 10 }}>Tap Download PNG to save and share</div>
+      <div style={{ fontSize: 13, color: "#555", marginTop: 10 }}>Tap Download PNG to save and share</div>
     </div>
   );
 }
@@ -420,10 +420,10 @@ function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineu
 
   const PlayerRow = ({ row, border, flag, isAway }) => (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, marginBottom: 8 }}>
-      <div style={{ fontSize: 8, fontWeight: 700, color: isAway ? "#ffffff" : border, letterSpacing: 1, textTransform: "uppercase", opacity: 0.8 }}>{row.label}</div>
+      <div style={{ fontSize: 11, fontWeight: 700, color: isAway ? "#ffffff" : border, letterSpacing: 1, textTransform: "uppercase", opacity: 0.8 }}>{row.label}</div>
       <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 5 }}>
         {row.names.map((name, i) => (
-          <div key={i} style={{ background: "rgba(0,0,0,0.82)", border: "1px solid " + border + "66", borderRadius: 4, padding: "4px 10px", fontSize: 14, fontWeight: 700, color: isAway ? "#a855f7" : "#ffffff", whiteSpace: "nowrap" }}>
+          <div key={i} style={{ background: "rgba(0,0,0,0.82)", border: "1px solid " + border + "66", borderRadius: 4, padding: "4px 10px", fontSize: 17, fontWeight: 700, color: isAway ? "#a855f7" : "#ffffff", whiteSpace: "nowrap" }}>
             {name ? surname(name) : flag}
           </div>
         ))}
@@ -435,7 +435,7 @@ function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineu
     <div style={{ width: "100%", borderRadius: 10, overflow: "hidden" }}>
       {lineupSource && (
         <div style={{ textAlign: "center", padding: "6px", background: "#0d0d18" }}>
-          <span style={{ fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 10, background: lineupSource === "confirmed" ? "#22c55e22" : "#f59e0b22", color: lineupSource === "confirmed" ? "#4ade80" : "#f59e0b", border: "1px solid " + (lineupSource === "confirmed" ? "#22c55e44" : "#f59e0b44") }}>
+          <span style={{ fontSize: 12, fontWeight: 700, padding: "3px 10px", borderRadius: 10, background: lineupSource === "confirmed" ? "#22c55e22" : "#f59e0b22", color: lineupSource === "confirmed" ? "#4ade80" : "#f59e0b", border: "1px solid " + (lineupSource === "confirmed" ? "#22c55e44" : "#f59e0b44") }}>
             {lineupSource === "confirmed" ? "✓ CONFIRMED LINEUP" : "LIKELY LINEUP"}
           </span>
         </div>
@@ -443,7 +443,7 @@ function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineu
 
       <div style={{ background: "repeating-linear-gradient(180deg,#1a7a1a 0px,#1a7a1a 28px,#1f8c1f 28px,#1f8c1f 56px)", padding: "12px 14px 8px" }}>
         <div style={{ textAlign: "center", marginBottom: 12 }}>
-          <span style={{ fontSize: 12, fontWeight: 800, color: "#4ade80", background: "rgba(0,0,0,0.65)", padding: "4px 12px", borderRadius: 6 }}>{homeFlag} {homeTeam} · {homeFormation || "4-3-3"}</span>
+          <span style={{ fontSize: 15, fontWeight: 800, color: "#4ade80", background: "rgba(0,0,0,0.65)", padding: "4px 12px", borderRadius: 6 }}>{homeFlag} {homeTeam} · {homeFormation || "4-3-3"}</span>
         </div>
         {homeRows.map((row, i) => <PlayerRow key={i} row={row} border="#4ade80" flag={homeFlag} isAway={false} />)}
       </div>
@@ -459,7 +459,7 @@ function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineu
       <div style={{ background: "repeating-linear-gradient(180deg,#1f8c1f 0px,#1f8c1f 28px,#1a7a1a 28px,#1a7a1a 56px)", padding: "8px 14px 12px" }}>
         {[...awayRows].reverse().map((row, i) => <PlayerRow key={i} row={row} border="#a855f7" flag={awayFlag} isAway={true} />)}
         <div style={{ textAlign: "center", marginTop: 12 }}>
-          <span style={{ fontSize: 12, fontWeight: 800, color: "#ffffff", background: "rgba(0,0,0,0.65)", padding: "4px 12px", borderRadius: 6 }}>{awayFlag} {awayTeam} · {awayFormation || "4-3-3"}</span>
+          <span style={{ fontSize: 15, fontWeight: 800, color: "#ffffff", background: "rgba(0,0,0,0.65)", padding: "4px 12px", borderRadius: 6 }}>{awayFlag} {awayTeam} · {awayFormation || "4-3-3"}</span>
         </div>
       </div>
     </div>
@@ -519,29 +519,29 @@ function AuthScreen() {
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div style={{ fontSize: 40, marginBottom: 8 }}>⚽</div>
           <div style={{ fontSize: 28, fontWeight: 900, color: "#4ade80", textShadow: "0 0 30px rgba(74,222,128,0.4)" }}>DEEP433</div>
-          <div style={{ fontSize: 13, color: "#555", marginTop: 4 }}>PUNDITS VS FANS · PREDICT NOW</div>
+          <div style={{ fontSize: 16, color: "#555", marginTop: 4 }}>PUNDITS VS FANS · PREDICT NOW</div>
         </div>
         <div style={{ background: "#13131f", border: "1px solid #1e1e30", borderRadius: 16, padding: 24 }}>
-          <button onClick={handleGoogle} disabled={loading} style={{ width: "100%", background: "#fff", border: "none", borderRadius: 10, color: "#111", cursor: "pointer", fontSize: 15, fontWeight: 700, padding: "13px 20px", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontFamily: "inherit" }}>
+          <button onClick={handleGoogle} disabled={loading} style={{ width: "100%", background: "#fff", border: "none", borderRadius: 10, color: "#111", cursor: "pointer", fontSize: 17, fontWeight: 700, padding: "13px 20px", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontFamily: "inherit" }}>
             <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/></svg>
             Continue with Google
           </button>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
             <div style={{ flex: 1, height: 1, background: "#1e1e30" }} />
-            <span style={{ color: "#555", fontSize: 12 }}>or</span>
+            <span style={{ color: "#555", fontSize: 15 }}>or</span>
             <div style={{ flex: 1, height: 1, background: "#1e1e30" }} />
           </div>
-          <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 10, color: "#f0f0f0", fontSize: 15, padding: "12px 16px", outline: "none", marginBottom: 10, fontFamily: "inherit" }}/>
-          <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleEmail()} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 10, color: "#f0f0f0", fontSize: 15, padding: "12px 16px", outline: "none", marginBottom: 16, fontFamily: "inherit" }}/>
-          {error && <div style={{ color: "#f87171", fontSize: 13, marginBottom: 12 }}>{error}</div>}
-          {message && <div style={{ color: "#4ade80", fontSize: 13, marginBottom: 12 }}>{message}</div>}
-          <button onClick={handleEmail} disabled={loading} style={{ width: "100%", background: "linear-gradient(135deg, #4ade80, #22c55e)", border: "none", borderRadius: 10, color: "#0a0f0a", fontSize: 16, fontWeight: 800, padding: "13px", cursor: "pointer", fontFamily: "inherit", marginBottom: 14 }}>
+          <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 10, color: "#f0f0f0", fontSize: 17, padding: "12px 16px", outline: "none", marginBottom: 10, fontFamily: "inherit" }}/>
+          <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleEmail()} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 10, color: "#f0f0f0", fontSize: 17, padding: "12px 16px", outline: "none", marginBottom: 16, fontFamily: "inherit" }}/>
+          {error && <div style={{ color: "#f87171", fontSize: 16, marginBottom: 12 }}>{error}</div>}
+          {message && <div style={{ color: "#4ade80", fontSize: 16, marginBottom: 12 }}>{message}</div>}
+          <button onClick={handleEmail} disabled={loading} style={{ width: "100%", background: "linear-gradient(135deg, #4ade80, #22c55e)", border: "none", borderRadius: 10, color: "#0a0f0a", fontSize: 18, fontWeight: 800, padding: "13px", cursor: "pointer", fontFamily: "inherit", marginBottom: 14 }}>
             {loading ? "..." : mode === "login" ? "Sign In" : "Create Account"}
           </button>
-          <div style={{ textAlign: "center", fontSize: 13, color: "#555" }}>
+          <div style={{ textAlign: "center", fontSize: 16, color: "#555" }}>
             {mode === "login" ? (
               <span style={{ color: "#555" }}>New signups are currently paused</span>
-            ) : (<>Already have an account? <button onClick={() => { setMode("login"); setError(""); setMessage(""); }} style={{ background: "none", border: "none", color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700 }}>Sign in</button></>)}
+            ) : (<>Already have an account? <button onClick={() => { setMode("login"); setError(""); setMessage(""); }} style={{ background: "none", border: "none", color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 16, fontWeight: 700 }}>Sign in</button></>)}
           </div>
         </div>
       </div>
@@ -1129,15 +1129,15 @@ export default function FootballPredictor() {
       <div style={{ background: "#0d0d18", borderBottom: "1px solid #1a1a2e", padding: "16px 20px" }}>
         <div style={{ maxWidth: 600, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 24 }}>⚽</span>
+            <span style={{ fontSize: 26 }}>⚽</span>
             <div>
-              <div style={{ fontSize: 16, fontWeight: 900, color: "#4ade80" }} className="glow">DEEP433</div>
-              <div style={{ fontSize: 10, color: "#555", letterSpacing: 1 }}>PUNDITS VS FANS · PREDICT NOW</div>
+              <div style={{ fontSize: 18, fontWeight: 900, color: "#4ade80" }} className="glow">DEEP433</div>
+              <div style={{ fontSize: 13, color: "#555", letterSpacing: 1 }}>PUNDITS VS FANS · PREDICT NOW</div>
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {rank && <div style={{ textAlign: "right" }}><div style={{ fontSize: 14 }}>{rank.icon}</div><div style={{ fontSize: 10, color: rank.color, fontWeight: 700 }}>{rank.name}</div></div>}
-            <button onClick={signOut} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "5px 10px" }}>Sign out</button>
+            {rank && <div style={{ textAlign: "right" }}><div style={{ fontSize: 17 }}>{rank.icon}</div><div style={{ fontSize: 13, color: rank.color, fontWeight: 700 }}>{rank.name}</div></div>}
+            <button onClick={signOut} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "5px 10px" }}>Sign out</button>
           </div>
         </div>
       </div>
@@ -1160,17 +1160,17 @@ export default function FootballPredictor() {
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                   <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#ef4444", animation: "pulse 1.5s infinite" }} />
-                  <span style={{ fontSize: 11, color: "#ef4444", fontWeight: 700 }}>{getTimeLabel(f.statusRaw, f.elapsed)}</span>
+                  <span style={{ fontSize: 14, color: "#ef4444", fontWeight: 700 }}>{getTimeLabel(f.statusRaw, f.elapsed)}</span>
                 </div>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", flex: 1 }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0", flex: 1 }}>
                   {f.home} <span style={{ color: "#4ade80" }}>{f.score.home ?? 0}</span>
                   <span style={{ color: "#555", margin: "0 4px" }}>-</span>
                   <span style={{ color: "#4ade80" }}>{f.score.away ?? 0}</span> {f.away}
                 </span>
                 {f.possession?.home && (
-                  <span style={{ fontSize: 10, color: "#555" }}>⚽ {f.possession.home}</span>
+                  <span style={{ fontSize: 13, color: "#555" }}>⚽ {f.possession.home}</span>
                 )}
-                <span style={{ fontSize: 10, color: "#555" }}>{expandedLive === f.fixtureId ? "▲" : "▼"}</span>
+                <span style={{ fontSize: 13, color: "#555" }}>{expandedLive === f.fixtureId ? "▲" : "▼"}</span>
               </div>
 
               {/* Expanded live card */}
@@ -1180,15 +1180,15 @@ export default function FootballPredictor() {
                   {/* Score header */}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 8, alignItems: "center", marginBottom: 12 }}>
                     <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>{f.home}</div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>{f.home}</div>
                       <div style={{ fontSize: 36, fontWeight: 900, color: "#4ade80" }}>{f.score.home ?? 0}</div>
                     </div>
                     <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: 11, color: "#ef4444", fontWeight: 700, marginBottom: 4 }}>🔴 LIVE</div>
-                      <div style={{ fontSize: 20, fontWeight: 800, color: "#ef4444" }}>{getTimeLabel(f.statusRaw, f.elapsed)}</div>
+                      <div style={{ fontSize: 14, color: "#ef4444", fontWeight: 700, marginBottom: 4 }}>🔴 LIVE</div>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: "#ef4444" }}>{getTimeLabel(f.statusRaw, f.elapsed)}</div>
                     </div>
                     <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>{f.away}</div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>{f.away}</div>
                       <div style={{ fontSize: 36, fontWeight: 900, color: "#f59e0b" }}>{f.score.away ?? 0}</div>
                     </div>
                   </div>
@@ -1196,7 +1196,7 @@ export default function FootballPredictor() {
                   {/* Possession bar */}
                   {f.possession?.home && (
                     <div style={{ marginBottom: 12 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#555", marginBottom: 4 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#555", marginBottom: 4 }}>
                         <span style={{ color: "#4ade80", fontWeight: 700 }}>{f.possession.home}</span>
                         <span style={{ color: "#888" }}>Possession</span>
                         <span style={{ color: "#f59e0b", fontWeight: 700 }}>{f.possession.away}</span>
@@ -1210,12 +1210,12 @@ export default function FootballPredictor() {
 
                   {/* Cards summary */}
                   {(f.cards?.home?.yellow > 0 || f.cards?.away?.yellow > 0 || f.cards?.home?.red > 0 || f.cards?.away?.red > 0) && (
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, fontSize: 12 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, fontSize: 15 }}>
                       <div style={{ display: "flex", gap: 6 }}>
                         {Array.from({ length: f.cards?.home?.yellow || 0 }).map((_, i) => <span key={i}>🟨</span>)}
                         {Array.from({ length: f.cards?.home?.red || 0 }).map((_, i) => <span key={i}>🟥</span>)}
                       </div>
-                      <div style={{ fontSize: 10, color: "#555" }}>Cards</div>
+                      <div style={{ fontSize: 13, color: "#555" }}>Cards</div>
                       <div style={{ display: "flex", gap: 6 }}>
                         {Array.from({ length: f.cards?.away?.yellow || 0 }).map((_, i) => <span key={i}>🟨</span>)}
                         {Array.from({ length: f.cards?.away?.red || 0 }).map((_, i) => <span key={i}>🟥</span>)}
@@ -1226,14 +1226,14 @@ export default function FootballPredictor() {
                   {/* Events timeline */}
                   {f.events?.length > 0 && (
                     <div style={{ borderTop: "1px solid #1a1a1a", paddingTop: 10 }}>
-                      <div style={{ fontSize: 10, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Match Events</div>
+                      <div style={{ fontSize: 13, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Match Events</div>
                       <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 240, overflowY: "auto" }}>
                         {[...f.events].reverse().map((e, i) => (
-                          <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
-                            <span style={{ color: "#555", minWidth: 32, fontWeight: 700, fontSize: 11 }}>{e.minute}{e.extra}'</span>
-                            <span style={{ fontSize: 14 }}>{e.icon}</span>
+                          <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15 }}>
+                            <span style={{ color: "#555", minWidth: 32, fontWeight: 700, fontSize: 14 }}>{e.minute}{e.extra}'</span>
+                            <span style={{ fontSize: 17 }}>{e.icon}</span>
                             <span style={{ color: "#f0f0f0", fontWeight: 600, flex: 1 }}>{e.label}</span>
-                            <span style={{ color: "#444", fontSize: 10 }}>{e.team?.split(" ").slice(-1)[0]}</span>
+                            <span style={{ color: "#444", fontSize: 13 }}>{e.team?.split(" ").slice(-1)[0]}</span>
                           </div>
                         ))}
                       </div>
@@ -1258,7 +1258,7 @@ export default function FootballPredictor() {
             {step === 1 && (
               <div className="card">
                 {/* League selector */}
-                <div style={{ fontSize: 11, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Competition</div>
+                <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Competition</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
                   {LEAGUES.map(l => (
                     <button key={l.id} className={`league-btn${selectedLeague === l.id ? " active" : ""}`}
@@ -1269,38 +1269,38 @@ export default function FootballPredictor() {
                   ))}
                 </div>
 
-                <div style={{ fontSize: 11, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Set Up The Match</div>
+                <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Set Up The Match</div>
 
                 {/* Free text inputs always visible */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 8, marginBottom: 16, alignItems: "center" }}>
                   <div>
-                    <div style={{ fontSize: 10, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Home / Team 1</div>
+                    <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Home / Team 1</div>
                     <input className="team-input" placeholder="e.g. Brazil" value={homeTeam} onChange={e => setHomeTeam(e.target.value)} />
                   </div>
                   <div style={{ color: "#333", fontWeight: 700, textAlign: "center", marginTop: 20 }}>vs</div>
                   <div>
-                    <div style={{ fontSize: 10, color: "#f87171", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Away / Team 2</div>
+                    <div style={{ fontSize: 13, color: "#f87171", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Away / Team 2</div>
                     <input className="team-input away" placeholder="e.g. Argentina" value={awayTeam} onChange={e => setAwayTeam(e.target.value)} />
                   </div>
                 </div>
 
                 {/* World Cup fixture quick-pick */}
                 {/* Live fixture picker — works for all leagues */}
-                <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Or pick a fixture</div>
+                <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Or pick a fixture</div>
                 <input className="search-input" placeholder="🔍 Search team..." value={fixtureSearch} onChange={e => setFixtureSearch(e.target.value)} style={{ marginBottom: 12 }} />
 
                 {fixturesLoading && (
-                  <div style={{ textAlign: "center", color: "#555", fontSize: 13, padding: "20px 0" }}>Loading fixtures...</div>
+                  <div style={{ textAlign: "center", color: "#555", fontSize: 16, padding: "20px 0" }}>Loading fixtures...</div>
                 )}
 
                 {!fixturesLoading && fixtures.length === 0 && (
-                  <div style={{ textAlign: "center", color: "#444", fontSize: 13, padding: "20px 0" }}>No upcoming fixtures found for this competition</div>
+                  <div style={{ textAlign: "center", color: "#444", fontSize: 16, padding: "20px 0" }}>No upcoming fixtures found for this competition</div>
                 )}
 
                 <div style={{ maxHeight: 320, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
                   {Object.entries(fixturesByDate).map(([date, dateFixtures]) => (
                     <div key={date}>
-                      <div style={{ fontSize: 10, color: date === "Today" ? "#4ade80" : date === "Tomorrow" ? "#f59e0b" : "#444", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6, marginTop: 4 }}>{date}</div>
+                      <div style={{ fontSize: 13, color: date === "Today" ? "#4ade80" : date === "Tomorrow" ? "#f59e0b" : "#444", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6, marginTop: 4 }}>{date}</div>
                       {dateFixtures.map((f, i) => {
                         const status = getMatchStatus(f.home, f.away);
                         const isLocked = status === "finished" || status === "live";
@@ -1311,21 +1311,21 @@ export default function FootballPredictor() {
                           >
                             <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
                               <img src={f.homeLogo || ""} alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
-                              <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{f.home}</span>
+                              <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{f.home}</span>
                             </div>
                             <div style={{ textAlign: "center", minWidth: 60 }}>
                               {isLocked && status === "finished"
-                                ? <span style={{ fontSize: 12, fontWeight: 800, color: "#555" }}>{f.score.home}-{f.score.away}</span>
+                                ? <span style={{ fontSize: 15, fontWeight: 800, color: "#555" }}>{f.score.home}-{f.score.away}</span>
                                 : status === "live"
-                                ? <span style={{ fontSize: 10, color: "#ef4444", fontWeight: 700 }}>🔴 LIVE</span>
-                                : <span style={{ fontSize: 10, color: "#555" }}>
+                                ? <span style={{ fontSize: 13, color: "#ef4444", fontWeight: 700 }}>🔴 LIVE</span>
+                                : <span style={{ fontSize: 13, color: "#555" }}>
                                     {new Date(f.kickoff).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} BST
                                   </span>
                               }
-                              <div style={{ fontSize: 9, color: "#333", marginTop: 2 }}>{f.round}</div>
+                              <div style={{ fontSize: 12, color: "#333", marginTop: 2 }}>{f.round}</div>
                             </div>
                             <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, justifyContent: "flex-end" }}>
-                              <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{f.away}</span>
+                              <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{f.away}</span>
                               <img src={f.awayLogo || ""} alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
                             </div>
                           </div>
@@ -1335,7 +1335,7 @@ export default function FootballPredictor() {
                   ))}
                 </div>
 
-                {error && <div style={{ color: "#f87171", fontSize: 13, margin: "12px 0" }}>{error}</div>}
+                {error && <div style={{ color: "#f87171", fontSize: 16, margin: "12px 0" }}>{error}</div>}
                 <button className="predict-btn" onClick={goToStep2} disabled={!homeTeam || !awayTeam} style={{ marginTop: 16 }}>
                   ⚡ Predict This Match
                 </button>
@@ -1344,21 +1344,21 @@ export default function FootballPredictor() {
 
             {step === 2 && (
               <div className="card">
-                <div style={{ fontSize: 11, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Your Prediction</div>
-                <div style={{ fontSize: 18, fontWeight: 800, color: "#f0f0f0", marginBottom: 4 }}>{homeTeam} vs {awayTeam}</div>
-                <div style={{ fontSize: 13, color: "#555", marginBottom: 28 }}>{leagueLabel}</div>
+                <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Your Prediction</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "#f0f0f0", marginBottom: 4 }}>{homeTeam} vs {awayTeam}</div>
+                <div style={{ fontSize: 16, color: "#555", marginBottom: 28 }}>{leagueLabel}</div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 28 }}>
                   <div style={{ textAlign: "center" }}>
-                    <div style={{ fontSize: 12, color: "#4ade80", fontWeight: 700, marginBottom: 8, textTransform: "uppercase" }}>{homeTeam}</div>
+                    <div style={{ fontSize: 15, color: "#4ade80", fontWeight: 700, marginBottom: 8, textTransform: "uppercase" }}>{homeTeam}</div>
                     <input className="score-input" type="number" min="0" max="20" placeholder="0" value={userHome} onChange={e => setUserHome(e.target.value)} />
                   </div>
                   <div style={{ fontSize: 28, color: "#333", fontWeight: 300, marginTop: 24 }}>—</div>
                   <div style={{ textAlign: "center" }}>
-                    <div style={{ fontSize: 12, color: "#f87171", fontWeight: 700, marginBottom: 8, textTransform: "uppercase" }}>{awayTeam}</div>
+                    <div style={{ fontSize: 15, color: "#f87171", fontWeight: 700, marginBottom: 8, textTransform: "uppercase" }}>{awayTeam}</div>
                     <input className="score-input" type="number" min="0" max="20" placeholder="0" value={userAway} onChange={e => setUserAway(e.target.value)} />
                   </div>
                 </div>
-                {error && <div style={{ color: "#f87171", fontSize: 13, marginBottom: 12 }}>{error}</div>}
+                {error && <div style={{ color: "#f87171", fontSize: 16, marginBottom: 12 }}>{error}</div>}
                 <button className="predict-btn" onClick={submitAndReveal} disabled={loading} style={{ marginBottom: 10 }}>
                   {loading ? "AI is thinking..." : "🤖 Submit & See What AI Predicts"}
                 </button>
@@ -1369,7 +1369,7 @@ export default function FootballPredictor() {
             {loading && (
               <div className="card" style={{ textAlign: "center", padding: "40px 20px" }}>
                 <div className="spinner" style={{ marginBottom: 16 }} />
-                <div style={{ color: "#555", fontSize: 13 }}>AI is analysing the match...</div>
+                <div style={{ color: "#555", fontSize: 16 }}>AI is analysing the match...</div>
               </div>
             )}
 
@@ -1388,22 +1388,22 @@ export default function FootballPredictor() {
                   <button
                     onClick={() => fetchConfirmedLineup(homeTeam, awayTeam, selectedLeague, savedPredictionId)}
                     disabled={lineupFetching}
-                    style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 8, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "8px 16px", width: "100%", marginTop: 4 }}
+                    style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 8, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 15, padding: "8px 16px", width: "100%", marginTop: 4 }}
                   >
                     {lineupFetching ? "Checking for confirmed lineup..." : "🔄 Refresh Lineup"}
                   </button>
                 )}
 
                 <div className="reveal-box">
-                  <div style={{ fontSize: 11, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 16, textAlign: "center" }}>{homeTeam} vs {awayTeam} · {leagueLabel}</div>
+                  <div style={{ fontSize: 14, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 16, textAlign: "center" }}>{homeTeam} vs {awayTeam} · {leagueLabel}</div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 12, alignItems: "center" }}>
                     <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: 11, color: "#4ade80", fontWeight: 700, marginBottom: 8, textTransform: "uppercase" }}>👤 Your Call</div>
+                      <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, marginBottom: 8, textTransform: "uppercase" }}>👤 Your Call</div>
                       <div style={{ fontSize: 48, fontWeight: 900, color: "#4ade80" }}>{userPrediction}</div>
                     </div>
-                    <div style={{ textAlign: "center", fontSize: 18, color: "#333", fontWeight: 700 }}>vs</div>
+                    <div style={{ textAlign: "center", fontSize: 20, color: "#333", fontWeight: 700 }}>vs</div>
                     <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 700, marginBottom: 8, textTransform: "uppercase" }}>🤖 AI Predicts</div>
+                      <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, marginBottom: 8, textTransform: "uppercase" }}>🤖 AI Predicts</div>
                       <div style={{ fontSize: 48, fontWeight: 900, color: "#f59e0b" }}>{result.scoreline}</div>
                     </div>
                   </div>
@@ -1414,83 +1414,83 @@ export default function FootballPredictor() {
                 </div>
 
                 <div className="card">
-                  <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>🤖 AI Verdict</div>
-                  <p style={{ fontSize: 15, lineHeight: 1.7, color: "#ccc" }}>{result.verdict}</p>
+                  <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>🤖 AI Verdict</div>
+                  <p style={{ fontSize: 17, lineHeight: 1.7, color: "#ccc" }}>{result.verdict}</p>
                 </div>
 
                 <div className="card">
-                  <div style={{ fontSize: 11, color: "#888", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>⚔️ Key Tactical Battle</div>
-                  <p style={{ fontSize: 14, color: "#aaa", lineHeight: 1.6 }}>{result.keyBattle}</p>
+                  <div style={{ fontSize: 14, color: "#888", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>⚔️ Key Tactical Battle</div>
+                  <p style={{ fontSize: 17, color: "#aaa", lineHeight: 1.6 }}>{result.keyBattle}</p>
                 </div>
 
                 <div className="card" style={{ padding: "14px 16px" }}>
-                  <div style={{ fontSize: 11, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🪑 Bench & Managers</div>
+                  <div style={{ fontSize: 14, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🪑 Bench & Managers</div>
 
                   {/* Home bench */}
                   <div style={{ marginBottom: 12 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: "#4ade80" }}>{homeTeam}</span>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: "#4ade80" }}>{homeTeam}</span>
                       {confirmedLineup?.home?.coach && (
-                        <span style={{ fontSize: 11, color: "#555" }}>👔 {confirmedLineup.home.coach}</span>
+                        <span style={{ fontSize: 14, color: "#555" }}>👔 {confirmedLineup.home.coach}</span>
                       )}
                     </div>
                     <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
                       {(confirmedLineup?.home?.substitutes || []).map((p, i) => (
-                        <div key={i} style={{ background: "#1a1a28", border: "1px solid #2a2a40", borderRadius: 20, padding: "4px 10px", fontSize: 12, fontWeight: 600, color: "#ccc", whiteSpace: "nowrap", flexShrink: 0 }}>
-                          <span style={{ color: "#4ade80", marginRight: 4, fontSize: 11 }}>{p.number}</span>{p.name?.split(" ").pop()}
+                        <div key={i} style={{ background: "#1a1a28", border: "1px solid #2a2a40", borderRadius: 20, padding: "4px 10px", fontSize: 15, fontWeight: 600, color: "#ccc", whiteSpace: "nowrap", flexShrink: 0 }}>
+                          <span style={{ color: "#4ade80", marginRight: 4, fontSize: 14 }}>{p.number}</span>{p.name?.split(" ").pop()}
                         </div>
                       ))}
-                      {!confirmedLineup && <span style={{ fontSize: 12, color: "#333", fontStyle: "italic" }}>Available after lineup confirmation</span>}
+                      {!confirmedLineup && <span style={{ fontSize: 15, color: "#333", fontStyle: "italic" }}>Available after lineup confirmation</span>}
                     </div>
                   </div>
 
                   {/* Away bench */}
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: "#a855f7" }}>{awayTeam}</span>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: "#a855f7" }}>{awayTeam}</span>
                       {confirmedLineup?.away?.coach && (
-                        <span style={{ fontSize: 11, color: "#555" }}>👔 {confirmedLineup.away.coach}</span>
+                        <span style={{ fontSize: 14, color: "#555" }}>👔 {confirmedLineup.away.coach}</span>
                       )}
                     </div>
                     <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
                       {(confirmedLineup?.away?.substitutes || []).map((p, i) => (
-                        <div key={i} style={{ background: "#1a1a28", border: "1px solid #2a2a40", borderRadius: 20, padding: "4px 10px", fontSize: 12, fontWeight: 600, color: "#ccc", whiteSpace: "nowrap", flexShrink: 0 }}>
-                          <span style={{ color: "#a855f7", marginRight: 4, fontSize: 11 }}>{p.number}</span>{p.name?.split(" ").pop()}
+                        <div key={i} style={{ background: "#1a1a28", border: "1px solid #2a2a40", borderRadius: 20, padding: "4px 10px", fontSize: 15, fontWeight: 600, color: "#ccc", whiteSpace: "nowrap", flexShrink: 0 }}>
+                          <span style={{ color: "#a855f7", marginRight: 4, fontSize: 14 }}>{p.number}</span>{p.name?.split(" ").pop()}
                         </div>
                       ))}
-                      {!confirmedLineup && <span style={{ fontSize: 12, color: "#333", fontStyle: "italic" }}>Available after lineup confirmation</span>}
+                      {!confirmedLineup && <span style={{ fontSize: 15, color: "#333", fontStyle: "italic" }}>Available after lineup confirmation</span>}
                     </div>
                   </div>
                 </div>
 
                 <div className="card" style={{ borderColor: "#2a1f00", background: "#13100a" }}>
-                  <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>🃏 Wildcard Factor</div>
-                  <p style={{ fontSize: 14, color: "#aaa", lineHeight: 1.6 }}>{result.wildcard}</p>
+                  <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>🃏 Wildcard Factor</div>
+                  <p style={{ fontSize: 17, color: "#aaa", lineHeight: 1.6 }}>{result.wildcard}</p>
                 </div>
 
                 {deepInsights && (
                   <div className="card" style={{ borderColor: "#3730a322", background: "#0f0f1f" }}>
-                    <div style={{ fontSize: 11, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 14 }}>📊 Deep Insights</div>
-                    <div style={{ fontSize: 13, color: "#aaa", marginBottom: 14, fontWeight: 600 }}>Statistical model — independent of AI verdict</div>
+                    <div style={{ fontSize: 14, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 14 }}>📊 Deep Insights</div>
+                    <div style={{ fontSize: 16, color: "#aaa", marginBottom: 14, fontWeight: 600 }}>Statistical model — independent of AI verdict</div>
 
                     {/* Win probability intentionally hidden — API returns identical values across WC fixtures */}
 
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
                       {deepInsights.comparison?.attackHome && (
                         <div style={{ background: "#13131f", borderRadius: 8, padding: "12px 14px" }}>
-                          <div style={{ fontSize: 12, color: "#ccc", marginBottom: 2, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Attack Rating</div>
-                          <div style={{ fontSize: 10, color: "#666", marginBottom: 8 }}>Relative attacking strength</div>
+                          <div style={{ fontSize: 15, color: "#ccc", marginBottom: 2, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Attack Rating</div>
+                          <div style={{ fontSize: 13, color: "#666", marginBottom: 8 }}>Relative attacking strength</div>
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: "#4ade80", minWidth: 34, textAlign: "right" }}>{capStat(deepInsights.comparison.attackHome)}</span>
+                            <span style={{ fontSize: 16, fontWeight: 700, color: "#4ade80", minWidth: 34, textAlign: "right" }}>{capStat(deepInsights.comparison.attackHome)}</span>
                             <div style={{ flex: 1, height: 7, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex" }}>
                               <div style={{ width: deepInsights.comparison.attackHome, background: "#4ade80" }} />
                             </div>
                             <div style={{ flex: 1, height: 7, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex", flexDirection: "row-reverse" }}>
                               <div style={{ width: deepInsights.comparison.attackAway, background: "#f59e0b" }} />
                             </div>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: "#f59e0b", minWidth: 34 }}>{capStat(deepInsights.comparison.attackAway)}</span>
+                            <span style={{ fontSize: 16, fontWeight: 700, color: "#f59e0b", minWidth: 34 }}>{capStat(deepInsights.comparison.attackAway)}</span>
                           </div>
-                          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontSize: 10, color: "#888" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontSize: 13, color: "#888" }}>
                             <span style={{ color: "#4ade80" }}>{homeTeam.split(" ")[0]}</span>
                             <span style={{ color: "#f59e0b" }}>{awayTeam.split(" ")[0]}</span>
                           </div>
@@ -1498,19 +1498,19 @@ export default function FootballPredictor() {
                       )}
                       {deepInsights.comparison?.defenceHome && (
                         <div style={{ background: "#13131f", borderRadius: 8, padding: "12px 14px" }}>
-                          <div style={{ fontSize: 12, color: "#ccc", marginBottom: 2, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Defence Rating</div>
-                          <div style={{ fontSize: 10, color: "#666", marginBottom: 8 }}>Relative defensive strength</div>
+                          <div style={{ fontSize: 15, color: "#ccc", marginBottom: 2, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Defence Rating</div>
+                          <div style={{ fontSize: 13, color: "#666", marginBottom: 8 }}>Relative defensive strength</div>
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: "#4ade80", minWidth: 34, textAlign: "right" }}>{capStat(deepInsights.comparison.defenceHome)}</span>
+                            <span style={{ fontSize: 16, fontWeight: 700, color: "#4ade80", minWidth: 34, textAlign: "right" }}>{capStat(deepInsights.comparison.defenceHome)}</span>
                             <div style={{ flex: 1, height: 7, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex" }}>
                               <div style={{ width: deepInsights.comparison.defenceHome, background: "#4ade80" }} />
                             </div>
                             <div style={{ flex: 1, height: 7, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex", flexDirection: "row-reverse" }}>
                               <div style={{ width: deepInsights.comparison.defenceAway, background: "#f59e0b" }} />
                             </div>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: "#f59e0b", minWidth: 34 }}>{capStat(deepInsights.comparison.defenceAway)}</span>
+                            <span style={{ fontSize: 16, fontWeight: 700, color: "#f59e0b", minWidth: 34 }}>{capStat(deepInsights.comparison.defenceAway)}</span>
                           </div>
-                          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontSize: 10, color: "#888" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontSize: 13, color: "#888" }}>
                             <span style={{ color: "#4ade80" }}>{homeTeam.split(" ")[0]}</span>
                             <span style={{ color: "#f59e0b" }}>{awayTeam.split(" ")[0]}</span>
                           </div>
@@ -1553,15 +1553,15 @@ export default function FootballPredictor() {
                       const TeamH2HRow = ({ team, record, h2hResults }) => (
                         <div style={{ background: "#13131f", borderRadius: 8, padding: "12px 14px", marginBottom: 8 }}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                            <span style={{ fontSize: 13, fontWeight: 800, color: "#f0f0f0" }}>{team}</span>
-                            <span style={{ fontSize: 11, color: "#555" }}>PPG: <span style={{ color: "#f0f0f0", fontWeight: 700 }}>{parsed.length ? (record.pts / parsed.length).toFixed(2) : "0.00"}</span></span>
+                            <span style={{ fontSize: 16, fontWeight: 800, color: "#f0f0f0" }}>{team}</span>
+                            <span style={{ fontSize: 14, color: "#555" }}>PPG: <span style={{ color: "#f0f0f0", fontWeight: 700 }}>{parsed.length ? (record.pts / parsed.length).toFixed(2) : "0.00"}</span></span>
                           </div>
                           <div style={{ display: "flex", gap: 5, marginBottom: 10 }}>
                             {h2hResults.map((r, i) => (
-                              <div key={i} style={{ width: 24, height: 24, borderRadius: 4, background: dotColor(r), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, color: "#0a0a0f" }}>{r}</div>
+                              <div key={i} style={{ width: 24, height: 24, borderRadius: 4, background: dotColor(r), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900, color: "#0a0a0f" }}>{r}</div>
                             ))}
                           </div>
-                          <div style={{ display: "flex", gap: 16, fontSize: 11 }}>
+                          <div style={{ display: "flex", gap: 16, fontSize: 14 }}>
                             <span style={{ color: "#4ade80" }}>W {record.w}</span>
                             <span style={{ color: "#60a5fa" }}>D {record.d}</span>
                             <span style={{ color: "#f87171" }}>L {record.l}</span>
@@ -1571,7 +1571,7 @@ export default function FootballPredictor() {
 
                       return (
                         <div style={{ marginBottom: 10 }}>
-                          <div style={{ fontSize: 12, color: "#ccc", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Recent H2H</div>
+                          <div style={{ fontSize: 15, color: "#ccc", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Recent H2H</div>
                           <TeamH2HRow team={homeTeam} record={homeRecord} h2hResults={parsed.map(m => getResult(m, homeTeam))} />
                           <TeamH2HRow team={awayTeam} record={awayRecord} h2hResults={parsed.map(m => getResult(m, awayTeam))} />
                         </div>
@@ -1586,16 +1586,16 @@ export default function FootballPredictor() {
                       const aNorm = 100 - hNorm;
                       return (
                         <div style={{ background: "#13131f", borderRadius: 8, padding: "12px 14px", marginBottom: 10 }}>
-                          <div style={{ fontSize: 12, color: "#ccc", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Current Form Index</div>
+                          <div style={{ fontSize: 15, color: "#ccc", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Current Form Index</div>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                             <div style={{ textAlign: "center" }}>
-                              <div style={{ fontSize: 12, color: "#4ade80", marginBottom: 4, fontWeight: 700 }}>{homeTeam}</div>
-                              <div style={{ fontSize: 22, fontWeight: 800, color: "#f0f0f0" }}>{hNorm}%</div>
+                              <div style={{ fontSize: 15, color: "#4ade80", marginBottom: 4, fontWeight: 700 }}>{homeTeam}</div>
+                              <div style={{ fontSize: 24, fontWeight: 800, color: "#f0f0f0" }}>{hNorm}%</div>
                             </div>
-                            <div style={{ fontSize: 13, color: "#ffffff", fontWeight: 700 }}>vs</div>
+                            <div style={{ fontSize: 16, color: "#ffffff", fontWeight: 700 }}>vs</div>
                             <div style={{ textAlign: "center" }}>
-                              <div style={{ fontSize: 12, color: "#f59e0b", marginBottom: 4, fontWeight: 700 }}>{awayTeam}</div>
-                              <div style={{ fontSize: 22, fontWeight: 800, color: "#f0f0f0" }}>{aNorm}%</div>
+                              <div style={{ fontSize: 15, color: "#f59e0b", marginBottom: 4, fontWeight: 700 }}>{awayTeam}</div>
+                              <div style={{ fontSize: 24, fontWeight: 800, color: "#f0f0f0" }}>{aNorm}%</div>
                             </div>
                           </div>
                           <div style={{ display: "flex", height: 6, borderRadius: 3, overflow: "hidden" }}>
@@ -1610,25 +1610,25 @@ export default function FootballPredictor() {
                 )}
 
                 <div className="card" style={{ borderColor: "#4ade8033" }}>
-                  <div style={{ fontSize: 11, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>📤 Challenge Your Friends</div>
+                  <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>📤 Challenge Your Friends</div>
                   <div style={{ background: "linear-gradient(135deg, #0d1a0d, #0a0a1f)", border: "1px solid #2a3a2a", borderRadius: 12, padding: 16, marginBottom: 12, textAlign: "center" }}>
-                    <div style={{ fontSize: 11, color: "#4ade80", fontWeight: 700, letterSpacing: 2, marginBottom: 10 }}>⚽ DEEP433 — YOU vs AI</div>
-                    <div style={{ fontSize: 12, color: "#555", marginBottom: 12, textTransform: "uppercase" }}>{leagueLabel}: {homeTeam} vs {awayTeam}</div>
+                    <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, letterSpacing: 2, marginBottom: 10 }}>⚽ DEEP433 — YOU vs AI</div>
+                    <div style={{ fontSize: 15, color: "#555", marginBottom: 12, textTransform: "uppercase" }}>{leagueLabel}: {homeTeam} vs {awayTeam}</div>
                     <div style={{ display: "flex", justifyContent: "center", gap: 24, marginBottom: 12 }}>
                       <div style={{ textAlign: "center" }}>
-                        <div style={{ fontSize: 10, color: "#4ade80", fontWeight: 700, marginBottom: 4 }}>👤 MY CALL</div>
+                        <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 700, marginBottom: 4 }}>👤 MY CALL</div>
                         <div style={{ fontSize: 28, fontWeight: 900, color: "#4ade80" }}>{userPrediction}</div>
                       </div>
                       <div style={{ textAlign: "center" }}>
-                        <div style={{ fontSize: 10, color: "#f59e0b", fontWeight: 700, marginBottom: 4 }}>🤖 AI SAYS</div>
+                        <div style={{ fontSize: 13, color: "#f59e0b", fontWeight: 700, marginBottom: 4 }}>🤖 AI SAYS</div>
                         <div style={{ fontSize: 28, fontWeight: 900, color: "#f59e0b" }}>{result.scoreline}</div>
                       </div>
                     </div>
-                    <div style={{ fontSize: 11, color: "#4ade80", fontWeight: 700 }}>deep433.com</div>
+                    <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700 }}>deep433.com</div>
                   </div>
                   <button className="copy-btn" onClick={copyShare} style={{ marginBottom: 10 }}>{copied ? "✓ Copied!" : "📋 Copy & Share"}</button>
                   {deepInsights && (
-                    <button onClick={() => setShowShareCard(true)} style={{ background: "linear-gradient(135deg, #818cf8, #6366f1)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px 24px", width: "100%", marginBottom: 10 }}>
+                    <button onClick={() => setShowShareCard(true)} style={{ background: "linear-gradient(135deg, #818cf8, #6366f1)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px 24px", width: "100%", marginBottom: 10 }}>
                       📸 Create Share Card
                     </button>
                   )}
@@ -1644,15 +1644,15 @@ export default function FootballPredictor() {
             {/* Horizontal scrolling completed scores ticker */}
             {liveData.filter(f => f.status === "finished").length > 0 && (
               <div style={{ background: "#0d0d18", borderRadius: 10, padding: "10px 0", overflow: "hidden", position: "relative" }}>
-                <div style={{ fontSize: 10, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, padding: "0 14px", marginBottom: 8 }}>FT Results</div>
+                <div style={{ fontSize: 13, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, padding: "0 14px", marginBottom: 8 }}>FT Results</div>
                 <div style={{ display: "flex", gap: 12, overflowX: "auto", padding: "0 14px 4px", scrollbarWidth: "none" }}>
                   {liveData.filter(f => f.status === "finished").map((f, i) => (
                     <div key={i} style={{ background: "#13131f", border: "1px solid #1e1e30", borderRadius: 8, padding: "8px 14px", flexShrink: 0, textAlign: "center", minWidth: 130 }}>
-                      <div style={{ fontSize: 10, color: "#555", marginBottom: 6 }}>FT</div>
+                      <div style={{ fontSize: 13, color: "#555", marginBottom: 6 }}>FT</div>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: "#f0f0f0", textAlign: "right", flex: 1 }}>{f.home.split(" ").slice(-1)[0]}</span>
-                        <span style={{ fontSize: 16, fontWeight: 900, color: "#f0f0f0" }}>{f.score.home ?? 0}-{f.score.away ?? 0}</span>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: "#f0f0f0", textAlign: "left", flex: 1 }}>{f.away.split(" ").slice(-1)[0]}</span>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: "#f0f0f0", textAlign: "right", flex: 1 }}>{f.home.split(" ").slice(-1)[0]}</span>
+                        <span style={{ fontSize: 18, fontWeight: 900, color: "#f0f0f0" }}>{f.score.home ?? 0}-{f.score.away ?? 0}</span>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: "#f0f0f0", textAlign: "left", flex: 1 }}>{f.away.split(" ").slice(-1)[0]}</span>
                       </div>
                     </div>
                   ))}
@@ -1661,10 +1661,10 @@ export default function FootballPredictor() {
             )}
 
             {/* All today's fixtures */}
-            <div style={{ fontSize: 11, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Today's Fixtures</div>
+            <div style={{ fontSize: 14, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Today's Fixtures</div>
 
             {liveData.length === 0 && (
-              <div style={{ textAlign: "center", color: "#444", fontSize: 14, padding: "40px 0" }}>No fixtures today — check back on matchday</div>
+              <div style={{ textAlign: "center", color: "#444", fontSize: 17, padding: "40px 0" }}>No fixtures today — check back on matchday</div>
             )}
 
             {liveData.map((f, i) => {
@@ -1679,19 +1679,19 @@ export default function FootballPredictor() {
                   <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", padding: "14px 16px", gap: 8 }}>
                     <div style={{ textAlign: "center" }}>
                       <TeamFlag team={f.home} logo={f.homeLogo} size={24} />
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", marginTop: 4 }}>{f.home}</div>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0", marginTop: 4 }}>{f.home}</div>
                       <div style={{ fontSize: 36, fontWeight: 900, color: isFinished ? "#888" : "#f0f0f0", marginTop: 2 }}>{isLive || isFinished ? (f.score.home ?? 0) : ""}</div>
                     </div>
                     <div style={{ textAlign: "center", minWidth: 60 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: statusColor, marginBottom: 4 }}>{statusLabel}</div>
-                      {!isLive && !isFinished && <div style={{ fontSize: 11, color: "#555" }}>{new Date(f.kickoff).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} BST</div>}
+                      <div style={{ fontSize: 14, fontWeight: 700, color: statusColor, marginBottom: 4 }}>{statusLabel}</div>
+                      {!isLive && !isFinished && <div style={{ fontSize: 14, color: "#555" }}>{new Date(f.kickoff).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} BST</div>}
                       {isLive && f.possession?.home && (
-                        <div style={{ fontSize: 10, color: "#555", marginTop: 4 }}>⚽ {f.possession.home}</div>
+                        <div style={{ fontSize: 13, color: "#555", marginTop: 4 }}>⚽ {f.possession.home}</div>
                       )}
                     </div>
                     <div style={{ textAlign: "center" }}>
                       <TeamFlag team={f.away} logo={f.awayLogo} size={24} />
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", marginTop: 4 }}>{f.away}</div>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0", marginTop: 4 }}>{f.away}</div>
                       <div style={{ fontSize: 36, fontWeight: 900, color: isFinished ? "#888" : "#f0f0f0", marginTop: 2 }}>{isLive || isFinished ? (f.score.away ?? 0) : ""}</div>
                     </div>
                   </div>
@@ -1709,17 +1709,17 @@ export default function FootballPredictor() {
                     <div style={{ padding: "8px 16px 12px", borderTop: "1px solid #1a1a2a" }}>
                       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                         {f.events.filter(e => e.type === "Goal" || e.type === "Card").map((e, j) => (
-                          <div key={j} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
-                            <span style={{ color: "#555", minWidth: 32, fontSize: 11, fontWeight: 700 }}>{e.minute}'</span>
-                            <span style={{ fontSize: 13 }}>{e.icon}</span>
+                          <div key={j} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15 }}>
+                            <span style={{ color: "#555", minWidth: 32, fontSize: 14, fontWeight: 700 }}>{e.minute}'</span>
+                            <span style={{ fontSize: 16 }}>{e.icon}</span>
                             <span style={{ color: "#ccc", fontWeight: 600, flex: 1 }}>{e.label}</span>
-                            <span style={{ color: "#444", fontSize: 10 }}>{e.team?.split(" ").slice(-1)[0]}</span>
+                            <span style={{ color: "#444", fontSize: 13 }}>{e.team?.split(" ").slice(-1)[0]}</span>
                           </div>
                         ))}
                       </div>
                       {/* Subs collapsed */}
                       {f.events.filter(e => e.type === "subst").length > 0 && (
-                        <div style={{ marginTop: 6, fontSize: 10, color: "#444" }}>
+                        <div style={{ marginTop: 6, fontSize: 13, color: "#444" }}>
                           🔄 {f.events.filter(e => e.type === "subst").length} substitution{f.events.filter(e => e.type === "subst").length !== 1 ? "s" : ""}
                         </div>
                       )}
@@ -1753,11 +1753,11 @@ export default function FootballPredictor() {
             </div>
 
             {bracketLoading && (
-              <div style={{ textAlign: "center", color: "#555", fontSize: 13, padding: "40px 0" }}>Loading bracket...</div>
+              <div style={{ textAlign: "center", color: "#555", fontSize: 16, padding: "40px 0" }}>Loading bracket...</div>
             )}
 
             {!bracketLoading && bracketRounds.length === 0 && (
-              <div style={{ textAlign: "center", color: "#444", fontSize: 13, padding: "40px 0" }}>No knockout fixtures found for this competition</div>
+              <div style={{ textAlign: "center", color: "#444", fontSize: 16, padding: "40px 0" }}>No knockout fixtures found for this competition</div>
             )}
 
             {/* Bracket rounds — horizontal scroll */}
@@ -1766,7 +1766,7 @@ export default function FootballPredictor() {
                 {bracketRounds.map((round, ri) => (
                   <div key={round.round} style={{ display: "flex", flexDirection: "column", gap: 12, minWidth: 200 }}>
                     {/* Round header */}
-                    <div style={{ fontSize: 10, fontWeight: 800, color: "#4ade80", textTransform: "uppercase", letterSpacing: 1.5, textAlign: "center", padding: "6px 0", borderBottom: "1px solid #1a1a2a" }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: "#4ade80", textTransform: "uppercase", letterSpacing: 1.5, textAlign: "center", padding: "6px 0", borderBottom: "1px solid #1a1a2a" }}>
                       {round.round}
                     </div>
 
@@ -1808,11 +1808,11 @@ export default function FootballPredictor() {
                                 ? <img src={m.homeLogo} alt="" style={{ width: 20, height: 20, objectFit: "contain", flexShrink: 0 }} />
                                 : <div style={{ width: 20, height: 20, background: "#1a1a2a", borderRadius: "50%", flexShrink: 0 }} />
                               }
-                              <span style={{ fontSize: 12, fontWeight: homeWon ? 800 : 600, color: homeWon ? "#4ade80" : "#f0f0f0", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              <span style={{ fontSize: 15, fontWeight: homeWon ? 800 : 600, color: homeWon ? "#4ade80" : "#f0f0f0", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                 {m.home || "TBD"}
                               </span>
                               {(isLive || isFinished) && (
-                                <span style={{ fontSize: 14, fontWeight: 900, color: homeWon ? "#4ade80" : "#888", minWidth: 16, textAlign: "right" }}>
+                                <span style={{ fontSize: 17, fontWeight: 900, color: homeWon ? "#4ade80" : "#888", minWidth: 16, textAlign: "right" }}>
                                   {m.score.home ?? 0}
                                 </span>
                               )}
@@ -1827,11 +1827,11 @@ export default function FootballPredictor() {
                                 ? <img src={m.awayLogo} alt="" style={{ width: 20, height: 20, objectFit: "contain", flexShrink: 0 }} />
                                 : <div style={{ width: 20, height: 20, background: "#1a1a2a", borderRadius: "50%", flexShrink: 0 }} />
                               }
-                              <span style={{ fontSize: 12, fontWeight: awayWon ? 800 : 600, color: awayWon ? "#4ade80" : "#f0f0f0", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              <span style={{ fontSize: 15, fontWeight: awayWon ? 800 : 600, color: awayWon ? "#4ade80" : "#f0f0f0", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                 {m.away || "TBD"}
                               </span>
                               {(isLive || isFinished) && (
-                                <span style={{ fontSize: 14, fontWeight: 900, color: awayWon ? "#4ade80" : "#888", minWidth: 16, textAlign: "right" }}>
+                                <span style={{ fontSize: 17, fontWeight: 900, color: awayWon ? "#4ade80" : "#888", minWidth: 16, textAlign: "right" }}>
                                   {m.score.away ?? 0}
                                 </span>
                               )}
@@ -1839,10 +1839,10 @@ export default function FootballPredictor() {
 
                             {/* Status footer */}
                             <div style={{ padding: "4px 10px", background: "#0d0d18", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                              <span style={{ fontSize: 9, color: isLive ? "#ef4444" : isFinished ? "#555" : "#555", fontWeight: 700 }}>
+                              <span style={{ fontSize: 12, color: isLive ? "#ef4444" : isFinished ? "#555" : "#555", fontWeight: 700 }}>
                                 {isLive ? `🔴 ${getTimeLabel(m.statusRaw, m.elapsed)}` : isFinished ? m.statusRaw : new Date(m.kickoff).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
                               </span>
-                              {userPred && <span style={{ fontSize: 9, color: "#4ade80" }}>✓ Predicted</span>}
+                              {userPred && <span style={{ fontSize: 12, color: "#4ade80" }}>✓ Predicted</span>}
                             </div>
                           </div>
                         );
@@ -1853,7 +1853,7 @@ export default function FootballPredictor() {
               </div>
             </div>
 
-            <div style={{ fontSize: 11, color: "#555", textAlign: "center" }}>
+            <div style={{ fontSize: 14, color: "#555", textAlign: "center" }}>
               Scroll horizontally to see all rounds · Green border = your prediction
             </div>
           </>
@@ -1881,7 +1881,7 @@ export default function FootballPredictor() {
             </div>
 
             {awardsLoading && (
-              <div style={{ textAlign: "center", color: "#555", fontSize: 13, padding: "30px 0" }}>Loading...</div>
+              <div style={{ textAlign: "center", color: "#555", fontSize: 16, padding: "30px 0" }}>Loading...</div>
             )}
 
             {!awardsLoading && tournamentPred && (
@@ -1897,8 +1897,8 @@ export default function FootballPredictor() {
                 >
                   <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
                   <div style={{ position: "absolute", top: 12, right: 14, display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontSize: 10, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
-                    <span style={{ fontSize: 9, color: "#888", fontWeight: 600 }}>deep433.com</span>
+                    <span style={{ fontSize: 13, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
+                    <span style={{ fontSize: 12, color: "#888", fontWeight: 600 }}>deep433.com</span>
                   </div>
                   {/* Logo watermark */}
                   <div style={{ position: "absolute", bottom: 12, left: 12, pointerEvents: "none" }}>
@@ -1906,18 +1906,18 @@ export default function FootballPredictor() {
                   </div>
 
                   <div style={{ textAlign: "center", marginBottom: 16, marginTop: 6, position: "relative", zIndex: 1 }}>
-                    <div style={{ fontSize: 13, color: "#f0f0f0", fontWeight: 900, textTransform: "uppercase", letterSpacing: 2 }}>
+                    <div style={{ fontSize: 16, color: "#f0f0f0", fontWeight: 900, textTransform: "uppercase", letterSpacing: 2 }}>
                       {LEAGUES.find(l => l.id === awardsLeague)?.label || awardsLeague}
                     </div>
-                    <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginTop: 2 }}>🎖 My Season Awards Pick</div>
+                    <div style={{ fontSize: 13, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginTop: 2 }}>🎖 My Season Awards Pick</div>
                   </div>
 
                   {/* Winner — hero */}
                   <div style={{ textAlign: "center", marginBottom: 16, position: "relative", zIndex: 1 }}>
-                    <div style={{ fontSize: 9, color: "#fbbf24", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>🏆 Winner</div>
+                    <div style={{ fontSize: 12, color: "#fbbf24", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>🏆 Winner</div>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
                       <TeamFlag team={tournamentPred.winner} logo={TEAM_LOGOS[tournamentPred.winner]} size={40} />
-                      <span style={{ fontSize: 20, fontWeight: 900, color: "#fbbf24" }}>{tournamentPred.winner}</span>
+                      <span style={{ fontSize: 22, fontWeight: 900, color: "#fbbf24" }}>{tournamentPred.winner}</span>
                     </div>
                   </div>
 
@@ -1925,13 +1925,13 @@ export default function FootballPredictor() {
 
                   {/* Runner-up */}
                   <div style={{ textAlign: "center", marginBottom: 14, position: "relative", zIndex: 1 }}>
-                    <div style={{ fontSize: 9, color: "#c0c0c0", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>🥈 Runner-up</div>
+                    <div style={{ fontSize: 12, color: "#c0c0c0", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>🥈 Runner-up</div>
                     {(() => {
                       const runnerUp = [tournamentPred.finalist_1, tournamentPred.finalist_2].find(f => f !== tournamentPred.winner);
                       return (
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                           <TeamFlag team={runnerUp} logo={TEAM_LOGOS[runnerUp]} size={28} />
-                          <span style={{ fontSize: 15, fontWeight: 800, color: "#f0f0f0" }}>{runnerUp}</span>
+                          <span style={{ fontSize: 17, fontWeight: 800, color: "#f0f0f0" }}>{runnerUp}</span>
                         </div>
                       );
                     })()}
@@ -1941,23 +1941,23 @@ export default function FootballPredictor() {
 
                   {/* Semi-finalists */}
                   <div style={{ position: "relative", zIndex: 1 }}>
-                    <div style={{ fontSize: 9, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, textAlign: "center", marginBottom: 10 }}>Semi-Finalists</div>
+                    <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, textAlign: "center", marginBottom: 10 }}>Semi-Finalists</div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                       {[tournamentPred.semi_finalist_1, tournamentPred.semi_finalist_2, tournamentPred.semi_finalist_3, tournamentPred.semi_finalist_4].map((team, i) => (
                         <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, background: "#13131f", borderRadius: 8, padding: "8px 10px" }}>
                           <TeamFlag team={team} logo={TEAM_LOGOS[team]} size={18} />
-                          <span style={{ fontSize: 11, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{team}</span>
+                          <span style={{ fontSize: 14, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{team}</span>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  <div style={{ fontSize: 9, color: "#444", textAlign: "center", marginTop: 16, position: "relative", zIndex: 1 }}>
+                  <div style={{ fontSize: 12, color: "#444", textAlign: "center", marginTop: 16, position: "relative", zIndex: 1 }}>
                     Submitted {new Date(tournamentPred.submitted_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                   </div>
                 </div>
 
-                <button onClick={downloadAwardsCard} disabled={awardsDownloading} style={{ marginTop: 12, background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%" }}>
+                <button onClick={downloadAwardsCard} disabled={awardsDownloading} style={{ marginTop: 12, background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
                   {awardsDownloading ? "Generating..." : "⬇ Download Prediction Card"}
                 </button>
                 <button onClick={() => {
@@ -1969,7 +1969,7 @@ export default function FootballPredictor() {
                   });
                   setAwardsStep(1);
                   setTournamentPred(null);
-                }} style={{ marginTop: 8, background: "none", border: "1px solid #2a2a3a", borderRadius: 8, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "10px", width: "100%" }}>
+                }} style={{ marginTop: 8, background: "none", border: "1px solid #2a2a3a", borderRadius: 8, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 16, fontWeight: 700, padding: "10px", width: "100%" }}>
                   ✏️ Edit Prediction
                 </button>
               </>
@@ -1986,26 +1986,26 @@ export default function FootballPredictor() {
 
                 {awardsStep === 1 && (
                   <>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>Step 1 of 3 — Semi-Finalists</div>
-                    <div style={{ fontSize: 11, color: "#555", marginBottom: 20 }}>Pick the 4 teams you predict will reach the Semi-Finals.</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>Step 1 of 3 — Semi-Finalists</div>
+                    <div style={{ fontSize: 14, color: "#555", marginBottom: 20 }}>Pick the 4 teams you predict will reach the Semi-Finals.</div>
                     {["sf1", "sf2", "sf3", "sf4"].map((key, i) => (
                       <div key={key} style={{ marginBottom: 14 }}>
-                        <div style={{ fontSize: 11, color: "#818cf8", fontWeight: 700, marginBottom: 6 }}>Semi-Finalist {i + 1}</div>
+                        <div style={{ fontSize: 14, color: "#818cf8", fontWeight: 700, marginBottom: 6 }}>Semi-Finalist {i + 1}</div>
                         <select
                           value={awardsForm[key]}
                           onChange={e => setAwardsForm(prev => ({ ...prev, [key]: e.target.value }))}
-                          style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "10px 14px", outline: "none", fontFamily: "inherit" }}
+                          style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 17, padding: "10px 14px", outline: "none", fontFamily: "inherit" }}
                         >
                           <option value="">— Select team —</option>
                           {remainingTeams.filter(t => ![awardsForm.sf1, awardsForm.sf2, awardsForm.sf3, awardsForm.sf4].includes(t) || awardsForm[key] === t).map(t => <option key={t} value={t}>{t}</option>)}
                         </select>
                       </div>
                     ))}
-                    {awardsError && <div style={{ color: "#f87171", fontSize: 12, marginBottom: 12 }}>{awardsError}</div>}
+                    {awardsError && <div style={{ color: "#f87171", fontSize: 15, marginBottom: 12 }}>{awardsError}</div>}
                     <button onClick={() => {
                       if (!awardsForm.sf1 || !awardsForm.sf2 || !awardsForm.sf3 || !awardsForm.sf4) { setAwardsError("Select all 4 semi-finalists"); return; }
                       setAwardsError(""); setAwardsStep(2);
-                    }} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%" }}>
+                    }} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
                       Next: Pick Finalists →
                     </button>
                   </>
@@ -2013,28 +2013,28 @@ export default function FootballPredictor() {
 
                 {awardsStep === 2 && (
                   <>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>Step 2 of 3 — Finalists</div>
-                    <div style={{ fontSize: 11, color: "#555", marginBottom: 20 }}>Which 2 of your semi-finalists reach the Final?</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>Step 2 of 3 — Finalists</div>
+                    <div style={{ fontSize: 14, color: "#555", marginBottom: 20 }}>Which 2 of your semi-finalists reach the Final?</div>
                     {["finalist1", "finalist2"].map((key, i) => (
                       <div key={key} style={{ marginBottom: 14 }}>
-                        <div style={{ fontSize: 11, color: "#c084fc", fontWeight: 700, marginBottom: 6 }}>Finalist {i + 1}</div>
+                        <div style={{ fontSize: 14, color: "#c084fc", fontWeight: 700, marginBottom: 6 }}>Finalist {i + 1}</div>
                         <select
                           value={awardsForm[key]}
                           onChange={e => setAwardsForm(prev => ({ ...prev, [key]: e.target.value }))}
-                          style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "10px 14px", outline: "none", fontFamily: "inherit" }}
+                          style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 17, padding: "10px 14px", outline: "none", fontFamily: "inherit" }}
                         >
                           <option value="">— Select team —</option>
                           {[awardsForm.sf1, awardsForm.sf2, awardsForm.sf3, awardsForm.sf4].filter(t => t && (![awardsForm.finalist1, awardsForm.finalist2].includes(t) || awardsForm[key] === t)).map(t => <option key={t} value={t}>{t}</option>)}
                         </select>
                       </div>
                     ))}
-                    {awardsError && <div style={{ color: "#f87171", fontSize: 12, marginBottom: 12 }}>{awardsError}</div>}
+                    {awardsError && <div style={{ color: "#f87171", fontSize: 15, marginBottom: 12 }}>{awardsError}</div>}
                     <div style={{ display: "flex", gap: 8 }}>
-                      <button onClick={() => setAwardsStep(1)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 8, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "12px 20px" }}>← Back</button>
+                      <button onClick={() => setAwardsStep(1)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 8, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 700, padding: "12px 20px" }}>← Back</button>
                       <button onClick={() => {
                         if (!awardsForm.finalist1 || !awardsForm.finalist2) { setAwardsError("Select both finalists"); return; }
                         setAwardsError(""); setAwardsStep(3);
-                      }} style={{ flex: 1, background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px" }}>
+                      }} style={{ flex: 1, background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px" }}>
                         Next: Pick Winner →
                       </button>
                     </div>
@@ -2043,23 +2043,23 @@ export default function FootballPredictor() {
 
                 {awardsStep === 3 && (
                   <>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>Step 3 of 3 — Winner</div>
-                    <div style={{ fontSize: 11, color: "#555", marginBottom: 20 }}>Who lifts the trophy?</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>Step 3 of 3 — Winner</div>
+                    <div style={{ fontSize: 14, color: "#555", marginBottom: 20 }}>Who lifts the trophy?</div>
                     <div style={{ marginBottom: 14 }}>
-                      <div style={{ fontSize: 11, color: "#fbbf24", fontWeight: 700, marginBottom: 6 }}>🏆 Winner</div>
+                      <div style={{ fontSize: 14, color: "#fbbf24", fontWeight: 700, marginBottom: 6 }}>🏆 Winner</div>
                       <select
                         value={awardsForm.winner}
                         onChange={e => setAwardsForm(prev => ({ ...prev, winner: e.target.value }))}
-                        style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "10px 14px", outline: "none", fontFamily: "inherit" }}
+                        style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 17, padding: "10px 14px", outline: "none", fontFamily: "inherit" }}
                       >
                         <option value="">— Select team —</option>
                         {[awardsForm.finalist1, awardsForm.finalist2].filter(Boolean).map(t => <option key={t} value={t}>{t}</option>)}
                       </select>
                     </div>
-                    {awardsError && <div style={{ color: "#f87171", fontSize: 12, marginBottom: 12 }}>{awardsError}</div>}
+                    {awardsError && <div style={{ color: "#f87171", fontSize: 15, marginBottom: 12 }}>{awardsError}</div>}
                     <div style={{ display: "flex", gap: 8 }}>
-                      <button onClick={() => setAwardsStep(2)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 8, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "12px 20px" }}>← Back</button>
-                      <button onClick={submitTournamentPrediction} disabled={awardsSubmitting} style={{ flex: 1, background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px" }}>
+                      <button onClick={() => setAwardsStep(2)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 8, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 700, padding: "12px 20px" }}>← Back</button>
+                      <button onClick={submitTournamentPrediction} disabled={awardsSubmitting} style={{ flex: 1, background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px" }}>
                         {awardsSubmitting ? "Submitting..." : "🔒 Submit Final Prediction"}
                       </button>
                     </div>
@@ -2069,7 +2069,7 @@ export default function FootballPredictor() {
             )}
 
             {!awardsLoading && !tournamentPred && remainingTeams.length === 0 && (
-              <div style={{ textAlign: "center", color: "#444", fontSize: 13, padding: "30px 0" }}>No teams found for this competition</div>
+              <div style={{ textAlign: "center", color: "#444", fontSize: 16, padding: "30px 0" }}>No teams found for this competition</div>
             )}
           </>
         )}
@@ -2079,58 +2079,58 @@ export default function FootballPredictor() {
             ? <DataGraphics history={history} supabase={supabase} />
             : <div className="card" style={{ textAlign: "center", padding: "40px 24px" }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>📊</div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: "#f0f0f0", marginBottom: 8 }}>Authorised Users Only</div>
-                <div style={{ fontSize: 13, color: "#555", lineHeight: 1.6 }}>This section is available to authorised Deep433 users. Contact us to request access.</div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: "#f0f0f0", marginBottom: 8 }}>Authorised Users Only</div>
+                <div style={{ fontSize: 16, color: "#555", lineHeight: 1.6 }}>This section is available to authorised Deep433 users. Contact us to request access.</div>
               </div>
         )}
 
         {tab === "standings" && (
           <>
             <div className="card" style={{ textAlign: "center", padding: "28px 20px" }}>
-              <div style={{ fontSize: 13, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 20 }}>Head to Head Record</div>
+              <div style={{ fontSize: 16, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 20 }}>Head to Head Record</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 16, alignItems: "center" }}>
                 <div>
-                  <div style={{ fontSize: 11, color: "#4ade80", fontWeight: 700, marginBottom: 8 }}>👤 YOU</div>
+                  <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, marginBottom: 8 }}>👤 YOU</div>
                   <div style={{ fontSize: 56, fontWeight: 900, color: "#4ade80" }}>{stats.userCorrect}</div>
-                  <div style={{ fontSize: 11, color: "#555", marginTop: 4 }}>exact scores</div>
+                  <div style={{ fontSize: 14, color: "#555", marginTop: 4 }}>exact scores</div>
                 </div>
-                <div style={{ fontSize: 20, color: "#333", fontWeight: 700 }}>vs</div>
+                <div style={{ fontSize: 22, color: "#333", fontWeight: 700 }}>vs</div>
                 <div>
-                  <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 700, marginBottom: 8 }}>🤖 AI</div>
+                  <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, marginBottom: 8 }}>🤖 AI</div>
                   <div style={{ fontSize: 56, fontWeight: 900, color: "#f59e0b" }}>{stats.aiCorrect}</div>
-                  <div style={{ fontSize: 11, color: "#555", marginTop: 4 }}>exact scores</div>
+                  <div style={{ fontSize: 14, color: "#555", marginTop: 4 }}>exact scores</div>
                 </div>
               </div>
               <div style={{ marginTop: 20, padding: "12px 20px", background: "#0f0f1a", borderRadius: 10 }}>
-                <div style={{ fontSize: 13, color: "#aaa" }}>You've beaten the AI <span style={{ color: "#4ade80", fontWeight: 700 }}>{stats.beatAI}</span> time{stats.beatAI !== 1 ? "s" : ""}</div>
+                <div style={{ fontSize: 16, color: "#aaa" }}>You've beaten the AI <span style={{ color: "#4ade80", fontWeight: 700 }}>{stats.beatAI}</span> time{stats.beatAI !== 1 ? "s" : ""}</div>
               </div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               {[{ label: "Predictions Made", value: stats.total, color: "#60a5fa" }, { label: "Results Logged", value: stats.verified, color: "#a78bfa" }].map(s => (
                 <div key={s.label} className="card" style={{ textAlign: "center", padding: "14px 10px" }}>
-                  <div style={{ fontSize: 22, fontWeight: 900, color: s.color }}>{s.value}</div>
-                  <div style={{ fontSize: 10, color: "#555", marginTop: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>{s.label}</div>
+                  <div style={{ fontSize: 24, fontWeight: 900, color: s.color }}>{s.value}</div>
+                  <div style={{ fontSize: 13, color: "#555", marginTop: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>{s.label}</div>
                 </div>
               ))}
             </div>
-            {stats.total === 0 && <div style={{ textAlign: "center", color: "#444", fontSize: 14, padding: "32px 0" }}>Make your first prediction to start the battle!</div>}
+            {stats.total === 0 && <div style={{ textAlign: "center", color: "#444", fontSize: 17, padding: "32px 0" }}>Make your first prediction to start the battle!</div>}
           </>
         )}
 
         {tab === "badges" && (
           <>
             <div className="card" style={{ textAlign: "center", padding: "16px 20px" }}>
-              <div style={{ fontSize: 13, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Your Rank</div>
-              {rank ? <div style={{ fontSize: 20, fontWeight: 900, color: rank.color }}>{rank.icon} {rank.name}</div> : <div style={{ fontSize: 16, color: "#444" }}>Beat the AI to earn your first badge</div>}
-              <div style={{ fontSize: 12, color: "#555", marginTop: 4 }}>{badges.filter(b => b.earned).length} of {badges.length} badges earned</div>
+              <div style={{ fontSize: 16, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Your Rank</div>
+              {rank ? <div style={{ fontSize: 22, fontWeight: 900, color: rank.color }}>{rank.icon} {rank.name}</div> : <div style={{ fontSize: 18, color: "#444" }}>Beat the AI to earn your first badge</div>}
+              <div style={{ fontSize: 15, color: "#555", marginTop: 4 }}>{badges.filter(b => b.earned).length} of {badges.length} badges earned</div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
               {badges.map(b => (
                 <div key={b.name} className={`badge-card${b.earned ? "" : " locked"}`}>
                   <div style={{ fontSize: 28, marginBottom: 8 }}>{b.icon}</div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: b.earned ? b.color : "#555", marginBottom: 4, lineHeight: 1.3 }}>{b.name}</div>
-                  <div style={{ fontSize: 10, color: "#444", lineHeight: 1.4 }}>{b.desc}</div>
-                  {!b.earned && <div style={{ fontSize: 10, color: "#2a2a2a", marginTop: 6 }}>🔒 Locked</div>}
+                  <div style={{ fontSize: 14, fontWeight: 700, color: b.earned ? b.color : "#555", marginBottom: 4, lineHeight: 1.3 }}>{b.name}</div>
+                  <div style={{ fontSize: 13, color: "#444", lineHeight: 1.4 }}>{b.desc}</div>
+                  {!b.earned && <div style={{ fontSize: 13, color: "#2a2a2a", marginTop: 6 }}>🔒 Locked</div>}
                 </div>
               ))}
             </div>
@@ -2139,9 +2139,9 @@ export default function FootballPredictor() {
 
         {tab === "history" && (
           <>
-            <div style={{ fontSize: 11, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Prediction History</div>
+            <div style={{ fontSize: 14, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Prediction History</div>
             <input className="search-input" placeholder="🔍 Search by team..." value={historySearch} onChange={e => setHistorySearch(e.target.value)} />
-            {history.length === 0 && <div style={{ textAlign: "center", color: "#444", fontSize: 14, padding: "40px 0" }}>No predictions yet — go predict a match!</div>}
+            {history.length === 0 && <div style={{ textAlign: "center", color: "#444", fontSize: 17, padding: "40px 0" }}>No predictions yet — go predict a match!</div>}
             {history.filter(h => !historySearch.trim() || h.home_team.toLowerCase().includes(historySearch.toLowerCase()) || h.away_team.toLowerCase().includes(historySearch.toLowerCase())).map((h) => {
               const wc = resultColor(h.result);
               const matchStatus = getMatchStatus(h.home_team, h.away_team);
@@ -2149,8 +2149,8 @@ export default function FootballPredictor() {
                 <div key={h.id} className="history-row">
                   <div style={{ marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", marginBottom: 2 }}>{h.home_team} vs {h.away_team}</div>
-                      <div style={{ fontSize: 11, color: "#555" }}>{new Date(h.created_at).toLocaleDateString("en-GB")}</div>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0", marginBottom: 2 }}>{h.home_team} vs {h.away_team}</div>
+                      <div style={{ fontSize: 14, color: "#555" }}>{new Date(h.created_at).toLocaleDateString("en-GB")}</div>
                     </div>
                     {h.ai_data && (
                       <div style={{ display: "flex", gap: 6 }}>
@@ -2158,36 +2158,36 @@ export default function FootballPredictor() {
                           // Load from localStorage if available
                           const cached = (() => { try { const s = localStorage.getItem(`lineup_${h.home_team}_${h.away_team}`); return s ? JSON.parse(s) : null; } catch { return null; } })();
                           setViewingPitch(cached ? { ...h, confirmed_lineup: cached } : h);
-                        }} style={{ background: "none", border: "1px solid #4ade8044", borderRadius: 6, color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "5px 10px", whiteSpace: "nowrap" }}>⚽ Pitch</button>
-                        <button onClick={() => setViewingAnalysis(h)} style={{ background: "none", border: "1px solid #818cf844", borderRadius: 6, color: "#818cf8", cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "5px 10px", whiteSpace: "nowrap" }}>📊 Analysis</button>
+                        }} style={{ background: "none", border: "1px solid #4ade8044", borderRadius: 6, color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "5px 10px", whiteSpace: "nowrap" }}>⚽ Pitch</button>
+                        <button onClick={() => setViewingAnalysis(h)} style={{ background: "none", border: "1px solid #818cf844", borderRadius: 6, color: "#818cf8", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "5px 10px", whiteSpace: "nowrap" }}>📊 Analysis</button>
                       </div>
                     )}
                   </div>
                   <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
                     <div style={{ flex: 1, textAlign: "center", background: "#13131f", borderRadius: 8, padding: "8px 4px" }}>
-                      <div style={{ fontSize: 10, color: "#4ade80", fontWeight: 700, marginBottom: 4 }}>👤 YOU</div>
-                      <div style={{ fontSize: 18, fontWeight: 900, color: "#4ade80" }}>{h.user_prediction}</div>
+                      <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 700, marginBottom: 4 }}>👤 YOU</div>
+                      <div style={{ fontSize: 20, fontWeight: 900, color: "#4ade80" }}>{h.user_prediction}</div>
                     </div>
-                    <div style={{ fontSize: 12, color: "#333" }}>vs</div>
+                    <div style={{ fontSize: 15, color: "#333" }}>vs</div>
                     <div style={{ flex: 1, textAlign: "center", background: "#13131f", borderRadius: 8, padding: "8px 4px" }}>
-                      <div style={{ fontSize: 10, color: "#f59e0b", fontWeight: 700, marginBottom: 4 }}>🤖 AI</div>
-                      <div style={{ fontSize: 18, fontWeight: 900, color: "#f59e0b" }}>{h.ai_prediction}</div>
+                      <div style={{ fontSize: 13, color: "#f59e0b", fontWeight: 700, marginBottom: 4 }}>🤖 AI</div>
+                      <div style={{ fontSize: 20, fontWeight: 900, color: "#f59e0b" }}>{h.ai_prediction}</div>
                     </div>
                     {h.actual_score && (
                       <div style={{ flex: 1, textAlign: "center", background: "#13131f", borderRadius: 8, padding: "8px 4px" }}>
-                        <div style={{ fontSize: 10, color: "#888", fontWeight: 700, marginBottom: 4 }}>RESULT</div>
-                        <div style={{ fontSize: 18, fontWeight: 900, color: "#f0f0f0" }}>{h.actual_score}</div>
+                        <div style={{ fontSize: 13, color: "#888", fontWeight: 700, marginBottom: 4 }}>RESULT</div>
+                        <div style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>{h.actual_score}</div>
                       </div>
                     )}
                   </div>
                   {h.result && (
-                    <div style={{ textAlign: "center", padding: "8px", background: wc + "11", border: `1px solid ${wc}33`, borderRadius: 8, fontSize: 13, fontWeight: 700, color: wc, marginBottom: 8 }}>
+                    <div style={{ textAlign: "center", padding: "8px", background: wc + "11", border: `1px solid ${wc}33`, borderRadius: 8, fontSize: 16, fontWeight: 700, color: wc, marginBottom: 8 }}>
                       {h.result === "user" ? "🏆 You beat the AI!" : h.result === "ai" ? "🤖 AI wins this one" : "🤝 It's a tie"}
                     </div>
                   )}
 
                   {matchStatus === "live" && (
-                    <div style={{ fontSize: 11, color: "#ef4444", fontWeight: 700, textAlign: "center", padding: "6px", marginTop: 4 }}>🔴 Match in progress</div>
+                    <div style={{ fontSize: 14, color: "#ef4444", fontWeight: 700, textAlign: "center", padding: "6px", marginTop: 4 }}>🔴 Match in progress</div>
                   )}
                   {matchStatus === "live" && (() => {
                     const live = findLiveFixture(h.home_team, h.away_team);
@@ -2195,16 +2195,16 @@ export default function FootballPredictor() {
                     if (!events?.length) return null;
                     return (
                       <div style={{ marginTop: 8, background: "#0d0d18", borderRadius: 8, padding: "10px 12px" }}>
-                        <div style={{ fontSize: 10, color: "#ef4444", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
+                        <div style={{ fontSize: 13, color: "#ef4444", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
                           🔴 {getTimeLabel(live.statusRaw, live.elapsed)}
                         </div>
                         <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                           {events.map((e, i) => (
-                            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
+                            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15 }}>
                               <span style={{ color: "#555", minWidth: 32, fontWeight: 700 }}>{e.minute}{e.extra}'</span>
-                              <span style={{ fontSize: 14 }}>{e.icon}</span>
+                              <span style={{ fontSize: 17 }}>{e.icon}</span>
                               <span style={{ color: "#f0f0f0", fontWeight: 600 }}>{e.label}</span>
-                              <span style={{ color: "#555", fontSize: 11, marginLeft: "auto" }}>{e.team?.split(" ").pop()}</span>
+                              <span style={{ color: "#555", fontSize: 14, marginLeft: "auto" }}>{e.team?.split(" ").pop()}</span>
                             </div>
                           ))}
                         </div>
@@ -2212,12 +2212,12 @@ export default function FootballPredictor() {
                     );
                   })()}
                   {matchStatus === "finished" && !h.actual_score && (
-                    <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 700, textAlign: "center", padding: "6px", marginTop: 4 }}>🏁 Fetching final score...</div>
+                    <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, textAlign: "center", padding: "6px", marginTop: 4 }}>🏁 Fetching final score...</div>
                   )}
 
                   {/* Edit and Delete only — no manual score logging */}
                   <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                    <button onClick={() => deletePredict(h.id)} style={{ background: "none", border: "1px solid #f8717133", borderRadius: 6, color: "#f87171", cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "6px 12px", flex: 1 }}>🗑️ Delete</button>
+                    <button onClick={() => deletePredict(h.id)} style={{ background: "none", border: "1px solid #f8717133", borderRadius: 6, color: "#f87171", cursor: "pointer", fontFamily: "inherit", fontSize: 15, padding: "6px 12px", flex: 1 }}>🗑️ Delete</button>
                   </div>
                 </div>
               );
@@ -2230,18 +2230,18 @@ export default function FootballPredictor() {
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)", zIndex: 50, display: "flex", flexDirection: "column" }}>
           {/* Fixed header */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", background: "#0d0d18", borderBottom: "1px solid #1a1a2a", flexShrink: 0 }}>
-            <div style={{ fontSize: 13, color: "#f0f0f0", fontWeight: 700 }}>{viewingPitch.home_team} vs {viewingPitch.away_team}</div>
+            <div style={{ fontSize: 16, color: "#f0f0f0", fontWeight: 700 }}>{viewingPitch.home_team} vs {viewingPitch.away_team}</div>
             <div style={{ display: "flex", gap: 8 }}>
               {!viewingPitch.confirmed_lineup && (
                 <button
                   onClick={() => fetchConfirmedLineup(viewingPitch.home_team, viewingPitch.away_team, selectedLeague, viewingPitch.id)}
                   disabled={lineupFetching}
-                  style={{ background: "none", border: "1px solid #f59e0b44", borderRadius: 6, color: "#f59e0b", cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "6px 12px" }}
+                  style={{ background: "none", border: "1px solid #f59e0b44", borderRadius: 6, color: "#f59e0b", cursor: "pointer", fontFamily: "inherit", fontSize: 15, padding: "6px 12px" }}
                 >
                   {lineupFetching ? "Checking..." : "🔄 Refresh Lineup"}
                 </button>
               )}
-              <button onClick={() => setViewingPitch(null)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#aaa", cursor: "pointer", fontFamily: "inherit", fontSize: 13, padding: "6px 14px" }}>✕ Close</button>
+              <button onClick={() => setViewingPitch(null)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#aaa", cursor: "pointer", fontFamily: "inherit", fontSize: 16, padding: "6px 14px" }}>✕ Close</button>
             </div>
           </div>
           {/* Scrollable pitch content */}
@@ -2259,33 +2259,33 @@ export default function FootballPredictor() {
             {/* Bench & Managers — shown when confirmed lineup is available */}
             {viewingPitch.confirmed_lineup && (
               <div className="card" style={{ marginTop: 12, padding: "14px 16px" }}>
-                <div style={{ fontSize: 11, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🪑 Bench & Managers</div>
+                <div style={{ fontSize: 14, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🪑 Bench & Managers</div>
                 <div style={{ marginBottom: 12 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "#4ade80" }}>{viewingPitch.home_team}</span>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: "#4ade80" }}>{viewingPitch.home_team}</span>
                     {viewingPitch.confirmed_lineup.home?.coach && (
-                      <span style={{ fontSize: 11, color: "#555" }}>👔 {viewingPitch.confirmed_lineup.home.coach}</span>
+                      <span style={{ fontSize: 14, color: "#555" }}>👔 {viewingPitch.confirmed_lineup.home.coach}</span>
                     )}
                   </div>
                   <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
                     {(viewingPitch.confirmed_lineup.home?.substitutes || []).map((p, i) => (
-                      <div key={i} style={{ background: "#1a1a28", border: "1px solid #4ade8044", borderRadius: 20, padding: "4px 10px", fontSize: 12, fontWeight: 600, color: "#ccc", whiteSpace: "nowrap", flexShrink: 0 }}>
-                        <span style={{ color: "#4ade80", marginRight: 4, fontSize: 11 }}>{p.number}</span>{p.name?.split(" ").pop()}
+                      <div key={i} style={{ background: "#1a1a28", border: "1px solid #4ade8044", borderRadius: 20, padding: "4px 10px", fontSize: 15, fontWeight: 600, color: "#ccc", whiteSpace: "nowrap", flexShrink: 0 }}>
+                        <span style={{ color: "#4ade80", marginRight: 4, fontSize: 14 }}>{p.number}</span>{p.name?.split(" ").pop()}
                       </div>
                     ))}
                   </div>
                 </div>
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "#a855f7" }}>{viewingPitch.away_team}</span>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: "#a855f7" }}>{viewingPitch.away_team}</span>
                     {viewingPitch.confirmed_lineup.away?.coach && (
-                      <span style={{ fontSize: 11, color: "#555" }}>👔 {viewingPitch.confirmed_lineup.away.coach}</span>
+                      <span style={{ fontSize: 14, color: "#555" }}>👔 {viewingPitch.confirmed_lineup.away.coach}</span>
                     )}
                   </div>
                   <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
                     {(viewingPitch.confirmed_lineup.away?.substitutes || []).map((p, i) => (
-                      <div key={i} style={{ background: "#1a1a28", border: "1px solid #a855f744", borderRadius: 20, padding: "4px 10px", fontSize: 12, fontWeight: 600, color: "#ccc", whiteSpace: "nowrap", flexShrink: 0 }}>
-                        <span style={{ color: "#a855f7", marginRight: 4, fontSize: 11 }}>{p.number}</span>{p.name?.split(" ").pop()}
+                      <div key={i} style={{ background: "#1a1a28", border: "1px solid #a855f744", borderRadius: 20, padding: "4px 10px", fontSize: 15, fontWeight: 600, color: "#ccc", whiteSpace: "nowrap", flexShrink: 0 }}>
+                        <span style={{ color: "#a855f7", marginRight: 4, fontSize: 14 }}>{p.number}</span>{p.name?.split(" ").pop()}
                       </div>
                     ))}
                   </div>
@@ -2300,25 +2300,25 @@ export default function FootballPredictor() {
         <div style={{ position: "fixed", inset: 0, background: "#0a0a0f", zIndex: 50, overflowY: "auto" }}>
           <div style={{ maxWidth: 600, margin: "0 auto", padding: "16px 16px 60px", display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0" }}>
-              <div style={{ fontSize: 14, color: "#f0f0f0", fontWeight: 700 }}>{viewingAnalysis.home_team} vs {viewingAnalysis.away_team}</div>
-              <button onClick={() => setViewingAnalysis(null)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 13, padding: "6px 14px" }}>✕ Close</button>
+              <div style={{ fontSize: 17, color: "#f0f0f0", fontWeight: 700 }}>{viewingAnalysis.home_team} vs {viewingAnalysis.away_team}</div>
+              <button onClick={() => setViewingAnalysis(null)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 16, padding: "6px 14px" }}>✕ Close</button>
             </div>
 
             {/* Score comparison */}
             <div className="reveal-box">
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 12, alignItems: "center" }}>
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 11, color: "#4ade80", fontWeight: 700, marginBottom: 8 }}>👤 Your Call</div>
+                  <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, marginBottom: 8 }}>👤 Your Call</div>
                   <div style={{ fontSize: 40, fontWeight: 900, color: "#4ade80" }}>{viewingAnalysis.user_prediction}</div>
                 </div>
-                <div style={{ textAlign: "center", fontSize: 16, color: "#333" }}>vs</div>
+                <div style={{ textAlign: "center", fontSize: 18, color: "#333" }}>vs</div>
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 700, marginBottom: 8 }}>🤖 AI Predicts</div>
+                  <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, marginBottom: 8 }}>🤖 AI Predicts</div>
                   <div style={{ fontSize: 40, fontWeight: 900, color: "#f59e0b" }}>{viewingAnalysis.ai_prediction}</div>
                 </div>
               </div>
               {viewingAnalysis.actual_score && (
-                <div style={{ textAlign: "center", marginTop: 12, padding: "8px", background: resultColor(viewingAnalysis.result) + "11", borderRadius: 8, fontSize: 13, fontWeight: 700, color: resultColor(viewingAnalysis.result) }}>
+                <div style={{ textAlign: "center", marginTop: 12, padding: "8px", background: resultColor(viewingAnalysis.result) + "11", borderRadius: 8, fontSize: 16, fontWeight: 700, color: resultColor(viewingAnalysis.result) }}>
                   Final: {viewingAnalysis.actual_score} · {viewingAnalysis.result === "user" ? "🏆 You beat the AI!" : viewingAnalysis.result === "ai" ? "🤖 AI wins" : "🤝 Tie"}
                 </div>
               )}
@@ -2327,57 +2327,57 @@ export default function FootballPredictor() {
             {/* AI Verdict */}
             {viewingAnalysis.ai_data?.verdict && (
               <div className="card">
-                <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>🤖 AI Verdict</div>
-                <p style={{ fontSize: 14, lineHeight: 1.7, color: "#ccc" }}>{viewingAnalysis.ai_data.verdict}</p>
+                <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>🤖 AI Verdict</div>
+                <p style={{ fontSize: 17, lineHeight: 1.7, color: "#ccc" }}>{viewingAnalysis.ai_data.verdict}</p>
               </div>
             )}
 
             {/* Key battle */}
             {viewingAnalysis.ai_data?.keyBattle && (
               <div className="card">
-                <div style={{ fontSize: 11, color: "#888", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>⚔️ Key Tactical Battle</div>
-                <p style={{ fontSize: 13, color: "#aaa", lineHeight: 1.6 }}>{viewingAnalysis.ai_data.keyBattle}</p>
+                <div style={{ fontSize: 14, color: "#888", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>⚔️ Key Tactical Battle</div>
+                <p style={{ fontSize: 16, color: "#aaa", lineHeight: 1.6 }}>{viewingAnalysis.ai_data.keyBattle}</p>
               </div>
             )}
 
             {/* Wildcard */}
             {viewingAnalysis.ai_data?.wildcard && (
               <div className="card" style={{ borderColor: "#2a1f00", background: "#13100a" }}>
-                <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>🃏 Wildcard</div>
-                <p style={{ fontSize: 13, color: "#aaa", lineHeight: 1.6 }}>{viewingAnalysis.ai_data.wildcard}</p>
+                <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>🃏 Wildcard</div>
+                <p style={{ fontSize: 16, color: "#aaa", lineHeight: 1.6 }}>{viewingAnalysis.ai_data.wildcard}</p>
               </div>
             )}
 
             {/* Bench & Managers — from saved confirmedLineup */}
             {viewingAnalysis.confirmed_lineup && (
               <div className="card" style={{ padding: "14px 16px" }}>
-                <div style={{ fontSize: 11, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🪑 Bench & Managers</div>
+                <div style={{ fontSize: 14, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🪑 Bench & Managers</div>
                 <div style={{ marginBottom: 12 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "#4ade80" }}>{viewingAnalysis.home_team}</span>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: "#4ade80" }}>{viewingAnalysis.home_team}</span>
                     {viewingAnalysis.confirmed_lineup.home?.coach && (
-                      <span style={{ fontSize: 11, color: "#555" }}>👔 {viewingAnalysis.confirmed_lineup.home?.coach}</span>
+                      <span style={{ fontSize: 14, color: "#555" }}>👔 {viewingAnalysis.confirmed_lineup.home?.coach}</span>
                     )}
                   </div>
                   <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
                     {(viewingAnalysis.confirmed_lineup.home?.substitutes || []).map((p, i) => (
-                      <div key={i} style={{ background: "#1a1a28", border: "1px solid #2a2a40", borderRadius: 20, padding: "4px 10px", fontSize: 12, fontWeight: 600, color: "#ccc", whiteSpace: "nowrap", flexShrink: 0 }}>
-                        <span style={{ color: "#4ade80", marginRight: 4, fontSize: 11 }}>{p.number}</span>{p.name?.split(" ").pop()}
+                      <div key={i} style={{ background: "#1a1a28", border: "1px solid #2a2a40", borderRadius: 20, padding: "4px 10px", fontSize: 15, fontWeight: 600, color: "#ccc", whiteSpace: "nowrap", flexShrink: 0 }}>
+                        <span style={{ color: "#4ade80", marginRight: 4, fontSize: 14 }}>{p.number}</span>{p.name?.split(" ").pop()}
                       </div>
                     ))}
                   </div>
                 </div>
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "#a855f7" }}>{viewingAnalysis.away_team}</span>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: "#a855f7" }}>{viewingAnalysis.away_team}</span>
                     {viewingAnalysis.confirmed_lineup.away?.coach && (
-                      <span style={{ fontSize: 11, color: "#555" }}>👔 {viewingAnalysis.confirmed_lineup.away?.coach}</span>
+                      <span style={{ fontSize: 14, color: "#555" }}>👔 {viewingAnalysis.confirmed_lineup.away?.coach}</span>
                     )}
                   </div>
                   <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
                     {(viewingAnalysis.confirmed_lineup.away?.substitutes || []).map((p, i) => (
-                      <div key={i} style={{ background: "#1a1a28", border: "1px solid #2a2a40", borderRadius: 20, padding: "4px 10px", fontSize: 12, fontWeight: 600, color: "#ccc", whiteSpace: "nowrap", flexShrink: 0 }}>
-                        <span style={{ color: "#a855f7", marginRight: 4, fontSize: 11 }}>{p.number}</span>{p.name?.split(" ").pop()}
+                      <div key={i} style={{ background: "#1a1a28", border: "1px solid #2a2a40", borderRadius: 20, padding: "4px 10px", fontSize: 15, fontWeight: 600, color: "#ccc", whiteSpace: "nowrap", flexShrink: 0 }}>
+                        <span style={{ color: "#a855f7", marginRight: 4, fontSize: 14 }}>{p.number}</span>{p.name?.split(" ").pop()}
                       </div>
                     ))}
                   </div>
