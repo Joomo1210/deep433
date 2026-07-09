@@ -2393,6 +2393,207 @@ function MatchH2HGraphic() {
   );
 }
 
+// ─── TRANSFER FIT GRAPHIC ────────────────────────────────────────────────────
+function TransferFitGraphic() {
+  const cardRef = useRef(null);
+  const [leagueId, setLeagueId] = useState("pl");
+
+  const [searchTarget, setSearchTarget] = useState("");
+  const [suggestTarget, setSuggestTarget] = useState([]);
+  const [target, setTarget] = useState(null);
+  const [searchingTarget, setSearchingTarget] = useState(false);
+
+  const [searchIncumbent, setSearchIncumbent] = useState("");
+  const [suggestIncumbent, setSuggestIncumbent] = useState([]);
+  const [incumbent, setIncumbent] = useState(null);
+  const [searchingIncumbent, setSearchingIncumbent] = useState(false);
+
+  const [downloading, setDownloading] = useState(false);
+  const [seasonLoading, setSeasonLoading] = useState(false);
+
+  const searchPlayer = async (query, slot) => {
+    if (query.length < 3) {
+      slot === "target" ? setSuggestTarget([]) : setSuggestIncumbent([]);
+      return;
+    }
+    slot === "target" ? setSearchingTarget(true) : setSearchingIncumbent(true);
+    try {
+      const r = await fetch(`/api/team-stats?mode=playersearch&query=${encodeURIComponent(query)}&leagueId=${leagueId}`);
+      const d = await r.json();
+      slot === "target" ? setSuggestTarget(d.players || []) : setSuggestIncumbent(d.players || []);
+    } catch {}
+    slot === "target" ? setSearchingTarget(false) : setSearchingIncumbent(false);
+  };
+
+  const selectPlayer = async (player, slot) => {
+    setSeasonLoading(true);
+    try {
+      const season = leagueId === "wc2026" ? 2026 : 2025;
+      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${player.id}&season=${season}`);
+      const d = await r.json();
+      const enriched = d.available ? { ...player, ...d } : player;
+      if (slot === "target") { setTarget(enriched); setSuggestTarget([]); setSearchTarget(enriched.name); }
+      else { setIncumbent(enriched); setSuggestIncumbent([]); setSearchIncumbent(enriched.name); }
+    } catch {
+      if (slot === "target") setTarget(player); else setIncumbent(player);
+    }
+    setSeasonLoading(false);
+  };
+
+  const download = async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      if (!window.html2canvas) {
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+        document.head.appendChild(s);
+        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
+      }
+      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
+      const link = document.createElement("a");
+      link.download = `deep433-transfer-fit-${target?.name}-vs-${incumbent?.name}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const FitRow = ({ label, val1, val2, higherIsBetter = true }) => {
+    const v1 = parseFloat(val1) || 0;
+    const v2 = parseFloat(val2) || 0;
+    const p1Better = higherIsBetter ? v1 > v2 : v1 < v2;
+    const p2Better = higherIsBetter ? v2 > v1 : v2 < v1;
+    return (
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 9 }}>
+        <span style={{ fontSize: 18, fontWeight: p1Better ? 900 : 700, color: "#a855f7", opacity: p1Better ? 1 : 0.65 }}>{val1 ?? "—"}</span>
+        <span style={{ fontSize: 10, color: "#999", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
+        <span style={{ fontSize: 18, fontWeight: p2Better ? 900 : 700, color: "#4ade80", opacity: p2Better ? 1 : 0.65 }}>{val2 ?? "—"}</span>
+      </div>
+    );
+  };
+
+  const PlayerSearchSlot = ({ label, search, setSearch, suggestions, setSuggestions, player, searching, slot, color }) => (
+    <div style={{ position: "relative" }}>
+      <div style={{ fontSize: 10, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{label}</div>
+      <input
+        placeholder="Search player..."
+        value={player ? player.name : search}
+        onChange={e => {
+          setSearch(e.target.value);
+          if (slot === "target") setTarget(null); else setIncumbent(null);
+          searchPlayer(e.target.value, slot);
+        }}
+        style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${player ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+      />
+      {searching && <div style={{ position: "absolute", right: 10, top: 38, fontSize: 10, color: "#555" }}>...</div>}
+      {suggestions.length > 0 && !player && (
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, zIndex: 20, marginTop: 4, maxHeight: 220, overflowY: "auto" }}>
+          {suggestions.map(p => (
+            <div key={p.id} onClick={() => selectPlayer(p, slot)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", cursor: "pointer", borderBottom: "1px solid #1a1a2a" }}>
+              {p.photo && <img src={p.photo} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover" }} />}
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>{p.name}</div>
+                <div style={{ fontSize: 10, color: "#555" }}>{p.team}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {LEAGUE_OPTIONS.map(l => (
+          <button key={l.id} onClick={() => { setLeagueId(l.id); setTarget(null); setIncumbent(null); setSearchTarget(""); setSearchIncumbent(""); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "5px 12px" }}>
+            {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
+            {l.label}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ fontSize: 11, color: "#666" }}>Compare a transfer target against a current squad player in a similar role.</div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <PlayerSearchSlot label="🎯 Transfer Target" search={searchTarget} setSearch={setSearchTarget} suggestions={suggestTarget} setSuggestions={setSuggestTarget} player={target} searching={searchingTarget} slot="target" color="#a855f7" />
+        <PlayerSearchSlot label="🏠 Current Squad" search={searchIncumbent} setSearch={setSearchIncumbent} suggestions={suggestIncumbent} setSuggestions={setSuggestIncumbent} player={incumbent} searching={searchingIncumbent} slot="incumbent" color="#4ade80" />
+      </div>
+
+      {seasonLoading && <div style={{ textAlign: "center", color: "#555", fontSize: 12 }}>Loading season stats...</div>}
+
+      {target && incumbent && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "22px 18px 18px" }}>
+              <div style={{ textAlign: "center", marginBottom: 14 }}>
+                <span style={{ fontSize: 11, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5 }}>🔄 Transfer Fit — Full Season</span>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16 }}>
+                <div style={{ textAlign: "center" }}>
+                  {target.photo && <img src={target.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #a855f7", margin: "0 auto 8px" }} />}
+                  <div style={{ fontSize: 15, fontWeight: 900, color: "#a855f7" }}>{target.name}</div>
+                  <div style={{ fontSize: 10, color: "#666", marginTop: 2 }}>{target.team}</div>
+                  <div style={{ fontSize: 9, color: "#a855f7", fontWeight: 700, marginTop: 2, opacity: 0.7 }}>TARGET</div>
+                </div>
+                <div style={{ textAlign: "center", padding: "0 8px" }}>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: "#333" }}>VS</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  {incumbent.photo && <img src={incumbent.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 8px" }} />}
+                  <div style={{ fontSize: 15, fontWeight: 900, color: "#4ade80" }}>{incumbent.name}</div>
+                  <div style={{ fontSize: 10, color: "#666", marginTop: 2 }}>{incumbent.team}</div>
+                  <div style={{ fontSize: 9, color: "#4ade80", fontWeight: 700, marginTop: 2, opacity: 0.7 }}>SQUAD</div>
+                </div>
+              </div>
+
+              <div style={{ height: 1, background: "#1a1a2a", marginBottom: 10 }} />
+
+              <div style={{
+                background: "linear-gradient(135deg, #a855f714, #4ade800e)",
+                border: "1px solid #a855f733",
+                borderRadius: 12, padding: "14px 16px", marginBottom: 10,
+              }}>
+                <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8, textAlign: "center" }}>⭐ Season Rating</div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: 32, fontWeight: 900, color: "#a855f7" }}>{target.rating ? parseFloat(target.rating).toFixed(1) : "—"}</span>
+                  <span style={{ fontSize: 32, fontWeight: 900, color: "#4ade80" }}>{incumbent.rating ? parseFloat(incumbent.rating).toFixed(1) : "—"}</span>
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                <BentoBox title="Output" icon="⚽" color="#a855f7">
+                  <FitRow label="Goals" val1={target.goals} val2={incumbent.goals} />
+                  <FitRow label="Assists" val1={target.assists} val2={incumbent.assists} />
+                  <FitRow label="Apps" val1={target.appearances} val2={incumbent.appearances} />
+                </BentoBox>
+
+                <BentoBox title="Progression" icon="🎨" color="#60a5fa">
+                  <FitRow label="Key Passes" val1={target.keyPasses} val2={incumbent.keyPasses} />
+                  <FitRow label="Dribbles" val1={target.dribbles} val2={incumbent.dribbles} />
+                  <FitRow label="Shots" val1={target.shots} val2={incumbent.shots} />
+                </BentoBox>
+              </div>
+
+              <BentoBox title="Defensive Work" icon="🛡️" color="#f59e0b">
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                  <FitRow label="Tackles" val1={target.tackles} val2={incumbent.tackles} />
+                  <FitRow label="Cards" val1={target.yellowCards} val2={incumbent.yellowCards} higherIsBetter={false} />
+                </div>
+              </BentoBox>
+            </div>
+          </GraphicCard>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#a855f7,#818cf8)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function DataGraphics({ history = [], supabase }) {
   const [activeSection, setActiveSection] = useState("match");
 
@@ -2402,6 +2603,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "h2h",      label: "🆚 Player H2H" },
     { id: "matchh2h", label: "📋 Match H2H" },
     { id: "glove",    label: "Golden Glove" },
+    { id: "transfer", label: "🔄 Transfer Fit" },
     { id: "match",    label: "📈 Match Stats" },
     { id: "player",   label: "⭐ Player Ratings" },
     { id: "top",      label: "🥇 Leaderboard" },
@@ -2427,6 +2629,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "h2h"      && <PlayerH2HGraphic />}
       {activeSection === "matchh2h" && <MatchH2HGraphic />}
       {activeSection === "glove"    && <GoldenGloveGraphic />}
+      {activeSection === "transfer" && <TransferFitGraphic />}
       {activeSection === "match"    && <MatchStatsGraphic />}
       {activeSection === "player"   && <PlayerRatingsGraphic />}
       {activeSection === "top"      && <TopScorersGraphic />}
