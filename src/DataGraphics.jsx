@@ -2019,18 +2019,43 @@ function PlayerH2HGraphic() {
                 </div>
               </div>
 
-              <div style={{ height: 1, background: "#1a1a2a", marginBottom: 8 }} />
+              <div style={{ height: 1, background: "#1a1a2a", marginBottom: 10 }} />
 
-              <CompareRow label="Rating" val1={player1.rating ? parseFloat(player1.rating).toFixed(1) : "—"} val2={player2.rating ? parseFloat(player2.rating).toFixed(1) : "—"} />
-              <CompareRow label="Goals" val1={player1.goals} val2={player2.goals} />
-              <CompareRow label="Assists" val1={player1.assists} val2={player2.assists} />
-              <CompareRow label="Apps" val1={player1.appearances} val2={player2.appearances} />
-              <CompareRow label="Shots" val1={player1.shots} val2={player2.shots} />
-              <CompareRow label="On Target" val1={player1.shotsOnTarget} val2={player2.shotsOnTarget} />
-              <CompareRow label="Key Passes" val1={player1.keyPasses} val2={player2.keyPasses} />
-              <CompareRow label="Dribbles" val1={player1.dribbles} val2={player2.dribbles} />
-              <CompareRow label="Tackles" val1={player1.tackles} val2={player2.tackles} />
-              <CompareRow label="Cards" val1={player1.yellowCards} val2={player2.yellowCards} higherIsBetter={false} />
+              {/* HERO: Rating comparison */}
+              <div style={{
+                background: "linear-gradient(135deg, #4ade8014, #f59e0b0e)",
+                border: "1px solid #4ade8033",
+                borderRadius: 12, padding: "14px 16px", marginBottom: 10,
+              }}>
+                <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8, textAlign: "center" }}>⭐ Rating</div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: 32, fontWeight: 900, color: "#4ade80" }}>{player1.rating ? parseFloat(player1.rating).toFixed(1) : "—"}</span>
+                  <span style={{ fontSize: 32, fontWeight: 900, color: "#f59e0b" }}>{player2.rating ? parseFloat(player2.rating).toFixed(1) : "—"}</span>
+                </div>
+              </div>
+
+              {/* Bento grid — 2x2 */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                <BentoBox title="Attack" icon="🎯" color="#4ade80">
+                  <CompareRow label="Goals" val1={player1.goals} val2={player2.goals} />
+                  <CompareRow label="Assists" val1={player1.assists} val2={player2.assists} />
+                  <CompareRow label="Shots" val1={player1.shots} val2={player2.shots} />
+                  <CompareRow label="On Target" val1={player1.shotsOnTarget} val2={player2.shotsOnTarget} />
+                </BentoBox>
+
+                <BentoBox title="Creativity" icon="🎨" color="#60a5fa">
+                  <CompareRow label="Key Passes" val1={player1.keyPasses} val2={player2.keyPasses} />
+                  <CompareRow label="Dribbles" val1={player1.dribbles} val2={player2.dribbles} />
+                  <CompareRow label="Apps" val1={player1.appearances} val2={player2.appearances} />
+                </BentoBox>
+              </div>
+
+              <BentoBox title="Involvement" icon="⏱️" color="#c084fc">
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                  <CompareRow label="Tackles" val1={player1.tackles} val2={player2.tackles} />
+                  <CompareRow label="Cards" val1={player1.yellowCards} val2={player2.yellowCards} higherIsBetter={false} />
+                </div>
+              </BentoBox>
             </div>
           </GraphicCard>
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
