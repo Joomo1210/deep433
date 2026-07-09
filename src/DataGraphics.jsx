@@ -60,7 +60,7 @@ function FixturePicker({ onSelect }) {
       {/* League selector */}
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         {LEAGUE_OPTIONS.map(l => (
-          <button key={l.id} onClick={() => setLeagueId(l.id)} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "5px 12px" }}>
+          <button key={l.id} onClick={() => setLeagueId(l.id)} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px" }}>
             {l.label}
           </button>
         ))}
@@ -71,16 +71,16 @@ function FixturePicker({ onSelect }) {
         placeholder="🔍 Search team..."
         value={search}
         onChange={e => setSearch(e.target.value)}
-        style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 14px", outline: "none", fontFamily: "inherit" }}
+        style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 16, padding: "9px 14px", outline: "none", fontFamily: "inherit" }}
       />
 
-      {loading && <div style={{ fontSize: 12, color: "#555", textAlign: "center" }}>Loading fixtures...</div>}
+      {loading && <div style={{ fontSize: 15, color: "#555", textAlign: "center" }}>Loading fixtures...</div>}
 
       {/* Fixture list */}
       <div style={{ maxHeight: 260, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
         {Object.entries(byDate).map(([date, dateFixtures]) => (
           <div key={date}>
-            <div style={{ fontSize: 10, color: date === "Today" ? "#4ade80" : date === "Yesterday" ? "#888" : date === "Tomorrow" ? "#f59e0b" : "#444", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, padding: "6px 0 4px" }}>{date}</div>
+            <div style={{ fontSize: 13, color: date === "Today" ? "#4ade80" : date === "Yesterday" ? "#888" : date === "Tomorrow" ? "#f59e0b" : "#444", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, padding: "6px 0 4px" }}>{date}</div>
             {dateFixtures.map((f, i) => (
               <div
                 key={i}
@@ -89,19 +89,19 @@ function FixturePicker({ onSelect }) {
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   {f.homeLogo && <img src={f.homeLogo} alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />}
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>{f.home}</span>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0" }}>{f.home}</span>
                 </div>
-                <div style={{ textAlign: "center", fontSize: 11 }}>
+                <div style={{ textAlign: "center", fontSize: 14 }}>
                   {f.status === "finished"
                     ? <span style={{ color: "#888", fontWeight: 800 }}>{f.score.home}-{f.score.away}</span>
                     : f.status === "live"
                     ? <span style={{ color: "#ef4444", fontWeight: 700 }}>🔴 LIVE</span>
                     : <span style={{ color: "#555" }}>{new Date(f.kickoff).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} BST</span>
                   }
-                  <div style={{ fontSize: 9, color: "#333", marginTop: 2 }}>{f.round}</div>
+                  <div style={{ fontSize: 12, color: "#333", marginTop: 2 }}>{f.round}</div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>{f.away}</span>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0" }}>{f.away}</span>
                   {f.awayLogo && <img src={f.awayLogo} alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />}
                 </div>
               </div>
@@ -140,9 +140,9 @@ function StatRow({ label, home, away, icon }) {
   return (
     <div style={{ marginBottom: 10 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-        <span style={{ fontSize: 15, fontWeight: 800, color: "#4ade80", minWidth: 36 }}>{home ?? "0"}</span>
-        <span style={{ fontSize: 10, color: "#aaa", fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>{icon && icon + " "}{label}</span>
-        <span style={{ fontSize: 15, fontWeight: 800, color: "#f59e0b", minWidth: 36, textAlign: "right" }}>{away ?? "0"}</span>
+        <span style={{ fontSize: 17, fontWeight: 800, color: "#4ade80", minWidth: 36 }}>{home ?? "0"}</span>
+        <span style={{ fontSize: 13, color: "#aaa", fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>{icon && icon + " "}{label}</span>
+        <span style={{ fontSize: 17, fontWeight: 800, color: "#f59e0b", minWidth: 36, textAlign: "right" }}>{away ?? "0"}</span>
       </div>
       <div style={{ display: "flex", height: 6, borderRadius: 3, overflow: "hidden" }}>
         <div style={{ width: `${homePct}%`, background: "#4ade80" }} />
@@ -168,8 +168,8 @@ function GraphicCard({ children, cardRef, label }) {
       >
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
         <div style={{ position: "absolute", top: 12, right: 14, zIndex: 2, display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: 10, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
-          <span style={{ fontSize: 9, color: "#888", fontWeight: 600 }}>deep433.com</span>
+          <span style={{ fontSize: 13, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
+          <span style={{ fontSize: 12, color: "#888", fontWeight: 600 }}>deep433.com</span>
         </div>
         {/* Centre background watermark */}
         <div style={{
@@ -188,7 +188,7 @@ function GraphicCard({ children, cardRef, label }) {
           {children}
         </div>
       </div>
-      <div style={{ fontSize: 10, color: "#555", textAlign: "center", marginTop: 8 }}>{label}</div>
+      <div style={{ fontSize: 13, color: "#555", textAlign: "center", marginTop: 8 }}>{label}</div>
     </div>
   );
 }
@@ -230,9 +230,9 @@ function AnimatedStatBar({ label, homeVal, awayVal, unit = "", animate }) {
   return (
     <div style={{ marginBottom: 10 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-        <span style={{ fontSize: 15, fontWeight: 900, color: "#4ade80" }}>{displayHv.toFixed(unit === "%" ? 0 : (Number.isInteger(hv) ? 0 : 1))}{unit}</span>
-        <span style={{ fontSize: 9, color: "#aaa", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
-        <span style={{ fontSize: 15, fontWeight: 900, color: "#f59e0b" }}>{displayAv.toFixed(unit === "%" ? 0 : (Number.isInteger(av) ? 0 : 1))}{unit}</span>
+        <span style={{ fontSize: 17, fontWeight: 900, color: "#4ade80" }}>{displayHv.toFixed(unit === "%" ? 0 : (Number.isInteger(hv) ? 0 : 1))}{unit}</span>
+        <span style={{ fontSize: 12, color: "#aaa", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
+        <span style={{ fontSize: 17, fontWeight: 900, color: "#f59e0b" }}>{displayAv.toFixed(unit === "%" ? 0 : (Number.isInteger(av) ? 0 : 1))}{unit}</span>
       </div>
       <div style={{ display: "flex", height: 6, borderRadius: 3, overflow: "hidden", background: "#1a1a24" }}>
         <div style={{ width: expanded ? `${homePct}%` : "0%", background: "#4ade80", transition: "width 0.9s cubic-bezier(0.16,1,0.3,1)" }} />
@@ -253,8 +253,8 @@ function BentoBox({ title, icon, color, children, span }) {
       gridColumn: span ? "span " + span : undefined,
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-        <span style={{ fontSize: 12 }}>{icon}</span>
-        <span style={{ fontSize: 11, color, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 }}>{title}</span>
+        <span style={{ fontSize: 15 }}>{icon}</span>
+        <span style={{ fontSize: 14, color, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 }}>{title}</span>
       </div>
       {children}
     </div>
@@ -323,17 +323,17 @@ function MatchStatsGraphic() {
       ) : (
         <>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
-            <button onClick={() => { setSelectedFixture(null); setData(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "4px 10px" }}>Change</button>
+            <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
+            <button onClick={() => { setSelectedFixture(null); setData(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
           </div>
           {!data && (
-            <button onClick={() => fetch_()} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
+            <button onClick={() => fetch_()} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "10px" }}>
               {loading ? "Loading stats..." : "Load Match Stats"}
             </button>
           )}
         </>
       )}
-      {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
+      {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
 
       {s && (
         <>
@@ -343,14 +343,14 @@ function MatchStatsGraphic() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16, marginTop: 8 }}>
                 <div style={{ textAlign: "center" }}>
                   {s.home.logo && <img src={s.home.logo} alt="" crossOrigin="anonymous" style={{ width: 34, height: 34, objectFit: "contain", marginBottom: 4, display: "block", margin: "0 auto 6px" }} />}
-                  <div style={{ fontSize: 12, fontWeight: 800, color: "#4ade80" }}>{s.home.team}</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "#4ade80" }}>{s.home.team}</div>
                 </div>
                 <div style={{ textAlign: "center", padding: "0 12px" }}>
-                  <div style={{ fontSize: 9, color: "#888", textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Match Stats</div>
+                  <div style={{ fontSize: 12, color: "#888", textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Match Stats</div>
                 </div>
                 <div style={{ textAlign: "center" }}>
                   {s.away.logo && <img src={s.away.logo} alt="" crossOrigin="anonymous" style={{ width: 34, height: 34, objectFit: "contain", marginBottom: 4, display: "block", margin: "0 auto 6px" }} />}
-                  <div style={{ fontSize: 12, fontWeight: 800, color: "#f59e0b" }}>{s.away.team}</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "#f59e0b" }}>{s.away.team}</div>
                 </div>
               </div>
 
@@ -360,7 +360,7 @@ function MatchStatsGraphic() {
                 border: "1px solid #4ade8033",
                 borderRadius: 12, padding: "16px 18px", marginBottom: 10,
               }}>
-                <div style={{ fontSize: 9, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 10, textAlign: "center" }}>⚽ Possession</div>
+                <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 10, textAlign: "center" }}>⚽ Possession</div>
                 <PossessionHero home={s.home.stats.possession} awayVal={s.away.stats.possession} animate={animate} />
               </div>
 
@@ -387,7 +387,7 @@ function MatchStatsGraphic() {
               </BentoBox>
             </div>
           </GraphicCard>
-          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%" }}>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
           </button>
         </>
@@ -480,23 +480,23 @@ function PlayerRatingsGraphic() {
       ) : (
         <>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
-            <button onClick={() => { setSelectedFixture(null); setData(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "4px 10px" }}>Change</button>
+            <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
+            <button onClick={() => { setSelectedFixture(null); setData(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
           </div>
           {!data && (
-            <button onClick={fetch_} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
+            <button onClick={fetch_} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "10px" }}>
               {loading ? "Loading ratings..." : "Load Player Ratings"}
             </button>
           )}
         </>
       )}
-      {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
+      {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
 
       {data && (
         <>
           <div style={{ display: "flex", gap: 8 }}>
             {["home", "away"].map(t => (
-              <button key={t} onClick={() => setSelectedTeam(t)} style={{ flex: 1, background: selectedTeam === t ? "#4ade80" : "none", border: `1px solid ${selectedTeam === t ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: selectedTeam === t ? "#0a0f0a" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "8px" }}>
+              <button key={t} onClick={() => setSelectedTeam(t)} style={{ flex: 1, background: selectedTeam === t ? "#4ade80" : "none", border: `1px solid ${selectedTeam === t ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: selectedTeam === t ? "#0a0f0a" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "8px" }}>
                 {data[t]?.team}
               </button>
             ))}
@@ -507,18 +507,18 @@ function PlayerRatingsGraphic() {
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, marginTop: 8 }}>
                 {teamData?.logo && <img src={teamData.logo} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 900, color: "#f0f0f0" }}>{teamData?.team}</div>
-                  <div style={{ fontSize: 10, color: "#555" }}>Player Ratings</div>
+                  <div style={{ fontSize: 17, fontWeight: 900, color: "#f0f0f0" }}>{teamData?.team}</div>
+                  <div style={{ fontSize: 13, color: "#555" }}>Player Ratings</div>
                 </div>
               </div>
               <div style={{ height: 1, background: "#1a1a2a", marginBottom: 12 }} />
               {players.map((p, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid #0f0f1a" }}>
-                  <div style={{ width: 24, textAlign: "center", fontSize: 11, color: "#555", fontWeight: 700 }}>{i + 1}</div>
+                  <div style={{ width: 24, textAlign: "center", fontSize: 14, color: "#555", fontWeight: 700 }}>{i + 1}</div>
                   {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                    <div style={{ fontSize: 10, color: "#555" }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                    <div style={{ fontSize: 13, color: "#555" }}>
                       {p.position} · {p.minutesPlayed}'
                       {p.goals ? ` · ⚽ ${p.goals}` : ""}
                       {p.assists ? ` · 🎯 ${p.assists}` : ""}
@@ -526,14 +526,14 @@ function PlayerRatingsGraphic() {
                       {p.redCards ? " · 🟥" : ""}
                     </div>
                   </div>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: ratingColor(p.rating), minWidth: 40, textAlign: "right" }}>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: ratingColor(p.rating), minWidth: 40, textAlign: "right" }}>
                     {p.rating ? parseFloat(p.rating).toFixed(1) : "—"}
                   </div>
                 </div>
               ))}
             </div>
           </GraphicCard>
-          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%" }}>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
           </button>
         </>
@@ -616,7 +616,7 @@ function TopScorersGraphic() {
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         {LEAGUE_OPTIONS.slice(0, 7).map(l => (
-          <button key={l.id} onClick={() => setLeagueId(l.id)} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
+          <button key={l.id} onClick={() => setLeagueId(l.id)} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
             {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
             {l.label}
           </button>
@@ -624,15 +624,15 @@ function TopScorersGraphic() {
       </div>
       <div style={{ display: "flex", gap: 6 }}>
         {["scorers", "assists", "cards"].map(t => (
-          <button key={t} onClick={() => setType(t)} style={{ flex: 1, background: type === t ? "#a855f7" : "none", border: `1px solid ${type === t ? "#a855f7" : "#2a2a3a"}`, borderRadius: 8, color: type === t ? "#fff" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "8px" }}>
+          <button key={t} onClick={() => setType(t)} style={{ flex: 1, background: type === t ? "#a855f7" : "none", border: `1px solid ${type === t ? "#a855f7" : "#2a2a3a"}`, borderRadius: 8, color: type === t ? "#fff" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "8px" }}>
             {typeIcons[t]} {typeLabels[t]}
           </button>
         ))}
       </div>
-      <button onClick={fetch_} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
+      <button onClick={fetch_} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "10px" }}>
         {loading ? "Loading..." : "Load Leaderboard"}
       </button>
-      {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
+      {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
 
       {data && (
         <>
@@ -642,10 +642,10 @@ function TopScorersGraphic() {
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, marginTop: 8 }}>
                 {LEAGUE_LOGOS[leagueId] && <img src={LEAGUE_LOGOS[leagueId]} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 15, fontWeight: 900, color: "#f0f0f0" }}>{typeLabels[type]}</div>
-                  <div style={{ fontSize: 10, color: "#555" }}>{LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label}</div>
+                  <div style={{ fontSize: 17, fontWeight: 900, color: "#f0f0f0" }}>{typeLabels[type]}</div>
+                  <div style={{ fontSize: 13, color: "#555" }}>{LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label}</div>
                 </div>
-                <div style={{ fontSize: 9, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{statLabel[type]}</div>
+                <div style={{ fontSize: 12, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{statLabel[type]}</div>
               </div>
               <div style={{ height: 1, background: "#1a1a2a", marginBottom: 8 }} />
 
@@ -694,8 +694,8 @@ function TopScorersGraphic() {
                       <div style={{ fontSize: isTop3 ? 14 : 12, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
                       <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
                         {p.teamLogo && <img src={p.teamLogo} alt="" crossOrigin="anonymous" style={{ width: 12, height: 12, objectFit: "contain" }} />}
-                        <span style={{ fontSize: 10, color: "#555" }}>{p.team}</span>
-                        {secondary && <span style={{ fontSize: 9, color: "#444", marginLeft: 4 }}>· {secondary}</span>}
+                        <span style={{ fontSize: 13, color: "#555" }}>{p.team}</span>
+                        {secondary && <span style={{ fontSize: 12, color: "#444", marginLeft: 4 }}>· {secondary}</span>}
                       </div>
                     </div>
                     {/* Stat value */}
@@ -707,7 +707,7 @@ function TopScorersGraphic() {
               })}
             </div>
           </GraphicCard>
-          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%" }}>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
           </button>
         </>
@@ -772,14 +772,14 @@ function TeamStatsGraphic() {
   };
 
   const formDot = (r) => (
-    <div style={{ width: 22, height: 22, borderRadius: "50%", background: r === "W" ? "#4ade80" : r === "D" ? "#a78bfa" : "#f87171", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, color: "#0a0a0f" }}>{r}</div>
+    <div style={{ width: 22, height: 22, borderRadius: "50%", background: r === "W" ? "#4ade80" : r === "D" ? "#a78bfa" : "#f87171", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900, color: "#0a0a0f" }}>{r}</div>
   );
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         {LEAGUE_OPTIONS.slice(1).map(l => (
-          <button key={l.id} onClick={() => { setLeagueId(l.id); setData(null); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
+          <button key={l.id} onClick={() => { setLeagueId(l.id); setData(null); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
             {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
             {l.label}
           </button>
@@ -797,17 +797,17 @@ function TeamStatsGraphic() {
             setData(null);
             searchTeams(e.target.value);
           }}
-          style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${selectedTeam ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "10px 14px", outline: "none", fontFamily: "inherit" }}
+          style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${selectedTeam ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 17, padding: "10px 14px", outline: "none", fontFamily: "inherit" }}
         />
-        {searching && <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: "#555" }}>Searching...</div>}
+        {searching && <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 14, color: "#555" }}>Searching...</div>}
         {teamSuggestions.length > 0 && !selectedTeam && (
           <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, zIndex: 10, marginTop: 4, maxHeight: 200, overflowY: "auto" }}>
             {teamSuggestions.map(t => (
               <div key={t.id} onClick={() => { setSelectedTeam(t); setTeamSearch(t.name); setTeamSuggestions([]); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", cursor: "pointer", borderBottom: "1px solid #1a1a2a" }}>
                 {t.logo && <img src={t.logo} alt="" style={{ width: 24, height: 24, objectFit: "contain" }} />}
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{t.name}</div>
-                  <div style={{ fontSize: 11, color: "#555" }}>{t.country}</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{t.name}</div>
+                  <div style={{ fontSize: 14, color: "#555" }}>{t.country}</div>
                 </div>
               </div>
             ))}
@@ -816,12 +816,12 @@ function TeamStatsGraphic() {
       </div>
 
       {selectedTeam && (
-        <button onClick={fetch_} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
+        <button onClick={fetch_} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "10px" }}>
           {loading ? "Loading..." : `Load ${selectedTeam.name} Stats`}
         </button>
       )}
 
-      {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
+      {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
 
       {data && (
         <>
@@ -830,14 +830,14 @@ function TeamStatsGraphic() {
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, marginTop: 8 }}>
                 {data.logo && <img src={data.logo} alt="" crossOrigin="anonymous" style={{ width: 40, height: 40, objectFit: "contain" }} />}
                 <div>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: "#f0f0f0" }}>{data.team}</div>
-                  <div style={{ fontSize: 10, color: "#555" }}>{LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label} · Season Stats</div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>{data.team}</div>
+                  <div style={{ fontSize: 13, color: "#555" }}>{LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label} · Season Stats</div>
                 </div>
               </div>
 
               {data.form && (
                 <div style={{ marginBottom: 14 }}>
-                  <div style={{ fontSize: 9, color: "#555", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Recent Form</div>
+                  <div style={{ fontSize: 12, color: "#555", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Recent Form</div>
                   <div style={{ display: "flex", gap: 4 }}>
                     {data.form.slice(-10).split("").map((r, i) => <div key={i}>{formDot(r)}</div>)}
                   </div>
@@ -859,8 +859,8 @@ function TeamStatsGraphic() {
                   { label: "Avg Conceded",  value: data.avgGoalsAgainst, color: "#f87171" },
                 ].map(s => (
                   <div key={s.label} style={{ background: "#13131f", borderRadius: 8, padding: "10px 8px", textAlign: "center" }}>
-                    <div style={{ fontSize: 22, fontWeight: 900, color: s.color }}>{s.value ?? "—"}</div>
-                    <div style={{ fontSize: 9, color: "#555", marginTop: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{s.label}</div>
+                    <div style={{ fontSize: 24, fontWeight: 900, color: s.color }}>{s.value ?? "—"}</div>
+                    <div style={{ fontSize: 12, color: "#555", marginTop: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{s.label}</div>
                   </div>
                 ))}
               </div>
@@ -868,18 +868,18 @@ function TeamStatsGraphic() {
               {(data.biggestWin || data.biggestLoss) && (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                   {data.biggestWin && <div style={{ background: "#4ade8011", border: "1px solid #4ade8022", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
-                    <div style={{ fontSize: 10, color: "#4ade80", marginBottom: 4 }}>Biggest Win</div>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: "#4ade80" }}>{data.biggestWin}</div>
+                    <div style={{ fontSize: 13, color: "#4ade80", marginBottom: 4 }}>Biggest Win</div>
+                    <div style={{ fontSize: 17, fontWeight: 800, color: "#4ade80" }}>{data.biggestWin}</div>
                   </div>}
                   {data.biggestLoss && <div style={{ background: "#f8717111", border: "1px solid #f8717122", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
-                    <div style={{ fontSize: 10, color: "#f87171", marginBottom: 4 }}>Biggest Loss</div>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: "#f87171" }}>{data.biggestLoss}</div>
+                    <div style={{ fontSize: 13, color: "#f87171", marginBottom: 4 }}>Biggest Loss</div>
+                    <div style={{ fontSize: 17, fontWeight: 800, color: "#f87171" }}>{data.biggestLoss}</div>
                   </div>}
                 </div>
               )}
             </div>
           </GraphicCard>
-          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%" }}>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
           </button>
         </>
@@ -1031,8 +1031,8 @@ function RecapGraphic({ history = [] }) {
       {/* Brand bar */}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
       <div style={{ position: "absolute", top: 12, right: 14, zIndex: 2, display: "flex", alignItems: "center", gap: 6 }}>
-        <span style={{ fontSize: 11, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
-        <span style={{ fontSize: 10, color: "#888", fontWeight: 600 }}>deep433.com</span>
+        <span style={{ fontSize: 14, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
+        <span style={{ fontSize: 13, color: "#888", fontWeight: 600 }}>deep433.com</span>
       </div>
       {/* Logo watermark — corner */}
       <div style={{ position: "absolute", bottom: 10, left: 10, pointerEvents: "none", zIndex: 0 }}>
@@ -1045,13 +1045,13 @@ function RecapGraphic({ history = [] }) {
           <div style={{ width: "50%", padding: "36px 20px 20px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", borderRight: "1px solid #1a1a2a", position: "relative", zIndex: 1 }}>
             {/* Enhanced header */}
             <div style={{ textAlign: "center", marginBottom: 12 }}>
-              <div style={{ fontSize: 8, color: "#555", letterSpacing: 2, textTransform: "uppercase" }}>{matchData?.competition}</div>
-              <div style={{ fontSize: 11, color: "#f0f0f0", letterSpacing: 2, textTransform: "uppercase", fontWeight: 900 }}>{selectedFixture?.round}</div>
+              <div style={{ fontSize: 11, color: "#555", letterSpacing: 2, textTransform: "uppercase" }}>{matchData?.competition}</div>
+              <div style={{ fontSize: 14, color: "#f0f0f0", letterSpacing: 2, textTransform: "uppercase", fontWeight: 900 }}>{selectedFixture?.round}</div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 8 }}>
               {selectedFixture?.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 44, height: 44, objectFit: "contain" }} />}
               <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 9, color: "#555", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Full Time</div>
+                <div style={{ fontSize: 12, color: "#555", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Full Time</div>
                 <div style={{ fontSize: 56, fontWeight: 900, color: "#f0f0f0", lineHeight: 1 }}>{fs0}-{fs1}</div>
               </div>
               {selectedFixture?.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 44, height: 44, objectFit: "contain" }} />}
@@ -1059,28 +1059,28 @@ function RecapGraphic({ history = [] }) {
             {/* Team names + goalscorers */}
             <div style={{ display: "flex", justifyContent: "space-between", width: "100%", gap: 8 }}>
               <div style={{ textAlign: "left", flex: 1 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#4ade80" }}>{selectedFixture?.home}</div>
-                {matchData?.homeGoals?.map((g, i) => <div key={i} style={{ fontSize: 10, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#4ade80" }}>{selectedFixture?.home}</div>
+                {matchData?.homeGoals?.map((g, i) => <div key={i} style={{ fontSize: 13, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
               </div>
               <div style={{ textAlign: "right", flex: 1 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#f59e0b" }}>{selectedFixture?.away}</div>
-                {matchData?.awayGoals?.map((g, i) => <div key={i} style={{ fontSize: 10, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#f59e0b" }}>{selectedFixture?.away}</div>
+                {matchData?.awayGoals?.map((g, i) => <div key={i} style={{ fontSize: 13, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
               </div>
             </div>
           </div>
           {/* Right: predictions */}
           <div style={{ flex: 1, padding: "36px 20px 20px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 12, position: "relative", zIndex: 1 }}>
-            <div style={{ fontSize: 10, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Predictions</div>
+            <div style={{ fontSize: 13, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Predictions</div>
             {[{ label: "👤 Your Call", pred: yourPrediction, result: yourResult, color: "#4ade80" }, { label: "🤖 AI Predicted", pred: aiPrediction, result: aiResult, color: "#f59e0b" }].map(p => (
               <div key={p.label} style={{ background: "#13131f", borderRadius: 10, padding: "12px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
-                  <div style={{ fontSize: 10, color: p.color, fontWeight: 700, marginBottom: 4 }}>{p.label}</div>
+                  <div style={{ fontSize: 13, color: p.color, fontWeight: 700, marginBottom: 4 }}>{p.label}</div>
                   <div style={{ fontSize: 28, fontWeight: 900, color: p.color }}>{p.pred || "—"}</div>
                 </div>
                 {p.result && (
                   <div style={{ textAlign: "center" }}>
-                    <div style={{ fontSize: 20 }}>{p.result.icon}</div>
-                    <div style={{ fontSize: 8, color: p.result.color, fontWeight: 700, marginTop: 2 }}>{p.result.label}</div>
+                    <div style={{ fontSize: 22 }}>{p.result.icon}</div>
+                    <div style={{ fontSize: 11, color: p.result.color, fontWeight: 700, marginTop: 2 }}>{p.result.label}</div>
                   </div>
                 )}
               </div>
@@ -1088,12 +1088,12 @@ function RecapGraphic({ history = [] }) {
             <div style={{ background: "#0d0d18", borderRadius: 8, padding: "8px 12px", textAlign: "center" }}>
               {matchData?.keyStat && (
                 <div style={{ marginBottom: selectedFixture?.venue ? 4 : 0 }}>
-                  <span style={{ fontSize: 11, color: "#818cf8", fontWeight: 700 }}>📊 </span>
-                  <span style={{ fontSize: 11, color: "#ccc", fontWeight: 600 }}>{matchData.keyStat}</span>
+                  <span style={{ fontSize: 14, color: "#818cf8", fontWeight: 700 }}>📊 </span>
+                  <span style={{ fontSize: 14, color: "#ccc", fontWeight: 600 }}>{matchData.keyStat}</span>
                 </div>
               )}
               {selectedFixture?.venue && (
-                <div style={{ fontSize: 10, color: "#888", fontWeight: 600 }}>📍 {selectedFixture.venue}{selectedFixture.city ? ", " + selectedFixture.city : ""}</div>
+                <div style={{ fontSize: 13, color: "#888", fontWeight: 600 }}>📍 {selectedFixture.venue}{selectedFixture.city ? ", " + selectedFixture.city : ""}</div>
               )}
             </div>
           </div>
@@ -1102,12 +1102,12 @@ function RecapGraphic({ history = [] }) {
         <div style={{ flex: 1, padding: "20px", display: "flex", flexDirection: "column", gap: 12, paddingTop: 32, position: "relative", zIndex: 1 }}>
           {/* Enhanced header + final score */}
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 8, color: "#555", letterSpacing: 2, textTransform: "uppercase", marginBottom: 2 }}>{matchData?.competition}</div>
-            <div style={{ fontSize: 10, color: "#f0f0f0", letterSpacing: 2, textTransform: "uppercase", marginBottom: 8, fontWeight: 900 }}>{selectedFixture?.round}</div>
+            <div style={{ fontSize: 11, color: "#555", letterSpacing: 2, textTransform: "uppercase", marginBottom: 2 }}>{matchData?.competition}</div>
+            <div style={{ fontSize: 13, color: "#f0f0f0", letterSpacing: 2, textTransform: "uppercase", marginBottom: 8, fontWeight: 900 }}>{selectedFixture?.round}</div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 6 }}>
               {selectedFixture?.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 40, height: 40, objectFit: "contain" }} />}
               <div>
-                <div style={{ fontSize: 8, color: "#555", textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }}>Full Time</div>
+                <div style={{ fontSize: 11, color: "#555", textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }}>Full Time</div>
                 <div style={{ fontSize: 56, fontWeight: 900, color: "#f0f0f0", lineHeight: 1 }}>{fs0}-{fs1}</div>
               </div>
               {selectedFixture?.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 40, height: 40, objectFit: "contain" }} />}
@@ -1115,12 +1115,12 @@ function RecapGraphic({ history = [] }) {
             {/* Team names + goalscorers */}
             <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginTop: 4 }}>
               <div style={{ textAlign: "left", flex: 1 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: "#4ade80" }}>{selectedFixture?.home}</div>
-                {matchData?.homeGoals?.map((g, i) => <div key={i} style={{ fontSize: 10, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#4ade80" }}>{selectedFixture?.home}</div>
+                {matchData?.homeGoals?.map((g, i) => <div key={i} style={{ fontSize: 13, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
               </div>
               <div style={{ textAlign: "right", flex: 1 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: "#f59e0b" }}>{selectedFixture?.away}</div>
-                {matchData?.awayGoals?.map((g, i) => <div key={i} style={{ fontSize: 10, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#f59e0b" }}>{selectedFixture?.away}</div>
+                {matchData?.awayGoals?.map((g, i) => <div key={i} style={{ fontSize: 13, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
               </div>
             </div>
           </div>
@@ -1129,12 +1129,12 @@ function RecapGraphic({ history = [] }) {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             {[{ label: "👤 Your Call", pred: yourPrediction, result: yourResult, color: "#4ade80" }, { label: "🤖 AI Predicted", pred: aiPrediction, result: aiResult, color: "#818cf8" }].map(p => (
               <div key={p.label} style={{ background: "#13131f", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
-                <div style={{ fontSize: 9, color: p.color, fontWeight: 700, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>{p.label}</div>
-                <div style={{ fontSize: 24, fontWeight: 900, color: p.color, marginBottom: 4 }}>{p.pred || "—"}</div>
+                <div style={{ fontSize: 12, color: p.color, fontWeight: 700, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>{p.label}</div>
+                <div style={{ fontSize: 26, fontWeight: 900, color: p.color, marginBottom: 4 }}>{p.pred || "—"}</div>
                 {p.result && (
                   <>
-                    <div style={{ fontSize: 16 }}>{p.result.icon}</div>
-                    <div style={{ fontSize: 8, color: p.result.color, fontWeight: 700, marginTop: 2 }}>{p.result.label}</div>
+                    <div style={{ fontSize: 18 }}>{p.result.icon}</div>
+                    <div style={{ fontSize: 11, color: p.result.color, fontWeight: 700, marginTop: 2 }}>{p.result.label}</div>
                   </>
                 )}
               </div>
@@ -1144,12 +1144,12 @@ function RecapGraphic({ history = [] }) {
           <div style={{ background: "#0d0d18", borderRadius: 8, padding: "8px 12px", textAlign: "center" }}>
             {matchData?.keyStat && (
               <div style={{ marginBottom: selectedFixture?.venue ? 4 : 0 }}>
-                <span style={{ fontSize: 11, color: "#818cf8", fontWeight: 700 }}>📊 </span>
-                <span style={{ fontSize: 11, color: "#ccc", fontWeight: 600 }}>{matchData.keyStat}</span>
+                <span style={{ fontSize: 14, color: "#818cf8", fontWeight: 700 }}>📊 </span>
+                <span style={{ fontSize: 14, color: "#ccc", fontWeight: 600 }}>{matchData.keyStat}</span>
               </div>
             )}
             {selectedFixture?.venue && (
-              <div style={{ fontSize: 10, color: "#888", fontWeight: 600 }}>📍 {selectedFixture.venue}{selectedFixture.city ? ", " + selectedFixture.city : ""}</div>
+              <div style={{ fontSize: 13, color: "#888", fontWeight: 600 }}>📍 {selectedFixture.venue}{selectedFixture.city ? ", " + selectedFixture.city : ""}</div>
             )}
           </div>
         </div>
@@ -1164,14 +1164,14 @@ function RecapGraphic({ history = [] }) {
       ) : (
         <>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
-            <button onClick={() => { setSelectedFixture(null); setMatchData(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "4px 10px" }}>Change</button>
+            <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
+            <button onClick={() => { setSelectedFixture(null); setMatchData(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
           </div>
 
-          {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
+          {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
 
           {matchData && !matchData.yourPrediction && (
-            <div style={{ fontSize: 12, color: "#f59e0b", background: "#f59e0b11", border: "1px solid #f59e0b33", borderRadius: 8, padding: "10px 14px" }}>
+            <div style={{ fontSize: 15, color: "#f59e0b", background: "#f59e0b11", border: "1px solid #f59e0b33", borderRadius: 8, padding: "10px 14px" }}>
               ⚠️ No prediction found for this match in your history. Make a prediction first to use the Recap card.
             </div>
           )}
@@ -1180,7 +1180,7 @@ function RecapGraphic({ history = [] }) {
             <>
               <div style={{ display: "flex", gap: 8 }}>
                 {["square", "landscape"].map(v => (
-                  <button key={v} onClick={() => setVariant(v)} style={{ flex: 1, background: variant === v ? "#4ade8022" : "none", border: `1px solid ${variant === v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: variant === v ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "8px" }}>
+                  <button key={v} onClick={() => setVariant(v)} style={{ flex: 1, background: variant === v ? "#4ade8022" : "none", border: `1px solid ${variant === v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: variant === v ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "8px" }}>
                     {v === "square" ? "1:1 Square" : "16:9 Landscape"}
                   </button>
                 ))}
@@ -1190,7 +1190,7 @@ function RecapGraphic({ history = [] }) {
                 <CardContent />
               </div>
 
-              <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%" }}>
+              <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
                 {downloading ? "Generating..." : "⬇ Download Recap Card"}
               </button>
             </>
@@ -1302,7 +1302,7 @@ function BracketGraphic({ history = [] }) {
 
     if (!m) return (
       <div style={{ width: w, background: "#161622", border: "1px dashed #2a2a3a", borderRadius: 8, padding: "14px 8px", textAlign: "center" }}>
-        <span style={{ fontSize: 10, color: "#666", fontWeight: 600 }}>Select match</span>
+        <span style={{ fontSize: 13, color: "#666", fontWeight: 600 }}>Select match</span>
       </div>
     );
 
@@ -1312,15 +1312,15 @@ function BracketGraphic({ history = [] }) {
         {[{ name: m.home, logo: m.homeLogo, score: m.score?.home, won: hw }, { name: m.away, logo: m.awayLogo, score: m.score?.away, won: aw }].map((t, i) => (
           <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 8px", background: t.won ? "#4ade8020" : "transparent", borderBottom: i === 0 ? "1px solid #26263a" : "none" }}>
             {t.logo ? <img src={t.logo} alt="" crossOrigin="anonymous" style={{ width: 18, height: 18, objectFit: "contain", flexShrink: 0 }} /> : <div style={{ width: 18, height: 18, background: "#26263a", borderRadius: "50%", flexShrink: 0 }} />}
-            <span style={{ fontSize: 11, fontWeight: t.won ? 900 : 700, color: t.won ? "#4ade80" : "#f5f5f5", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name || "TBD"}</span>
-            {(isF || isL) && <span style={{ fontSize: 13, fontWeight: 900, color: t.won ? "#4ade80" : "#ccc" }}>{t.score ?? 0}</span>}
+            <span style={{ fontSize: 14, fontWeight: t.won ? 900 : 700, color: t.won ? "#4ade80" : "#f5f5f5", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name || "TBD"}</span>
+            {(isF || isL) && <span style={{ fontSize: 16, fontWeight: 900, color: t.won ? "#4ade80" : "#ccc" }}>{t.score ?? 0}</span>}
           </div>
         ))}
         <div style={{ padding: "3px 8px", background: "#0d0d18", display: "flex", justifyContent: "space-between" }}>
-          <span style={{ fontSize: 8, color: isL ? "#ff6b6b" : "#999", fontWeight: 700 }}>
+          <span style={{ fontSize: 11, color: isL ? "#ff6b6b" : "#999", fontWeight: 700 }}>
             {isL ? "🔴 LIVE" : isF ? m.statusRaw : new Date(m.kickoff).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
           </span>
-          {pred && <span style={{ fontSize: 8, color: "#4ade80", fontWeight: 700 }}>✓ {pred.user_prediction}</span>}
+          {pred && <span style={{ fontSize: 11, color: "#4ade80", fontWeight: 700 }}>✓ {pred.user_prediction}</span>}
         </div>
       </div>
     );
@@ -1329,14 +1329,14 @@ function BracketGraphic({ history = [] }) {
   const Arr = () => (
     <div style={{ display: "flex", alignItems: "center", padding: "0 4px", flexShrink: 0 }}>
       <div style={{ width: 10, height: 2, background: "#4a4a5a" }} />
-      <span style={{ fontSize: 13, color: "#888", fontWeight: 900 }}>›</span>
+      <span style={{ fontSize: 16, color: "#888", fontWeight: 900 }}>›</span>
     </div>
   );
 
   const DropDown = ({ label, skey }) => (
     <div>
-      <div style={{ fontSize: 9, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>{label}</div>
-      <select value={sel[skey]} onChange={e => setS(skey)(e.target.value)} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "7px 10px", outline: "none", fontFamily: "inherit" }}>
+      <div style={{ fontSize: 12, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>{label}</div>
+      <select value={sel[skey]} onChange={e => setS(skey)(e.target.value)} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 15, padding: "7px 10px", outline: "none", fontFamily: "inherit" }}>
         <option value="">— Select —</option>
         {rounds.map(r => (
           <optgroup key={r.round} label={r.round}>
@@ -1357,14 +1357,14 @@ function BracketGraphic({ history = [] }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         {CUP_LEAGUES.map(l => (
-          <button key={l.id} onClick={() => setLeagueId(l.id)} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
+          <button key={l.id} onClick={() => setLeagueId(l.id)} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
             {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
             {l.label}
           </button>
         ))}
       </div>
 
-      {loading && <div style={{ textAlign: "center", color: "#555", fontSize: 13, padding: "20px 0" }}>Loading...</div>}
+      {loading && <div style={{ textAlign: "center", color: "#555", fontSize: 16, padding: "20px 0" }}>Loading...</div>}
 
       {!loading && rounds.length > 0 && (
         <>
@@ -1381,11 +1381,11 @@ function BracketGraphic({ history = [] }) {
           <div ref={cardRef} style={{ background: "linear-gradient(145deg, #0a0a0f 0%, #0d0d1a 60%, #0a0f0a 100%)", border: "1px solid #1e1e30", borderRadius: 14, overflow: "hidden", position: "relative", padding: "28px 16px 16px", fontFamily: "'Inter',sans-serif" }}>
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
             <div style={{ position: "absolute", top: 10, right: 12, display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ fontSize: 9, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
-              <span style={{ fontSize: 8, color: "#888", fontWeight: 600 }}>deep433.com</span>
+              <span style={{ fontSize: 12, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
+              <span style={{ fontSize: 11, color: "#888", fontWeight: 600 }}>deep433.com</span>
             </div>
             <div style={{ textAlign: "center", marginBottom: 14 }}>
-              <div style={{ fontSize: 13, color: "#f0f0f0", fontWeight: 900, textTransform: "uppercase", letterSpacing: 2 }}>
+              <div style={{ fontSize: 16, color: "#f0f0f0", fontWeight: 900, textTransform: "uppercase", letterSpacing: 2 }}>
                 {CUP_LEAGUES.find(l => l.id === leagueId)?.label}
               </div>
             </div>
@@ -1396,19 +1396,19 @@ function BracketGraphic({ history = [] }) {
 
                 {/* Top-left: QF1 */}
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-                  <div style={{ fontSize: 9, color: "#4ade80", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Quarter-Final</div>
+                  <div style={{ fontSize: 12, color: "#4ade80", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Quarter-Final</div>
                   <Node val={sel.qf1} w={140} />
                 </div>
 
                 {/* Top-center: SF1 */}
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <div style={{ fontSize: 9, color: "#c084fc", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Semi-Final</div>
+                  <div style={{ fontSize: 12, color: "#c084fc", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Semi-Final</div>
                   <Node val={sel.sf1} w={150} />
                 </div>
 
                 {/* Top-right: QF3 */}
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-                  <div style={{ fontSize: 9, color: "#4ade80", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Quarter-Final</div>
+                  <div style={{ fontSize: 12, color: "#4ade80", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Quarter-Final</div>
                   <Node val={sel.qf3} w={140} />
                 </div>
 
@@ -1432,18 +1432,18 @@ function BracketGraphic({ history = [] }) {
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 20 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, marginBottom: 8 }}>
                   <TrophyIcon size={18} />
-                  <span style={{ fontSize: 12, color: "#fbbf24", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5 }}>Final</span>
+                  <span style={{ fontSize: 15, color: "#fbbf24", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5 }}>Final</span>
                 </div>
                 <Node val={sel.fin} w={180} />
               </div>
             </div>
 
             <div style={{ textAlign: "center", marginTop: 10 }}>
-              <span style={{ fontSize: 9, color: "#999", fontWeight: 600 }}>🟢 Green border = your prediction · deep433.com</span>
+              <span style={{ fontSize: 12, color: "#999", fontWeight: 600 }}>🟢 Green border = your prediction · deep433.com</span>
             </div>
           </div>
 
-          <button onClick={download} disabled={downloading || !hasAny} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%", opacity: !hasAny ? 0.4 : 1 }}>
+          <button onClick={download} disabled={downloading || !hasAny} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%", opacity: !hasAny ? 0.4 : 1 }}>
             {downloading ? "Generating..." : "⬇ Download Bracket Card"}
           </button>
         </>
@@ -1509,15 +1509,15 @@ function DeepInsightsGraphic() {
     return (
       <div style={{ marginBottom: 14 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
-          <span style={{ fontSize: 20, fontWeight: 900, color: "#4ade80" }}>{a}%</span>
-          <span style={{ fontSize: 10, color: "#aaa", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{label}</span>
-          <span style={{ fontSize: 20, fontWeight: 900, color: "#f59e0b" }}>{b}%</span>
+          <span style={{ fontSize: 22, fontWeight: 900, color: "#4ade80" }}>{a}%</span>
+          <span style={{ fontSize: 13, color: "#aaa", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{label}</span>
+          <span style={{ fontSize: 22, fontWeight: 900, color: "#f59e0b" }}>{b}%</span>
         </div>
         <div style={{ display: "flex", height: 8, borderRadius: 4, overflow: "hidden" }}>
           <div style={{ width: `${a}%`, background: "#4ade80" }} />
           <div style={{ width: `${b}%`, background: "#f59e0b", opacity: 0.6 }} />
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3, fontSize: 9, color: "#444" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3, fontSize: 12, color: "#444" }}>
           <span>{home?.split(" ")[0]}</span><span>{away?.split(" ")[0]}</span>
         </div>
       </div>
@@ -1531,18 +1531,18 @@ function DeepInsightsGraphic() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           {logo && <img src={logo} alt="" crossOrigin="anonymous" style={{ width: 20, height: 20, objectFit: "contain" }} />}
-          <span style={{ fontSize: 12, fontWeight: 800, color: "#f0f0f0" }}>{team}</span>
+          <span style={{ fontSize: 15, fontWeight: 800, color: "#f0f0f0" }}>{team}</span>
         </div>
-        <span style={{ fontSize: 10, color: "#555" }}>PPG: <span style={{ color: "#f0f0f0", fontWeight: 700 }}>{ppg}</span></span>
+        <span style={{ fontSize: 13, color: "#555" }}>PPG: <span style={{ color: "#f0f0f0", fontWeight: 700 }}>{ppg}</span></span>
       </div>
       <div style={{ display: "flex", gap: 5 }}>
         {results.map((r, i) => (
-          <div key={i} style={{ width: 24, height: 24, borderRadius: 4, background: dotColor(r), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, color: "#0a0a0f" }}>{r}</div>
+          <div key={i} style={{ width: 24, height: 24, borderRadius: 4, background: dotColor(r), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900, color: "#0a0a0f" }}>{r}</div>
         ))}
         <div style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center" }}>
-          <span style={{ fontSize: 10, color: "#4ade80" }}>W {results.filter(r => r === "W").length}</span>
-          <span style={{ fontSize: 10, color: "#60a5fa" }}>D {results.filter(r => r === "D").length}</span>
-          <span style={{ fontSize: 10, color: "#f87171" }}>L {results.filter(r => r === "L").length}</span>
+          <span style={{ fontSize: 13, color: "#4ade80" }}>W {results.filter(r => r === "W").length}</span>
+          <span style={{ fontSize: 13, color: "#60a5fa" }}>D {results.filter(r => r === "D").length}</span>
+          <span style={{ fontSize: 13, color: "#f87171" }}>L {results.filter(r => r === "L").length}</span>
         </div>
       </div>
     </div>
@@ -1576,12 +1576,12 @@ function DeepInsightsGraphic() {
       ) : (
         <>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
-            <button onClick={() => { setSelectedFixture(null); setInsights(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "4px 10px" }}>Change</button>
+            <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
+            <button onClick={() => { setSelectedFixture(null); setInsights(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
           </div>
 
-          {loading && <div style={{ textAlign: "center", color: "#555", fontSize: 13, padding: "20px 0" }}>Loading insights...</div>}
-          {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
+          {loading && <div style={{ textAlign: "center", color: "#555", fontSize: 16, padding: "20px 0" }}>Loading insights...</div>}
+          {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
 
           {insights && (
             <>
@@ -1591,19 +1591,19 @@ function DeepInsightsGraphic() {
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, marginTop: 8 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       {selectedFixture.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
-                      <span style={{ fontSize: 14, fontWeight: 900, color: "#4ade80" }}>{home}</span>
+                      <span style={{ fontSize: 17, fontWeight: 900, color: "#4ade80" }}>{home}</span>
                     </div>
                     <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: 9, color: "#555", textTransform: "uppercase", letterSpacing: 1 }}>{selectedFixture.round}</div>
-                      <div style={{ fontSize: 11, color: "#333", fontWeight: 700 }}>vs</div>
+                      <div style={{ fontSize: 12, color: "#555", textTransform: "uppercase", letterSpacing: 1 }}>{selectedFixture.round}</div>
+                      <div style={{ fontSize: 14, color: "#333", fontWeight: 700 }}>vs</div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ fontSize: 14, fontWeight: 900, color: "#f59e0b" }}>{away}</span>
+                      <span style={{ fontSize: 17, fontWeight: 900, color: "#f59e0b" }}>{away}</span>
                       {selectedFixture.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
                     </div>
                   </div>
 
-                  <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 12 }}>📊 Deep Insights</div>
+                  <div style={{ fontSize: 13, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 12 }}>📊 Deep Insights</div>
 
                   {/* Stat bars */}
                   {insights.comparison?.attackHome && (
@@ -1619,14 +1619,14 @@ function DeepInsightsGraphic() {
                   {/* H2H */}
                   {h2hResults.length > 0 && (
                     <>
-                      <div style={{ fontSize: 10, color: "#aaa", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8, marginTop: 4 }}>Recent H2H</div>
+                      <div style={{ fontSize: 13, color: "#aaa", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8, marginTop: 4 }}>Recent H2H</div>
                       <H2HRow team={home} results={h2hResults} ppg={homePPG} logo={selectedFixture.homeLogo} />
                       <H2HRow team={away} results={awayResults} ppg={awayPPG} logo={selectedFixture.awayLogo} />
                     </>
                   )}
                 </div>
               </GraphicCard>
-              <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%" }}>
+              <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
                 {downloading ? "Generating..." : "⬇ Download PNG"}
               </button>
             </>
@@ -1711,16 +1711,16 @@ function MatchPitchViewGraphic() {
           />
         ) : (
           <div style={{ width: 36, height: 36, borderRadius: "50%", background: color + "22", border: `2px solid ${color}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <span style={{ fontSize: 13, fontWeight: 900, color }}>{player.number}</span>
+            <span style={{ fontSize: 16, fontWeight: 900, color }}>{player.number}</span>
           </div>
         )}
         {player.photo && (
           <div style={{ position: "absolute", bottom: -2, right: -2, background: color, borderRadius: "50%", width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <span style={{ fontSize: 7, fontWeight: 900, color: "#0a0a0f" }}>{player.number}</span>
+            <span style={{ fontSize: 10, fontWeight: 900, color: "#0a0a0f" }}>{player.number}</span>
           </div>
         )}
       </div>
-      <div style={{ fontSize: 8, fontWeight: 700, color: "#f0f0f0", textAlign: "center", lineHeight: 1.2, maxWidth: 52, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: "#f0f0f0", textAlign: "center", lineHeight: 1.2, maxWidth: 52, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
         {player.name?.split(" ").slice(-1)[0]}
       </div>
     </div>
@@ -1747,12 +1747,12 @@ function MatchPitchViewGraphic() {
       ) : (
         <>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
-            <button onClick={() => { setSelectedFixture(null); setLineup(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "4px 10px" }}>Change</button>
+            <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
+            <button onClick={() => { setSelectedFixture(null); setLineup(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
           </div>
 
-          {loading && <div style={{ textAlign: "center", color: "#555", fontSize: 13, padding: "20px 0" }}>Loading lineup...</div>}
-          {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
+          {loading && <div style={{ textAlign: "center", color: "#555", fontSize: 16, padding: "20px 0" }}>Loading lineup...</div>}
+          {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
 
           {lineup && (
             <>
@@ -1802,7 +1802,7 @@ function MatchPitchViewGraphic() {
                   {/* Brand */}
                   <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
                   <div style={{ position: "absolute", top: 8, right: 10, display: "flex", alignItems: "center", gap: 4 }}>
-                    <span style={{ fontSize: 8, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
+                    <span style={{ fontSize: 11, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
                   </div>
 
                   {/* Watermark — corner */}
@@ -1813,8 +1813,8 @@ function MatchPitchViewGraphic() {
                   {/* Home team header */}
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4, paddingLeft: 4 }}>
                     {selectedFixture.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 18, height: 18, objectFit: "contain" }} />}
-                    <span style={{ fontSize: 10, fontWeight: 800, color: "#4ade80" }}>{selectedFixture.home}</span>
-                    <span style={{ fontSize: 9, color: "#555" }}>{lineup.home?.formation}</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: "#4ade80" }}>{selectedFixture.home}</span>
+                    <span style={{ fontSize: 12, color: "#555" }}>{lineup.home?.formation}</span>
                   </div>
 
                   {/* Home team players */}
@@ -1824,7 +1824,7 @@ function MatchPitchViewGraphic() {
 
                   {/* Centre line label */}
                   <div style={{ textAlign: "center", padding: "4px 0" }}>
-                    <span style={{ fontSize: 8, color: "#1a6b3a", fontWeight: 700, letterSpacing: 2 }}>· · · · · · · · · · · · · ·</span>
+                    <span style={{ fontSize: 11, color: "#1a6b3a", fontWeight: 700, letterSpacing: 2 }}>· · · · · · · · · · · · · ·</span>
                   </div>
 
                   {/* Away team players */}
@@ -1835,13 +1835,13 @@ function MatchPitchViewGraphic() {
                   {/* Away team header */}
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, paddingLeft: 4 }}>
                     {selectedFixture.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 18, height: 18, objectFit: "contain" }} />}
-                    <span style={{ fontSize: 10, fontWeight: 800, color: "#f59e0b" }}>{selectedFixture.away}</span>
-                    <span style={{ fontSize: 9, color: "#555" }}>{lineup.away?.formation}</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: "#f59e0b" }}>{selectedFixture.away}</span>
+                    <span style={{ fontSize: 12, color: "#555" }}>{lineup.away?.formation}</span>
                   </div>
                 </div>
               </div>
 
-              <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%" }}>
+              <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
                 {downloading ? "Generating..." : "⬇ Download Pitch View PNG"}
               </button>
             </>
@@ -1856,7 +1856,7 @@ function MatchPitchViewGraphic() {
   function PlayerSearchBox({ label, search, setSearch, suggestions, setSuggestions, player, setPlayer, searching, slot, color, onSearch }) {
   return (
     <div style={{ position: "relative" }}>
-      <div style={{ fontSize: 10, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 13, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{label}</div>
       <input
         placeholder="Search player..."
         value={player ? player.name : search}
@@ -1865,17 +1865,17 @@ function MatchPitchViewGraphic() {
           setPlayer(null);
           onSearch(e.target.value, slot);
         }}
-        style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${player ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+        style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${player ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 16, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
       />
-      {searching && <div style={{ position: "absolute", right: 10, top: 38, fontSize: 10, color: "#555" }}>...</div>}
+      {searching && <div style={{ position: "absolute", right: 10, top: 38, fontSize: 13, color: "#555" }}>...</div>}
       {suggestions.length > 0 && !player && (
         <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, zIndex: 20, marginTop: 4, maxHeight: 220, overflowY: "auto" }}>
           {suggestions.map(p => (
             <div key={p.id} onClick={() => { setPlayer(p); setSearch(p.name); setSuggestions([]); }} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", cursor: "pointer", borderBottom: "1px solid #1a1a2a" }}>
               {p.photo && <img src={p.photo} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover" }} />}
               <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>{p.name}</div>
-                <div style={{ fontSize: 10, color: "#555" }}>{p.team}</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0" }}>{p.name}</div>
+                <div style={{ fontSize: 13, color: "#555" }}>{p.team}</div>
               </div>
             </div>
           ))}
@@ -1961,9 +1961,9 @@ function PlayerH2HGraphic() {
     const p2Better = higherIsBetter ? v2 > v1 : v2 < v1;
     return (
       <div style={{ display: "flex", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #0f0f1a" }}>
-        <span style={{ flex: 1, textAlign: "right", fontSize: 18, fontWeight: p1Better ? 900 : 700, color: "#4ade80", opacity: p1Better ? 1 : 0.65, paddingRight: 12 }}>{val1 ?? "—"}</span>
-        <span style={{ fontSize: 10, color: "#999", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, width: 90, textAlign: "center" }}>{label}</span>
-        <span style={{ flex: 1, textAlign: "left", fontSize: 18, fontWeight: p2Better ? 900 : 700, color: "#f59e0b", opacity: p2Better ? 1 : 0.65, paddingLeft: 12 }}>{val2 ?? "—"}</span>
+        <span style={{ flex: 1, textAlign: "right", fontSize: 20, fontWeight: p1Better ? 900 : 700, color: "#4ade80", opacity: p1Better ? 1 : 0.65, paddingRight: 12 }}>{val1 ?? "—"}</span>
+        <span style={{ fontSize: 13, color: "#999", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, width: 90, textAlign: "center" }}>{label}</span>
+        <span style={{ flex: 1, textAlign: "left", fontSize: 20, fontWeight: p2Better ? 900 : 700, color: "#f59e0b", opacity: p2Better ? 1 : 0.65, paddingLeft: 12 }}>{val2 ?? "—"}</span>
       </div>
     );
   };
@@ -1973,7 +1973,7 @@ function PlayerH2HGraphic() {
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         {LEAGUE_OPTIONS.slice(0, 7).map(l => (
-          <button key={l.id} onClick={() => { setLeagueId(l.id); setPlayer1(null); setPlayer2(null); setSearch1(""); setSearch2(""); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "5px 12px" }}>
+          <button key={l.id} onClick={() => { setLeagueId(l.id); setPlayer1(null); setPlayer2(null); setSearch1(""); setSearch2(""); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px" }}>
             {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
             {l.label}
           </button>
@@ -1989,7 +1989,7 @@ function PlayerH2HGraphic() {
         <>
           <div style={{ display: "flex", gap: 8 }}>
             {["competition", "season"].map(m => (
-              <button key={m} onClick={() => toggleStatsMode(m)} disabled={seasonLoading} style={{ flex: 1, background: statsMode === m ? "#4ade8022" : "none", border: `1px solid ${statsMode === m ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: statsMode === m ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "8px", textTransform: "capitalize" }}>
+              <button key={m} onClick={() => toggleStatsMode(m)} disabled={seasonLoading} style={{ flex: 1, background: statsMode === m ? "#4ade8022" : "none", border: `1px solid ${statsMode === m ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: statsMode === m ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "8px", textTransform: "capitalize" }}>
                 {seasonLoading && m === "season" ? "Loading..." : m === "competition" ? "🏆 This Competition" : "📅 Full Season"}
               </button>
             ))}
@@ -1998,7 +1998,7 @@ function PlayerH2HGraphic() {
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "22px 18px 18px" }}>
               <div style={{ textAlign: "center", marginBottom: 12 }}>
-                <span style={{ fontSize: 9, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5 }}>
+                <span style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5 }}>
                   {statsMode === "season" ? "📅 Full Season Comparison" : `🏆 ${LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label} Stats`}
                 </span>
               </div>
@@ -2006,16 +2006,16 @@ function PlayerH2HGraphic() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16, marginTop: 8 }}>
                 <div style={{ textAlign: "center" }}>
                   {player1.photo && <img src={player1.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 8px" }} />}
-                  <div style={{ fontSize: 15, fontWeight: 900, color: "#4ade80" }}>{player1.name}</div>
-                  <div style={{ fontSize: 9, color: "#555", marginTop: 2 }}>{player1.team}</div>
+                  <div style={{ fontSize: 17, fontWeight: 900, color: "#4ade80" }}>{player1.name}</div>
+                  <div style={{ fontSize: 12, color: "#555", marginTop: 2 }}>{player1.team}</div>
                 </div>
                 <div style={{ textAlign: "center", padding: "0 8px" }}>
-                  <div style={{ fontSize: 16, fontWeight: 900, color: "#333" }}>VS</div>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: "#333" }}>VS</div>
                 </div>
                 <div style={{ textAlign: "center" }}>
                   {player2.photo && <img src={player2.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #f59e0b", margin: "0 auto 8px" }} />}
-                  <div style={{ fontSize: 15, fontWeight: 900, color: "#f59e0b" }}>{player2.name}</div>
-                  <div style={{ fontSize: 9, color: "#555", marginTop: 2 }}>{player2.team}</div>
+                  <div style={{ fontSize: 17, fontWeight: 900, color: "#f59e0b" }}>{player2.name}</div>
+                  <div style={{ fontSize: 12, color: "#555", marginTop: 2 }}>{player2.team}</div>
                 </div>
               </div>
 
@@ -2033,7 +2033,7 @@ function PlayerH2HGraphic() {
               <CompareRow label="Cards" val1={player1.yellowCards} val2={player2.yellowCards} higherIsBetter={false} />
             </div>
           </GraphicCard>
-          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%" }}>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
           </button>
         </>
@@ -2132,17 +2132,17 @@ function GoldenGloveGraphic() {
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         {LEAGUE_OPTIONS.map(l => (
-          <button key={l.id} onClick={() => { setLeagueId(l.id); setStandings(null); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
+          <button key={l.id} onClick={() => { setLeagueId(l.id); setStandings(null); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
             {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
             {l.label}
           </button>
         ))}
       </div>
 
-      <button onClick={fetchCleanSheets} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
+      <button onClick={fetchCleanSheets} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "10px" }}>
         {loading ? "Loading..." : "Load Golden Glove Race"}
       </button>
-      {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
+      {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
 
       {standings && (
         <>
@@ -2151,10 +2151,10 @@ function GoldenGloveGraphic() {
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18, marginTop: 8 }}>
                 {LEAGUE_LOGOS[leagueId] && <img src={LEAGUE_LOGOS[leagueId]} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 15, fontWeight: 900, color: "#f0f0f0" }}>Golden Glove Race</div>
-                  <div style={{ fontSize: 10, color: "#555" }}>{LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label}</div>
+                  <div style={{ fontSize: 17, fontWeight: 900, color: "#f0f0f0" }}>Golden Glove Race</div>
+                  <div style={{ fontSize: 13, color: "#555" }}>{LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label}</div>
                 </div>
-                <div style={{ fontSize: 9, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Clean Sheets</div>
+                <div style={{ fontSize: 12, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Clean Sheets</div>
               </div>
 
               {(() => {
@@ -2165,8 +2165,8 @@ function GoldenGloveGraphic() {
                     <div key={team.name} style={{ marginBottom: 14 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
                         {team.logo && <img src={team.logo} alt="" crossOrigin="anonymous" style={{ width: 22, height: 22, objectFit: "contain", flexShrink: 0 }} />}
-                        <span style={{ fontSize: 13, fontWeight: 800, color: "#f0f0f0", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{team.name}</span>
-                        <span style={{ fontSize: 18, fontWeight: 900, color: "#FFD700" }}>{team.cleanSheets}</span>
+                        <span style={{ fontSize: 16, fontWeight: 800, color: "#f0f0f0", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{team.name}</span>
+                        <span style={{ fontSize: 20, fontWeight: 900, color: "#FFD700" }}>{team.cleanSheets}</span>
                       </div>
                       <div style={{ height: 8, background: "#1a1a24", borderRadius: 4, overflow: "hidden" }}>
                         <div style={{
@@ -2175,14 +2175,14 @@ function GoldenGloveGraphic() {
                           borderRadius: 4,
                         }} />
                       </div>
-                      <div style={{ fontSize: 10, color: "#999", marginTop: 3, fontWeight: 600 }}>{team.played} played · {team.goalsConceded} conceded</div>
+                      <div style={{ fontSize: 13, color: "#999", marginTop: 3, fontWeight: 600 }}>{team.played} played · {team.goalsConceded} conceded</div>
                     </div>
                   );
                 });
               })()}
             </div>
           </GraphicCard>
-          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%" }}>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
           </button>
         </>
@@ -2246,20 +2246,20 @@ function MatchH2HGraphic() {
     const p2Better = higherIsBetter ? v2 > v1 : v2 < v1;
     return (
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 9 }}>
-        <span style={{ fontSize: 18, fontWeight: p1Better ? 900 : 700, color: "#4ade80", opacity: p1Better ? 1 : 0.65 }}>{val1 != null ? val1 + unit : "—"}</span>
-        <span style={{ fontSize: 10, color: "#999", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
-        <span style={{ fontSize: 18, fontWeight: p2Better ? 900 : 700, color: "#f59e0b", opacity: p2Better ? 1 : 0.65 }}>{val2 != null ? val2 + unit : "—"}</span>
+        <span style={{ fontSize: 20, fontWeight: p1Better ? 900 : 700, color: "#4ade80", opacity: p1Better ? 1 : 0.65 }}>{val1 != null ? val1 + unit : "—"}</span>
+        <span style={{ fontSize: 13, color: "#999", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
+        <span style={{ fontSize: 20, fontWeight: p2Better ? 900 : 700, color: "#f59e0b", opacity: p2Better ? 1 : 0.65 }}>{val2 != null ? val2 + unit : "—"}</span>
       </div>
     );
   };
 
   const PlayerPicker = ({ team, selected, onSelect, color }) => (
     <div>
-      <div style={{ fontSize: 10, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{team?.team}</div>
+      <div style={{ fontSize: 13, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{team?.team}</div>
       <select
         value={selected?.name || ""}
         onChange={e => onSelect(team?.players?.find(p => p.name === e.target.value) || null)}
-        style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${selected ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+        style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${selected ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 16, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
       >
         <option value="">— Select player —</option>
         {team?.players?.map(p => <option key={p.name} value={p.name}>{p.name} ({p.rating ? parseFloat(p.rating).toFixed(1) : "—"})</option>)}
@@ -2274,12 +2274,12 @@ function MatchH2HGraphic() {
       ) : (
         <>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
-            <button onClick={() => { setSelectedFixture(null); setMatchPlayers(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "4px 10px" }}>Change</button>
+            <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
+            <button onClick={() => { setSelectedFixture(null); setMatchPlayers(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
           </div>
 
-          {loading && <div style={{ textAlign: "center", color: "#555", fontSize: 13, padding: "20px 0" }}>Loading player stats...</div>}
-          {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
+          {loading && <div style={{ textAlign: "center", color: "#555", fontSize: 16, padding: "20px 0" }}>Loading player stats...</div>}
+          {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
 
           {matchPlayers && (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -2295,10 +2295,10 @@ function MatchH2HGraphic() {
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "22px 18px 18px" }}>
               <div style={{ textAlign: "center", marginBottom: 12 }}>
-                <div style={{ fontSize: 11, color: "#f0f0f0", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 3 }}>
+                <div style={{ fontSize: 14, color: "#f0f0f0", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 3 }}>
                   🏆 FIFA World Cup 2026
                 </div>
-                <span style={{ fontSize: 9, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>
+                <span style={{ fontSize: 12, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>
                   📋 {selectedFixture.home} vs {selectedFixture.away}
                 </span>
               </div>
@@ -2306,16 +2306,16 @@ function MatchH2HGraphic() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16 }}>
                 <div style={{ textAlign: "center" }}>
                   {player1.photo && <img src={player1.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 8px" }} />}
-                  <div style={{ fontSize: 15, fontWeight: 900, color: "#4ade80" }}>{player1.name}</div>
-                  <div style={{ fontSize: 9, color: "#555", marginTop: 2 }}>{matchPlayers.home.team}</div>
+                  <div style={{ fontSize: 17, fontWeight: 900, color: "#4ade80" }}>{player1.name}</div>
+                  <div style={{ fontSize: 12, color: "#555", marginTop: 2 }}>{matchPlayers.home.team}</div>
                 </div>
                 <div style={{ textAlign: "center", padding: "0 8px" }}>
-                  <div style={{ fontSize: 16, fontWeight: 900, color: "#333" }}>VS</div>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: "#333" }}>VS</div>
                 </div>
                 <div style={{ textAlign: "center" }}>
                   {player2.photo && <img src={player2.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #f59e0b", margin: "0 auto 8px" }} />}
-                  <div style={{ fontSize: 15, fontWeight: 900, color: "#f59e0b" }}>{player2.name}</div>
-                  <div style={{ fontSize: 9, color: "#555", marginTop: 2 }}>{matchPlayers.away.team}</div>
+                  <div style={{ fontSize: 17, fontWeight: 900, color: "#f59e0b" }}>{player2.name}</div>
+                  <div style={{ fontSize: 12, color: "#555", marginTop: 2 }}>{matchPlayers.away.team}</div>
                 </div>
               </div>
 
@@ -2327,7 +2327,7 @@ function MatchH2HGraphic() {
                 border: "1px solid #4ade8033",
                 borderRadius: 12, padding: "14px 16px", marginBottom: 10,
               }}>
-                <div style={{ fontSize: 9, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8, textAlign: "center" }}>⭐ Match Rating</div>
+                <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8, textAlign: "center" }}>⭐ Match Rating</div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ fontSize: 32, fontWeight: 900, color: "#4ade80" }}>{player1.rating ? parseFloat(player1.rating).toFixed(1) : "—"}</span>
                   <span style={{ fontSize: 32, fontWeight: 900, color: "#f59e0b" }}>{player2.rating ? parseFloat(player2.rating).toFixed(1) : "—"}</span>
@@ -2359,7 +2359,7 @@ function MatchH2HGraphic() {
               </BentoBox>
             </div>
           </GraphicCard>
-          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "12px", width: "100%" }}>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
           </button>
         </>
@@ -2391,7 +2391,7 @@ export default function DataGraphics({ history = [], supabase }) {
 
       <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
         {sections.map(s => (
-          <button key={s.id} onClick={() => setActiveSection(s.id)} style={{ background: activeSection === s.id ? "#a855f722" : "none", border: `1px solid ${activeSection === s.id ? "#a855f7" : "#2a2a3a"}`, borderRadius: 20, color: activeSection === s.id ? "#a855f7" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "7px 14px", whiteSpace: "nowrap", flexShrink: 0 }}>
+          <button key={s.id} onClick={() => setActiveSection(s.id)} style={{ background: activeSection === s.id ? "#a855f722" : "none", border: `1px solid ${activeSection === s.id ? "#a855f7" : "#2a2a3a"}`, borderRadius: 20, color: activeSection === s.id ? "#a855f7" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "7px 14px", whiteSpace: "nowrap", flexShrink: 0 }}>
             {s.label}
           </button>
         ))}
