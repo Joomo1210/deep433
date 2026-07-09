@@ -2050,7 +2050,7 @@ function PlayerH2HGraphic() {
                 </BentoBox>
               </div>
 
-              <BentoBox title="Involvement" icon="⏱️" color="#c084fc">
+              <BentoBox title="Workrate & Caution" icon="⚔️" color="#c084fc">
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                   <CompareRow label="Tackles" val1={player1.tackles} val2={player2.tackles} />
                   <CompareRow label="Cards" val1={player1.yellowCards} val2={player2.yellowCards} higherIsBetter={false} />
@@ -2375,7 +2375,7 @@ function MatchH2HGraphic() {
                 </BentoBox>
               </div>
 
-              <BentoBox title="Involvement" icon="⏱️" color="#c084fc">
+              <BentoBox title="Workrate & Caution" icon="⚔️" color="#c084fc">
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                   <MatchCompareRow label="Minutes" val1={player1.minutesPlayed} val2={player2.minutesPlayed} />
                   <MatchCompareRow label="Tackles" val1={player1.tackles} val2={player2.tackles} />
