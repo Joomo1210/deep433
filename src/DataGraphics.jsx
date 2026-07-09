@@ -2394,6 +2394,38 @@ function MatchH2HGraphic() {
 }
 
 // ─── TRANSFER FIT GRAPHIC ────────────────────────────────────────────────────
+  function PlayerSearchSlot({ label, search, setSearch, suggestions, setSuggestions, player, searching, slot, color, onSelect, onClear, onSearch }) {
+  return (
+    <div style={{ position: "relative" }}>
+      <div style={{ fontSize: 10, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{label}</div>
+      <input
+        placeholder="Search player..."
+        value={player ? player.name : search}
+        onChange={e => {
+          setSearch(e.target.value);
+          onClear();
+          onSearch(e.target.value, slot);
+        }}
+        style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${player ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+      />
+      {searching && <div style={{ position: "absolute", right: 10, top: 38, fontSize: 10, color: "#555" }}>...</div>}
+      {suggestions.length > 0 && !player && (
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, zIndex: 20, marginTop: 4, maxHeight: 220, overflowY: "auto" }}>
+          {suggestions.map(p => (
+            <div key={p.id} onClick={() => onSelect(p, slot)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", cursor: "pointer", borderBottom: "1px solid #1a1a2a" }}>
+              {p.photo && <img src={p.photo} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover" }} />}
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>{p.name}</div>
+                <div style={{ fontSize: 10, color: "#555" }}>{p.team}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TransferFitGraphic() {
   const cardRef = useRef(null);
   const [leagueId, setLeagueId] = useState("pl");
@@ -2473,35 +2505,6 @@ function TransferFitGraphic() {
     );
   };
 
-  const PlayerSearchSlot = ({ label, search, setSearch, suggestions, setSuggestions, player, searching, slot, color }) => (
-    <div style={{ position: "relative" }}>
-      <div style={{ fontSize: 10, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{label}</div>
-      <input
-        placeholder="Search player..."
-        value={player ? player.name : search}
-        onChange={e => {
-          setSearch(e.target.value);
-          if (slot === "target") setTarget(null); else setIncumbent(null);
-          searchPlayer(e.target.value, slot);
-        }}
-        style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${player ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
-      />
-      {searching && <div style={{ position: "absolute", right: 10, top: 38, fontSize: 10, color: "#555" }}>...</div>}
-      {suggestions.length > 0 && !player && (
-        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, zIndex: 20, marginTop: 4, maxHeight: 220, overflowY: "auto" }}>
-          {suggestions.map(p => (
-            <div key={p.id} onClick={() => selectPlayer(p, slot)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", cursor: "pointer", borderBottom: "1px solid #1a1a2a" }}>
-              {p.photo && <img src={p.photo} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover" }} />}
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>{p.name}</div>
-                <div style={{ fontSize: 10, color: "#555" }}>{p.team}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -2517,8 +2520,8 @@ function TransferFitGraphic() {
       <div style={{ fontSize: 11, color: "#666" }}>Compare a transfer target against a current squad player in a similar role.</div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        <PlayerSearchSlot label="🎯 Transfer Target" search={searchTarget} setSearch={setSearchTarget} suggestions={suggestTarget} setSuggestions={setSuggestTarget} player={target} searching={searchingTarget} slot="target" color="#a855f7" />
-        <PlayerSearchSlot label="🏠 Current Squad" search={searchIncumbent} setSearch={setSearchIncumbent} suggestions={suggestIncumbent} setSuggestions={setSuggestIncumbent} player={incumbent} searching={searchingIncumbent} slot="incumbent" color="#4ade80" />
+        <PlayerSearchSlot label="🎯 Transfer Target" search={searchTarget} setSearch={setSearchTarget} suggestions={suggestTarget} setSuggestions={setSuggestTarget} player={target} searching={searchingTarget} slot="target" color="#a855f7" onSelect={selectPlayer} onClear={() => setTarget(null)} onSearch={searchPlayer} />
+        <PlayerSearchSlot label="🏠 Current Squad" search={searchIncumbent} setSearch={setSearchIncumbent} suggestions={suggestIncumbent} setSuggestions={setSuggestIncumbent} player={incumbent} searching={searchingIncumbent} slot="incumbent" color="#4ade80" onSelect={selectPlayer} onClear={() => setIncumbent(null)} onSearch={searchPlayer} />
       </div>
 
       {seasonLoading && <div style={{ textAlign: "center", color: "#555", fontSize: 12 }}>Loading season stats...</div>}
