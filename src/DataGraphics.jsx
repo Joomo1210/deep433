@@ -1033,8 +1033,8 @@ function RecapGraphic({ history = [] }) {
       {/* Brand bar */}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
       <div style={{ position: "absolute", top: 12, right: 14, zIndex: 2, display: "flex", alignItems: "center", gap: 6 }}>
-        <span style={{ fontSize: 14, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
-        <span style={{ fontSize: 13, color: "#888", fontWeight: 600 }}>deep433.com</span>
+        <span style={{ fontSize: 16, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
+        
       </div>
       {/* Logo watermark — corner */}
       <div style={{ position: "absolute", bottom: 10, left: 10, pointerEvents: "none", zIndex: 0 }}>
@@ -1047,13 +1047,13 @@ function RecapGraphic({ history = [] }) {
           <div style={{ width: "50%", padding: "36px 20px 20px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", borderRight: "1px solid #1a1a2a", position: "relative", zIndex: 1 }}>
             {/* Enhanced header */}
             <div style={{ textAlign: "center", marginBottom: 12 }}>
-              <div style={{ fontSize: 11, color: "#555", letterSpacing: 2, textTransform: "uppercase" }}>{matchData?.competition}</div>
-              <div style={{ fontSize: 14, color: "#f0f0f0", letterSpacing: 2, textTransform: "uppercase", fontWeight: 900 }}>{selectedFixture?.round}</div>
+              <div style={{ fontSize: 14, color: "#999", letterSpacing: 2, textTransform: "uppercase" }}>{matchData?.competition}</div>
+              <div style={{ fontSize: 16, color: "#f0f0f0", letterSpacing: 2, textTransform: "uppercase", fontWeight: 900 }}>{selectedFixture?.round}</div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 8 }}>
               {selectedFixture?.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 44, height: 44, objectFit: "contain" }} />}
               <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 12, color: "#555", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Full Time</div>
+                <div style={{ fontSize: 14, color: "#999", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Full Time</div>
                 <div style={{ fontSize: 56, fontWeight: 900, color: "#f0f0f0", lineHeight: 1, letterSpacing: -1 }}>{fs0}-{fs1}</div>
               </div>
               {selectedFixture?.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 44, height: 44, objectFit: "contain" }} />}
@@ -1061,28 +1061,28 @@ function RecapGraphic({ history = [] }) {
             {/* Team names + goalscorers */}
             <div style={{ display: "flex", justifyContent: "space-between", width: "100%", gap: 8 }}>
               <div style={{ textAlign: "left", flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#4ade80" }}>{selectedFixture?.home}</div>
-                {matchData?.homeGoals?.map((g, i) => <div key={i} style={{ fontSize: 13, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#4ade80" }}>{selectedFixture?.home}</div>
+                {matchData?.homeGoals?.map((g, i) => <div key={i} style={{ fontSize: 15, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
               </div>
               <div style={{ textAlign: "right", flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#f59e0b" }}>{selectedFixture?.away}</div>
-                {matchData?.awayGoals?.map((g, i) => <div key={i} style={{ fontSize: 13, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#f59e0b" }}>{selectedFixture?.away}</div>
+                {matchData?.awayGoals?.map((g, i) => <div key={i} style={{ fontSize: 15, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
               </div>
             </div>
           </div>
           {/* Right: predictions */}
           <div style={{ flex: 1, padding: "36px 20px 20px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 12, position: "relative", zIndex: 1 }}>
-            <div style={{ fontSize: 13, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Predictions</div>
+            <div style={{ fontSize: 15, color: "#999", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Predictions</div>
             {[{ label: "👤 Your Call", pred: yourPrediction, result: yourResult, color: "#4ade80" }, { label: "🤖 AI Predicted", pred: aiPrediction, result: aiResult, color: "#f59e0b" }].map(p => (
               <div key={p.label} style={{ background: "#13131f", borderRadius: 10, padding: "12px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
-                  <div style={{ fontSize: 13, color: p.color, fontWeight: 700, marginBottom: 4 }}>{p.label}</div>
+                  <div style={{ fontSize: 15, color: p.color, fontWeight: 700, marginBottom: 4 }}>{p.label}</div>
                   <div style={{ fontSize: 28, fontWeight: 900, color: p.color }}>{p.pred || "—"}</div>
                 </div>
                 {p.result && (
                   <div style={{ textAlign: "center" }}>
                     <div style={{ fontSize: 22 }}>{p.result.icon}</div>
-                    <div style={{ fontSize: 11, color: p.result.color, fontWeight: 700, marginTop: 2 }}>{p.result.label}</div>
+                    <div style={{ fontSize: 14, color: p.result.color, fontWeight: 700, marginTop: 2 }}>{p.result.label}</div>
                   </div>
                 )}
               </div>
@@ -1090,12 +1090,12 @@ function RecapGraphic({ history = [] }) {
             <div style={{ background: "#0d0d18", borderRadius: 8, padding: "8px 12px", textAlign: "center" }}>
               {matchData?.keyStat && (
                 <div style={{ marginBottom: selectedFixture?.venue ? 4 : 0 }}>
-                  <span style={{ fontSize: 14, color: "#818cf8", fontWeight: 700 }}>📊 </span>
-                  <span style={{ fontSize: 14, color: "#ccc", fontWeight: 600 }}>{matchData.keyStat}</span>
+                  <span style={{ fontSize: 16, color: "#818cf8", fontWeight: 700 }}>📊 </span>
+                  <span style={{ fontSize: 16, color: "#ccc", fontWeight: 600 }}>{matchData.keyStat}</span>
                 </div>
               )}
               {selectedFixture?.venue && (
-                <div style={{ fontSize: 13, color: "#888", fontWeight: 600 }}>📍 {selectedFixture.venue}{selectedFixture.city ? ", " + selectedFixture.city : ""}</div>
+                <div style={{ fontSize: 15, color: "#bbb", fontWeight: 600 }}>📍 {selectedFixture.venue}{selectedFixture.city ? ", " + selectedFixture.city : ""}</div>
               )}
             </div>
           </div>
@@ -1104,12 +1104,12 @@ function RecapGraphic({ history = [] }) {
         <div style={{ flex: 1, padding: "20px", display: "flex", flexDirection: "column", gap: 12, paddingTop: 32, position: "relative", zIndex: 1 }}>
           {/* Enhanced header + final score */}
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 11, color: "#555", letterSpacing: 2, textTransform: "uppercase", marginBottom: 2 }}>{matchData?.competition}</div>
-            <div style={{ fontSize: 13, color: "#f0f0f0", letterSpacing: 2, textTransform: "uppercase", marginBottom: 8, fontWeight: 900 }}>{selectedFixture?.round}</div>
+            <div style={{ fontSize: 14, color: "#999", letterSpacing: 2, textTransform: "uppercase", marginBottom: 2 }}>{matchData?.competition}</div>
+            <div style={{ fontSize: 15, color: "#f0f0f0", letterSpacing: 2, textTransform: "uppercase", marginBottom: 8, fontWeight: 900 }}>{selectedFixture?.round}</div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 6 }}>
               {selectedFixture?.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 40, height: 40, objectFit: "contain" }} />}
               <div>
-                <div style={{ fontSize: 11, color: "#555", textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }}>Full Time</div>
+                <div style={{ fontSize: 14, color: "#999", textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }}>Full Time</div>
                 <div style={{ fontSize: 56, fontWeight: 900, color: "#f0f0f0", lineHeight: 1, letterSpacing: -1 }}>{fs0}-{fs1}</div>
               </div>
               {selectedFixture?.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 40, height: 40, objectFit: "contain" }} />}
@@ -1117,12 +1117,12 @@ function RecapGraphic({ history = [] }) {
             {/* Team names + goalscorers */}
             <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginTop: 4 }}>
               <div style={{ textAlign: "left", flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#4ade80" }}>{selectedFixture?.home}</div>
-                {matchData?.homeGoals?.map((g, i) => <div key={i} style={{ fontSize: 13, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
+                <div style={{ fontSize: 15, fontWeight: 700, color: "#4ade80" }}>{selectedFixture?.home}</div>
+                {matchData?.homeGoals?.map((g, i) => <div key={i} style={{ fontSize: 15, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
               </div>
               <div style={{ textAlign: "right", flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#f59e0b" }}>{selectedFixture?.away}</div>
-                {matchData?.awayGoals?.map((g, i) => <div key={i} style={{ fontSize: 13, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
+                <div style={{ fontSize: 15, fontWeight: 700, color: "#f59e0b" }}>{selectedFixture?.away}</div>
+                {matchData?.awayGoals?.map((g, i) => <div key={i} style={{ fontSize: 15, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
               </div>
             </div>
           </div>
@@ -1131,12 +1131,12 @@ function RecapGraphic({ history = [] }) {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             {[{ label: "👤 Your Call", pred: yourPrediction, result: yourResult, color: "#4ade80" }, { label: "🤖 AI Predicted", pred: aiPrediction, result: aiResult, color: "#818cf8" }].map(p => (
               <div key={p.label} style={{ background: "#13131f", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
-                <div style={{ fontSize: 12, color: p.color, fontWeight: 700, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>{p.label}</div>
+                <div style={{ fontSize: 14, color: p.color, fontWeight: 700, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>{p.label}</div>
                 <div style={{ fontSize: 26, fontWeight: 900, color: p.color, marginBottom: 4, letterSpacing: -0.5 }}>{p.pred || "—"}</div>
                 {p.result && (
                   <>
-                    <div style={{ fontSize: 18 }}>{p.result.icon}</div>
-                    <div style={{ fontSize: 11, color: p.result.color, fontWeight: 700, marginTop: 2 }}>{p.result.label}</div>
+                    <div style={{ fontSize: 20 }}>{p.result.icon}</div>
+                    <div style={{ fontSize: 14, color: p.result.color, fontWeight: 700, marginTop: 2 }}>{p.result.label}</div>
                   </>
                 )}
               </div>
@@ -1146,12 +1146,12 @@ function RecapGraphic({ history = [] }) {
           <div style={{ background: "#0d0d18", borderRadius: 8, padding: "8px 12px", textAlign: "center" }}>
             {matchData?.keyStat && (
               <div style={{ marginBottom: selectedFixture?.venue ? 4 : 0 }}>
-                <span style={{ fontSize: 14, color: "#818cf8", fontWeight: 700 }}>📊 </span>
-                <span style={{ fontSize: 14, color: "#ccc", fontWeight: 600 }}>{matchData.keyStat}</span>
+                <span style={{ fontSize: 16, color: "#818cf8", fontWeight: 700 }}>📊 </span>
+                <span style={{ fontSize: 16, color: "#ccc", fontWeight: 600 }}>{matchData.keyStat}</span>
               </div>
             )}
             {selectedFixture?.venue && (
-              <div style={{ fontSize: 13, color: "#888", fontWeight: 600 }}>📍 {selectedFixture.venue}{selectedFixture.city ? ", " + selectedFixture.city : ""}</div>
+              <div style={{ fontSize: 15, color: "#bbb", fontWeight: 600 }}>📍 {selectedFixture.venue}{selectedFixture.city ? ", " + selectedFixture.city : ""}</div>
             )}
           </div>
         </div>
@@ -1166,14 +1166,14 @@ function RecapGraphic({ history = [] }) {
       ) : (
         <>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
-            <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
-            <button onClick={() => { setSelectedFixture(null); setMatchData(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
+            <span style={{ fontSize: 18, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
+            <button onClick={() => { setSelectedFixture(null); setMatchData(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#999", cursor: "pointer", fontFamily: "inherit", fontSize: 16, padding: "4px 10px" }}>Change</button>
           </div>
 
-          {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
+          {error && <div style={{ color: "#f87171", fontSize: 18 }}>{error}</div>}
 
           {matchData && !matchData.yourPrediction && (
-            <div style={{ fontSize: 15, color: "#f59e0b", background: "#f59e0b11", border: "1px solid #f59e0b33", borderRadius: 8, padding: "10px 14px" }}>
+            <div style={{ fontSize: 17, color: "#f59e0b", background: "#f59e0b11", border: "1px solid #f59e0b33", borderRadius: 8, padding: "10px 14px" }}>
               ⚠️ No prediction found for this match in your history. Make a prediction first to use the Recap card.
             </div>
           )}
@@ -1182,7 +1182,7 @@ function RecapGraphic({ history = [] }) {
             <>
               <div style={{ display: "flex", gap: 8 }}>
                 {["square", "landscape"].map(v => (
-                  <button key={v} onClick={() => setVariant(v)} style={{ flex: 1, background: variant === v ? "#4ade8022" : "none", border: `1px solid ${variant === v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: variant === v ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "8px" }}>
+                  <button key={v} onClick={() => setVariant(v)} style={{ flex: 1, background: variant === v ? "#4ade8022" : "none", border: `1px solid ${variant === v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: variant === v ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 700, padding: "8px" }}>
                     {v === "square" ? "1:1 Square" : "16:9 Landscape"}
                   </button>
                 ))}
@@ -1192,7 +1192,7 @@ function RecapGraphic({ history = [] }) {
                 <CardContent />
               </div>
 
-              <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+              <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 19, fontWeight: 800, padding: "12px", width: "100%" }}>
                 {downloading ? "Generating..." : "⬇ Download Recap Card"}
               </button>
             </>
@@ -1384,7 +1384,7 @@ function BracketGraphic({ history = [] }) {
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
             <div style={{ position: "absolute", top: 10, right: 12, display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ fontSize: 12, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
-              <span style={{ fontSize: 11, color: "#888", fontWeight: 600 }}>deep433.com</span>
+              
             </div>
             <div style={{ textAlign: "center", marginBottom: 14 }}>
               <div style={{ fontSize: 16, color: "#f0f0f0", fontWeight: 900, textTransform: "uppercase", letterSpacing: 2 }}>
@@ -1441,7 +1441,7 @@ function BracketGraphic({ history = [] }) {
             </div>
 
             <div style={{ textAlign: "center", marginTop: 10 }}>
-              <span style={{ fontSize: 12, color: "#999", fontWeight: 600 }}>🟢 Green border = your prediction · deep433.com</span>
+              <span style={{ fontSize: 12, color: "#999", fontWeight: 600 }}>🟢 Green border = your prediction</span>
             </div>
           </div>
 
