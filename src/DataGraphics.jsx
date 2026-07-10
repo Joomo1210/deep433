@@ -957,8 +957,8 @@ function RecapGraphic({ history = [] }) {
           const awaySaves = away.stats?.saves || 0;
 
           // Pick the most interesting stat
-          if (homePoss >= 65) keyStat = `${home.team} dominated with ${homePoss}% possession`;
-          else if (awayPoss >= 65) keyStat = `${away.team} dominated with ${awayPoss}% possession`;
+          if (homePoss >= 65) keyStat = `${home.team} had ${homePoss}% of the ball`;
+          else if (awayPoss >= 65) keyStat = `${away.team} had ${awayPoss}% of the ball`;
           else if (awaySaves >= 5) keyStat = `${away.team} keeper made ${awaySaves} saves`;
           else if (homeSaves >= 5) keyStat = `${home.team} keeper made ${homeSaves} saves`;
           else if (homeShotsOn + awayShotsOn <= 4) keyStat = `Only ${homeShotsOn + awayShotsOn} shots on target — a tight affair`;
