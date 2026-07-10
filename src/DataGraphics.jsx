@@ -1091,11 +1091,11 @@ function RecapGraphic({ history = [] }) {
               {matchData?.keyStat && (
                 <div style={{ marginBottom: selectedFixture?.venue ? 4 : 0 }}>
                   <span style={{ fontSize: 16, color: "#818cf8", fontWeight: 700 }}>📊 </span>
-                  <span style={{ fontSize: 16, color: "#ccc", fontWeight: 600 }}>{matchData.keyStat}</span>
+                  <span style={{ fontSize: 12, color: "#ccc", fontWeight: 600 }}>{matchData.keyStat}</span>
                 </div>
               )}
               {selectedFixture?.venue && (
-                <div style={{ fontSize: 15, color: "#bbb", fontWeight: 600 }}>📍 {selectedFixture.venue}{selectedFixture.city ? ", " + selectedFixture.city : ""}</div>
+                <div style={{ fontSize: 11, color: "#bbb", fontWeight: 600 }}>📍 {selectedFixture.venue}{selectedFixture.city ? ", " + selectedFixture.city : ""}</div>
               )}
             </div>
           </div>
@@ -1147,11 +1147,11 @@ function RecapGraphic({ history = [] }) {
             {matchData?.keyStat && (
               <div style={{ marginBottom: selectedFixture?.venue ? 4 : 0 }}>
                 <span style={{ fontSize: 16, color: "#818cf8", fontWeight: 700 }}>📊 </span>
-                <span style={{ fontSize: 16, color: "#ccc", fontWeight: 600 }}>{matchData.keyStat}</span>
+                <span style={{ fontSize: 12, color: "#ccc", fontWeight: 600 }}>{matchData.keyStat}</span>
               </div>
             )}
             {selectedFixture?.venue && (
-              <div style={{ fontSize: 15, color: "#bbb", fontWeight: 600 }}>📍 {selectedFixture.venue}{selectedFixture.city ? ", " + selectedFixture.city : ""}</div>
+              <div style={{ fontSize: 11, color: "#bbb", fontWeight: 600 }}>📍 {selectedFixture.venue}{selectedFixture.city ? ", " + selectedFixture.city : ""}</div>
             )}
           </div>
         </div>
