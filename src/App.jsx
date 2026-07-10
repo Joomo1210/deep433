@@ -178,7 +178,7 @@ function H2HSummaryShare({ h2h, homeTeam, awayTeam }) {
       <div style={{ display: "flex", justifyContent: "space-around", marginBottom: 10 }}>
         <div style={{ textAlign: "center" }}>
           <div style={{ fontSize: 26, fontWeight: 900, color: "#4ade80" }}>{hw}</div>
-          <div style={{ fontSize: 12, color: "#4ade80", marginTop: 2 }}>{homeTeam.split(" ")[0]}</div>
+          <div style={{ fontSize: 13, color: "#4ade80", marginTop: 8, fontWeight: 600 }}>{homeTeam.split(" ")[0]}</div>
         </div>
         <div style={{ textAlign: "center" }}>
           <div style={{ fontSize: 26, fontWeight: 900, color: "#a78bfa" }}>{d}</div>
@@ -186,7 +186,7 @@ function H2HSummaryShare({ h2h, homeTeam, awayTeam }) {
         </div>
         <div style={{ textAlign: "center" }}>
           <div style={{ fontSize: 26, fontWeight: 900, color: "#f59e0b" }}>{aw}</div>
-          <div style={{ fontSize: 12, color: "#f59e0b", marginTop: 2 }}>{awayTeam.split(" ")[0]}</div>
+          <div style={{ fontSize: 13, color: "#f59e0b", marginTop: 8, fontWeight: 600 }}>{awayTeam.split(" ")[0]}</div>
         </div>
       </div>
       <div style={{ display: "flex", gap: 5, justifyContent: "center", marginBottom: 8 }}>
@@ -288,8 +288,8 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
               <div style={{ width: hp + "%", background: "#4ade80" }} />
               <div style={{ width: ap + "%", background: "#f59e0b", opacity: 0.6 }} />
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3, fontSize: 12, color: "#444" }}>
-              <span>{homeTeam.split(" ")[0]}</span><span>{awayTeam.split(" ")[0]}</span>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 9, fontSize: 13, color: "#aaa" }}>
+              <span style={{ color: "#4ade80", fontWeight: 600 }}>{homeTeam.split(" ")[0]}</span><span style={{ color: "#f59e0b", fontWeight: 600 }}>{awayTeam.split(" ")[0]}</span>
             </div>
           </div>
         );
@@ -333,7 +333,7 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
                 <div style={{ textAlign: "center" }}>
                   <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><TeamLogo src={homeLogo} size={44} /></div>
                   <div style={{ fontSize: 15, fontWeight: 800, color: "#4ade80", marginBottom: 4 }}>{homeTeam}</div>
-                  <div style={{ fontSize: 52, fontWeight: 900, color: "#4ade80", lineHeight: 1 }}>{userPrediction.split("-")[0]}</div>
+                  <div style={{ fontSize: 52, fontWeight: 900, color: "#4ade80", lineHeight: 1, letterSpacing: -1 }}>{userPrediction.split("-")[0]}</div>
                 </div>
                 <div style={{ textAlign: "center" }}>
                   <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 700, letterSpacing: 1, marginBottom: 4 }}>YOUR CALL</div>
@@ -343,7 +343,7 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
                 <div style={{ textAlign: "center" }}>
                   <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><TeamLogo src={awayLogo} size={44} /></div>
                   <div style={{ fontSize: 15, fontWeight: 800, color: "#f59e0b", marginBottom: 4 }}>{awayTeam}</div>
-                  <div style={{ fontSize: 52, fontWeight: 900, color: "#f59e0b", lineHeight: 1 }}>{userPrediction.split("-")[1]}</div>
+                  <div style={{ fontSize: 52, fontWeight: 900, color: "#f59e0b", lineHeight: 1, letterSpacing: -1 }}>{userPrediction.split("-")[1]}</div>
                 </div>
               </div>
             </div>
@@ -360,7 +360,7 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
               <div style={{ textAlign: "center" }}>
                 <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><TeamLogo src={homeLogo} size={44} /></div>
                 <div style={{ fontSize: 15, fontWeight: 800, color: "#4ade80", marginBottom: 4 }}>{homeTeam}</div>
-                <div style={{ fontSize: 54, fontWeight: 900, color: "#4ade80", lineHeight: 1 }}>{userPrediction.split("-")[0]}</div>
+                <div style={{ fontSize: 54, fontWeight: 900, color: "#4ade80", lineHeight: 1, letterSpacing: -1 }}>{userPrediction.split("-")[0]}</div>
               </div>
               <div style={{ textAlign: "center" }}>
                 <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 700, letterSpacing: 1, marginBottom: 4 }}>YOUR CALL</div>
@@ -370,7 +370,7 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
               <div style={{ textAlign: "center" }}>
                 <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><TeamLogo src={awayLogo} size={44} /></div>
                 <div style={{ fontSize: 15, fontWeight: 800, color: "#f59e0b", marginBottom: 4 }}>{awayTeam}</div>
-                <div style={{ fontSize: 54, fontWeight: 900, color: "#f59e0b", lineHeight: 1 }}>{userPrediction.split("-")[1]}</div>
+                <div style={{ fontSize: 54, fontWeight: 900, color: "#f59e0b", lineHeight: 1, letterSpacing: -1 }}>{userPrediction.split("-")[1]}</div>
               </div>
             </div>
             <div style={{ height: 1, background: "#1a1a2a" }} />
@@ -2176,12 +2176,12 @@ export default function FootballPredictor() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 12, alignItems: "center" }}>
                 <div style={{ textAlign: "center" }}>
                   <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, marginBottom: 8 }}>👤 Your Call</div>
-                  <div style={{ fontSize: 40, fontWeight: 900, color: "#4ade80" }}>{viewingAnalysis.user_prediction}</div>
+                  <div style={{ fontSize: 42, fontWeight: 900, color: "#4ade80", letterSpacing: -0.5 }}>{viewingAnalysis.user_prediction}</div>
                 </div>
                 <div style={{ textAlign: "center", fontSize: 18, color: "#333" }}>vs</div>
                 <div style={{ textAlign: "center" }}>
                   <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, marginBottom: 8 }}>🤖 AI Predicts</div>
-                  <div style={{ fontSize: 40, fontWeight: 900, color: "#f59e0b" }}>{viewingAnalysis.ai_prediction}</div>
+                  <div style={{ fontSize: 42, fontWeight: 900, color: "#f59e0b", letterSpacing: -0.5 }}>{viewingAnalysis.ai_prediction}</div>
                 </div>
               </div>
               {viewingAnalysis.actual_score && (
