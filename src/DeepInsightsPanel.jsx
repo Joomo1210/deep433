@@ -17,8 +17,8 @@ function BentoBox({ title, icon, color, children }) {
   return (
     <div style={{ background: "#13131f", border: `1px solid ${color}22`, borderRadius: 10, padding: "10px 12px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
-        <span style={{ fontSize: 12 }}>{icon}</span>
-        <span style={{ fontSize: 10, color, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5 }}>{title}</span>
+        <span style={{ fontSize: 15 }}>{icon}</span>
+        <span style={{ fontSize: 13, color, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5 }}>{title}</span>
       </div>
       {children}
     </div>
@@ -29,18 +29,18 @@ function RatingBar({ subtitle, homeVal, awayVal, homeTeam, awayTeam }) {
   if (!homeVal) return null;
   return (
     <div>
-      <div style={{ fontSize: 10, color: "#666", marginBottom: 6 }}>{subtitle}</div>
+      <div style={{ fontSize: 13, color: "#999", marginBottom: 6 }}>{subtitle}</div>
       <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-        <span style={{ fontSize: 15, fontWeight: 900, color: "#4ade80", minWidth: 32, textAlign: "right" }}>{capStat(homeVal)}</span>
+        <span style={{ fontSize: 17, fontWeight: 900, color: "#4ade80", minWidth: 32, textAlign: "right" }}>{capStat(homeVal)}</span>
         <div style={{ flex: 1, height: 6, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex" }}>
           <div style={{ width: homeVal, background: "#4ade80" }} />
         </div>
         <div style={{ flex: 1, height: 6, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex", flexDirection: "row-reverse" }}>
           <div style={{ width: awayVal, background: "#f59e0b" }} />
         </div>
-        <span style={{ fontSize: 15, fontWeight: 900, color: "#f59e0b", minWidth: 32 }}>{capStat(awayVal)}</span>
+        <span style={{ fontSize: 17, fontWeight: 900, color: "#f59e0b", minWidth: 32 }}>{capStat(awayVal)}</span>
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, fontSize: 10, color: "#888" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, fontSize: 13, color: "#aaa" }}>
         <span style={{ color: "#4ade80" }}>{homeTeam.split(" ")[0]}</span>
         <span style={{ color: "#f59e0b" }}>{awayTeam.split(" ")[0]}</span>
       </div>
@@ -52,10 +52,10 @@ function TeamH2HRow({ team, h2hResults, color }) {
   const dotColor = (r) => r === "W" ? "#4ade80" : r === "D" ? "#60a5fa" : "#f87171";
   return (
     <div style={{ marginBottom: 8 }}>
-      <div style={{ fontSize: 12, fontWeight: 800, color, marginBottom: 5 }}>{team}</div>
+      <div style={{ fontSize: 15, fontWeight: 800, color, marginBottom: 5 }}>{team}</div>
       <div style={{ display: "flex", gap: 4 }}>
         {h2hResults.map((r, i) => (
-          <div key={i} style={{ width: 18, height: 18, borderRadius: 4, background: dotColor(r), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, color: "#0a0a0f" }}>{r}</div>
+          <div key={i} style={{ width: 18, height: 18, borderRadius: 4, background: dotColor(r), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900, color: "#0a0a0f" }}>{r}</div>
         ))}
       </div>
     </div>
@@ -65,17 +65,17 @@ function TeamH2HRow({ team, h2hResults, color }) {
 function FormRow({ team, form, color }) {
   return (
     <div style={{ marginBottom: 8 }}>
-      <div style={{ fontSize: 12, fontWeight: 800, color, marginBottom: 5 }}>{team}</div>
+      <div style={{ fontSize: 15, fontWeight: 800, color, marginBottom: 5 }}>{team}</div>
       <div style={{ display: "flex", gap: 4 }}>
         {(form || "").split("").slice(-5).map((r, i) => (
           <div key={i} style={{
             width: 18, height: 18, borderRadius: 4,
             background: r === "W" ? "#4ade80" : r === "D" ? "#60a5fa" : "#f87171",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 9, fontWeight: 900, color: "#0a0a0f",
+            fontSize: 12, fontWeight: 900, color: "#0a0a0f",
           }}>{r}</div>
         ))}
-        {!form && <span style={{ fontSize: 10, color: "#555" }}>No recent form data</span>}
+        {!form && <span style={{ fontSize: 13, color: "#999" }}>No recent form data</span>}
       </div>
     </div>
   );
@@ -125,8 +125,8 @@ export default function DeepInsightsPanel({ insights, homeTeam, awayTeam, showHe
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       {showHeader && (
         <div>
-          <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 3 }}>📊 Brief Insights</div>
-          <div style={{ fontSize: 10, color: "#888", fontWeight: 600 }}>Statistical model — independent of AI verdict</div>
+          <div style={{ fontSize: 15, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 3 }}>📊 Brief Insights</div>
+          <div style={{ fontSize: 13, color: "#aaa", fontWeight: 600 }}>Statistical model — independent of AI verdict</div>
         </div>
       )}
 
@@ -136,15 +136,15 @@ export default function DeepInsightsPanel({ insights, homeTeam, awayTeam, showHe
           border: "1px solid #818cf833",
           borderRadius: 10, padding: "10px 12px",
         }}>
-          <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, textAlign: "center", marginBottom: 8 }}>🔮 Predicted Scorelines</div>
+          <div style={{ fontSize: 13, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, textAlign: "center", marginBottom: 8 }}>🔮 Predicted Scorelines</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, marginBottom: 3 }}>🤖 AI Verdict</div>
-              <div style={{ fontSize: 22, fontWeight: 900, color: "#818cf8" }}>{aiPrediction || "—"}</div>
+              <div style={{ fontSize: 13, color: "#818cf8", fontWeight: 700, marginBottom: 3 }}>🤖 AI Verdict</div>
+              <div style={{ fontSize: 24, fontWeight: 900, color: "#818cf8" }}>{aiPrediction || "—"}</div>
             </div>
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 10, color: "#4ade80", fontWeight: 700, marginBottom: 3 }}>👤 My Pick</div>
-              <div style={{ fontSize: 22, fontWeight: 900, color: "#4ade80" }}>{userPrediction || "—"}</div>
+              <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 700, marginBottom: 3 }}>👤 My Pick</div>
+              <div style={{ fontSize: 24, fontWeight: 900, color: "#4ade80" }}>{userPrediction || "—"}</div>
             </div>
           </div>
         </div>
