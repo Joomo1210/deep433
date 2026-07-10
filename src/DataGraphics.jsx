@@ -1589,6 +1589,11 @@ function DeepInsightsGraphic({ history = [] }) {
             <>
               <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
                 <div style={{ padding: "22px 18px 18px" }}>
+                  {/* Competition label */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 10 }}>
+                    <img src="/fifa.png" alt="" crossOrigin="anonymous" style={{ width: 18, height: 18, objectFit: "contain" }} />
+                    <span style={{ fontSize: 12, color: "#ccc", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 }}>FIFA World Cup 2026</span>
+                  </div>
                   {/* Match header */}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, marginTop: 8 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -1596,8 +1601,8 @@ function DeepInsightsGraphic({ history = [] }) {
                       <span style={{ fontSize: 17, fontWeight: 900, color: "#4ade80" }}>{home}</span>
                     </div>
                     <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: 12, color: "#555", textTransform: "uppercase", letterSpacing: 1 }}>{selectedFixture.round}</div>
-                      <div style={{ fontSize: 14, color: "#333", fontWeight: 700 }}>vs</div>
+                      <div style={{ fontSize: 13, color: "#aaa", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{selectedFixture.round}</div>
+                      <div style={{ fontSize: 14, color: "#555", fontWeight: 700 }}>vs</div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <span style={{ fontSize: 17, fontWeight: 900, color: "#f59e0b" }}>{away}</span>
