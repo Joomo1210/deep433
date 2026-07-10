@@ -1,127 +1,101 @@
-// /api/fixtures.js
-// Fetches upcoming and recent fixtures for a league across a date range
-// Usage: /api/fixtures?leagueId=wc2026
-
-const LEAGUE_MAP = {
-  wc2026:      { id: 1,   season: 2026 },
-  pl:          { id: 39,  season: 2025 },
-  laliga:      { id: 140, season: 2025 },
-  seriea:      { id: 135, season: 2025 },
-  bundesliga:  { id: 78,  season: 2025 },
-  ligue1:      { id: 61,  season: 2025 },
-  ucl:         { id: 2,   season: 2025 },
-  uel:         { id: 3,   season: 2025 },
-  facup:       { id: 45,  season: 2025 },
-  copadelrey:  { id: 143, season: 2025 },
-  afcon:       { id: 6,   season: 2025 },
-  copamerica:  { id: 9,   season: 2024 },
-};
-
-function mapStatus(short) {
-  const live = ["1H","HT","2H","ET","BT","P","INT"];
-  const finished = ["FT","AET","PEN"];
-  if (live.includes(short)) return "live";
-  if (finished.includes(short)) return "finished";
-  return "upcoming";
-}
+// /api/fixture-insights.js
+// Fetches API-Football's algorithmic prediction data for a specific fixture.
+// Returns win probabilities, H2H record, form, attack/defence comparison.
+// Usage: /api/fixture-insights?fixtureId=1567307
 
 export default async function handler(req, res) {
-  const { leagueId, full } = req.query;
-  if (!leagueId) return res.status(400).json({ error: "leagueId required" });
+  const { fixtureId } = req.query;
 
-  const league = LEAGUE_MAP[leagueId];
-  if (!league) return res.status(400).json({ error: "Unknown league" });
-
-  const apiKey = process.env.API_FOOTBALL_KEY;
-
-  // Full mode: fetch entire season in one call (for stats aggregation, e.g. clean sheets)
-  if (full === "true") {
-    try {
-      const r = await fetch(`https://v3.football.api-sports.io/fixtures?league=${league.id}&season=${league.season}`, {
-        headers: { "x-apisports-key": apiKey }
-      });
-      const data = await r.json();
-      const fixtures = (data.response || []).map(f => ({
-        home: f.teams?.home?.name,
-        away: f.teams?.away?.name,
-        homeLogo: f.teams?.home?.logo,
-        awayLogo: f.teams?.away?.logo,
-        status: mapStatus(f.fixture?.status?.short),
-        statusRaw: f.fixture?.status?.short,
-        elapsed: f.fixture?.status?.elapsed,
-        kickoff: f.fixture?.date,
-        date: f.fixture?.date?.split("T")[0],
-        fixtureId: f.fixture?.id,
-        round: f.league?.round,
-        venue: f.fixture?.venue?.name,
-        city: f.fixture?.venue?.city,
-        score: { home: f.goals?.home, away: f.goals?.away },
-      }));
-      return res.status(200).json({ fixtures });
-    } catch (err) {
-      return res.status(500).json({ error: err.message });
-    }
+  if (!fixtureId) {
+    return res.status(400).json({ error: "fixtureId is required" });
   }
 
-  const now = new Date();
-
-  // Fetch yesterday through next 10 days to capture ongoing tournaments
-  const dates = [];
-  for (let i = -1; i <= 10; i++) {
-    const d = new Date(now.getTime() + i * 86400000);
-    dates.push(d.toISOString().split("T")[0]);
+  const apiKey = process.env.API_FOOTBALL_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: "API_FOOTBALL_KEY not configured" });
   }
 
   try {
-    // Fetch all dates in parallel
-    const results = await Promise.allSettled(
-      dates.map(date =>
-        fetch(`https://v3.football.api-sports.io/fixtures?league=${league.id}&season=${league.season}&date=${date}`, {
-          headers: { "x-apisports-key": apiKey }
-        }).then(r => r.json()).then(d => ({ date, fixtures: d.response || [] }))
-      )
-    );
-
-    const allFixtures = [];
-    results.forEach(r => {
-      if (r.status === "fulfilled") {
-        r.value.fixtures.forEach(f => {
-          allFixtures.push({
-            home: f.teams?.home?.name,
-            away: f.teams?.away?.name,
-            homeLogo: f.teams?.home?.logo,
-            awayLogo: f.teams?.away?.logo,
-            status: mapStatus(f.fixture?.status?.short),
-            statusRaw: f.fixture?.status?.short,
-            elapsed: f.fixture?.status?.elapsed,
-            kickoff: f.fixture?.date,
-            date: r.value.date,
-            fixtureId: f.fixture?.id,
-            round: f.league?.round,
-            venue: f.fixture?.venue?.name,
-            city: f.fixture?.venue?.city,
-            score: {
-              home: f.goals?.home,
-              away: f.goals?.away,
-            },
-          });
-        });
-      }
+    const url = `https://v3.football.api-sports.io/predictions?fixture=${fixtureId}`;
+    const response = await fetch(url, {
+      headers: { "x-apisports-key": apiKey },
     });
 
-    // Sort by kickoff time
-    allFixtures.sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+    if (!response.ok) {
+      return res.status(200).json({ available: false, reason: "Could not fetch prediction data" });
+    }
 
-    // Remove duplicates (same fixtureId)
-    const seen = new Set();
-    const unique = allFixtures.filter(f => {
-      if (seen.has(f.fixtureId)) return false;
-      seen.add(f.fixtureId);
-      return true;
+    const data = await response.json();
+    const pred = data.response?.[0];
+
+    if (!pred) {
+      return res.status(200).json({ available: false, reason: "No prediction data available" });
+    }
+
+    const percent = pred.predictions?.percent;
+    const winner = pred.predictions?.winner?.name;
+    const advice = pred.predictions?.advice;
+    const underOver = pred.predictions?.under_over;
+    const goalsHome = pred.predictions?.goals?.home;
+    const goalsAway = pred.predictions?.goals?.away;
+
+    const comp = pred.comparison || {};
+    const h2h = pred.h2h || [];
+
+    // Summarise last 5 H2H results
+    const h2hSummary = h2h.slice(0, 5).map(f => {
+      const hg = f.goals?.home ?? "?";
+      const ag = f.goals?.away ?? "?";
+      const hn = f.teams?.home?.name;
+      const an = f.teams?.away?.name;
+      return `${hn} ${hg}-${ag} ${an}`;
     });
 
-    res.status(200).json({ fixtures: unique });
+    // Recent form strings
+    const homeForm = pred.teams?.home?.last_5?.form || "";
+    const awayForm = pred.teams?.away?.last_5?.form || "";
+
+    // Normalise comparison values to always sum to 100%
+    const norm = (a, b) => {
+      const av = Math.max(parseFloat(a) || 0, 5);
+      const bv = Math.max(parseFloat(b) || 0, 5);
+      const total = av + bv;
+      return { a: Math.round((av / total) * 100) + "%", b: Math.round((bv / total) * 100) + "%" };
+    };
+    const atk  = norm(comp.att?.home,  comp.att?.away);
+    const def  = norm(comp.def?.home,  comp.def?.away);
+    const form = norm(comp.form?.home, comp.form?.away);
+
+    return res.status(200).json({
+      available: true,
+      winner,
+      advice,
+      underOver,
+      percent: {
+        home: percent?.home,
+        draw: percent?.draw,
+        away: percent?.away,
+      },
+      goals: {
+        home: goalsHome,
+        away: goalsAway,
+      },
+      comparison: {
+        attackHome: atk.a,
+        attackAway: atk.b,
+        defenceHome: def.a,
+        defenceAway: def.b,
+        formHome: form.a,
+        formAway: form.b,
+        h2hHome: comp.h2h?.home,
+        h2hAway: comp.h2h?.away,
+      },
+      form: { home: homeForm, away: awayForm },
+      homeTeamId: pred.teams?.home?.id,
+      awayTeamId: pred.teams?.away?.id,
+      h2h: h2hSummary,
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.status(200).json({ available: false, error: err.message });
   }
 }
