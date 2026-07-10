@@ -25,7 +25,7 @@ const LEAGUE_LOGOS = {
 };
 
 const LEAGUES = [
-  { id: "wc2026",     label: "World Cup 2026",     short: "World Cup 2026" },
+  { id: "wc2026",     label: "FIFA World Cup 2026", short: "FIFA World Cup 2026" },
   { id: "pl",         label: "Premier League",      short: "Premier League" },
   { id: "laliga",     label: "La Liga",             short: "La Liga" },
   { id: "seriea",     label: "Serie A",             short: "Serie A" },
