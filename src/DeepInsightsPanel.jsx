@@ -140,6 +140,28 @@ export default function DeepInsightsPanel({ insights, homeTeam, awayTeam, showHe
           <TeamH2HRow team={awayTeam} record={awayRecord} h2hResults={parsed.map(m => getH2HResult(m, awayTeam))} totalMatches={totalMatches} />
         </div>
       )}
+
+      {(insights.form?.home || insights.form?.away) && (
+        <div style={{ marginBottom: 10 }}>
+          <div style={{ fontSize: 15, color: "#ccc", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Last 5 Matches</div>
+          {[{ team: homeTeam, form: insights.form.home }, { team: awayTeam, form: insights.form.away }].map(({ team, form }) => (
+            <div key={team} style={{ background: "#13131f", borderRadius: 8, padding: "12px 14px", marginBottom: 8 }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#f0f0f0", marginBottom: 10 }}>{team}</div>
+              <div style={{ display: "flex", gap: 5 }}>
+                {(form || "").split("").slice(-5).map((r, i) => (
+                  <div key={i} style={{
+                    width: 24, height: 24, borderRadius: 4,
+                    background: r === "W" ? "#4ade80" : r === "D" ? "#60a5fa" : "#f87171",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 12, fontWeight: 900, color: "#0a0a0f",
+                  }}>{r}</div>
+                ))}
+                {!form && <span style={{ fontSize: 13, color: "#555" }}>No recent form data</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
