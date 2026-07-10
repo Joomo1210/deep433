@@ -40,7 +40,7 @@ function RatingBar({ subtitle, homeVal, awayVal, homeTeam, awayTeam }) {
         </div>
         <span style={{ fontSize: 17, fontWeight: 900, color: "#f59e0b", minWidth: 32 }}>{capStat(awayVal)}</span>
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, fontSize: 13, color: "#aaa" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10, fontSize: 13, color: "#aaa" }}>
         <span style={{ color: "#4ade80" }}>{homeTeam.split(" ")[0]}</span>
         <span style={{ color: "#f59e0b" }}>{awayTeam.split(" ")[0]}</span>
       </div>
@@ -140,11 +140,11 @@ export default function DeepInsightsPanel({ insights, homeTeam, awayTeam, showHe
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: 13, color: "#818cf8", fontWeight: 700, marginBottom: 3 }}>🤖 AI Verdict</div>
-              <div style={{ fontSize: 24, fontWeight: 900, color: "#818cf8" }}>{aiPrediction || "—"}</div>
+              <div style={{ fontSize: 32, fontWeight: 900, color: "#818cf8", letterSpacing: -0.5 }}>{aiPrediction || "—"}</div>
             </div>
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 700, marginBottom: 3 }}>👤 My Pick</div>
-              <div style={{ fontSize: 24, fontWeight: 900, color: "#4ade80" }}>{userPrediction || "—"}</div>
+              <div style={{ fontSize: 32, fontWeight: 900, color: "#4ade80", letterSpacing: -0.5 }}>{userPrediction || "—"}</div>
             </div>
           </div>
         </div>
