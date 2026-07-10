@@ -165,12 +165,13 @@ function GraphicCard({ children, cardRef, label }) {
           overflow: "hidden",
           position: "relative",
           fontFamily: "'Inter',sans-serif",
+          maxWidth: 460,
+          margin: "0 auto",
         }}
       >
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
-        <div style={{ position: "absolute", top: 12, right: 14, zIndex: 2, display: "flex", alignItems: "center", gap: 6 }}>
+        <div style={{ position: "absolute", top: 12, right: 14, zIndex: 2 }}>
           <span style={{ fontSize: 13, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
-          <span style={{ fontSize: 12, color: "#888", fontWeight: 600 }}>deep433.com</span>
         </div>
         {/* Centre background watermark */}
         <div style={{
@@ -2791,7 +2792,7 @@ export default function DataGraphics({ history = [], supabase }) {
   const [activeSection, setActiveSection] = useState("match");
 
   const sections = [
-    { id: "insights", label: "📊 Deep Insights" },
+    { id: "insights", label: "📊 Brief Insights" },
     { id: "pitch",    label: "⚽ Pitch View" },
     { id: "h2h",      label: "🆚 Player H2H" },
     { id: "matchh2h", label: "📋 Match H2H" },
