@@ -73,7 +73,7 @@ function getH2HResult(match, perspective) {
   return perspWon ? "W" : "L";
 }
 
-export default function DeepInsightsPanel({ insights, homeTeam, awayTeam, showHeader = true }) {
+export default function DeepInsightsPanel({ insights, homeTeam, awayTeam, showHeader = true, aiPrediction, userPrediction }) {
   if (!insights) return null;
 
   const parsed = insights.h2h?.length ? insights.h2h.map(parseH2HLine).filter(Boolean) : [];
@@ -96,6 +96,22 @@ export default function DeepInsightsPanel({ insights, homeTeam, awayTeam, showHe
           <div style={{ fontSize: 14, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 14 }}>📊 Deep Insights</div>
           <div style={{ fontSize: 16, color: "#aaa", marginBottom: 14, fontWeight: 600 }}>Statistical model — independent of AI verdict</div>
         </>
+      )}
+
+      {(aiPrediction || userPrediction) && (
+        <div style={{ background: "#13131f", border: "1px solid #1a1a2a", borderRadius: 8, padding: "12px 14px", marginBottom: 14 }}>
+          <div style={{ fontSize: 13, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, textAlign: "center", marginBottom: 10 }}>🔮 Predicted Scorelines</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 13, color: "#818cf8", fontWeight: 700, marginBottom: 4 }}>🤖 AI Verdict</div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: "#818cf8" }}>{aiPrediction || "—"}</div>
+            </div>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 700, marginBottom: 4 }}>👤 My Pick</div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: "#4ade80" }}>{userPrediction || "—"}</div>
+            </div>
+          </div>
+        </div>
       )}
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
