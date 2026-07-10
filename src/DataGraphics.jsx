@@ -1034,11 +1034,6 @@ function RecapGraphic({ history = [] }) {
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
       <div style={{ position: "absolute", top: 12, right: 14, zIndex: 2, display: "flex", alignItems: "center", gap: 6 }}>
         <span style={{ fontSize: 16, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
-        
-      </div>
-      {/* Logo watermark — corner */}
-      <div style={{ position: "absolute", bottom: 10, left: 10, pointerEvents: "none", zIndex: 0 }}>
-        <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, opacity: 0.35, objectFit: "contain", borderRadius: "50%", userSelect: "none" }} />
       </div>
 
       {isLandscape ? (
@@ -1059,19 +1054,23 @@ function RecapGraphic({ history = [] }) {
               {selectedFixture?.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 44, height: 44, objectFit: "contain" }} />}
             </div>
             {/* Team names + goalscorers */}
-            <div style={{ display: "flex", justifyContent: "space-between", width: "100%", gap: 8 }}>
-              <div style={{ textAlign: "left", flex: 1 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", width: "100%", gap: 8, position: "relative" }}>
+              {/* Watermark centered between the two team columns */}
+              <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", pointerEvents: "none", zIndex: 0 }}>
+                <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 34, height: 34, opacity: 0.3, objectFit: "contain", borderRadius: "50%", userSelect: "none" }} />
+              </div>
+              <div style={{ textAlign: "left", flex: 1, position: "relative", zIndex: 1 }}>
                 <div style={{ fontSize: 16, fontWeight: 700, color: "#4ade80" }}>{selectedFixture?.home}</div>
                 {matchData?.homeGoals?.map((g, i) => <div key={i} style={{ fontSize: 15, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
               </div>
-              <div style={{ textAlign: "right", flex: 1 }}>
+              <div style={{ textAlign: "right", flex: 1, position: "relative", zIndex: 1 }}>
                 <div style={{ fontSize: 16, fontWeight: 700, color: "#f59e0b" }}>{selectedFixture?.away}</div>
                 {matchData?.awayGoals?.map((g, i) => <div key={i} style={{ fontSize: 15, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
               </div>
             </div>
           </div>
           {/* Right: predictions */}
-          <div style={{ flex: 1, padding: "36px 20px 20px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 12, position: "relative", zIndex: 1 }}>
+          <div style={{ flex: 1, padding: "36px 20px 12px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 12, position: "relative", zIndex: 1 }}>
             <div style={{ fontSize: 15, color: "#999", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Predictions</div>
             {[{ label: "👤 Your Call", pred: yourPrediction, result: yourResult, color: "#4ade80" }, { label: "🤖 AI Predicted", pred: aiPrediction, result: aiResult, color: "#f59e0b" }].map(p => (
               <div key={p.label} style={{ background: "#13131f", borderRadius: 10, padding: "12px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -1115,12 +1114,15 @@ function RecapGraphic({ history = [] }) {
               {selectedFixture?.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 40, height: 40, objectFit: "contain" }} />}
             </div>
             {/* Team names + goalscorers */}
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginTop: 4 }}>
-              <div style={{ textAlign: "left", flex: 1 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginTop: 4, position: "relative" }}>
+              <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", pointerEvents: "none", zIndex: 0 }}>
+                <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, opacity: 0.28, objectFit: "contain", borderRadius: "50%", userSelect: "none" }} />
+              </div>
+              <div style={{ textAlign: "left", flex: 1, position: "relative", zIndex: 1 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: "#4ade80" }}>{selectedFixture?.home}</div>
                 {matchData?.homeGoals?.map((g, i) => <div key={i} style={{ fontSize: 15, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
               </div>
-              <div style={{ textAlign: "right", flex: 1 }}>
+              <div style={{ textAlign: "right", flex: 1, position: "relative", zIndex: 1 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: "#f59e0b" }}>{selectedFixture?.away}</div>
                 {matchData?.awayGoals?.map((g, i) => <div key={i} style={{ fontSize: 15, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
               </div>
