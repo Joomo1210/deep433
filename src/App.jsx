@@ -1471,7 +1471,7 @@ export default function FootballPredictor() {
 
                 {deepInsights && (
                   <div className="card" style={{ borderColor: "#3730a322", background: "#0f0f1f" }}>
-                    <DeepInsightsPanel insights={deepInsights} homeTeam={homeTeam} awayTeam={awayTeam} />
+                    <DeepInsightsPanel insights={deepInsights} homeTeam={homeTeam} awayTeam={awayTeam} aiPrediction={result?.scoreline} userPrediction={userPrediction} />
                   </div>
                 )}
 
