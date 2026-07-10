@@ -2793,6 +2793,138 @@ function GoalTimingGraphic() {
   );
 }
 
+// ─── HALFTIME RECAP GRAPHIC ──────────────────────────────────────────────────
+function HalftimeRecapGraphic() {
+  const cardRef = useRef(null);
+  const [selectedFixture, setSelectedFixture] = useState(null);
+  const [events, setEvents] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSelect = async (f) => {
+    setSelectedFixture(f);
+    setEvents(null);
+    setError("");
+    if (f.status === "upcoming") { setError("This match hasn't kicked off yet"); return; }
+    setLoading(true);
+    try {
+      const r = await fetch(`/api/match-events?fixtureId=${f.fixtureId}`);
+      const d = await r.json();
+      setEvents(d.events || []);
+    } catch (e) { setError("Could not load match events"); }
+    setLoading(false);
+  };
+
+  const download = async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      if (!window.html2canvas) {
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+        document.head.appendChild(s);
+        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
+      }
+      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
+      const link = document.createElement("a");
+      link.download = `deep433-ht-recap-${selectedFixture?.home}-vs-${selectedFixture?.away}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  function normalizeTeam(s) { return (s || "").toLowerCase().replace(/[^a-z0-9]/g, ""); }
+
+  const firstHalfEvents = (events || []).filter(e => {
+    if (e.type === "Goal" && e.detail === "Missed Penalty") return false;
+    const min = parseInt(e.minute) || 0;
+    return min <= 45 && (e.type === "Goal" || e.type === "Card");
+  }).sort((a, b) => (parseInt(a.minute) || 0) - (parseInt(b.minute) || 0));
+
+  const htHomeGoals = firstHalfEvents.filter(e => e.type === "Goal" && normalizeTeam(e.team) === normalizeTeam(selectedFixture?.home)).length;
+  const htAwayGoals = firstHalfEvents.filter(e => e.type === "Goal" && normalizeTeam(e.team) === normalizeTeam(selectedFixture?.away)).length;
+
+  const hasReachedHT = selectedFixture && (selectedFixture.status === "live" || selectedFixture.status === "finished");
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {!selectedFixture ? (
+        <FixturePicker onSelect={handleSelect} />
+      ) : (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
+          <button onClick={() => { setSelectedFixture(null); setEvents(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#999", cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "4px 10px" }}>Change</button>
+        </div>
+      )}
+
+      {loading && <div style={{ textAlign: "center", color: "#999", fontSize: 13, padding: "20px 0" }}>Loading match events...</div>}
+      {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
+
+      {events && hasReachedHT && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "22px 18px 18px" }}>
+              <div style={{ textAlign: "center", marginBottom: 6 }}>
+                <span style={{ fontSize: 12, color: "#ccc", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 }}>{selectedFixture.round}</span>
+              </div>
+              <div style={{ textAlign: "center", marginBottom: 16 }}>
+                <span style={{ fontSize: 11, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>⏱ Halftime Recap</span>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 18 }}>
+                <div style={{ textAlign: "center" }}>
+                  {selectedFixture.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, objectFit: "contain", margin: "0 auto 6px" }} />}
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "#4ade80" }}>{selectedFixture.home}</div>
+                </div>
+                <div style={{ textAlign: "center", padding: "0 10px" }}>
+                  <div style={{ fontSize: 10, color: "#999", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>HT</div>
+                  <div style={{ fontSize: 34, fontWeight: 900, color: "#f0f0f0", letterSpacing: -1 }}>{htHomeGoals}-{htAwayGoals}</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  {selectedFixture.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, objectFit: "contain", margin: "0 auto 6px" }} />}
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "#f59e0b" }}>{selectedFixture.away}</div>
+                </div>
+              </div>
+
+              <BentoBox title="First Half Events" icon="📋" color="#60a5fa">
+                {firstHalfEvents.length === 0 && (
+                  <div style={{ fontSize: 12, color: "#999", textAlign: "center", padding: "8px 0" }}>No goals or cards in the first half</div>
+                )}
+                {firstHalfEvents.map((e, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: i < firstHalfEvents.length - 1 ? "1px solid #1a1a2a" : "none" }}>
+                    <span style={{ fontSize: 12, color: "#999", minWidth: 30, fontWeight: 700 }}>{e.minute}'</span>
+                    <span style={{ fontSize: 14 }}>{e.icon}</span>
+                    <span style={{ fontSize: 13, color: "#f0f0f0", fontWeight: 600, flex: 1 }}>{(e.label || "").split("(")[0].trim()}</span>
+                    <span style={{ fontSize: 11, color: normalizeTeam(e.team) === normalizeTeam(selectedFixture.home) ? "#4ade80" : "#f59e0b", fontWeight: 700 }}>
+                      {(e.team || "").split(" ").slice(-1)[0]}
+                    </span>
+                  </div>
+                ))}
+              </BentoBox>
+
+              {selectedFixture.status === "finished" && (
+                <div style={{ background: "#13131f", borderRadius: 10, padding: "12px 14px", marginTop: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: 12, color: "#ccc", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Full Time</span>
+                  <span style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5 }}>{selectedFixture.score?.home}-{selectedFixture.score?.away}</span>
+                </div>
+              )}
+            </div>
+          </GraphicCard>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+        </>
+      )}
+
+      {events && !hasReachedHT && (
+        <div style={{ textAlign: "center", color: "#999", fontSize: 13, padding: "20px 0" }}>This match hasn't reached halftime yet</div>
+      )}
+    </div>
+  );
+}
+
 export default function DataGraphics({ history = [], supabase }) {
   const [activeSection, setActiveSection] = useState("match");
 
@@ -2804,6 +2936,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "glove",    label: "Golden Glove" },
     { id: "transfer", label: "🔄 Transfer Fit" },
     { id: "timing",   label: "⏱️ Goal Timing" },
+    { id: "halftime", label: "⏸ Halftime Recap" },
     { id: "match",    label: "📈 Match Stats" },
     { id: "player",   label: "⭐ Player Ratings" },
     { id: "top",      label: "🥇 Leaderboard" },
@@ -2831,6 +2964,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "glove"    && <GoldenGloveGraphic />}
       {activeSection === "transfer" && <TransferFitGraphic />}
       {activeSection === "timing"   && <GoalTimingGraphic />}
+      {activeSection === "halftime" && <HalftimeRecapGraphic />}
       {activeSection === "match"    && <MatchStatsGraphic />}
       {activeSection === "player"   && <PlayerRatingsGraphic />}
       {activeSection === "top"      && <TopScorersGraphic />}
