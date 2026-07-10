@@ -1,13 +1,118 @@
-import { useState, useEffect, useRef } from "react";
-import LandingPage from "./LandingPage";
-import DataGraphics from "./DataGraphics";
+import { useState, useRef, useEffect } from "react";
 import DeepInsightsPanel from "./DeepInsightsPanel";
-import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  "https://idisdztwpvedtnroiian.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlkaXNkenR3cHZlZHRucm9paWFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NTczOTQsImV4cCI6MjA5NzAzMzM5NH0.YmF0DqWmopuJs9Ci1hdFi0XDMoWRD0yfVwOuuG7WVyE"
-);
+const LEAGUE_OPTIONS = [
+  { id: "wc2026", label: "FIFA World Cup 2026" },
+  { id: "pl",     label: "Premier League" },
+  { id: "laliga", label: "La Liga" },
+  { id: "seriea", label: "Serie A" },
+  { id: "bundesliga", label: "Bundesliga" },
+  { id: "ligue1", label: "Ligue 1" },
+  { id: "ucl",    label: "Champions League" },
+];
+
+// ─── FIXTURE PICKER ──────────────────────────────────────────────────────────
+function FixturePicker({ onSelect }) {
+  const [leagueId, setLeagueId] = useState("wc2026");
+  const [fixtures, setFixtures] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    setLoading(true);
+    setFixtures([]);
+    fetch(`/api/fixtures?leagueId=${leagueId}`)
+      .then(r => r.json())
+      .then(d => setFixtures(d.fixtures || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [leagueId]);
+
+  const getDateLabel = (dateStr) => {
+    const now = new Date();
+    const localDate = (d) => {
+      const yr = d.getFullYear();
+      const mo = String(d.getMonth()+1).padStart(2,"0");
+      const dy = String(d.getDate()).padStart(2,"0");
+      return `${yr}-${mo}-${dy}`;
+    };
+    const today = localDate(now);
+    const yesterday = localDate(new Date(now.getTime() - 86400000));
+    const tomorrow = localDate(new Date(now.getTime() + 86400000));
+    if (dateStr === today) return "Today";
+    if (dateStr === yesterday) return "Yesterday";
+    if (dateStr === tomorrow) return "Tomorrow";
+    return new Date(dateStr).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+  };
+
+  const filtered = search.trim()
+    ? fixtures.filter(f => f.home.toLowerCase().includes(search.toLowerCase()) || f.away.toLowerCase().includes(search.toLowerCase()))
+    : fixtures;
+
+  const byDate = filtered.reduce((acc, f) => {
+    const label = getDateLabel(f.date);
+    if (!acc[label]) acc[label] = [];
+    acc[label].push(f);
+    return acc;
+  }, {});
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {/* League selector */}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {LEAGUE_OPTIONS.map(l => (
+          <button key={l.id} onClick={() => setLeagueId(l.id)} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px" }}>
+            {l.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Search */}
+      <input
+        placeholder="🔍 Search team..."
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 16, padding: "9px 14px", outline: "none", fontFamily: "inherit" }}
+      />
+
+      {loading && <div style={{ fontSize: 15, color: "#555", textAlign: "center" }}>Loading fixtures...</div>}
+
+      {/* Fixture list */}
+      <div style={{ maxHeight: 260, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
+        {Object.entries(byDate).map(([date, dateFixtures]) => (
+          <div key={date}>
+            <div style={{ fontSize: 13, color: date === "Today" ? "#4ade80" : date === "Yesterday" ? "#888" : date === "Tomorrow" ? "#f59e0b" : "#444", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, padding: "6px 0 4px" }}>{date}</div>
+            {dateFixtures.map((f, i) => (
+              <div
+                key={i}
+                onClick={() => onSelect(f)}
+                style={{ background: "#13131f", border: "1px solid #1e1e30", borderRadius: 8, padding: "8px 12px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {f.homeLogo && <img src={f.homeLogo} alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />}
+                  <span style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0" }}>{f.home}</span>
+                </div>
+                <div style={{ textAlign: "center", fontSize: 14 }}>
+                  {f.status === "finished"
+                    ? <span style={{ color: "#888", fontWeight: 800 }}>{f.score.home}-{f.score.away}</span>
+                    : f.status === "live"
+                    ? <span style={{ color: "#ef4444", fontWeight: 700 }}>🔴 LIVE</span>
+                    : <span style={{ color: "#555" }}>{new Date(f.kickoff).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} BST</span>
+                  }
+                  <div style={{ fontSize: 12, color: "#333", marginTop: 2 }}>{f.round}</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0" }}>{f.away}</span>
+                  {f.awayLogo && <img src={f.awayLogo} alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />}
+                </div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 const LEAGUE_LOGOS = {
   wc2026:     "https://media.api-sports.io/football/leagues/1.png",
@@ -17,209 +122,1544 @@ const LEAGUE_LOGOS = {
   bundesliga: "https://media.api-sports.io/football/leagues/78.png",
   ligue1:     "https://media.api-sports.io/football/leagues/61.png",
   ucl:        "https://media.api-sports.io/football/leagues/2.png",
-  uel:        "https://media.api-sports.io/football/leagues/3.png",
-  facup:      "https://media.api-sports.io/football/leagues/45.png",
-  copadelrey: "https://media.api-sports.io/football/leagues/143.png",
-  afcon:      "https://media.api-sports.io/football/leagues/6.png",
-  copamerica: "https://media.api-sports.io/football/leagues/9.png",
 };
 
-const LEAGUES = [
-  { id: "wc2026",     label: "World Cup 2026",     short: "World Cup 2026" },
-  { id: "pl",         label: "Premier League",      short: "Premier League" },
-  { id: "laliga",     label: "La Liga",             short: "La Liga" },
-  { id: "seriea",     label: "Serie A",             short: "Serie A" },
-  { id: "bundesliga", label: "Bundesliga",          short: "Bundesliga" },
-  { id: "ligue1",     label: "Ligue 1",             short: "Ligue 1" },
-  { id: "ucl",        label: "Champions League",    short: "Champions League" },
-  { id: "uel",        label: "Europa League",       short: "Europa League" },
-  { id: "facup",      label: "FA Cup",              short: "FA Cup" },
-  { id: "copadelrey", label: "Copa del Rey",        short: "Copa del Rey" },
-  { id: "afcon",      label: "AFCON",               short: "AFCON" },
-  { id: "copamerica", label: "Copa America",        short: "Copa America" },
-];
-
-const BADGE_DEFS = [
-  { icon: "⚽", name: "Sunday League Scout", desc: "First prediction made", color: "#888", condition: (s) => s.total >= 1 },
-  { icon: "🤖", name: "AI Beater", desc: "Beat the AI once", color: "#60a5fa", condition: (s) => s.beatAI >= 1 },
-  { icon: "🎯", name: "Sharp Eye", desc: "Beat the AI 3 times", color: "#a78bfa", condition: (s) => s.beatAI >= 3 },
-  { icon: "🔥", name: "On Fire", desc: "Beat the AI 5 times", color: "#f97316", condition: (s) => s.beatAI >= 5 },
-  { icon: "🧠", name: "Analyst", desc: "Beat the AI 10 times", color: "#4ade80", condition: (s) => s.beatAI >= 10 },
-  { icon: "👑", name: "AI Destroyer", desc: "Beat the AI 20 times", color: "#fbbf24", condition: (s) => s.beatAI >= 20 },
-];
-
-function getRank(stats) {
-  const earned = BADGE_DEFS.filter(b => b.condition(stats));
-  return earned.length > 0 ? earned[earned.length - 1] : null;
-}
-
-function computeStats(history) {
-  const verified = history.filter(h => h.actual_score);
-  const userCorrect = verified.filter(h => h.user_prediction === h.actual_score).length;
-  const aiCorrect = verified.filter(h => h.ai_prediction === h.actual_score).length;
-  const beatAI = verified.filter(h => h.result === "user").length;
-  return { total: history.length, verified: verified.length, userCorrect, aiCorrect, beatAI };
-}
-
-const TEAM_CODES = {
-  "Mexico": "mx", "South Africa": "za", "Korea Republic": "kr", "Czechia": "cz",
-  "Canada": "ca", "Bosnia and Herzegovina": "ba", "Bosnia-Herzegovina": "ba",
-  "United States": "us", "USA": "us", "Paraguay": "py", "Qatar": "qa",
-  "Switzerland": "ch", "Brazil": "br", "Morocco": "ma", "Haiti": "ht",
-  "Scotland": "gb-sct", "Australia": "au", "Türkiye": "tr", "Germany": "de",
-  "Curaçao": "cw", "Netherlands": "nl", "Japan": "jp", "Côte d'Ivoire": "ci",
-  "Ecuador": "ec", "Sweden": "se", "Tunisia": "tn", "Spain": "es",
-  "Cabo Verde": "cv", "Belgium": "be", "Egypt": "eg", "Saudi Arabia": "sa",
-  "Uruguay": "uy", "IR Iran": "ir", "New Zealand": "nz", "France": "fr",
-  "Senegal": "sn", "Iraq": "iq", "Norway": "no", "Argentina": "ar",
-  "Algeria": "dz", "Austria": "at", "Jordan": "jo", "Portugal": "pt",
-  "Congo DR": "cd", "England": "gb-eng", "Croatia": "hr", "Ghana": "gh",
-  "Panama": "pa", "Uzbekistan": "uz", "Colombia": "co",
-  "Cape Verde Islands": "cv",
+const ratingColor = (r) => {
+  const n = parseFloat(r);
+  if (!n) return "#555";
+  if (n >= 8) return "#4ade80";
+  if (n >= 7) return "#f59e0b";
+  if (n >= 6) return "#f97316";
+  return "#f87171";
 };
 
-// Team logo cache — populated from API-Football fixture responses
-const TEAM_LOGOS = {};
-
-function TeamFlag({ team, logo, size = 20 }) {
-  const src = logo || TEAM_LOGOS[team];
-  if (!src) return null;
+function StatRow({ label, home, away, icon }) {
+  const h = parseFloat(home) || 0;
+  const a = parseFloat(away) || 0;
+  const total = h + a || 1;
+  const homePct = Math.round((h / total) * 100);
   return (
-    <img
-      src={src}
-      alt=""
-      crossOrigin="anonymous"
-      style={{ width: size, height: size, objectFit: "contain", display: "block", flexShrink: 0 }}
-    />
-  );
-}
-
-const TEAM_FLAGS = {
-  "Mexico": "🇲🇽", "South Africa": "🇿🇦", "Korea Republic": "🇰🇷", "Czechia": "🇨🇿",
-  "Canada": "🇨🇦", "Bosnia and Herzegovina": "🇧🇦", "USA": "🇺🇸", "Paraguay": "🇵🇾",
-  "Qatar": "🇶🇦", "Switzerland": "🇨🇭", "Brazil": "🇧🇷", "Morocco": "🇲🇦",
-  "Haiti": "🇭🇹", "Scotland": "🏴 SCO", "Australia": "🇦🇺", "Türkiye": "🇹🇷",
-  "Germany": "🇩🇪", "Curaçao": "🇨🇼", "Netherlands": "🇳🇱", "Japan": "🇯🇵",
-  "Côte d'Ivoire": "🇨🇮", "Ecuador": "🇪🇨", "Sweden": "🇸🇪", "Tunisia": "🇹🇳",
-  "Spain": "🇪🇸", "Cabo Verde": "🇨🇻", "Belgium": "🇧🇪", "Egypt": "🇪🇬",
-  "Saudi Arabia": "🇸🇦", "Uruguay": "🇺🇾", "IR Iran": "🇮🇷", "New Zealand": "🇳🇿",
-  "France": "🇫🇷", "Senegal": "🇸🇳", "Iraq": "🇮🇶", "Norway": "🇳🇴",
-  "Argentina": "🇦🇷", "Algeria": "🇩🇿", "Austria": "🇦🇹", "Jordan": "🇯🇴",
-  "Portugal": "🇵🇹", "Congo DR": "🇨🇩", "England": "🏴 ENG", "Croatia": "🇭🇷",
-  "Ghana": "🇬🇭", "Panama": "🇵🇦", "Uzbekistan": "🇺🇿", "Colombia": "🇨🇴",
-  "Cape Verde Islands": "🇨🇻",
-};
-
-
-function capStatShare(val, counterVal) {
-  if (!val) return val;
-  const num = parseFloat(val);
-  if (isNaN(num)) return val;
-  const capped = Math.min(Math.max(num, 20), 70);
-  // If counterVal provided, ensure they sum to 100
-  if (counterVal !== undefined) {
-    const counter = parseFloat(counterVal);
-    if (!isNaN(counter)) {
-      const cappedCounter = Math.min(Math.max(counter, 20), 70);
-      const total = capped + cappedCounter;
-      if (total !== 100) {
-        return Math.round((capped / total) * 100) + "%";
-      }
-    }
-  }
-  return capped + "%";
-}
-
-function StatBarShare({ leftVal, rightVal }) {
-  const left = parseFloat(leftVal) || 50;
-  const right = parseFloat(rightVal) || 50;
-  const total = left + right;
-  const leftPct = Math.round((left / total) * 100);
-  const rightPct = 100 - leftPct;
-  return (
-    <div style={{ display: "flex", height: 8, borderRadius: 4, overflow: "hidden", width: "100%" }}>
-      <div style={{ width: `${leftPct}%`, background: "#4ade80", flexShrink: 0 }} />
-      <div style={{ width: `${rightPct}%`, background: "#f59e0b", opacity: 0.6, flexShrink: 0 }} />
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+        <span style={{ fontSize: 17, fontWeight: 800, color: "#4ade80", minWidth: 36 }}>{home ?? "0"}</span>
+        <span style={{ fontSize: 13, color: "#aaa", fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>{icon && icon + " "}{label}</span>
+        <span style={{ fontSize: 17, fontWeight: 800, color: "#f59e0b", minWidth: 36, textAlign: "right" }}>{away ?? "0"}</span>
+      </div>
+      <div style={{ display: "flex", height: 6, borderRadius: 3, overflow: "hidden" }}>
+        <div style={{ width: `${homePct}%`, background: "#4ade80" }} />
+        <div style={{ width: `${100 - homePct}%`, background: "#f59e0b", opacity: 0.5 }} />
+      </div>
     </div>
   );
 }
 
-function H2HSummaryShare({ h2h, homeTeam, awayTeam }) {
-  if (!h2h?.length) return null;
+function GraphicCard({ children, cardRef, label }) {
+  return (
+    <div>
+      <div
+        ref={cardRef}
+        style={{
+          background: "linear-gradient(145deg, #0a0a0f 0%, #0d0d1a 60%, #0a0f0a 100%)",
+          border: "1px solid #1e1e30",
+          borderRadius: 14,
+          overflow: "hidden",
+          position: "relative",
+          fontFamily: "'Inter',sans-serif",
+        }}
+      >
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
+        <div style={{ position: "absolute", top: 12, right: 14, zIndex: 2, display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: 13, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
+          <span style={{ fontSize: 12, color: "#888", fontWeight: 600 }}>deep433.com</span>
+        </div>
+        {/* Centre background watermark */}
+        <div style={{
+          position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
+          pointerEvents: "none", zIndex: 0,
+        }}>
+          <div style={{
+            fontSize: 72, fontWeight: 900, color: "#4ade80", opacity: 0.04,
+            letterSpacing: 6, textTransform: "uppercase", userSelect: "none",
+            transform: "rotate(-15deg)", whiteSpace: "nowrap",
+          }}>
+            DEEP433
+          </div>
+        </div>
+        <div style={{ position: "relative", zIndex: 1 }}>
+          {children}
+        </div>
+      </div>
+      <div style={{ fontSize: 13, color: "#555", textAlign: "center", marginTop: 8 }}>{label}</div>
+    </div>
+  );
+}
 
-  const parse = (r) => {
-    const parts = r.match(/^(.+?)\s+(\d+)-(\d+)\s+(.+)$/);
-    if (!parts) return null;
-    return { homeTeam: parts[1].trim(), hg: parseInt(parts[2]), ag: parseInt(parts[3]), awayTeam: parts[4].trim() };
+// ─── MATCH STATS GRAPHIC ────────────────────────────────────────────────────
+// ─── Animated count-up hook ──────────────────────────────────────────────────
+function useCountUp(target, duration = 900, trigger = true) {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    if (!trigger) { setValue(target); return; }
+    let raf;
+    const start = performance.now();
+    const from = 0;
+    const to = parseFloat(target) || 0;
+    const tick = (now) => {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+      setValue(from + (to - from) * eased);
+      if (progress < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration, trigger]);
+  return value;
+}
+
+// ─── Animated comparison bar (home vs away) ──────────────────────────────────
+function AnimatedStatBar({ label, homeVal, awayVal, unit = "", animate }) {
+  const hv = parseFloat(homeVal) || 0;
+  const av = parseFloat(awayVal) || 0;
+  const total = hv + av || 1;
+  const homePct = (hv / total) * 100;
+  const awayPct = 100 - homePct;
+  const [expanded, setExpanded] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setExpanded(true), 60); return () => clearTimeout(t); }, []);
+  const displayHv = useCountUp(hv, 900, animate);
+  const displayAv = useCountUp(av, 900, animate);
+
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+        <span style={{ fontSize: 17, fontWeight: 900, color: "#4ade80" }}>{displayHv.toFixed(unit === "%" ? 0 : (Number.isInteger(hv) ? 0 : 1))}{unit}</span>
+        <span style={{ fontSize: 12, color: "#aaa", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
+        <span style={{ fontSize: 17, fontWeight: 900, color: "#f59e0b" }}>{displayAv.toFixed(unit === "%" ? 0 : (Number.isInteger(av) ? 0 : 1))}{unit}</span>
+      </div>
+      <div style={{ display: "flex", height: 6, borderRadius: 3, overflow: "hidden", background: "#1a1a24" }}>
+        <div style={{ width: expanded ? `${homePct}%` : "0%", background: "#4ade80", transition: "width 0.9s cubic-bezier(0.16,1,0.3,1)" }} />
+        <div style={{ width: expanded ? `${awayPct}%` : "0%", background: "#f59e0b", opacity: 0.6, transition: "width 0.9s cubic-bezier(0.16,1,0.3,1) 0.05s" }} />
+      </div>
+    </div>
+  );
+}
+
+// ─── Bento box wrapper ────────────────────────────────────────────────────────
+function BentoBox({ title, icon, color, children, span }) {
+  return (
+    <div style={{
+      background: "#13131f",
+      border: `1px solid ${color}22`,
+      borderRadius: 10,
+      padding: "12px 14px",
+      gridColumn: span ? "span " + span : undefined,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+        <span style={{ fontSize: 15 }}>{icon}</span>
+        <span style={{ fontSize: 14, color, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 }}>{title}</span>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function MatchStatsGraphic() {
+  const cardRef = useRef(null);
+  const [fixtureId, setFixtureId] = useState("");
+  const [selectedFixture, setSelectedFixture] = useState(null);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState("");
+  const [animate, setAnimate] = useState(true);
+
+  const handleSelect = (f) => {
+    setSelectedFixture(f);
+    setFixtureId(f.fixtureId);
+    setData(null);
+    setError("");
   };
 
-  const hn = normalize(homeTeam);
-  const an = normalize(awayTeam);
+  const fetch_ = async (id) => {
+    const fid = id || fixtureId;
+    if (!fid) return;
+    setLoading(true); setError(""); setData(null);
+    try {
+      const r = await fetch(`/api/match-stats?fixtureId=${fid}`);
+      const d = await r.json();
+      if (!d.available) throw new Error("No stats available for this fixture yet — try after kickoff");
+      setData(d);
+      setAnimate(true);
+    } catch (e) { setError(e.message); }
+    setLoading(false);
+  };
 
-  const normalize = s => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const download = async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    // Ensure bars/numbers are in their settled state before capturing
+    setAnimate(false);
+    await new Promise(res => setTimeout(res, 120));
+    try {
+      if (!window.html2canvas) {
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+        document.head.appendChild(s);
+        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
+      }
+      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
+      const link = document.createElement("a");
+      link.download = `deep433-match-stats-${fixtureId}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch { alert("Download failed — try screenshotting manually"); }
+    setDownloading(false);
+  };
 
-  let hw = 0, aw = 0, d = 0;
-  const dots = h2h.map(r => {
-    const p = parse(r);
-    if (!p) { d++; return "D"; }
-    const { hg, ag } = p;
-    const matchHomeIsOurHome = normalize(p.homeTeam) === hn;
-    const matchHomeIsOurAway = normalize(p.homeTeam) === an;
-    if (hg === ag) { d++; return "D"; }
-    const matchHomeWon = hg > ag;
-    // Did our homeTeam win this H2H game?
-    const ourHomeWon = (matchHomeIsOurHome && matchHomeWon) || (matchHomeIsOurAway && !matchHomeWon);
-    if (ourHomeWon) { hw++; return "W"; }
-    aw++; return "L";
-  });
+  const s = data;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {!selectedFixture ? (
+        <FixturePicker onSelect={handleSelect} />
+      ) : (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
+            <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
+            <button onClick={() => { setSelectedFixture(null); setData(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
+          </div>
+          {!data && (
+            <button onClick={() => fetch_()} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "10px" }}>
+              {loading ? "Loading stats..." : "Load Match Stats"}
+            </button>
+          )}
+        </>
+      )}
+      {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
+
+      {s && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "22px 18px 18px" }}>
+              {/* Team header */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16, marginTop: 8 }}>
+                <div style={{ textAlign: "center" }}>
+                  {s.home.logo && <img src={s.home.logo} alt="" crossOrigin="anonymous" style={{ width: 34, height: 34, objectFit: "contain", marginBottom: 4, display: "block", margin: "0 auto 6px" }} />}
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "#4ade80" }}>{s.home.team}</div>
+                </div>
+                <div style={{ textAlign: "center", padding: "0 12px" }}>
+                  <div style={{ fontSize: 12, color: "#888", textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Match Stats</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  {s.away.logo && <img src={s.away.logo} alt="" crossOrigin="anonymous" style={{ width: 34, height: 34, objectFit: "contain", marginBottom: 4, display: "block", margin: "0 auto 6px" }} />}
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "#f59e0b" }}>{s.away.team}</div>
+                </div>
+              </div>
+
+              {/* HERO: Possession — large signature card */}
+              <div style={{
+                background: "linear-gradient(135deg, #4ade8014, #f59e0b0e)",
+                border: "1px solid #4ade8033",
+                borderRadius: 12, padding: "16px 18px", marginBottom: 10,
+              }}>
+                <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 10, textAlign: "center" }}>⚽ Possession</div>
+                <PossessionHero home={s.home.stats.possession} awayVal={s.away.stats.possession} animate={animate} />
+              </div>
+
+              {/* Bento grid — 2x2 */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                <BentoBox title="Attack" icon="🎯" color="#4ade80">
+                  <AnimatedStatBar label="Total Shots" homeVal={s.home.stats.shotsTotal} awayVal={s.away.stats.shotsTotal} animate={animate} />
+                  <AnimatedStatBar label="On Target" homeVal={s.home.stats.shotsOnGoal} awayVal={s.away.stats.shotsOnGoal} animate={animate} />
+                  <AnimatedStatBar label="Corners" homeVal={s.home.stats.corners} awayVal={s.away.stats.corners} animate={animate} />
+                </BentoBox>
+
+                <BentoBox title="Discipline" icon="🟨" color="#f59e0b">
+                  <AnimatedStatBar label="Fouls" homeVal={s.home.stats.fouls} awayVal={s.away.stats.fouls} animate={animate} />
+                  <AnimatedStatBar label="Yellow Cards" homeVal={s.home.stats.yellowCards} awayVal={s.away.stats.yellowCards} animate={animate} />
+                  <AnimatedStatBar label="Offsides" homeVal={s.home.stats.offsides} awayVal={s.away.stats.offsides} animate={animate} />
+                </BentoBox>
+              </div>
+
+              <BentoBox title="Efficiency" icon="🧤" color="#818cf8">
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                  <AnimatedStatBar label="Pass Accuracy" homeVal={s.home.stats.passAccuracy} awayVal={s.away.stats.passAccuracy} unit="%" animate={animate} />
+                  <AnimatedStatBar label="Saves" homeVal={s.home.stats.saves} awayVal={s.away.stats.saves} animate={animate} />
+                </div>
+              </BentoBox>
+            </div>
+          </GraphicCard>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Possession hero — large animated numbers + bar ──────────────────────────
+function PossessionHero({ home, awayVal, animate }) {
+  const hv = parseFloat(home) || 50;
+  const av = parseFloat(awayVal) || (100 - hv);
+  const total = hv + av || 1;
+  const homePct = (hv / total) * 100;
+  const [expanded, setExpanded] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setExpanded(true), 60); return () => clearTimeout(t); }, []);
+  const displayHv = useCountUp(homePct, 1000, animate);
+  const displayAv = useCountUp(100 - homePct, 1000, animate);
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-around", marginBottom: 10 }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 26, fontWeight: 900, color: "#4ade80" }}>{hw}</div>
-          <div style={{ fontSize: 12, color: "#4ade80", marginTop: 2 }}>{homeTeam.split(" ")[0]}</div>
-        </div>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 26, fontWeight: 900, color: "#a78bfa" }}>{d}</div>
-          <div style={{ fontSize: 12, color: "#a78bfa", marginTop: 2 }}>Draws</div>
-        </div>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 26, fontWeight: 900, color: "#f59e0b" }}>{aw}</div>
-          <div style={{ fontSize: 12, color: "#f59e0b", marginTop: 2 }}>{awayTeam.split(" ")[0]}</div>
-        </div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+        <span style={{ fontSize: 32, fontWeight: 900, color: "#4ade80", lineHeight: 1 }}>{Math.round(displayHv)}%</span>
+        <span style={{ fontSize: 32, fontWeight: 900, color: "#f59e0b", lineHeight: 1 }}>{Math.round(displayAv)}%</span>
       </div>
-      <div style={{ display: "flex", gap: 5, justifyContent: "center", marginBottom: 8 }}>
-        {dots.map((dot, i) => (
-          <div key={i} style={{ width: 26, height: 26, borderRadius: "50%", background: dot === "W" ? "#4ade80" : dot === "L" ? "#f59e0b" : "#a78bfa", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: "#0a0a0f" }}>{dot}</div>
-        ))}
+      <div style={{ display: "flex", height: 10, borderRadius: 5, overflow: "hidden", background: "#1a1a24" }}>
+        <div style={{ width: expanded ? `${homePct}%` : "0%", background: "linear-gradient(90deg,#22c55e,#4ade80)", transition: "width 1s cubic-bezier(0.16,1,0.3,1)" }} />
+        <div style={{ width: expanded ? `${100 - homePct}%` : "0%", background: "linear-gradient(90deg,#f59e0b,#fbbf24)", opacity: 0.7, transition: "width 1s cubic-bezier(0.16,1,0.3,1) 0.05s" }} />
       </div>
-      {/* Raw list fallback */}
-      {h2h.map((r, i) => {
-        const p = parse(r);
-        if (!p) return <div key={i} style={{ fontSize: 13, color: "#444", textAlign: "center" }}>{r}</div>;
-        const { hg, ag } = p;
-        const homeColor = hg > ag ? "#4ade80" : hg < ag ? "#f87171" : "#aaa";
-        const awayColor = ag > hg ? "#4ade80" : ag < hg ? "#f87171" : "#aaa";
-        return (
-          <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "3px 0", borderBottom: "1px solid #1a1a2a" }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: homeColor, flex: 1 }}>{p.homeTeam}</span>
-            <span style={{ fontSize: 15, fontWeight: 900, color: "#f0f0f0", margin: "0 8px" }}>{hg}-{ag}</span>
-            <span style={{ fontSize: 13, fontWeight: 700, color: awayColor, flex: 1, textAlign: "right" }}>{p.awayTeam}</span>
-          </div>
-        );
-      })}
     </div>
   );
 }
 
-function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPrediction, aiPrediction, leagueLabel, deepInsights, onClose }) {
+// ─── PLAYER RATINGS GRAPHIC ─────────────────────────────────────────────────
+function PlayerRatingsGraphic() {
   const cardRef = useRef(null);
+  const [fixtureId, setFixtureId] = useState("");
+  const [selectedFixture, setSelectedFixture] = useState(null);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState("");
+  const [selectedTeam, setSelectedTeam] = useState("home");
+
+  const handleSelect = (f) => {
+    setSelectedFixture(f);
+    setFixtureId(f.fixtureId);
+    setData(null);
+    setError("");
+  };
+
+  const fetch_ = async () => {
+    if (!fixtureId) return;
+    setLoading(true); setError(""); setData(null);
+    try {
+      const r = await fetch(`/api/player-ratings?fixtureId=${fixtureId}`);
+      const d = await r.json();
+      if (!d.available) throw new Error("No player ratings available yet — try after kickoff");
+      setData(d);
+    } catch (e) { setError(e.message); }
+    setLoading(false);
+  };
+
+  const download = async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      if (!window.html2canvas) {
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+        document.head.appendChild(s);
+        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
+      }
+      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
+      const link = document.createElement("a");
+      link.download = `deep433-player-ratings-${fixtureId}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const teamData = data?.[selectedTeam];
+  const players = teamData?.players?.sort((a, b) => parseFloat(b.rating || 0) - parseFloat(a.rating || 0)) || [];
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {!selectedFixture ? (
+        <FixturePicker onSelect={handleSelect} />
+      ) : (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
+            <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
+            <button onClick={() => { setSelectedFixture(null); setData(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
+          </div>
+          {!data && (
+            <button onClick={fetch_} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "10px" }}>
+              {loading ? "Loading ratings..." : "Load Player Ratings"}
+            </button>
+          )}
+        </>
+      )}
+      {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
+
+      {data && (
+        <>
+          <div style={{ display: "flex", gap: 8 }}>
+            {["home", "away"].map(t => (
+              <button key={t} onClick={() => setSelectedTeam(t)} style={{ flex: 1, background: selectedTeam === t ? "#4ade80" : "none", border: `1px solid ${selectedTeam === t ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: selectedTeam === t ? "#0a0f0a" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "8px" }}>
+                {data[t]?.team}
+              </button>
+            ))}
+          </div>
+
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "22px 18px 18px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, marginTop: 8 }}>
+                {teamData?.logo && <img src={teamData.logo} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
+                <div>
+                  <div style={{ fontSize: 17, fontWeight: 900, color: "#f0f0f0" }}>{teamData?.team}</div>
+                  <div style={{ fontSize: 13, color: "#555" }}>Player Ratings</div>
+                </div>
+              </div>
+              <div style={{ height: 1, background: "#1a1a2a", marginBottom: 12 }} />
+              {players.map((p, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid #0f0f1a" }}>
+                  <div style={{ width: 24, textAlign: "center", fontSize: 14, color: "#555", fontWeight: 700 }}>{i + 1}</div>
+                  {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                    <div style={{ fontSize: 13, color: "#555" }}>
+                      {p.position} · {p.minutesPlayed}'
+                      {p.goals ? ` · ⚽ ${p.goals}` : ""}
+                      {p.assists ? ` · 🎯 ${p.assists}` : ""}
+                      {p.yellowCards ? " · 🟨" : ""}
+                      {p.redCards ? " · 🟥" : ""}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: ratingColor(p.rating), minWidth: 40, textAlign: "right" }}>
+                    {p.rating ? parseFloat(p.rating).toFixed(1) : "—"}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </GraphicCard>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── TOP SCORERS GRAPHIC ─────────────────────────────────────────────────────
+function TopScorersGraphic() {
+  const cardRef = useRef(null);
+  const [leagueId, setLeagueId] = useState("wc2026");
+  const [type, setType] = useState("scorers");
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState("");
+
+  const fetch_ = async () => {
+    setLoading(true); setError(""); setData(null);
+    try {
+      const r = await fetch(`/api/top-scorers?leagueId=${leagueId}&type=${type}`);
+      const d = await r.json();
+      if (!d.available) throw new Error("No data available");
+      setData(d);
+    } catch (e) { setError(e.message); }
+    setLoading(false);
+  };
+
+  const download = async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      if (!window.html2canvas) {
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+        document.head.appendChild(s);
+        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
+      }
+      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
+      const link = document.createElement("a");
+      link.download = `deep433-${type}-${leagueId}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const typeLabels = { scorers: "Top Scorers", assists: "Top Assists", cards: "Most Booked" };
+  const typeIcons =  { scorers: "⚽", assists: "🎯", cards: "🟨" };
+  const statLabel =  { scorers: "GOALS", assists: "ASSISTS", cards: "CARDS" };
+
+  const getStatValue = (p) => {
+    if (type === "scorers") return p.goals || 0;
+    if (type === "assists") return p.assists || 0;
+    return (p.yellowCards || 0);
+  };
+
+  const getSecondary = (p) => {
+    if (type === "scorers") return p.appearances ? `${p.appearances} apps` : null;
+    if (type === "assists") return p.appearances ? `${p.appearances} apps` : null;
+    return p.redCards ? `${p.redCards}🟥` : null;
+  };
+
+  const rankColor = (i) => {
+    if (i === 0) return "#FFD700"; // Gold
+    if (i === 1) return "#C0C0C0"; // Silver
+    if (i === 2) return "#CD7F32"; // Bronze
+    return "#555";
+  };
+
+  const rankBg = (i) => {
+    if (i === 0) return "linear-gradient(135deg, rgba(255,215,0,0.08), rgba(255,215,0,0.02))";
+    if (i === 1) return "linear-gradient(135deg, rgba(192,192,192,0.06), rgba(192,192,192,0.01))";
+    if (i === 2) return "linear-gradient(135deg, rgba(205,127,50,0.06), rgba(205,127,50,0.01))";
+    return "transparent";
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {LEAGUE_OPTIONS.slice(0, 7).map(l => (
+          <button key={l.id} onClick={() => setLeagueId(l.id)} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
+            {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
+            {l.label}
+          </button>
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 6 }}>
+        {["scorers", "assists", "cards"].map(t => (
+          <button key={t} onClick={() => setType(t)} style={{ flex: 1, background: type === t ? "#a855f7" : "none", border: `1px solid ${type === t ? "#a855f7" : "#2a2a3a"}`, borderRadius: 8, color: type === t ? "#fff" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "8px" }}>
+            {typeIcons[t]} {typeLabels[t]}
+          </button>
+        ))}
+      </div>
+      <button onClick={fetch_} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "10px" }}>
+        {loading ? "Loading..." : "Load Leaderboard"}
+      </button>
+      {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
+
+      {data && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "22px 18px 18px" }}>
+              {/* Header */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, marginTop: 8 }}>
+                {LEAGUE_LOGOS[leagueId] && <img src={LEAGUE_LOGOS[leagueId]} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 17, fontWeight: 900, color: "#f0f0f0" }}>{typeLabels[type]}</div>
+                  <div style={{ fontSize: 13, color: "#555" }}>{LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label}</div>
+                </div>
+                <div style={{ fontSize: 12, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{statLabel[type]}</div>
+              </div>
+              <div style={{ height: 1, background: "#1a1a2a", marginBottom: 8 }} />
+
+              {data.players.map((p, i) => {
+                const isTop3 = i < 3;
+                const secondary = getSecondary(p);
+                return (
+                  <div key={i} style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    padding: isTop3 ? "10px 8px" : "7px 4px",
+                    borderBottom: "1px solid #0f0f1a",
+                    background: rankBg(i),
+                    borderRadius: isTop3 ? 8 : 0,
+                    marginBottom: isTop3 ? 4 : 0,
+                    border: i === 0 ? "1px solid rgba(255,215,0,0.15)" : i === 1 ? "1px solid rgba(192,192,192,0.1)" : i === 2 ? "1px solid rgba(205,127,50,0.1)" : "none",
+                  }}>
+                    {/* Rank — golden boot for scorers, medals for others */}
+                    <div style={{ width: 28, textAlign: "center", flexShrink: 0 }}>
+                      {i < 3 && type === "scorers" ? (
+                        <svg width="26" height="26" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                          {/* Boot shape */}
+                          <path d="M20 70 L20 30 Q20 20 30 20 L55 20 Q65 20 65 30 L65 50 L80 50 Q90 50 90 60 L90 75 Q90 85 80 85 L25 85 Q15 85 15 75 L15 70 Z"
+                            fill={i === 0 ? "#FFD700" : i === 1 ? "#C0C0C0" : "#CD7F32"}
+                            stroke={i === 0 ? "#B8860B" : i === 1 ? "#A0A0A0" : "#8B4513"}
+                            strokeWidth="3"
+                          />
+                          {/* Sole */}
+                          <path d="M15 78 Q15 88 25 88 L80 88 Q90 88 90 78 L90 82 Q90 90 80 90 L25 90 Q15 90 15 82 Z"
+                            fill={i === 0 ? "#B8860B" : i === 1 ? "#909090" : "#8B4513"}
+                          />
+                          {/* Laces */}
+                          <line x1="30" y1="35" x2="55" y2="35" stroke={i === 0 ? "#B8860B" : i === 1 ? "#909090" : "#8B4513"} strokeWidth="2.5" strokeLinecap="round"/>
+                          <line x1="30" y1="42" x2="55" y2="42" stroke={i === 0 ? "#B8860B" : i === 1 ? "#909090" : "#8B4513"} strokeWidth="2.5" strokeLinecap="round"/>
+                          <line x1="30" y1="49" x2="55" y2="49" stroke={i === 0 ? "#B8860B" : i === 1 ? "#909090" : "#8B4513"} strokeWidth="2.5" strokeLinecap="round"/>
+                        </svg>
+                      ) : (
+                        <span style={{ fontSize: isTop3 ? 16 : 12, color: rankColor(i), fontWeight: 900 }}>
+                          {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
+                        </span>
+                      )}
+                    </div>
+                    {/* Photo */}
+                    {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: isTop3 ? 36 : 28, height: isTop3 ? 36 : 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: isTop3 ? `1.5px solid ${rankColor(i)}44` : "none" }} />}
+                    {/* Name + team */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: isTop3 ? 14 : 12, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
+                        {p.teamLogo && <img src={p.teamLogo} alt="" crossOrigin="anonymous" style={{ width: 12, height: 12, objectFit: "contain" }} />}
+                        <span style={{ fontSize: 13, color: "#555" }}>{p.team}</span>
+                        {secondary && <span style={{ fontSize: 12, color: "#444", marginLeft: 4 }}>· {secondary}</span>}
+                      </div>
+                    </div>
+                    {/* Stat value */}
+                    <div style={{ fontSize: isTop3 ? 28 : 20, fontWeight: 900, color: "#4ade80", minWidth: 36, textAlign: "right", flexShrink: 0 }}>
+                      {getStatValue(p)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </GraphicCard>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── TEAM STATS GRAPHIC ──────────────────────────────────────────────────────
+function TeamStatsGraphic() {
+  const cardRef = useRef(null);
+  const [leagueId, setLeagueId] = useState("pl");
+  const [teamSearch, setTeamSearch] = useState("");
+  const [teamSuggestions, setTeamSuggestions] = useState([]);
+  const [selectedTeam, setSelectedTeam] = useState(null); // { id, name, logo }
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState("");
+
+  const searchTeams = async (query) => {
+    if (query.length < 3) { setTeamSuggestions([]); return; }
+    setSearching(true);
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
+      const d = await r.json();
+      setTeamSuggestions(d.teams || []);
+    } catch {}
+    setSearching(false);
+  };
+
+  const fetch_ = async () => {
+    if (!selectedTeam) return;
+    setLoading(true); setError(""); setData(null);
+    try {
+      const r = await fetch(`/api/team-stats?leagueId=${leagueId}&teamId=${selectedTeam.id}`);
+      const d = await r.json();
+      if (!d.available) throw new Error("No stats available for this team in this competition");
+      setData(d);
+    } catch (e) { setError(e.message); }
+    setLoading(false);
+  };
+
+  const download = async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      if (!window.html2canvas) {
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+        document.head.appendChild(s);
+        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
+      }
+      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
+      const link = document.createElement("a");
+      link.download = `deep433-team-stats-${data?.team}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const formDot = (r) => (
+    <div style={{ width: 22, height: 22, borderRadius: "50%", background: r === "W" ? "#4ade80" : r === "D" ? "#a78bfa" : "#f87171", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900, color: "#0a0a0f" }}>{r}</div>
+  );
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {LEAGUE_OPTIONS.slice(1).map(l => (
+          <button key={l.id} onClick={() => { setLeagueId(l.id); setData(null); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
+            {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
+            {l.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Team search */}
+      <div style={{ position: "relative" }}>
+        <input
+          placeholder="Search team name e.g. Arsenal, Barcelona..."
+          value={selectedTeam ? selectedTeam.name : teamSearch}
+          onChange={e => {
+            setTeamSearch(e.target.value);
+            setSelectedTeam(null);
+            setData(null);
+            searchTeams(e.target.value);
+          }}
+          style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${selectedTeam ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 17, padding: "10px 14px", outline: "none", fontFamily: "inherit" }}
+        />
+        {searching && <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 14, color: "#555" }}>Searching...</div>}
+        {teamSuggestions.length > 0 && !selectedTeam && (
+          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, zIndex: 10, marginTop: 4, maxHeight: 200, overflowY: "auto" }}>
+            {teamSuggestions.map(t => (
+              <div key={t.id} onClick={() => { setSelectedTeam(t); setTeamSearch(t.name); setTeamSuggestions([]); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", cursor: "pointer", borderBottom: "1px solid #1a1a2a" }}>
+                {t.logo && <img src={t.logo} alt="" style={{ width: 24, height: 24, objectFit: "contain" }} />}
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{t.name}</div>
+                  <div style={{ fontSize: 14, color: "#555" }}>{t.country}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {selectedTeam && (
+        <button onClick={fetch_} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "10px" }}>
+          {loading ? "Loading..." : `Load ${selectedTeam.name} Stats`}
+        </button>
+      )}
+
+      {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
+
+      {data && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "22px 18px 18px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, marginTop: 8 }}>
+                {data.logo && <img src={data.logo} alt="" crossOrigin="anonymous" style={{ width: 40, height: 40, objectFit: "contain" }} />}
+                <div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>{data.team}</div>
+                  <div style={{ fontSize: 13, color: "#555" }}>{LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label} · Season Stats</div>
+                </div>
+              </div>
+
+              {data.form && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 12, color: "#555", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Recent Form</div>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    {data.form.slice(-10).split("").map((r, i) => <div key={i}>{formDot(r)}</div>)}
+                  </div>
+                </div>
+              )}
+
+              <div style={{ height: 1, background: "#1a1a2a", marginBottom: 14 }} />
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 14 }}>
+                {[
+                  { label: "Played",        value: data.played,          color: "#f0f0f0" },
+                  { label: "Wins",          value: data.wins,            color: "#4ade80" },
+                  { label: "Draws",         value: data.draws,           color: "#a78bfa" },
+                  { label: "Losses",        value: data.losses,          color: "#f87171" },
+                  { label: "Goals For",     value: data.goalsFor,        color: "#4ade80" },
+                  { label: "Goals Against", value: data.goalsAgainst,    color: "#f87171" },
+                  { label: "Clean Sheets",  value: data.cleanSheets,     color: "#60a5fa" },
+                  { label: "Avg Scored",    value: data.avgGoalsFor,     color: "#4ade80" },
+                  { label: "Avg Conceded",  value: data.avgGoalsAgainst, color: "#f87171" },
+                ].map(s => (
+                  <div key={s.label} style={{ background: "#13131f", borderRadius: 8, padding: "10px 8px", textAlign: "center" }}>
+                    <div style={{ fontSize: 24, fontWeight: 900, color: s.color }}>{s.value ?? "—"}</div>
+                    <div style={{ fontSize: 12, color: "#555", marginTop: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {(data.biggestWin || data.biggestLoss) && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  {data.biggestWin && <div style={{ background: "#4ade8011", border: "1px solid #4ade8022", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+                    <div style={{ fontSize: 13, color: "#4ade80", marginBottom: 4 }}>Biggest Win</div>
+                    <div style={{ fontSize: 17, fontWeight: 800, color: "#4ade80" }}>{data.biggestWin}</div>
+                  </div>}
+                  {data.biggestLoss && <div style={{ background: "#f8717111", border: "1px solid #f8717122", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+                    <div style={{ fontSize: 13, color: "#f87171", marginBottom: 4 }}>Biggest Loss</div>
+                    <div style={{ fontSize: 17, fontWeight: 800, color: "#f87171" }}>{data.biggestLoss}</div>
+                  </div>}
+                </div>
+              )}
+            </div>
+          </GraphicCard>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── RECAP CARD ──────────────────────────────────────────────────────────────
+function RecapGraphic({ history = [] }) {
+  const cardRef = useRef(null);
+  const [selectedFixture, setSelectedFixture] = useState(null);
   const [variant, setVariant] = useState("square");
+  const [downloading, setDownloading] = useState(false);
+  const [matchData, setMatchData] = useState(null);
+  const [error, setError] = useState("");
+
   const isLandscape = variant === "landscape";
 
-  const downloadImage = async () => {
+  const handleSelect = async (f) => {
+    setSelectedFixture(f);
+    setError("");
+    setMatchData(null);
+    const fs = (f.score?.home != null && f.score?.away != null)
+      ? `${f.score.home}-${f.score.away}` : null;
+    if (!fs) { setError("No final score available — match may not be finished yet."); return; }
+    const norm = s => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const pred = history.find(h =>
+      (norm(h.home_team) === norm(f.home) && norm(h.away_team) === norm(f.away)) ||
+      (norm(h.home_team) === norm(f.away) && norm(h.away_team) === norm(f.home))
+    );
+
+    // Fetch goalscorers from match stats
+    let homeGoals = [];
+    let awayGoals = [];
+    let keyStat = null;
+
+    if (f.fixtureId) {
+      try {
+        // Fetch match stats and events in parallel
+        const [statsRes, eventsRes] = await Promise.all([
+          fetch(`/api/match-stats?fixtureId=${f.fixtureId}`),
+          fetch(`/api/match-events?fixtureId=${f.fixtureId}`),
+        ]);
+        const statsData = await statsRes.json();
+        const eventsData = await eventsRes.json();
+
+        // Extract goals (excluding missed penalties) and cards
+        (eventsData.events || [])
+          .filter(e => {
+            if (e.type === "Goal" && e.detail === "Missed Penalty") return false;
+            return e.type === "Goal" || e.type === "Card";
+          })
+          .forEach(e => {
+            // Scorer is before the bracket e.g. "Kane (Bellingham)" -> "Kane"
+            const scorerFull = e.label?.split("(")[0]?.trim() || "";
+            const surname = scorerFull.split(" ").slice(-1)[0]?.trim();
+            const time = `${e.minute}'`;
+            const entry = `${e.icon} ${surname} ${time}`;
+            if (norm(e.team) === norm(f.home)) homeGoals.push(entry);
+            else awayGoals.push(entry);
+          });
+
+        // Generate key stat from match stats
+        if (statsData.available) {
+          const home = statsData.home;
+          const away = statsData.away;
+          const homePoss = parseFloat(home.stats?.possession) || 0;
+          const awayPoss = parseFloat(away.stats?.possession) || 0;
+          const homeShotsOn = home.stats?.shotsOnGoal || 0;
+          const awayShotsOn = away.stats?.shotsOnGoal || 0;
+          const homeSaves = home.stats?.saves || 0;
+          const awaySaves = away.stats?.saves || 0;
+
+          // Pick the most interesting stat
+          if (homePoss >= 65) keyStat = `${home.team} dominated with ${homePoss}% possession`;
+          else if (awayPoss >= 65) keyStat = `${away.team} dominated with ${awayPoss}% possession`;
+          else if (awaySaves >= 5) keyStat = `${away.team} keeper made ${awaySaves} saves`;
+          else if (homeSaves >= 5) keyStat = `${home.team} keeper made ${homeSaves} saves`;
+          else if (homeShotsOn + awayShotsOn <= 4) keyStat = `Only ${homeShotsOn + awayShotsOn} shots on target — a tight affair`;
+          else if (homeShotsOn >= 8) keyStat = `${home.team} fired ${homeShotsOn} shots on target`;
+          else if (awayShotsOn >= 8) keyStat = `${away.team} fired ${awayShotsOn} shots on target`;
+          else keyStat = `${home.team} ${homePoss}% · ${away.team} ${awayPoss}% possession`;
+        }
+      } catch {}
+    }
+
+    setMatchData({
+      finalScore: fs,
+      yourPrediction: pred?.user_prediction || null,
+      aiPrediction: pred?.ai_prediction || null,
+      homeGoals,
+      awayGoals,
+      keyStat,
+      competition: "FIFA World Cup 2026",
+      round: f.round || "",
+    });
+  };
+
+  const download = async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      if (!window.html2canvas) {
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+        document.head.appendChild(s);
+        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
+      }
+      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
+      const link = document.createElement("a");
+      link.download = `deep433-recap-${selectedFixture?.home}-vs-${selectedFixture?.away}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const fs = matchData?.finalScore || "0-0";
+  const [fs0, fs1] = fs.split("-").map(n => parseInt(n) || 0);
+  const yourPrediction = matchData?.yourPrediction;
+  const aiPrediction = matchData?.aiPrediction;
+  const finalScore = matchData?.finalScore;
+
+  const getOutcome = (pred) => {
+    if (!pred || !matchData?.finalScore) return null;
+    const [p0, p1] = pred.split("-").map(n => parseInt(n) || 0);
+    if (p0 === fs0 && p1 === fs1) return { icon: "✅", label: "Exact", color: "#4ade80" };
+    const homeWon = fs0 > fs1;
+    const awayWon = fs1 > fs0;
+    const draw = fs0 === fs1;
+    const correct = (homeWon && p0 > p1) || (awayWon && p1 > p0) || (draw && p0 === p1);
+    if (correct) return { icon: "🟡", label: "Outcome ✓", color: "#f59e0b" };
+    return { icon: "❌", label: "Missed", color: "#f87171" };
+  };
+
+  const yourResult = getOutcome(yourPrediction);
+  const aiResult = getOutcome(aiPrediction);
+
+  const CardContent = () => (
+    <div style={{
+      width: isLandscape ? Math.min(760, window.innerWidth - 32) : Math.min(480, window.innerWidth - 32),
+      aspectRatio: isLandscape ? "16/9" : "1/1",
+      background: "linear-gradient(145deg, #0a0a0f 0%, #0d0d1a 60%, #0a0f0a 100%)",
+      borderRadius: 14, overflow: "hidden", position: "relative",
+      display: "flex", flexDirection: isLandscape ? "row" : "column",
+      border: "1px solid #1e1e30", fontFamily: "'Inter',sans-serif",
+    }}>
+      {/* Brand bar */}
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
+      <div style={{ position: "absolute", top: 12, right: 14, zIndex: 2, display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ fontSize: 14, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
+        <span style={{ fontSize: 13, color: "#888", fontWeight: 600 }}>deep433.com</span>
+      </div>
+      {/* Logo watermark — corner */}
+      <div style={{ position: "absolute", bottom: 10, left: 10, pointerEvents: "none", zIndex: 0 }}>
+        <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, opacity: 0.35, objectFit: "contain", borderRadius: "50%", userSelect: "none" }} />
+      </div>
+
+      {isLandscape ? (
+        <>
+          {/* Left: final score hero */}
+          <div style={{ width: "50%", padding: "36px 20px 20px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", borderRight: "1px solid #1a1a2a", position: "relative", zIndex: 1 }}>
+            {/* Enhanced header */}
+            <div style={{ textAlign: "center", marginBottom: 12 }}>
+              <div style={{ fontSize: 11, color: "#555", letterSpacing: 2, textTransform: "uppercase" }}>{matchData?.competition}</div>
+              <div style={{ fontSize: 14, color: "#f0f0f0", letterSpacing: 2, textTransform: "uppercase", fontWeight: 900 }}>{selectedFixture?.round}</div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 8 }}>
+              {selectedFixture?.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 44, height: 44, objectFit: "contain" }} />}
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 12, color: "#555", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Full Time</div>
+                <div style={{ fontSize: 56, fontWeight: 900, color: "#f0f0f0", lineHeight: 1 }}>{fs0}-{fs1}</div>
+              </div>
+              {selectedFixture?.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 44, height: 44, objectFit: "contain" }} />}
+            </div>
+            {/* Team names + goalscorers */}
+            <div style={{ display: "flex", justifyContent: "space-between", width: "100%", gap: 8 }}>
+              <div style={{ textAlign: "left", flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#4ade80" }}>{selectedFixture?.home}</div>
+                {matchData?.homeGoals?.map((g, i) => <div key={i} style={{ fontSize: 13, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
+              </div>
+              <div style={{ textAlign: "right", flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#f59e0b" }}>{selectedFixture?.away}</div>
+                {matchData?.awayGoals?.map((g, i) => <div key={i} style={{ fontSize: 13, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
+              </div>
+            </div>
+          </div>
+          {/* Right: predictions */}
+          <div style={{ flex: 1, padding: "36px 20px 20px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 12, position: "relative", zIndex: 1 }}>
+            <div style={{ fontSize: 13, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Predictions</div>
+            {[{ label: "👤 Your Call", pred: yourPrediction, result: yourResult, color: "#4ade80" }, { label: "🤖 AI Predicted", pred: aiPrediction, result: aiResult, color: "#f59e0b" }].map(p => (
+              <div key={p.label} style={{ background: "#13131f", borderRadius: 10, padding: "12px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <div style={{ fontSize: 13, color: p.color, fontWeight: 700, marginBottom: 4 }}>{p.label}</div>
+                  <div style={{ fontSize: 28, fontWeight: 900, color: p.color }}>{p.pred || "—"}</div>
+                </div>
+                {p.result && (
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 22 }}>{p.result.icon}</div>
+                    <div style={{ fontSize: 11, color: p.result.color, fontWeight: 700, marginTop: 2 }}>{p.result.label}</div>
+                  </div>
+                )}
+              </div>
+            ))}
+            <div style={{ background: "#0d0d18", borderRadius: 8, padding: "8px 12px", textAlign: "center" }}>
+              {matchData?.keyStat && (
+                <div style={{ marginBottom: selectedFixture?.venue ? 4 : 0 }}>
+                  <span style={{ fontSize: 14, color: "#818cf8", fontWeight: 700 }}>📊 </span>
+                  <span style={{ fontSize: 14, color: "#ccc", fontWeight: 600 }}>{matchData.keyStat}</span>
+                </div>
+              )}
+              {selectedFixture?.venue && (
+                <div style={{ fontSize: 13, color: "#888", fontWeight: 600 }}>📍 {selectedFixture.venue}{selectedFixture.city ? ", " + selectedFixture.city : ""}</div>
+              )}
+            </div>
+          </div>
+        </>
+      ) : (
+        <div style={{ flex: 1, padding: "20px", display: "flex", flexDirection: "column", gap: 12, paddingTop: 32, position: "relative", zIndex: 1 }}>
+          {/* Enhanced header + final score */}
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 11, color: "#555", letterSpacing: 2, textTransform: "uppercase", marginBottom: 2 }}>{matchData?.competition}</div>
+            <div style={{ fontSize: 13, color: "#f0f0f0", letterSpacing: 2, textTransform: "uppercase", marginBottom: 8, fontWeight: 900 }}>{selectedFixture?.round}</div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 6 }}>
+              {selectedFixture?.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 40, height: 40, objectFit: "contain" }} />}
+              <div>
+                <div style={{ fontSize: 11, color: "#555", textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }}>Full Time</div>
+                <div style={{ fontSize: 56, fontWeight: 900, color: "#f0f0f0", lineHeight: 1 }}>{fs0}-{fs1}</div>
+              </div>
+              {selectedFixture?.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 40, height: 40, objectFit: "contain" }} />}
+            </div>
+            {/* Team names + goalscorers */}
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginTop: 4 }}>
+              <div style={{ textAlign: "left", flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#4ade80" }}>{selectedFixture?.home}</div>
+                {matchData?.homeGoals?.map((g, i) => <div key={i} style={{ fontSize: 13, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
+              </div>
+              <div style={{ textAlign: "right", flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#f59e0b" }}>{selectedFixture?.away}</div>
+                {matchData?.awayGoals?.map((g, i) => <div key={i} style={{ fontSize: 13, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
+              </div>
+            </div>
+          </div>
+          <div style={{ height: 1, background: "#1a1a2a" }} />
+          {/* Predictions */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            {[{ label: "👤 Your Call", pred: yourPrediction, result: yourResult, color: "#4ade80" }, { label: "🤖 AI Predicted", pred: aiPrediction, result: aiResult, color: "#818cf8" }].map(p => (
+              <div key={p.label} style={{ background: "#13131f", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
+                <div style={{ fontSize: 12, color: p.color, fontWeight: 700, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>{p.label}</div>
+                <div style={{ fontSize: 26, fontWeight: 900, color: p.color, marginBottom: 4 }}>{p.pred || "—"}</div>
+                {p.result && (
+                  <>
+                    <div style={{ fontSize: 18 }}>{p.result.icon}</div>
+                    <div style={{ fontSize: 11, color: p.result.color, fontWeight: 700, marginTop: 2 }}>{p.result.label}</div>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+          {/* Key stat + venue banner */}
+          <div style={{ background: "#0d0d18", borderRadius: 8, padding: "8px 12px", textAlign: "center" }}>
+            {matchData?.keyStat && (
+              <div style={{ marginBottom: selectedFixture?.venue ? 4 : 0 }}>
+                <span style={{ fontSize: 14, color: "#818cf8", fontWeight: 700 }}>📊 </span>
+                <span style={{ fontSize: 14, color: "#ccc", fontWeight: 600 }}>{matchData.keyStat}</span>
+              </div>
+            )}
+            {selectedFixture?.venue && (
+              <div style={{ fontSize: 13, color: "#888", fontWeight: 600 }}>📍 {selectedFixture.venue}{selectedFixture.city ? ", " + selectedFixture.city : ""}</div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {!selectedFixture ? (
+        <FixturePicker onSelect={handleSelect} />
+      ) : (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
+            <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
+            <button onClick={() => { setSelectedFixture(null); setMatchData(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
+          </div>
+
+          {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
+
+          {matchData && !matchData.yourPrediction && (
+            <div style={{ fontSize: 15, color: "#f59e0b", background: "#f59e0b11", border: "1px solid #f59e0b33", borderRadius: 8, padding: "10px 14px" }}>
+              ⚠️ No prediction found for this match in your history. Make a prediction first to use the Recap card.
+            </div>
+          )}
+
+          {matchData && (
+            <>
+              <div style={{ display: "flex", gap: 8 }}>
+                {["square", "landscape"].map(v => (
+                  <button key={v} onClick={() => setVariant(v)} style={{ flex: 1, background: variant === v ? "#4ade8022" : "none", border: `1px solid ${variant === v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: variant === v ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "8px" }}>
+                    {v === "square" ? "1:1 Square" : "16:9 Landscape"}
+                  </button>
+                ))}
+              </div>
+
+              <div ref={cardRef}>
+                <CardContent />
+              </div>
+
+              <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+                {downloading ? "Generating..." : "⬇ Download Recap Card"}
+              </button>
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── BRACKET GRAPHIC ─────────────────────────────────────────────────────────
+function BracketGraphic({ history = [] }) {
+  const cardRef = useRef(null);
+  const [leagueId, setLeagueId] = useState("wc2026");
+  const [rounds, setRounds] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  // 7 manual selectors: 4 QF + 2 SF + 1 Final
+  const [sel, setSel] = useState({ qf1:"", qf2:"", qf3:"", qf4:"", sf1:"", sf2:"", fin:"" });
+  const setS = (key) => (val) => setSel(prev => ({ ...prev, [key]: val }));
+
+  const CUP_LEAGUES = [
+    { id: "wc2026", label: "FIFA World Cup 2026" },
+    { id: "ucl",    label: "Champions League" },
+    { id: "uel",    label: "Europa League" },
+    { id: "facup",  label: "FA Cup" },
+    { id: "copadelrey", label: "Copa del Rey" },
+    { id: "afcon",  label: "AFCON" },
+    { id: "copamerica", label: "Copa America" },
+  ];
+
+  useEffect(() => {
+    setLoading(true); setRounds([]);
+    setSel({ qf1:"", qf2:"", qf3:"", qf4:"", sf1:"", sf2:"", fin:"" });
+    fetch(`/api/bracket?leagueId=${leagueId}`)
+      .then(r => r.json())
+      .then(d => setRounds(d.rounds || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [leagueId]);
+
+  const norm = s => (s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+  const getUserPred = (m) => m && history.find(h =>
+    (norm(h.home_team) === norm(m.home) && norm(h.away_team) === norm(m.away)) ||
+    (norm(h.home_team) === norm(m.away) && norm(h.away_team) === norm(m.home))
+  );
+
+  const getMatch = (val) => {
+    if (!val) return null;
+    const [roundName, mi] = val.split(":::");
+    const r = rounds.find(r => r.round === roundName);
+    return r?.matches[parseInt(mi)] || null;
+  };
+
+  const download = async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      if (!window.html2canvas) {
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+        document.head.appendChild(s);
+        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
+      }
+      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
+      const link = document.createElement("a");
+      link.download = `deep433-bracket-${leagueId}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const TrophyIcon = ({ size = 24 }) => (
+    <svg width={size} height={size} viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+      {/* Globe/top of trophy */}
+      <circle cx="50" cy="22" r="11" fill="#FFD700" stroke="#B8860B" strokeWidth="1.5" />
+      <circle cx="50" cy="19" r="4" fill="#FFF3B0" opacity="0.7" />
+      {/* Spiral bands rising from base to globe — FIFA trophy's signature look */}
+      <path d="M38 78 C 30 68, 30 58, 40 50 C 50 42, 50 34, 44 28"
+            fill="none" stroke="#FFD700" strokeWidth="6" strokeLinecap="round" />
+      <path d="M62 78 C 70 68, 70 58, 60 50 C 50 42, 50 34, 56 28"
+            fill="none" stroke="#FFD700" strokeWidth="6" strokeLinecap="round" />
+      <path d="M50 80 C 50 68, 50 58, 50 50 C 50 42, 50 36, 50 30"
+            fill="none" stroke="#FFD700" strokeWidth="6" strokeLinecap="round" />
+      {/* Outline strokes for depth */}
+      <path d="M38 78 C 30 68, 30 58, 40 50 C 50 42, 50 34, 44 28"
+            fill="none" stroke="#B8860B" strokeWidth="1.2" strokeLinecap="round" />
+      <path d="M62 78 C 70 68, 70 58, 60 50 C 50 42, 50 34, 56 28"
+            fill="none" stroke="#B8860B" strokeWidth="1.2" strokeLinecap="round" />
+      {/* Base cone widening down */}
+      <path d="M35 80 L65 80 L58 96 L42 96 Z" fill="#FFD700" stroke="#B8860B" strokeWidth="1.5" />
+      {/* Pedestal */}
+      <rect x="38" y="96" width="24" height="6" fill="#2a2a3a" />
+      <rect x="32" y="102" width="36" height="8" rx="2" fill="#1a1a2a" stroke="#333" strokeWidth="1" />
+      {/* Shine accents */}
+      <path d="M46 32 C 44 40, 44 48, 48 54" fill="none" stroke="#FFF3B0" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
+    </svg>
+  );
+
+  const Node = ({ val, w = 155 }) => {
+    const m = getMatch(val);
+    const pred = getUserPred(m);
+    const isF = m?.status === "finished";
+    const isL = m?.status === "live";
+    const hw = isF && m.score.home > m.score.away;
+    const aw = isF && m.score.away > m.score.home;
+
+    if (!m) return (
+      <div style={{ width: w, background: "#161622", border: "1px dashed #2a2a3a", borderRadius: 8, padding: "14px 8px", textAlign: "center" }}>
+        <span style={{ fontSize: 13, color: "#666", fontWeight: 600 }}>Select match</span>
+      </div>
+    );
+
+    return (
+      <div style={{ width: w, background: "#181826", border: `2px solid ${pred ? "#4ade80" : isL ? "#ef4444" : "#333"}`, borderRadius: 8, overflow: "hidden", boxShadow: pred ? "0 0 10px rgba(74,222,128,0.35)" : "none", flexShrink: 0 }}>
+        {isL && <div style={{ height: 2, background: "#ef4444" }} />}
+        {[{ name: m.home, logo: m.homeLogo, score: m.score?.home, won: hw }, { name: m.away, logo: m.awayLogo, score: m.score?.away, won: aw }].map((t, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 8px", background: t.won ? "#4ade8020" : "transparent", borderBottom: i === 0 ? "1px solid #26263a" : "none" }}>
+            {t.logo ? <img src={t.logo} alt="" crossOrigin="anonymous" style={{ width: 18, height: 18, objectFit: "contain", flexShrink: 0 }} /> : <div style={{ width: 18, height: 18, background: "#26263a", borderRadius: "50%", flexShrink: 0 }} />}
+            <span style={{ fontSize: 14, fontWeight: t.won ? 900 : 700, color: t.won ? "#4ade80" : "#f5f5f5", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name || "TBD"}</span>
+            {(isF || isL) && <span style={{ fontSize: 16, fontWeight: 900, color: t.won ? "#4ade80" : "#ccc" }}>{t.score ?? 0}</span>}
+          </div>
+        ))}
+        <div style={{ padding: "3px 8px", background: "#0d0d18", display: "flex", justifyContent: "space-between" }}>
+          <span style={{ fontSize: 11, color: isL ? "#ff6b6b" : "#999", fontWeight: 700 }}>
+            {isL ? "🔴 LIVE" : isF ? m.statusRaw : new Date(m.kickoff).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+          </span>
+          {pred && <span style={{ fontSize: 11, color: "#4ade80", fontWeight: 700 }}>✓ {pred.user_prediction}</span>}
+        </div>
+      </div>
+    );
+  };
+
+  const Arr = () => (
+    <div style={{ display: "flex", alignItems: "center", padding: "0 4px", flexShrink: 0 }}>
+      <div style={{ width: 10, height: 2, background: "#4a4a5a" }} />
+      <span style={{ fontSize: 16, color: "#888", fontWeight: 900 }}>›</span>
+    </div>
+  );
+
+  const DropDown = ({ label, skey }) => (
+    <div>
+      <div style={{ fontSize: 12, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>{label}</div>
+      <select value={sel[skey]} onChange={e => setS(skey)(e.target.value)} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 15, padding: "7px 10px", outline: "none", fontFamily: "inherit" }}>
+        <option value="">— Select —</option>
+        {rounds.map(r => (
+          <optgroup key={r.round} label={r.round}>
+            {r.matches.map((m, i) => (
+              <option key={m.fixtureId} value={`${r.round}:::${i}`}>
+                {m.home || "TBD"} vs {m.away || "TBD"} {m.status === "finished" ? `(${m.score.home}-${m.score.away})` : ""}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+    </div>
+  );
+
+  const hasAny = Object.values(sel).some(v => v);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {CUP_LEAGUES.map(l => (
+          <button key={l.id} onClick={() => setLeagueId(l.id)} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
+            {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
+            {l.label}
+          </button>
+        ))}
+      </div>
+
+      {loading && <div style={{ textAlign: "center", color: "#555", fontSize: 16, padding: "20px 0" }}>Loading...</div>}
+
+      {!loading && rounds.length > 0 && (
+        <>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <DropDown label="QF Match 1 (top left)" skey="qf1" />
+            <DropDown label="QF Match 2 (bottom left)" skey="qf2" />
+            <DropDown label="QF Match 3 (top right)" skey="qf3" />
+            <DropDown label="QF Match 4 (bottom right)" skey="qf4" />
+            <DropDown label="SF Match 1 (top)" skey="sf1" />
+            <DropDown label="SF Match 2 (bottom)" skey="sf2" />
+            <DropDown label="🏆 Final" skey="fin" />
+          </div>
+
+          <div ref={cardRef} style={{ background: "linear-gradient(145deg, #0a0a0f 0%, #0d0d1a 60%, #0a0f0a 100%)", border: "1px solid #1e1e30", borderRadius: 14, overflow: "hidden", position: "relative", padding: "28px 16px 16px", fontFamily: "'Inter',sans-serif" }}>
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
+            <div style={{ position: "absolute", top: 10, right: 12, display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
+              <span style={{ fontSize: 11, color: "#888", fontWeight: 600 }}>deep433.com</span>
+            </div>
+            <div style={{ textAlign: "center", marginBottom: 14 }}>
+              <div style={{ fontSize: 16, color: "#f0f0f0", fontWeight: 900, textTransform: "uppercase", letterSpacing: 2 }}>
+                {CUP_LEAGUES.find(l => l.id === leagueId)?.label}
+              </div>
+            </div>
+
+            <div style={{ position: "relative", width: "100%", maxWidth: 460, margin: "0 auto", padding: "10px 0" }}>
+              {/* Grid: 3 columns x 2 rows, Final spans center */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 170px 1fr", gridTemplateRows: "auto auto", gap: "16px 12px", alignItems: "center" }}>
+
+                {/* Top-left: QF1 */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                  <div style={{ fontSize: 12, color: "#4ade80", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Quarter-Final</div>
+                  <Node val={sel.qf1} w={140} />
+                </div>
+
+                {/* Top-center: SF1 */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <div style={{ fontSize: 12, color: "#c084fc", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Semi-Final</div>
+                  <Node val={sel.sf1} w={150} />
+                </div>
+
+                {/* Top-right: QF3 */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+                  <div style={{ fontSize: 12, color: "#4ade80", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Quarter-Final</div>
+                  <Node val={sel.qf3} w={140} />
+                </div>
+
+                {/* Bottom-left: QF2 */}
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <Node val={sel.qf2} w={140} />
+                </div>
+
+                {/* Bottom-center: SF2 */}
+                <div style={{ display: "flex", justifyContent: "center" }}>
+                  <Node val={sel.sf2} w={150} />
+                </div>
+
+                {/* Bottom-right: QF4 */}
+                <div style={{ display: "flex", justifyContent: "flex-start" }}>
+                  <Node val={sel.qf4} w={140} />
+                </div>
+              </div>
+
+              {/* Final — dead centre, overlaid */}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 20 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, marginBottom: 8 }}>
+                  <TrophyIcon size={18} />
+                  <span style={{ fontSize: 15, color: "#fbbf24", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5 }}>Final</span>
+                </div>
+                <Node val={sel.fin} w={180} />
+              </div>
+            </div>
+
+            <div style={{ textAlign: "center", marginTop: 10 }}>
+              <span style={{ fontSize: 12, color: "#999", fontWeight: 600 }}>🟢 Green border = your prediction · deep433.com</span>
+            </div>
+          </div>
+
+          <button onClick={download} disabled={downloading || !hasAny} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%", opacity: !hasAny ? 0.4 : 1 }}>
+            {downloading ? "Generating..." : "⬇ Download Bracket Card"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+
+
+// ─── DEEP INSIGHTS GRAPHIC ───────────────────────────────────────────────────
+function DeepInsightsGraphic({ history = [] }) {
+  const cardRef = useRef(null);
+  const [selectedFixture, setSelectedFixture] = useState(null);
+  const [insights, setInsights] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSelect = async (f) => {
+    setSelectedFixture(f);
+    setInsights(null);
+    setError("");
+    if (!f.fixtureId) { setError("No fixture ID available"); return; }
+    setLoading(true);
+    try {
+      const r = await fetch(`/api/fixture-insights?fixtureId=${f.fixtureId}&home=${encodeURIComponent(f.home)}&away=${encodeURIComponent(f.away)}`);
+      const d = await r.json();
+      if (!d.comparison) throw new Error("No insights available for this fixture yet");
+      setInsights(d);
+    } catch (e) { setError(e.message); }
+    setLoading(false);
+  };
+
+  const download = async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      if (!window.html2canvas) {
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+        document.head.appendChild(s);
+        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
+      }
+      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
+      const link = document.createElement("a");
+      link.download = `deep433-insights-${selectedFixture?.home}-vs-${selectedFixture?.away}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const norm100 = (a, b) => {
+    const av = parseFloat(a) || 0;
+    const bv = parseFloat(b) || 0;
+    const total = av + bv || 1;
+    return { a: Math.round((av / total) * 100), b: Math.round((bv / total) * 100) };
+  };
+
+  const StatBar = ({ label, homeVal, awayVal, home, away }) => {
+    const { a, b } = norm100(homeVal, awayVal);
+    return (
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+          <span style={{ fontSize: 22, fontWeight: 900, color: "#4ade80" }}>{a}%</span>
+          <span style={{ fontSize: 13, color: "#aaa", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{label}</span>
+          <span style={{ fontSize: 22, fontWeight: 900, color: "#f59e0b" }}>{b}%</span>
+        </div>
+        <div style={{ display: "flex", height: 8, borderRadius: 4, overflow: "hidden" }}>
+          <div style={{ width: `${a}%`, background: "#4ade80" }} />
+          <div style={{ width: `${b}%`, background: "#f59e0b", opacity: 0.6 }} />
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3, fontSize: 12, color: "#444" }}>
+          <span>{home?.split(" ")[0]}</span><span>{away?.split(" ")[0]}</span>
+        </div>
+      </div>
+    );
+  };
+
+  const dotColor = (r) => r === "W" ? "#4ade80" : r === "D" ? "#60a5fa" : "#f87171";
+
+  const H2HRow = ({ team, results, ppg, logo }) => (
+    <div style={{ background: "#0d0d18", borderRadius: 8, padding: "10px 12px", marginBottom: 8 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {logo && <img src={logo} alt="" crossOrigin="anonymous" style={{ width: 20, height: 20, objectFit: "contain" }} />}
+          <span style={{ fontSize: 15, fontWeight: 800, color: "#f0f0f0" }}>{team}</span>
+        </div>
+        <span style={{ fontSize: 13, color: "#555" }}>PPG: <span style={{ color: "#f0f0f0", fontWeight: 700 }}>{ppg}</span></span>
+      </div>
+      <div style={{ display: "flex", gap: 5 }}>
+        {results.map((r, i) => (
+          <div key={i} style={{ width: 24, height: 24, borderRadius: 4, background: dotColor(r), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900, color: "#0a0a0f" }}>{r}</div>
+        ))}
+        <div style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center" }}>
+          <span style={{ fontSize: 13, color: "#4ade80" }}>W {results.filter(r => r === "W").length}</span>
+          <span style={{ fontSize: 13, color: "#60a5fa" }}>D {results.filter(r => r === "D").length}</span>
+          <span style={{ fontSize: 13, color: "#f87171" }}>L {results.filter(r => r === "L").length}</span>
+        </div>
+      </div>
+    </div>
+  );
+
+  const parseH2H = (h2h, homeTeam, awayTeam) => {
+    const norm = s => (s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+    return h2h.map(r => {
+      const parts = r.match(/^(.+?)\s+(\d+)-(\d+)\s+(.+)$/);
+      if (!parts) return { result: "D" };
+      const matchHome = parts[1].trim();
+      const hg = parseInt(parts[2]);
+      const ag = parseInt(parts[3]);
+      if (hg === ag) return "D";
+      const homeTeamWon = (norm(matchHome) === norm(homeTeam) && hg > ag) || (norm(matchHome) !== norm(homeTeam) && ag > hg);
+      return homeTeamWon ? "W" : "L";
+    });
+  };
+
+  const home = selectedFixture?.home;
+  const away = selectedFixture?.away;
+  const h2hResults = insights?.h2h?.length ? parseH2H(insights.h2h, home, away) : [];
+  const awayResults = h2hResults.map(r => r === "W" ? "L" : r === "L" ? "W" : "D");
+  const homePPG = h2hResults.length ? (h2hResults.reduce((a, r) => a + (r === "W" ? 3 : r === "D" ? 1 : 0), 0) / h2hResults.length).toFixed(2) : "0.00";
+  const awayPPG = awayResults.length ? (awayResults.reduce((a, r) => a + (r === "W" ? 3 : r === "D" ? 1 : 0), 0) / awayResults.length).toFixed(2) : "0.00";
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {!selectedFixture ? (
+        <FixturePicker onSelect={handleSelect} />
+      ) : (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
+            <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
+            <button onClick={() => { setSelectedFixture(null); setInsights(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
+          </div>
+
+          {loading && <div style={{ textAlign: "center", color: "#555", fontSize: 16, padding: "20px 0" }}>Loading insights...</div>}
+          {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
+
+          {insights && (
+            <>
+              <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+                <div style={{ padding: "22px 18px 18px" }}>
+                  {/* Match header */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, marginTop: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      {selectedFixture.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
+                      <span style={{ fontSize: 17, fontWeight: 900, color: "#4ade80" }}>{home}</span>
+                    </div>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: 12, color: "#555", textTransform: "uppercase", letterSpacing: 1 }}>{selectedFixture.round}</div>
+                      <div style={{ fontSize: 14, color: "#333", fontWeight: 700 }}>vs</div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 17, fontWeight: 900, color: "#f59e0b" }}>{away}</span>
+                      {selectedFixture.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
+                    </div>
+                  </div>
+
+                  {(() => {
+                    const norm = s => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+                    const pred = selectedFixture.status !== "finished"
+                      ? history.find(h =>
+                          (norm(h.home_team) === norm(home) && norm(h.away_team) === norm(away)) ||
+                          (norm(h.home_team) === norm(away) && norm(h.away_team) === norm(home))
+                        )
+                      : null;
+                    return (
+                      <DeepInsightsPanel
+                        insights={insights}
+                        homeTeam={home}
+                        awayTeam={away}
+                        aiPrediction={pred?.ai_prediction}
+                        userPrediction={pred?.user_prediction}
+                      />
+                    );
+                  })()}
+                </div>
+              </GraphicCard>
+              <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+                {downloading ? "Generating..." : "⬇ Download PNG"}
+              </button>
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── MATCH PITCH VIEW GRAPHIC ────────────────────────────────────────────────
+function MatchPitchViewGraphic() {
+  const cardRef = useRef(null);
+  const [selectedFixture, setSelectedFixture] = useState(null);
+  const [lineup, setLineup] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSelect = async (f) => {
+    setSelectedFixture(f);
+    setLineup(null);
+    setError("");
+    if (!f.fixtureId) { setError("No fixture ID available"); return; }
+    setLoading(true);
+    try {
+      const r = await fetch(`/api/match-lineup?fixtureId=${f.fixtureId}`);
+      const d = await r.json();
+      if (!d.available || !d.home?.players?.length) throw new Error("Lineup not confirmed yet — check back closer to kickoff");
+      setLineup(d);
+    } catch (e) { setError(e.message); }
+    setLoading(false);
+  };
+
+  const download = async () => {
     if (!cardRef.current) return;
     setDownloading(true);
     try {
@@ -230,477 +1670,272 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
         await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
       }
       const canvas = await window.html2canvas(cardRef.current, {
-        backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false,
+        backgroundColor: "#0a3d1f", scale: 2, useCORS: true, logging: false,
+        allowTaint: false,
       });
       const link = document.createElement("a");
-      link.download = `deep433-${homeTeam}-vs-${awayTeam}.png`;
+      link.download = `deep433-lineup-${selectedFixture?.home}-vs-${selectedFixture?.away}.png`;
       link.href = canvas.toDataURL("image/png");
       link.click();
     } catch { alert("Download failed — try screenshotting manually"); }
     setDownloading(false);
   };
 
-  const stats = [
-    { label: "Attack",  home: deepInsights?.comparison?.attackHome,  away: deepInsights?.comparison?.attackAway },
-    { label: "Defence", home: deepInsights?.comparison?.defenceHome, away: deepInsights?.comparison?.defenceAway },
-    { label: "Form",    home: deepInsights?.comparison?.formHome,    away: deepInsights?.comparison?.formAway },
-  ].filter(s => s.home && s.away);
+  // Grid format from API: "row:col" where row=depth, col=horizontal position
+  const groupByRow = (players) => {
+    const rows = {};
+    (players || []).forEach(p => {
+      if (!p.grid) return;
+      const parts = p.grid.split(":");
+      const row = parseInt(parts[0]);
+      const col = parseInt(parts[1]);
+      if (!rows[row]) rows[row] = [];
+      rows[row].push({ ...p, col });
+    });
+    return Object.entries(rows)
+      .sort(([a], [b]) => Number(a) - Number(b))
+      .map(([, players]) => players.sort((a, b) => a.col - b.col));
+  };
 
-  const TeamLogo = ({ src, size = 48 }) => src
-    ? <img src={src} alt="" crossOrigin="anonymous" style={{ width: size, height: size, objectFit: "contain", display: "block" }} />
-    : null;
-
-  const CardHeader = () => (
-    <>
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
-      <div style={{ position: "absolute", top: 12, right: 14, zIndex: 2, display: "flex", alignItems: "center", gap: 6 }}>
-        <span style={{ fontSize: 14, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
-        <span style={{ fontSize: 13, color: "#888", fontWeight: 600 }}>deep433.com</span>
-      </div>
-      {/* Corner watermark */}
-      <div style={{ position: "absolute", bottom: 10, left: 10, pointerEvents: "none", zIndex: 0 }}>
-        <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 34, height: 34, opacity: 0.35, objectFit: "contain", borderRadius: "50%", userSelect: "none" }} />
-      </div>
-      {/* Competition context */}
-      <div style={{ textAlign: "center", paddingTop: 18, paddingBottom: 4 }}>
-        <span style={{ fontSize: 12, color: "#888", letterSpacing: 2, textTransform: "uppercase", fontWeight: 600 }}>{leagueLabel}</span>
-      </div>
-    </>
-  );
-
-  const StatsSection = () => (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>📊 Deep Insights</div>
-      {stats.map(s => {
-        const hv = parseFloat(s.home) || 0;
-        const av = parseFloat(s.away) || 0;
-        const total = hv + av || 1;
-        const hp = Math.round((hv / total) * 100);
-        const ap = 100 - hp;
-        return (
-          <div key={s.label}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-              <span style={{ fontSize: 20, fontWeight: 900, color: "#4ade80" }}>{hp}%</span>
-              <span style={{ fontSize: 12, color: "#aaa", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>{s.label}</span>
-              <span style={{ fontSize: 20, fontWeight: 900, color: "#f59e0b" }}>{ap}%</span>
-            </div>
-            <div style={{ display: "flex", height: 6, borderRadius: 3, overflow: "hidden" }}>
-              <div style={{ width: hp + "%", background: "#4ade80" }} />
-              <div style={{ width: ap + "%", background: "#f59e0b", opacity: 0.6 }} />
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3, fontSize: 12, color: "#444" }}>
-              <span>{homeTeam.split(" ")[0]}</span><span>{awayTeam.split(" ")[0]}</span>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)", zIndex: 60, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 16, overflowY: "auto" }}>
-      <div style={{ display: "flex", gap: 8, marginBottom: 12, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
-        {["square", "landscape"].map(v => (
-          <button key={v} onClick={() => setVariant(v)} style={{ background: variant === v ? "#4ade80" : "none", border: "1px solid " + (variant === v ? "#4ade80" : "#333"), borderRadius: 6, color: variant === v ? "#0a0f0a" : "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "6px 14px" }}>
-            {v === "square" ? "1:1" : "16:9"}
-          </button>
-        ))}
-        <button onClick={downloadImage} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 800, padding: "6px 16px", opacity: downloading ? 0.6 : 1 }}>
-          {downloading ? "Generating..." : "⬇ Download PNG"}
-        </button>
-        <button onClick={onClose} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 15, padding: "6px 12px" }}>✕ Close</button>
-      </div>
-
-      <div
-        ref={cardRef}
-        style={{
-          width: isLandscape ? Math.min(760, window.innerWidth - 32) : Math.min(480, window.innerWidth - 32),
-          aspectRatio: isLandscape ? "16/9" : "1/1",
-          background: "linear-gradient(145deg, #0a0a0f 0%, #0d0d1a 60%, #0a0f0a 100%)",
-          borderRadius: 14, overflow: "hidden", position: "relative",
-          display: "flex", flexDirection: isLandscape ? "row" : "column",
-          border: "1px solid #1e1e30",
-        }}
-      >
-        <CardHeader />
-
-        {isLandscape ? (
-          // ── LANDSCAPE 16:9 ──────────────────────────────────────────
-          <>
-            {/* Left: teams + prediction */}
-            <div style={{ width: "45%", padding: "36px 20px 20px", display: "flex", flexDirection: "column", justifyContent: "space-between", borderRight: "1px solid #1a1a2a" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 8 }}>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><TeamLogo src={homeLogo} size={44} /></div>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: "#4ade80", marginBottom: 4 }}>{homeTeam}</div>
-                  <div style={{ fontSize: 52, fontWeight: 900, color: "#4ade80", lineHeight: 1 }}>{userPrediction.split("-")[0]}</div>
-                </div>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 700, letterSpacing: 1, marginBottom: 4 }}>YOUR CALL</div>
-                  <div style={{ fontSize: 18, color: "#333", marginBottom: 6 }}>—</div>
-                  <div style={{ fontSize: 13, color: "#818cf8", fontWeight: 700, background: "rgba(129,140,248,0.08)", border: "1px solid rgba(129,140,248,0.2)", borderRadius: 5, padding: "3px 8px", whiteSpace: "nowrap" }}>AI {aiPrediction}</div>
-                </div>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><TeamLogo src={awayLogo} size={44} /></div>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: "#f59e0b", marginBottom: 4 }}>{awayTeam}</div>
-                  <div style={{ fontSize: 52, fontWeight: 900, color: "#f59e0b", lineHeight: 1 }}>{userPrediction.split("-")[1]}</div>
-                </div>
-              </div>
-            </div>
-            {/* Right: stats */}
-            <div style={{ flex: 1, padding: "36px 20px 20px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-              <StatsSection />
-            </div>
-          </>
+  const PlayerNode = ({ player, color }) => (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, width: 52 }}>
+      <div style={{ position: "relative" }}>
+        {player.photo ? (
+          <img
+            src={player.photo}
+            alt=""
+            crossOrigin="anonymous"
+            style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", border: `2px solid ${color}`, display: "block" }}
+          />
         ) : (
-          // ── SQUARE 1:1 ──────────────────────────────────────────────
-          <div style={{ flex: 1, padding: "20px", display: "flex", flexDirection: "column", gap: 14, paddingTop: 36 }}>
-            {/* Teams + hero scores */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 8 }}>
-              <div style={{ textAlign: "center" }}>
-                <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><TeamLogo src={homeLogo} size={44} /></div>
-                <div style={{ fontSize: 15, fontWeight: 800, color: "#4ade80", marginBottom: 4 }}>{homeTeam}</div>
-                <div style={{ fontSize: 54, fontWeight: 900, color: "#4ade80", lineHeight: 1 }}>{userPrediction.split("-")[0]}</div>
-              </div>
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 700, letterSpacing: 1, marginBottom: 4 }}>YOUR CALL</div>
-                <div style={{ fontSize: 18, color: "#333", marginBottom: 6 }}>—</div>
-                <div style={{ fontSize: 13, color: "#818cf8", fontWeight: 700, background: "rgba(129,140,248,0.08)", border: "1px solid rgba(129,140,248,0.2)", borderRadius: 5, padding: "3px 8px", whiteSpace: "nowrap" }}>AI {aiPrediction}</div>
-              </div>
-              <div style={{ textAlign: "center" }}>
-                <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><TeamLogo src={awayLogo} size={44} /></div>
-                <div style={{ fontSize: 15, fontWeight: 800, color: "#f59e0b", marginBottom: 4 }}>{awayTeam}</div>
-                <div style={{ fontSize: 54, fontWeight: 900, color: "#f59e0b", lineHeight: 1 }}>{userPrediction.split("-")[1]}</div>
-              </div>
-            </div>
-            <div style={{ height: 1, background: "#1a1a2a" }} />
-            <StatsSection />
+          <div style={{ width: 36, height: 36, borderRadius: "50%", background: color + "22", border: `2px solid ${color}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ fontSize: 16, fontWeight: 900, color }}>{player.number}</span>
+          </div>
+        )}
+        {player.photo && (
+          <div style={{ position: "absolute", bottom: -2, right: -2, background: color, borderRadius: "50%", width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ fontSize: 10, fontWeight: 900, color: "#0a0a0f" }}>{player.number}</span>
           </div>
         )}
       </div>
-      <div style={{ fontSize: 13, color: "#555", marginTop: 10 }}>Tap Download PNG to save and share</div>
+      <div style={{ fontSize: 11, fontWeight: 700, color: "#f0f0f0", textAlign: "center", lineHeight: 1.2, maxWidth: 52, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {player.name?.split(" ").slice(-1)[0]}
+      </div>
     </div>
   );
-}
 
-
-function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineupNames, awayLineupNames, lineupSource }) {
-  const homeFlag = TEAM_FLAGS[homeTeam] || "🏳️";
-  const awayFlag = TEAM_FLAGS[awayTeam] || "🏳️";
-
-  const parseFormation = (f) => {
-    if (!f) return [4, 3, 3];
-    return f.split("-").map(Number);
-  };
-
-  const hForm = parseFormation(homeFormation);
-  const aForm = parseFormation(awayFormation);
-
-  const surname = (fullName) => {
-    if (!fullName) return "";
-    const parts = fullName.trim().split(" ");
-    return parts[parts.length - 1];
-  };
-
-  const splitIntoRows = (names, formation) => {
-    if (!names || !names.length) return [];
-    const rows = [1, ...formation];
-    const result = [];
-    let idx = 0;
-    rows.forEach((count, rowIdx) => {
-      const rowNames = names.slice(idx, idx + count);
-      const label = rowIdx === 0 ? "GK" : rowIdx === rows.length - 1 ? "ATT" : rowIdx === 1 ? "DEF" : "MID";
-      result.push({ label, names: rowNames });
-      idx += count;
-    });
-    return result;
-  };
-
-  const homeRows = splitIntoRows(homeLineupNames, hForm);
-  const awayRows = splitIntoRows(awayLineupNames, aForm);
-
-  const PlayerRow = ({ row, border, flag, isAway }) => (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, marginBottom: 8 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: isAway ? "#ffffff" : border, letterSpacing: 1, textTransform: "uppercase", opacity: 0.8 }}>{row.label}</div>
-      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 5 }}>
-        {row.names.map((name, i) => (
-          <div key={i} style={{ background: "rgba(0,0,0,0.82)", border: "1px solid " + border + "66", borderRadius: 4, padding: "4px 10px", fontSize: 17, fontWeight: 700, color: isAway ? "#a855f7" : "#ffffff", whiteSpace: "nowrap" }}>
-            {name ? surname(name) : flag}
+  const TeamRows = ({ players, color, reverse = false }) => {
+    const rows = groupByRow(players);
+    const displayRows = reverse ? [...rows].reverse() : rows;
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "8px 0" }}>
+        {displayRows.map((row, ri) => (
+          <div key={ri} style={{ display: "flex", justifyContent: "space-around", alignItems: "center" }}>
+            {row.map((p, pi) => <PlayerNode key={pi} player={p} color={color} />)}
           </div>
         ))}
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
-    <div style={{ width: "100%", borderRadius: 10, overflow: "hidden" }}>
-      {lineupSource && (
-        <div style={{ textAlign: "center", padding: "6px", background: "#0d0d18" }}>
-          <span style={{ fontSize: 12, fontWeight: 700, padding: "3px 10px", borderRadius: 10, background: lineupSource === "confirmed" ? "#22c55e22" : "#f59e0b22", color: lineupSource === "confirmed" ? "#4ade80" : "#f59e0b", border: "1px solid " + (lineupSource === "confirmed" ? "#22c55e44" : "#f59e0b44") }}>
-            {lineupSource === "confirmed" ? "✓ CONFIRMED LINEUP" : "LIKELY LINEUP"}
-          </span>
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {!selectedFixture ? (
+        <FixturePicker onSelect={handleSelect} />
+      ) : (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
+            <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
+            <button onClick={() => { setSelectedFixture(null); setLineup(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
+          </div>
+
+          {loading && <div style={{ textAlign: "center", color: "#555", fontSize: 16, padding: "20px 0" }}>Loading lineup...</div>}
+          {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
+
+          {lineup && (
+            <>
+              <div
+                ref={cardRef}
+                style={{
+                  position: "relative",
+                  width: "100%",
+                  maxWidth: 420,
+                  margin: "0 auto",
+                  borderRadius: 14,
+                  overflow: "hidden",
+                  fontFamily: "'Inter',sans-serif",
+                }}
+              >
+                {/* Pitch background SVG */}
+                <svg viewBox="0 0 420 680" xmlns="http://www.w3.org/2000/svg" style={{ display: "block", width: "100%" }}>
+                  {/* Pitch */}
+                  <rect width="420" height="680" fill="#0a3d1f" />
+                  {/* Pitch outline */}
+                  <rect x="20" y="20" width="380" height="640" fill="none" stroke="#1a6b3a" strokeWidth="2" rx="2" />
+                  {/* Centre line */}
+                  <line x1="20" y1="340" x2="400" y2="340" stroke="#1a6b3a" strokeWidth="2" />
+                  {/* Centre circle */}
+                  <circle cx="210" cy="340" r="55" fill="none" stroke="#1a6b3a" strokeWidth="2" />
+                  <circle cx="210" cy="340" r="3" fill="#1a6b3a" />
+                  {/* Top penalty area */}
+                  <rect x="100" y="20" width="220" height="90" fill="none" stroke="#1a6b3a" strokeWidth="2" />
+                  <rect x="155" y="20" width="110" height="40" fill="none" stroke="#1a6b3a" strokeWidth="2" />
+                  <circle cx="210" cy="95" r="4" fill="#1a6b3a" />
+                  {/* Top penalty arc */}
+                  <path d="M 170 110 A 55 55 0 0 1 250 110" fill="none" stroke="#1a6b3a" strokeWidth="2" />
+                  {/* Bottom penalty area */}
+                  <rect x="100" y="570" width="220" height="90" fill="none" stroke="#1a6b3a" strokeWidth="2" />
+                  <rect x="155" y="640" width="110" height="40" fill="none" stroke="#1a6b3a" strokeWidth="2" />
+                  <circle cx="210" cy="585" r="4" fill="#1a6b3a" />
+                  {/* Bottom penalty arc */}
+                  <path d="M 170 570 A 55 55 0 0 0 250 570" fill="none" stroke="#1a6b3a" strokeWidth="2" />
+                  {/* Grass stripes */}
+                  {[0,1,2,3,4,5,6].map(i => (
+                    <rect key={i} x="20" y={20 + i * 91} width="380" height="45" fill={i % 2 === 0 ? "rgba(255,255,255,0.02)" : "transparent"} />
+                  ))}
+                </svg>
+
+                {/* Players overlaid on pitch */}
+                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", padding: "24px 8px" }}>
+                  {/* Brand */}
+                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
+                  <div style={{ position: "absolute", top: 8, right: 10, display: "flex", alignItems: "center", gap: 4 }}>
+                    <span style={{ fontSize: 11, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
+                  </div>
+
+                  {/* Watermark — corner */}
+                  <div style={{ position: "absolute", bottom: 10, left: 10, pointerEvents: "none" }}>
+                    <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 26, height: 26, opacity: 0.35, objectFit: "contain", borderRadius: "50%", userSelect: "none" }} />
+                  </div>
+
+                  {/* Home team header */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4, paddingLeft: 4 }}>
+                    {selectedFixture.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 18, height: 18, objectFit: "contain" }} />}
+                    <span style={{ fontSize: 13, fontWeight: 800, color: "#4ade80" }}>{selectedFixture.home}</span>
+                    <span style={{ fontSize: 12, color: "#555" }}>{lineup.home?.formation}</span>
+                  </div>
+
+                  {/* Home team players */}
+                  <div style={{ flex: 1 }}>
+                    <TeamRows players={lineup.home?.players} color="#4ade80" reverse={false} />
+                  </div>
+
+                  {/* Centre line label */}
+                  <div style={{ textAlign: "center", padding: "4px 0" }}>
+                    <span style={{ fontSize: 11, color: "#1a6b3a", fontWeight: 700, letterSpacing: 2 }}>· · · · · · · · · · · · · ·</span>
+                  </div>
+
+                  {/* Away team players */}
+                  <div style={{ flex: 1 }}>
+                    <TeamRows players={lineup.away?.players} color="#f59e0b" reverse={true} />
+                  </div>
+
+                  {/* Away team header */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, paddingLeft: 4 }}>
+                    {selectedFixture.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 18, height: 18, objectFit: "contain" }} />}
+                    <span style={{ fontSize: 13, fontWeight: 800, color: "#f59e0b" }}>{selectedFixture.away}</span>
+                    <span style={{ fontSize: 12, color: "#555" }}>{lineup.away?.formation}</span>
+                  </div>
+                </div>
+              </div>
+
+              <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+                {downloading ? "Generating..." : "⬇ Download Pitch View PNG"}
+              </button>
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── PLAYER HEAD-TO-HEAD GRAPHIC ─────────────────────────────────────────────
+  function PlayerSearchBox({ label, search, setSearch, suggestions, setSuggestions, player, setPlayer, searching, slot, color, onSearch }) {
+  return (
+    <div style={{ position: "relative" }}>
+      <div style={{ fontSize: 13, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{label}</div>
+      <input
+        placeholder="Search player..."
+        value={player ? player.name : search}
+        onChange={e => {
+          setSearch(e.target.value);
+          setPlayer(null);
+          onSearch(e.target.value, slot);
+        }}
+        style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${player ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 16, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+      />
+      {searching && <div style={{ position: "absolute", right: 10, top: 38, fontSize: 13, color: "#555" }}>...</div>}
+      {suggestions.length > 0 && !player && (
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, zIndex: 20, marginTop: 4, maxHeight: 220, overflowY: "auto" }}>
+          {suggestions.map(p => (
+            <div key={p.id} onClick={() => { setPlayer(p); setSearch(p.name); setSuggestions([]); }} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", cursor: "pointer", borderBottom: "1px solid #1a1a2a" }}>
+              {p.photo && <img src={p.photo} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover" }} />}
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0" }}>{p.name}</div>
+                <div style={{ fontSize: 13, color: "#555" }}>{p.team}</div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
-
-      <div style={{ background: "repeating-linear-gradient(180deg,#1a7a1a 0px,#1a7a1a 28px,#1f8c1f 28px,#1f8c1f 56px)", padding: "12px 14px 8px" }}>
-        <div style={{ textAlign: "center", marginBottom: 12 }}>
-          <span style={{ fontSize: 15, fontWeight: 800, color: "#4ade80", background: "rgba(0,0,0,0.65)", padding: "4px 12px", borderRadius: 6 }}>{homeFlag} {homeTeam} · {homeFormation || "4-3-3"}</span>
-        </div>
-        {homeRows.map((row, i) => <PlayerRow key={i} row={row} border="#4ade80" flag={homeFlag} isAway={false} />)}
-      </div>
-
-      <div style={{ background: "#0d0d18", display: "flex", alignItems: "center", gap: 8, padding: "5px 14px" }}>
-        <div style={{ flex: 1, height: 1, background: "#1e1e30" }} />
-        <div style={{ width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg, #1a1a2e, #16213e)", border: "2px solid #2a2a4a", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
-          <img src="/deep433.jpg" alt="Deep433" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        </div>
-        <div style={{ flex: 1, height: 1, background: "#1e1e30" }} />
-      </div>
-
-      <div style={{ background: "repeating-linear-gradient(180deg,#1f8c1f 0px,#1f8c1f 28px,#1a7a1a 28px,#1a7a1a 56px)", padding: "8px 14px 12px" }}>
-        {[...awayRows].reverse().map((row, i) => <PlayerRow key={i} row={row} border="#a855f7" flag={awayFlag} isAway={true} />)}
-        <div style={{ textAlign: "center", marginTop: 12 }}>
-          <span style={{ fontSize: 15, fontWeight: 800, color: "#ffffff", background: "rgba(0,0,0,0.65)", padding: "4px 12px", borderRadius: 6 }}>{awayFlag} {awayTeam} · {awayFormation || "4-3-3"}</span>
-        </div>
-      </div>
     </div>
   );
 }
 
-function getTimeLabel(statusRaw, elapsed) {
-  switch(statusRaw) {
-    case "1H":  return elapsed ? `${elapsed}'` : "1H";
-    case "HT":  return "HT";
-    case "2H":  return elapsed > 90 ? `90+${elapsed - 90}'` : elapsed ? `${elapsed}'` : "2H";
-    case "ET":  return elapsed ? `${elapsed}'` : "ET";
-    case "BT":  return "BT";
-    case "P":   return "Pens";
-    case "INT": return "INT";
-    case "FT":  return "FT";
-    case "AET": return "AET";
-    case "PEN": return "PEN";
-    default:    return statusRaw || "";
-  }
-}
+function PlayerH2HGraphic() {
+  const cardRef = useRef(null);
+  const [leagueId, setLeagueId] = useState("wc2026");
+  const [search1, setSearch1] = useState("");
+  const [search2, setSearch2] = useState("");
+  const [suggestions1, setSuggestions1] = useState([]);
+  const [suggestions2, setSuggestions2] = useState([]);
+  const [player1, setPlayer1] = useState(null);
+  const [player2, setPlayer2] = useState(null);
+  const [searching1, setSearching1] = useState(false);
+  const [searching2, setSearching2] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [statsMode, setStatsMode] = useState("competition"); // competition | season
+  const [seasonLoading, setSeasonLoading] = useState(false);
 
-function AuthScreen() {
-  const [mode, setMode] = useState("login");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
-
-  const handleEmail = async () => {
-    if (!email || !password) { setError("Enter email and password."); return; }
-    setLoading(true); setError(""); setMessage("");
+  const searchPlayer = async (query, slot) => {
+    if (query.length < 3) {
+      slot === 1 ? setSuggestions1([]) : setSuggestions2([]);
+      return;
+    }
+    slot === 1 ? setSearching1(true) : setSearching2(true);
     try {
-      if (mode === "signup") {
-        setError("New signups are currently paused. Check back soon!");
-        setLoading(false);
-        return;
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-      }
-    } catch (e) { setError(e.message); }
-    setLoading(false);
+      const r = await fetch(`/api/team-stats?mode=playersearch&query=${encodeURIComponent(query)}&leagueId=${leagueId}`);
+      const d = await r.json();
+      slot === 1 ? setSuggestions1(d.players || []) : setSuggestions2(d.players || []);
+    } catch {}
+    slot === 1 ? setSearching1(false) : setSearching2(false);
   };
 
-  const handleGoogle = async () => {
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: "https://deep433.com" } });
-    if (error) { setError(error.message); setLoading(false); }
+  // Fetch season-aggregated stats when toggled to Season mode
+  const fetchSeasonStats = async (player, setPlayer) => {
+    if (!player?.id) return;
+    setSeasonLoading(true);
+    try {
+      const season = leagueId === "wc2026" ? 2026 : 2025;
+      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${player.id}&season=${season}`);
+      const d = await r.json();
+      if (d.available) setPlayer(prev => ({ ...prev, ...d, _seasonData: d }));
+    } catch {}
+    setSeasonLoading(false);
   };
 
-  return (
-    <div style={{ minHeight: "100vh", background: "#0a0a0f", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 20, fontFamily: "'Inter','Helvetica Neue',sans-serif" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; }`}</style>
-      <div style={{ width: "100%", maxWidth: 400 }}>
-        <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div style={{ fontSize: 40, marginBottom: 8 }}>⚽</div>
-          <div style={{ fontSize: 28, fontWeight: 900, color: "#4ade80", textShadow: "0 0 30px rgba(74,222,128,0.4)" }}>DEEP433</div>
-          <div style={{ fontSize: 16, color: "#555", marginTop: 4 }}>PUNDITS VS FANS · PREDICT NOW</div>
-        </div>
-        <div style={{ background: "#13131f", border: "1px solid #1e1e30", borderRadius: 16, padding: 24 }}>
-          <button onClick={handleGoogle} disabled={loading} style={{ width: "100%", background: "#fff", border: "none", borderRadius: 10, color: "#111", cursor: "pointer", fontSize: 17, fontWeight: 700, padding: "13px 20px", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontFamily: "inherit" }}>
-            <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/></svg>
-            Continue with Google
-          </button>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-            <div style={{ flex: 1, height: 1, background: "#1e1e30" }} />
-            <span style={{ color: "#555", fontSize: 15 }}>or</span>
-            <div style={{ flex: 1, height: 1, background: "#1e1e30" }} />
-          </div>
-          <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 10, color: "#f0f0f0", fontSize: 17, padding: "12px 16px", outline: "none", marginBottom: 10, fontFamily: "inherit" }}/>
-          <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleEmail()} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 10, color: "#f0f0f0", fontSize: 17, padding: "12px 16px", outline: "none", marginBottom: 16, fontFamily: "inherit" }}/>
-          {error && <div style={{ color: "#f87171", fontSize: 16, marginBottom: 12 }}>{error}</div>}
-          {message && <div style={{ color: "#4ade80", fontSize: 16, marginBottom: 12 }}>{message}</div>}
-          <button onClick={handleEmail} disabled={loading} style={{ width: "100%", background: "linear-gradient(135deg, #4ade80, #22c55e)", border: "none", borderRadius: 10, color: "#0a0f0a", fontSize: 18, fontWeight: 800, padding: "13px", cursor: "pointer", fontFamily: "inherit", marginBottom: 14 }}>
-            {loading ? "..." : mode === "login" ? "Sign In" : "Create Account"}
-          </button>
-          <div style={{ textAlign: "center", fontSize: 16, color: "#555" }}>
-            {mode === "login" ? (
-              <span style={{ color: "#555" }}>New signups are currently paused</span>
-            ) : (<>Already have an account? <button onClick={() => { setMode("login"); setError(""); setMessage(""); }} style={{ background: "none", border: "none", color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 16, fontWeight: 700 }}>Sign in</button></>)}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default function FootballPredictor() {
-  const [session, setSession] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [showLanding, setShowLanding] = useState(true);
-  const [tab, setTab] = useState("predict");
-  const [homeTeam, setHomeTeam] = useState("");
-  const [awayTeam, setAwayTeam] = useState("");
-  const [userHome, setUserHome] = useState("");
-  const [userAway, setUserAway] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
-  const [userPrediction, setUserPrediction] = useState("");
-  const [error, setError] = useState("");
-  const [history, setHistory] = useState([]);
-  const [loggingIdx, setLoggingIdx] = useState(null);
-  const [logScore, setLogScore] = useState("");
-  const [copied, setCopied] = useState(false);
-  const [selectedLeague, setSelectedLeague] = useState("wc2026");
-  const [step, setStep] = useState(1);
-  const [fixtureSearch, setFixtureSearch] = useState("");
-  const [historySearch, setHistorySearch] = useState("");
-  const [liveData, setLiveData] = useState([]);
-  const [liveEvents, setLiveEvents] = useState({});
-  const [expandedLive, setExpandedLive] = useState(null);
-  const [showShareCard, setShowShareCard] = useState(false);
-  const [selectedHomeLogo, setSelectedHomeLogo] = useState(null);
-  const [selectedAwayLogo, setSelectedAwayLogo] = useState(null);
-  const [userRole, setUserRole] = useState("user");
-  const [fixtures, setFixtures] = useState([]);
-  const [fixturesLoading, setFixturesLoading] = useState(false);
-  const [bracketRounds, setBracketRounds] = useState([]);
-  const [bracketLoading, setBracketLoading] = useState(false);
-  const [awardsLeague, setAwardsLeague] = useState("wc2026");
-  const [remainingTeams, setRemainingTeams] = useState([]);
-  const [awardsLoading, setAwardsLoading] = useState(false);
-  const [tournamentPred, setTournamentPred] = useState(null);
-  const [awardsStep, setAwardsStep] = useState(1); // 1=SF, 2=Finalists, 3=Winner
-  const [awardsForm, setAwardsForm] = useState({ sf1: "", sf2: "", sf3: "", sf4: "", finalist1: "", finalist2: "", winner: "" });
-  const [awardsSubmitting, setAwardsSubmitting] = useState(false);
-  const [awardsError, setAwardsError] = useState("");
-  const [awardsDownloading, setAwardsDownloading] = useState(false);
-  const awardsCardRef = useRef(null);
-  const [confirmedLineup, setConfirmedLineup] = useState(null);
-  const [lineupFetching, setLineupFetching] = useState(false);
-  const [viewingPitch, setViewingPitch] = useState(null);
-  const [viewingAnalysis, setViewingAnalysis] = useState(null);
-  const [savedPredictionId, setSavedPredictionId] = useState(null);
-  const [deepInsights, setDeepInsights] = useState(null);
-  const [selectedFixtureId, setSelectedFixtureId] = useState(null);
-
-  const isWorldCup = selectedLeague === "wc2026";
-  const leagueLabel = LEAGUES.find(l => l.id === selectedLeague)?.short || "World Cup 2026";
-
-  const ESTIMATED_MATCH_MINUTES = 105; // 90 min + halftime/stoppage buffer
-
-  const normalize = (s) =>
-    (s || "")
-      .toLowerCase()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]/g, "");
-
-  const findFixture = (homeTeam, awayTeam) => {
-    const h = normalize(homeTeam);
-    const a = normalize(awayTeam);
-    return fixtures.find(f =>
-      (normalize(f.home) === h && normalize(f.away) === a) ||
-      (normalize(f.home) === a && normalize(f.away) === h)
-    );
+  const toggleStatsMode = async (newMode) => {
+    setStatsMode(newMode);
+    if (newMode === "season") {
+      if (player1 && !player1._seasonData) await fetchSeasonStats(player1, setPlayer1);
+      if (player2 && !player2._seasonData) await fetchSeasonStats(player2, setPlayer2);
+    }
   };
 
-  const findLiveFixture = (homeTeam, awayTeam) => {
-    const h = normalize(homeTeam);
-    const a = normalize(awayTeam);
-    return liveData.find(f =>
-      (normalize(f.home) === h && normalize(f.away) === a) ||
-      (normalize(f.home) === a && normalize(f.away) === h)
-    );
-  };
-
-  const getMatchStatus = (homeTeam, awayTeam) => {
-    const live = findLiveFixture(homeTeam, awayTeam);
-    if (live) return live.status; // "upcoming" | "live" | "finished" — straight from the API
-
-    const fixture = findFixture(homeTeam, awayTeam);
-    if (!fixture || !fixture.kickoff) return "unknown";
-    const now = new Date();
-    const kickoff = new Date(fixture.kickoff);
-    const finish = new Date(kickoff.getTime() + ESTIMATED_MATCH_MINUTES * 60000);
-    if (now < kickoff) return "upcoming";
-    if (now < finish) return "live";
-    return "finished";
-  };
-
-  const isLocked = (homeTeam, awayTeam) => {
-    const status = getMatchStatus(homeTeam, awayTeam);
-    return status === "live" || status === "finished";
-  };
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session); setAuthLoading(false);
-      if (session) { loadHistory(session.user.id); loadUserRole(session.user.id); }
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session) { loadHistory(session.user.id); loadUserRole(session.user.id); }
-    });
-    return () => subscription.unsubscribe();
-  }, []);
-
-  // Fetch bracket when bracket tab selected
-  useEffect(() => {
-    if (tab !== "bracket" || !session) return;
-    setBracketLoading(true);
-    setBracketRounds([]);
-    fetch(`/api/bracket?leagueId=${selectedLeague}`)
-      .then(r => r.json())
-      .then(d => setBracketRounds(d.rounds || []))
-      .catch(() => {})
-      .finally(() => setBracketLoading(false));
-  }, [tab, selectedLeague, session]);
-
-  // Fetch remaining teams + existing prediction for Season Awards tab
-  useEffect(() => {
-    if (tab !== "awards" || !session) return;
-    setAwardsLoading(true);
-    setAwardsError("");
-    setTournamentPred(null);
-    setAwardsStep(1);
-    setAwardsForm({ sf1: "", sf2: "", sf3: "", sf4: "", finalist1: "", finalist2: "", winner: "" });
-
-    Promise.all([
-      fetch(`/api/bracket?leagueId=${awardsLeague}`).then(r => r.json()),
-      supabase.from("tournament_predictions").select("*").eq("user_id", session.user.id).eq("league_id", awardsLeague).maybeSingle(),
-    ]).then(([bracketData, predResult]) => {
-      // Extract unique team names from all rounds
-      const teams = new Set();
-      (bracketData.rounds || []).forEach(r => {
-        r.matches.forEach(m => {
-          if (m.home) teams.add(m.home);
-          if (m.away) teams.add(m.away);
-        });
-      });
-      setRemainingTeams([...teams].sort());
-      if (predResult.data) setTournamentPred(predResult.data);
-    }).catch(() => setAwardsError("Failed to load teams")).finally(() => setAwardsLoading(false));
-  }, [tab, awardsLeague, session]);
-
-  const downloadAwardsCard = async () => {
-    if (!awardsCardRef.current) return;
-    setAwardsDownloading(true);
+  const download = async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
     try {
       if (!window.html2canvas) {
         const s = document.createElement("script");
@@ -708,1566 +1943,893 @@ export default function FootballPredictor() {
         document.head.appendChild(s);
         await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
       }
-      const canvas = await window.html2canvas(awardsCardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
+      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
       const link = document.createElement("a");
-      link.download = `deep433-season-awards-${awardsLeague}.png`;
+      link.download = `deep433-h2h-${player1?.name}-vs-${player2?.name}.png`;
       link.href = canvas.toDataURL("image/png");
       link.click();
-    } catch { alert("Download failed — try screenshotting manually"); }
-    setAwardsDownloading(false);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
   };
 
-  const submitTournamentPrediction = async () => {
-    const { sf1, sf2, sf3, sf4, finalist1, finalist2, winner } = awardsForm;
-    if (!sf1 || !sf2 || !sf3 || !sf4 || !finalist1 || !finalist2 || !winner) {
-      setAwardsError("Please complete all selections");
-      return;
-    }
-    setAwardsSubmitting(true);
-    setAwardsError("");
-    const { data, error } = await supabase.from("tournament_predictions").upsert({
-      user_id: session.user.id,
-      league_id: awardsLeague,
-      semi_finalist_1: sf1,
-      semi_finalist_2: sf2,
-      semi_finalist_3: sf3,
-      semi_finalist_4: sf4,
-      finalist_1: finalist1,
-      finalist_2: finalist2,
-      winner,
-      submitted_at: new Date().toISOString(),
-    }, { onConflict: "user_id,league_id" }).select().single();
-    if (error) setAwardsError(error.message);
-    else setTournamentPred(data);
-    setAwardsSubmitting(false);
-  };
-
-  // Fetch fixtures for the selected league
-  useEffect(() => {
-    if (!session) return;
-    setFixturesLoading(true);
-    setFixtures([]);
-    fetch(`/api/fixtures?leagueId=${selectedLeague}`)
-      .then(r => r.json())
-      .then(d => {
-        const fixtureList = d.fixtures || [];
-        // Cache team logos from API response
-        fixtureList.forEach(f => {
-          if (f.home && f.homeLogo) TEAM_LOGOS[f.home] = f.homeLogo;
-          if (f.away && f.awayLogo) TEAM_LOGOS[f.away] = f.awayLogo;
-        });
-        setFixtures(fixtureList);
-      })
-      .catch(() => {})
-      .finally(() => setFixturesLoading(false));
-  }, [selectedLeague, session]);
-
-  // Poll live scores every 3 minutes for the currently selected league
-  useEffect(() => {
-    if (!session) return;
-
-    const fetchLive = async () => {
-      const today = new Date().toISOString().split("T")[0];
-      try {
-        const res = await fetch(`/api/live-scores?leagueId=${selectedLeague}&date=${today}`);
-        if (!res.ok) return; // league not supported on free tier, or other error — fail quietly
-        const data = await res.json();
-        setLiveData(data.fixtures || []);
-      } catch {
-        // network error — keep using whatever liveData we already have
-      }
-    };
-
-    fetchLive();
-    const interval = setInterval(fetchLive, 3 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [session, selectedLeague]);
-
-  // matches that don't have a logged result yet, and fill it in automatically.
-  useEffect(() => {
-    if (!liveData.length || !history.length) return;
-
-    history.forEach(h => {
-      if (h.actual_score) return; // already logged
-
-      const live = findLiveFixture(h.home_team, h.away_team);
-      if (!live || live.status !== "finished") return;
-      if (live.score.home == null || live.score.away == null) return;
-
-      const score = `${live.score.home}-${live.score.away}`;
-      logResult(h.id, score);
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [liveData, history]);
-
-  const loadHistory = async (userId) => {
-    const { data } = await supabase.from("predictions").select("*, confirmed_lineup").eq("user_id", userId).order("created_at", { ascending: false });
-    if (data) setHistory(data);
-  };
-
-  const loadUserRole = async (userId) => {
-    const { data } = await supabase.from("profiles").select("role").eq("id", userId).single();
-    if (data?.role) setUserRole(data.role);
-  };
-
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    setHistory([]); setStep(1); setResult(null);
-    setHomeTeam(""); setAwayTeam("");
-  };
-
-  const stats = computeStats(history);
-  const rank = getRank(stats);
-  const badges = BADGE_DEFS.map(b => ({ ...b, earned: b.condition(stats) }));
-
-  const confidenceColor = (c) => c === "High" ? "#22c55e" : c === "Medium" ? "#f59e0b" : "#ef4444";
-  const outcomeColor = (o) => o === "Home Win" ? "#60a5fa" : o === "Away Win" ? "#f87171" : "#a78bfa";
-  const resultColor = (r) => r === "user" ? "#4ade80" : r === "ai" ? "#f87171" : r === "tie" ? "#f59e0b" : "#555";
-
-  const selectFixture = (fix) => {
-    setHomeTeam(fix.home);
-    setAwayTeam(fix.away);
-    setFixtureSearch("");
-    setSelectedHomeLogo(fix.homeLogo || null);
-    setSelectedAwayLogo(fix.awayLogo || null);
-  };
-
-  const hasExistingPrediction = (homeTeam, awayTeam) => {
-    const h = normalize(homeTeam);
-    const a = normalize(awayTeam);
-    return history.some(item =>
-      (normalize(item.home_team) === h && normalize(item.away_team) === a) ||
-      (normalize(item.home_team) === a && normalize(item.away_team) === h)
+  const CompareRow = ({ label, val1, val2, higherIsBetter = true }) => {
+    const v1 = parseFloat(val1) || 0;
+    const v2 = parseFloat(val2) || 0;
+    const p1Better = higherIsBetter ? v1 > v2 : v1 < v2;
+    const p2Better = higherIsBetter ? v2 > v1 : v2 < v1;
+    return (
+      <div style={{ display: "flex", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #0f0f1a" }}>
+        <span style={{ flex: 1, textAlign: "right", fontSize: 20, fontWeight: p1Better ? 900 : 700, color: "#4ade80", opacity: p1Better ? 1 : 0.65, paddingRight: 12 }}>{val1 ?? "—"}</span>
+        <span style={{ fontSize: 13, color: "#999", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, width: 90, textAlign: "center" }}>{label}</span>
+        <span style={{ flex: 1, textAlign: "left", fontSize: 20, fontWeight: p2Better ? 900 : 700, color: "#f59e0b", opacity: p2Better ? 1 : 0.65, paddingLeft: 12 }}>{val2 ?? "—"}</span>
+      </div>
     );
   };
 
-  const goToStep2 = () => {
-    if (!homeTeam || !awayTeam) { setError("Enter both team names."); return; }
-    if (hasExistingPrediction(homeTeam, awayTeam)) {
-      setError("You've already predicted this match — check History to edit it.");
-      return;
-    }
-    const status = getMatchStatus(homeTeam, awayTeam);
-    if (status === "live") { setError("This match is already in progress — predictions are closed."); return; }
-    if (status === "finished") { setError("This match has finished — predictions are closed."); return; }
-    setError(""); setStep(2);
-  };
 
-  const submitAndReveal = async () => {
-    if (userHome === "" || userAway === "") { setError("Enter your predicted score."); return; }
-    const up = `${userHome}-${userAway}`;
-    setUserPrediction(up);
-    setError(""); setLoading(true); setResult(null);
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {LEAGUE_OPTIONS.slice(0, 7).map(l => (
+          <button key={l.id} onClick={() => { setLeagueId(l.id); setPlayer1(null); setPlayer2(null); setSearch1(""); setSearch2(""); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px" }}>
+            {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
+            {l.label}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <PlayerSearchBox label="Player 1" search={search1} setSearch={setSearch1} suggestions={suggestions1} setSuggestions={setSuggestions1} player={player1} setPlayer={setPlayer1} searching={searching1} slot={1} color="#4ade80" onSearch={searchPlayer} />
+        <PlayerSearchBox label="Player 2" search={search2} setSearch={setSearch2} suggestions={suggestions2} setSuggestions={setSuggestions2} player={player2} setPlayer={setPlayer2} searching={searching2} slot={2} color="#f59e0b" onSearch={searchPlayer} />
+      </div>
+
+      {player1 && player2 && (
+        <>
+          <div style={{ display: "flex", gap: 8 }}>
+            {["competition", "season"].map(m => (
+              <button key={m} onClick={() => toggleStatsMode(m)} disabled={seasonLoading} style={{ flex: 1, background: statsMode === m ? "#4ade8022" : "none", border: `1px solid ${statsMode === m ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: statsMode === m ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "8px", textTransform: "capitalize" }}>
+                {seasonLoading && m === "season" ? "Loading..." : m === "competition" ? "🏆 This Competition" : "📅 Full Season"}
+              </button>
+            ))}
+          </div>
+
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "22px 18px 18px" }}>
+              <div style={{ textAlign: "center", marginBottom: 12 }}>
+                <span style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5 }}>
+                  {statsMode === "season" ? "📅 Full Season Comparison" : `🏆 ${LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label} Stats`}
+                </span>
+              </div>
+              {/* Player headers */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16, marginTop: 8 }}>
+                <div style={{ textAlign: "center" }}>
+                  {player1.photo && <img src={player1.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 8px" }} />}
+                  <div style={{ fontSize: 17, fontWeight: 900, color: "#4ade80" }}>{player1.name}</div>
+                  <div style={{ fontSize: 12, color: "#555", marginTop: 2 }}>{player1.team}</div>
+                </div>
+                <div style={{ textAlign: "center", padding: "0 8px" }}>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: "#333" }}>VS</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  {player2.photo && <img src={player2.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #f59e0b", margin: "0 auto 8px" }} />}
+                  <div style={{ fontSize: 17, fontWeight: 900, color: "#f59e0b" }}>{player2.name}</div>
+                  <div style={{ fontSize: 12, color: "#555", marginTop: 2 }}>{player2.team}</div>
+                </div>
+              </div>
+
+              <div style={{ height: 1, background: "#1a1a2a", marginBottom: 10 }} />
+
+              {/* HERO: Rating comparison */}
+              <div style={{
+                background: "linear-gradient(135deg, #4ade8014, #f59e0b0e)",
+                border: "1px solid #4ade8033",
+                borderRadius: 12, padding: "14px 16px", marginBottom: 10,
+              }}>
+                <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8, textAlign: "center" }}>⭐ Rating</div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: 32, fontWeight: 900, color: "#4ade80" }}>{player1.rating ? parseFloat(player1.rating).toFixed(1) : "—"}</span>
+                  <span style={{ fontSize: 32, fontWeight: 900, color: "#f59e0b" }}>{player2.rating ? parseFloat(player2.rating).toFixed(1) : "—"}</span>
+                </div>
+              </div>
+
+              {/* Bento grid — 2x2 */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                <BentoBox title="Attack" icon="🎯" color="#4ade80">
+                  <CompareRow label="Goals" val1={player1.goals} val2={player2.goals} />
+                  <CompareRow label="Assists" val1={player1.assists} val2={player2.assists} />
+                  <CompareRow label="Shots" val1={player1.shots} val2={player2.shots} />
+                  <CompareRow label="On Target" val1={player1.shotsOnTarget} val2={player2.shotsOnTarget} />
+                </BentoBox>
+
+                <BentoBox title="Creativity" icon="🎨" color="#60a5fa">
+                  <CompareRow label="Key Passes" val1={player1.keyPasses} val2={player2.keyPasses} />
+                  <CompareRow label="Dribbles" val1={player1.dribbles} val2={player2.dribbles} />
+                  <CompareRow label="Apps" val1={player1.appearances} val2={player2.appearances} />
+                </BentoBox>
+              </div>
+
+              <BentoBox title="Workrate & Caution" icon="⚔️" color="#c084fc">
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                  <CompareRow label="Tackles" val1={player1.tackles} val2={player2.tackles} />
+                  <CompareRow label="Cards" val1={player1.yellowCards} val2={player2.yellowCards} higherIsBetter={false} />
+                </div>
+              </BentoBox>
+            </div>
+          </GraphicCard>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── GOLDEN GLOVE RACE (CLEAN SHEETS) ────────────────────────────────────────
+function GoldenGloveGraphic() {
+  const cardRef = useRef(null);
+  const [leagueId, setLeagueId] = useState("wc2026");
+  const [standings, setStandings] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState("");
+
+  const KNOCKOUT_LEAGUES = ["wc2026", "ucl", "uel", "facup", "copadelrey", "afcon", "copamerica"];
+
+  const fetchCleanSheets = async () => {
+    setLoading(true); setError(""); setStandings(null);
     try {
-      const res = await fetch("/api/predict", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ homeTeam, awayTeam, league: leagueLabel, fixtureId: selectedFixtureId || findLiveFixture(homeTeam, awayTeam)?.fixtureId || null }),
+      const r = await fetch(`/api/fixtures?leagueId=${leagueId}&full=true`);
+      const d = await r.json();
+      const fixtures = (d.fixtures || []).filter(f => f.status === "finished");
+
+      if (!fixtures.length) throw new Error("No completed fixtures yet for this competition");
+
+      // Aggregate clean sheets per team
+      const teamMap = {};
+      fixtures.forEach(f => {
+        const homeGoals = f.score?.home ?? 0;
+        const awayGoals = f.score?.away ?? 0;
+
+        if (!teamMap[f.home]) teamMap[f.home] = { name: f.home, logo: f.homeLogo, cleanSheets: 0, played: 0, goalsConceded: 0 };
+        if (!teamMap[f.away]) teamMap[f.away] = { name: f.away, logo: f.awayLogo, cleanSheets: 0, played: 0, goalsConceded: 0 };
+
+        teamMap[f.home].played++;
+        teamMap[f.away].played++;
+        teamMap[f.home].goalsConceded += awayGoals;
+        teamMap[f.away].goalsConceded += homeGoals;
+
+        if (awayGoals === 0) teamMap[f.home].cleanSheets++;
+        if (homeGoals === 0) teamMap[f.away].cleanSheets++;
       });
-      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `Error ${res.status}`); }
-      const parsed = await res.json();
-      setResult(parsed);
-      setStep(3);
-      const aiPrediction = (parsed.scoreline || "").replace(" - ", "-").replace(" – ", "-");
-      const { data: saved } = await supabase.from("predictions").insert({
-        user_id: session.user.id, home_team: homeTeam, away_team: awayTeam,
-        user_prediction: up, ai_prediction: aiPrediction, ai_verdict: parsed.verdict,
-        ai_data: parsed,
-      }).select().single();
-      if (saved) {
-        setHistory(prev => [saved, ...prev]);
-        setSavedPredictionId(saved.id);
+
+      // For knockout competitions, filter to only currently-active teams
+      let activeNames = null;
+      if (KNOCKOUT_LEAGUES.includes(leagueId)) {
+        try {
+          const br = await fetch(`/api/bracket?leagueId=${leagueId}`);
+          const bd = await br.json();
+          const names = new Set();
+          (bd.rounds || []).forEach(round => {
+            round.matches.forEach(m => {
+              if (m.home) names.add(m.home);
+              if (m.away) names.add(m.away);
+            });
+          });
+          if (names.size > 0) activeNames = names;
+        } catch {}
       }
-    } catch (e) { setError(e.message || "Something went wrong. Try again."); }
+
+      let teams = Object.values(teamMap);
+      if (activeNames) teams = teams.filter(t => activeNames.has(t.name));
+
+      const sorted = teams
+        .sort((a, b) => b.cleanSheets - a.cleanSheets || a.goalsConceded - b.goalsConceded)
+        .slice(0, 10);
+
+      setStandings(sorted);
+    } catch (e) { setError(e.message); }
     setLoading(false);
   };
 
-  const resetPredict = () => {
-    setStep(1); setResult(null); setHomeTeam(""); setAwayTeam("");
-    setUserHome(""); setUserAway(""); setUserPrediction(""); setError(""); setFixtureSearch("");
-    setSelectedFixtureId(null); setDeepInsights(null); setSelectedHomeLogo(null); setSelectedAwayLogo(null);
-  };
-
-  const logResult = async (id, score) => {
-    const item = history.find(h => h.id === id);
-    if (!item) return;
+  const download = async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
     try {
-      const [uh, ua] = item.user_prediction.split("-").map(Number);
-      const [ah, aa] = item.ai_prediction.split("-").map(Number);
-      const [rh, ra] = score.split("-").map(Number);
-      const userDiff = Math.abs(uh-rh)+Math.abs(ua-ra);
-      const aiDiff = Math.abs(ah-rh)+Math.abs(aa-ra);
-      const r = userDiff < aiDiff ? "user" : aiDiff < userDiff ? "ai" : "tie";
-      await supabase.from("predictions").update({ actual_score: score, result: r }).eq("id", id);
-      setHistory(prev => prev.map(h => h.id === id ? { ...h, actual_score: score, result: r } : h));
-    } catch {}
-    setLoggingIdx(null); setLogScore("");
-  };
-
-  const deletePredict = async (id) => {
-    await supabase.from("predictions").delete().eq("id", id);
-    setHistory(prev => prev.filter(h => h.id !== id));
-  };
-
-  const editPredict = async (id, newScore) => {
-    await supabase.from("predictions").update({ user_prediction: newScore }).eq("id", id);
-    setHistory(prev => prev.map(h => h.id === id ? { ...h, user_prediction: newScore } : h));
-    setLoggingIdx(null); setLogScore("");
-  };
-
-  const shareText = result && userPrediction ? `⚽ DEEP433 — YOU vs AI\n${leagueLabel}: ${homeTeam} vs ${awayTeam}\n\nMy prediction: ${userPrediction}\nAI prediction: ${result.scoreline}\n\n"${result.verdict?.slice(0, 100)}..."\n\nChallenge the AI at deep433.com` : "";
-  const copyShare = () => { navigator.clipboard.writeText(shareText).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }); };
-
-  // Group fixtures by date, filtered by search
-  // Group fixtures by date label (Today / Tomorrow / Fri 4 Jul etc.)
-  const getDateLabel = (dateStr) => {
-    const now = new Date();
-    const localDate = (d) => {
-      const yr = d.getFullYear();
-      const mo = String(d.getMonth()+1).padStart(2,"0");
-      const dy = String(d.getDate()).padStart(2,"0");
-      return `${yr}-${mo}-${dy}`;
-    };
-    const today = localDate(now);
-    const tomorrow = localDate(new Date(now.getTime() + 86400000));
-    if (dateStr === today) return "Today";
-    if (dateStr === tomorrow) return "Tomorrow";
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
-  };
-
-  const filteredFixtures = fixtureSearch.trim()
-    ? fixtures.filter(f => f.home.toLowerCase().includes(fixtureSearch.toLowerCase()) || f.away.toLowerCase().includes(fixtureSearch.toLowerCase()))
-    : fixtures;
-
-  const fixturesByDate = filteredFixtures.reduce((acc, f) => {
-    const label = getDateLabel(f.date);
-    if (!acc[label]) acc[label] = [];
-    acc[label].push(f);
-    return acc;
-  }, {});
-
-  // Look up fixtureId whenever home/away/league changes — try live data first, then API
-  useEffect(() => {
-    if (!homeTeam || !awayTeam || !session) return;
-    const live = findLiveFixture(homeTeam, awayTeam);
-    if (live?.fixtureId) { setSelectedFixtureId(live.fixtureId); return; }
-    const fetchFixtureId = async () => {
-      const now = new Date();
-      const dates = [
-        now.toISOString().split("T")[0],
-        new Date(now.getTime() + 86400000).toISOString().split("T")[0],
-        new Date(now.getTime() + 172800000).toISOString().split("T")[0],
-      ];
-      for (const date of dates) {
-        try {
-          const res = await fetch(`/api/live-scores?leagueId=${selectedLeague}&date=${date}`);
-          const data = await res.json();
-          const h = homeTeam.toLowerCase().replace(/[^a-z0-9]/g, "");
-          const a = awayTeam.toLowerCase().replace(/[^a-z0-9]/g, "");
-          const match = (data.fixtures || []).find(f =>
-            (f.home.toLowerCase().replace(/[^a-z0-9]/g, "") === h && f.away.toLowerCase().replace(/[^a-z0-9]/g, "") === a) ||
-            (f.home.toLowerCase().replace(/[^a-z0-9]/g, "") === a && f.away.toLowerCase().replace(/[^a-z0-9]/g, "") === h)
-          );
-          if (match?.fixtureId) { setSelectedFixtureId(match.fixtureId); return; }
-        } catch {}
+      if (!window.html2canvas) {
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+        document.head.appendChild(s);
+        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
       }
-      setSelectedFixtureId(null);
-    };
-    fetchFixtureId();
-  }, [homeTeam, awayTeam, selectedLeague, session]);
-
-  const fetchConfirmedLineup = async (home, away, league, predictionId) => {
-    setLineupFetching(true);
-
-    // Find the prediction ID — use passed ID, savedPredictionId, or look up from history
-    const pid = predictionId || savedPredictionId || (() => {
-      const h = normalize(home);
-      const a = normalize(away);
-      const match = history.find(item =>
-        (normalize(item.home_team) === h && normalize(item.away_team) === a) ||
-        (normalize(item.home_team) === a && normalize(item.away_team) === h)
-      );
-      return match?.id || null;
-    })();
-    const now = new Date();
-    const dates = [
-      new Date(now.getTime() - 86400000).toISOString().split("T")[0],
-      now.toISOString().split("T")[0],
-      new Date(now.getTime() + 86400000).toISOString().split("T")[0],
-    ];
-    for (const date of dates) {
-      try {
-        const res = await fetch(`/api/match-lineup?leagueId=${league}&date=${date}&home=${encodeURIComponent(home)}&away=${encodeURIComponent(away)}`);
-        const data = await res.json();
-        if (data.available) {
-          setConfirmedLineup(data);
-          // Also update viewingPitch so the modal re-renders with confirmed data immediately
-          setViewingPitch(prev => prev ? { ...prev, confirmed_lineup: data } : prev);
-          // Save to localStorage as reliable fallback
-          try {
-            localStorage.setItem(`lineup_${home}_${away}`, JSON.stringify(data));
-          } catch {}
-          if (pid) {
-            const { error } = await supabase.from("predictions")
-              .update({ confirmed_lineup: data })
-              .eq("id", pid);
-            if (!error) {
-              setHistory(prev => prev.map(h => h.id === pid
-                ? { ...h, confirmed_lineup: data }
-                : h
-              ));
-            }
-          }
-          setLineupFetching(false);
-          return;
-        }
-      } catch {}
-    }
-    setLineupFetching(false);
+      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
+      const link = document.createElement("a");
+      link.download = `deep433-golden-glove-${leagueId}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch { alert("Download failed"); }
+    setDownloading(false);
   };
 
-  // Once a prediction reveals (step 3), try fetching the real confirmed lineup.
-  useEffect(() => {
-    if (step !== 3 || !result) return;
-    setDeepInsights(null);
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {LEAGUE_OPTIONS.map(l => (
+          <button key={l.id} onClick={() => { setLeagueId(l.id); setStandings(null); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
+            {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
+            {l.label}
+          </button>
+        ))}
+      </div>
 
-    // Check if we already have a saved confirmed lineup in history
-    const existingPrediction = savedPredictionId
-      ? history.find(h => h.id === savedPredictionId)
-      : null;
+      <button onClick={fetchCleanSheets} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "10px" }}>
+        {loading ? "Loading..." : "Load Golden Glove Race"}
+      </button>
+      {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
 
-    if (existingPrediction?.confirmed_lineup) {
-      setConfirmedLineup(existingPrediction.confirmed_lineup);
-    } else {
-      setConfirmedLineup(null);
-      fetchConfirmedLineup(homeTeam, awayTeam, selectedLeague, savedPredictionId);
-    }
+      {standings && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "22px 18px 18px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18, marginTop: 8 }}>
+                {LEAGUE_LOGOS[leagueId] && <img src={LEAGUE_LOGOS[leagueId]} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 17, fontWeight: 900, color: "#f0f0f0" }}>Golden Glove Race</div>
+                  <div style={{ fontSize: 13, color: "#555" }}>{LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label}</div>
+                </div>
+                <div style={{ fontSize: 12, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Clean Sheets</div>
+              </div>
 
-    // Also fetch deep insights if we have a fixtureId
-    const fid = selectedFixtureId || findLiveFixture(homeTeam, awayTeam)?.fixtureId;
-    if (fid) {
-      fetch(`/api/fixture-insights?fixtureId=${fid}`)
-        .then(r => r.json())
-        .then(data => { if (data.available) setDeepInsights(data); })
-        .catch(() => {});
-    }
-  }, [step, result, homeTeam, awayTeam, selectedLeague]);
+              {(() => {
+                const maxCS = Math.max(...standings.map(t => t.cleanSheets), 1);
+                return standings.map((team, i) => {
+                  const barPct = (team.cleanSheets / maxCS) * 100;
+                  return (
+                    <div key={team.name} style={{ marginBottom: 14 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
+                        {team.logo && <img src={team.logo} alt="" crossOrigin="anonymous" style={{ width: 22, height: 22, objectFit: "contain", flexShrink: 0 }} />}
+                        <span style={{ fontSize: 16, fontWeight: 800, color: "#f0f0f0", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{team.name}</span>
+                        <span style={{ fontSize: 20, fontWeight: 900, color: "#FFD700" }}>{team.cleanSheets}</span>
+                      </div>
+                      <div style={{ height: 8, background: "#1a1a24", borderRadius: 4, overflow: "hidden" }}>
+                        <div style={{
+                          width: `${Math.max(barPct, 4)}%`, height: "100%",
+                          background: "linear-gradient(90deg, #B8860B, #FFD700)",
+                          borderRadius: 4,
+                        }} />
+                      </div>
+                      <div style={{ fontSize: 13, color: "#999", marginTop: 3, fontWeight: 600 }}>{team.played} played · {team.goalsConceded} conceded</div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          </GraphicCard>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
 
-  const capStat = (val) => {
-    if (!val) return val;
-    const num = parseFloat(val);
-    if (isNaN(num)) return val;
-    const capped = Math.min(Math.max(num, 20), 70);
-    return capped + '%';
+// ─── MAIN EXPORT ─────────────────────────────────────────────────────────────
+// ─── MATCH HEAD-TO-HEAD GRAPHIC ──────────────────────────────────────────────
+function MatchH2HGraphic() {
+  const cardRef = useRef(null);
+  const [selectedFixture, setSelectedFixture] = useState(null);
+  const [matchPlayers, setMatchPlayers] = useState(null);
+  const [player1, setPlayer1] = useState(null);
+  const [player2, setPlayer2] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSelect = async (f) => {
+    setSelectedFixture(f);
+    setMatchPlayers(null);
+    setPlayer1(null);
+    setPlayer2(null);
+    setError("");
+    if (!f.fixtureId) { setError("No fixture ID available"); return; }
+    setLoading(true);
+    try {
+      const r = await fetch(`/api/player-ratings?fixtureId=${f.fixtureId}`);
+      const d = await r.json();
+      if (!d.available) throw new Error("Player stats not available yet — check back after the match");
+      setMatchPlayers(d);
+    } catch (e) { setError(e.message); }
+    setLoading(false);
   };
 
-  const TABS = [
-    { id: "predict",   label: "⚡ Predict" },
-    { id: "scores",    label: "🔴 Scores" },
-    { id: "bracket",   label: "🏆 Bracket" },
-    { id: "awards",    label: "🎖 Season Awards" },
-    ...(userRole === "admin" ? [{ id: "graphics", label: "📊 Graphics" }] : []),
-    { id: "standings", label: "🏆 You vs AI" },
-    { id: "badges",    label: "🏅 Badges" },
-    { id: "history",   label: "📋 History" },
-  ];
+  const download = async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      if (!window.html2canvas) {
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+        document.head.appendChild(s);
+        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
+      }
+      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
+      const link = document.createElement("a");
+      link.download = `deep433-matchh2h-${player1?.name}-vs-${player2?.name}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
 
-  if (authLoading) return (
-    <div style={{ minHeight: "100vh", background: "#0a0a0f", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ width: 36, height: 36, border: "3px solid #1e1e30", borderTop: "3px solid #4ade80", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+  const MatchCompareRow = ({ label, val1, val2, higherIsBetter = true, unit = "" }) => {
+    const v1 = parseFloat(val1) || 0;
+    const v2 = parseFloat(val2) || 0;
+    const p1Better = higherIsBetter ? v1 > v2 : v1 < v2;
+    const p2Better = higherIsBetter ? v2 > v1 : v2 < v1;
+    return (
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 9 }}>
+        <span style={{ fontSize: 20, fontWeight: p1Better ? 900 : 700, color: "#4ade80", opacity: p1Better ? 1 : 0.65 }}>{val1 != null ? val1 + unit : "—"}</span>
+        <span style={{ fontSize: 13, color: "#999", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
+        <span style={{ fontSize: 20, fontWeight: p2Better ? 900 : 700, color: "#f59e0b", opacity: p2Better ? 1 : 0.65 }}>{val2 != null ? val2 + unit : "—"}</span>
+      </div>
+    );
+  };
+
+  const PlayerPicker = ({ team, selected, onSelect, color }) => (
+    <div>
+      <div style={{ fontSize: 13, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{team?.team}</div>
+      <select
+        value={selected?.name || ""}
+        onChange={e => onSelect(team?.players?.find(p => p.name === e.target.value) || null)}
+        style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${selected ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 16, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+      >
+        <option value="">— Select player —</option>
+        {team?.players?.map(p => <option key={p.name} value={p.name}>{p.name} ({p.rating ? parseFloat(p.rating).toFixed(1) : "—"})</option>)}
+      </select>
     </div>
   );
 
-  if (!session) {
-    if (showLanding) return <LandingPage onGetStarted={() => setShowLanding(false)} />;
-    return <AuthScreen />;
-  }
-
   return (
-    <div style={{ minHeight: "100vh", background: "#0a0a0f", color: "#f0f0f0", fontFamily: "'Inter','Helvetica Neue',sans-serif" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        .glow { text-shadow: 0 0 30px rgba(74,222,128,0.4); }
-        .card { background: #13131f; border: 1px solid #1e1e30; border-radius: 14px; padding: 20px; }
-        .score-input { background: #1a1a24; border: 2px solid #2a2a3a; border-radius: 10px; color: #f0f0f0; font-size: 32px; font-weight: 900; padding: 12px; width: 75px; outline: none; text-align: center; font-family: inherit; transition: border-color 0.2s; -moz-appearance: textfield; }
-        .score-input::-webkit-outer-spin-button, .score-input::-webkit-inner-spin-button { -webkit-appearance: none; }
-        .score-input:focus { border-color: #4ade80; }
-        .team-input { background: #1a1a24; border: 1.5px solid #2a2a3a; border-radius: 10px; color: #f0f0f0; font-size: 15px; padding: 12px 16px; width: 100%; outline: none; font-family: inherit; transition: border-color 0.2s; }
-        .team-input:focus { border-color: #4ade80; }
-        .team-input.away:focus { border-color: #f87171; }
-        .team-input::placeholder { color: #444; }
-        .search-input { background: #1a1a24; border: 1.5px solid #2a2a3a; border-radius: 10px; color: #f0f0f0; font-size: 14px; padding: 10px 14px; width: 100%; outline: none; font-family: inherit; }
-        .search-input::placeholder { color: #444; }
-        .predict-btn { background: linear-gradient(135deg, #4ade80, #22c55e); border: none; border-radius: 10px; color: #0a0f0a; font-size: 16px; font-weight: 800; padding: 14px 32px; cursor: pointer; width: 100%; transition: opacity 0.2s; font-family: inherit; }
-        .predict-btn:hover { opacity: 0.9; }
-        .predict-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .ghost-btn { background: none; border: 1.5px solid #2a2a3a; border-radius: 10px; color: #666; font-size: 14px; font-weight: 600; padding: 12px; cursor: pointer; width: 100%; font-family: inherit; }
-        .nav-tab { background: none; border: none; border-bottom: 2px solid transparent; color: #555; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 600; padding: 12px 4px; transition: all 0.15s; white-space: nowrap; }
-        .nav-tab.active { border-bottom-color: #4ade80; color: #4ade80; }
-        .tag { display: inline-block; border-radius: 6px; font-size: 12px; font-weight: 700; padding: 4px 10px; text-transform: uppercase; }
-        .player-chip { background: #1a1a28; border: 1px solid #2a2a40; border-radius: 6px; font-size: 12px; padding: 5px 10px; color: #ccc; }
-        .spinner { width: 36px; height: 36px; border: 3px solid #1e1e30; border-top: 3px solid #4ade80; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .reveal-box { background: linear-gradient(135deg, #0d1f0d, #0f1a2e); border: 1px solid #2a3a2a; border-radius: 16px; padding: 24px; }
-        .history-row { background: #0f0f1a; border: 1px solid #1a1a2a; border-radius: 10px; padding: 12px 14px; }
-        .badge-card { background: #13131f; border: 1px solid #1e1e30; border-radius: 12px; padding: 16px 10px; text-align: center; }
-        .badge-card.locked { opacity: 0.35; filter: grayscale(1); }
-        .copy-btn { background: #4ade80; border: none; border-radius: 8px; color: #0a0f0a; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 800; padding: 12px 24px; width: 100%; transition: opacity 0.2s; }
-        .log-input { background: #1a1a24; border: 1.5px solid #2a2a3a; border-radius: 6px; color: #f0f0f0; font-size: 13px; padding: 6px 10px; width: 80px; outline: none; font-family: inherit; text-align: center; }
-        .league-btn { background: #1a1a24; border: 1.5px solid #2a2a3a; border-radius: 20px; color: #666; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 600; padding: 7px 14px; transition: all 0.12s; white-space: nowrap; }
-        .league-btn.active { background: #4ade8018; border-color: #4ade80; color: #4ade80; }
-        .fixture-row { background: #0f0f1a; border: 1px solid #1a1a2a; border-radius: 10px; padding: 10px 14px; cursor: pointer; transition: border-color 0.15s; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-        .fixture-row:hover { border-color: #4ade80; }
-        .fixture-row.selected { border-color: #4ade80; background: #4ade8008; }
-        .step-dot { width: 8px; height: 8px; border-radius: 50%; background: #1a1a2a; transition: background 0.2s; }
-        .step-dot.active { background: #4ade80; }
-        .step-dot.done { background: #22c55e; }
-      `}</style>
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {!selectedFixture ? (
+        <FixturePicker onSelect={handleSelect} />
+      ) : (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
+            <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
+            <button onClick={() => { setSelectedFixture(null); setMatchPlayers(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
+          </div>
 
-      <div style={{ background: "#0d0d18", borderBottom: "1px solid #1a1a2e", padding: "16px 20px" }}>
-        <div style={{ maxWidth: 600, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 26 }}>⚽</span>
-            <div>
-              <div style={{ fontSize: 18, fontWeight: 900, color: "#4ade80" }} className="glow">DEEP433</div>
-              <div style={{ fontSize: 13, color: "#555", letterSpacing: 1 }}>PUNDITS VS FANS · PREDICT NOW</div>
+          {loading && <div style={{ textAlign: "center", color: "#555", fontSize: 16, padding: "20px 0" }}>Loading player stats...</div>}
+          {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
+
+          {matchPlayers && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <PlayerPicker team={matchPlayers.home} selected={player1} onSelect={setPlayer1} color="#4ade80" />
+              <PlayerPicker team={matchPlayers.away} selected={player2} onSelect={setPlayer2} color="#f59e0b" />
             </div>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {rank && <div style={{ textAlign: "right" }}><div style={{ fontSize: 17 }}>{rank.icon}</div><div style={{ fontSize: 13, color: rank.color, fontWeight: 700 }}>{rank.name}</div></div>}
-            <button onClick={signOut} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "5px 10px" }}>Sign out</button>
-          </div>
-        </div>
-      </div>
+          )}
+        </>
+      )}
 
-      <div style={{ background: "#0d0d18", borderBottom: "1px solid #1a1a2e", overflowX: "auto" }}>
-        <div style={{ maxWidth: 600, margin: "0 auto", display: "flex", gap: 4, padding: "0 16px" }}>
-          {TABS.map(t => <button key={t.id} className={`nav-tab${tab === t.id ? " active" : ""}`} onClick={() => setTab(t.id)}>{t.label}</button>)}
-        </div>
-      </div>
-
-      {/* Live ticker bar — shows when matches are live */}
-      {liveData.filter(f => f.status === "live").length > 0 && (
-        <div style={{ background: "#0f0f0f", borderBottom: "1px solid #1a0000" }}>
-          {liveData.filter(f => f.status === "live").map(f => (
-            <div key={f.fixtureId}>
-              {/* Collapsed ticker row */}
-              <div
-                onClick={() => setExpandedLive(expandedLive === f.fixtureId ? null : f.fixtureId)}
-                style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 16px", cursor: "pointer", maxWidth: 600, margin: "0 auto" }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                  <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#ef4444", animation: "pulse 1.5s infinite" }} />
-                  <span style={{ fontSize: 14, color: "#ef4444", fontWeight: 700 }}>{getTimeLabel(f.statusRaw, f.elapsed)}</span>
+      {player1 && player2 && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "22px 18px 18px" }}>
+              <div style={{ textAlign: "center", marginBottom: 12 }}>
+                <div style={{ fontSize: 14, color: "#f0f0f0", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 3 }}>
+                  🏆 FIFA World Cup 2026
                 </div>
-                <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0", flex: 1 }}>
-                  {f.home} <span style={{ color: "#4ade80" }}>{f.score.home ?? 0}</span>
-                  <span style={{ color: "#555", margin: "0 4px" }}>-</span>
-                  <span style={{ color: "#4ade80" }}>{f.score.away ?? 0}</span> {f.away}
+                <span style={{ fontSize: 12, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>
+                  📋 {selectedFixture.home} vs {selectedFixture.away}
                 </span>
-                {f.possession?.home && (
-                  <span style={{ fontSize: 13, color: "#555" }}>⚽ {f.possession.home}</span>
-                )}
-                <span style={{ fontSize: 13, color: "#555" }}>{expandedLive === f.fixtureId ? "▲" : "▼"}</span>
               </div>
 
-              {/* Expanded live card */}
-              {expandedLive === f.fixtureId && (
-                <div style={{ background: "#0a0a0a", borderTop: "1px solid #1a1a1a", padding: "12px 16px", maxWidth: 600, margin: "0 auto" }}>
-
-                  {/* Score header */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 8, alignItems: "center", marginBottom: 12 }}>
-                    <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>{f.home}</div>
-                      <div style={{ fontSize: 36, fontWeight: 900, color: "#4ade80" }}>{f.score.home ?? 0}</div>
-                    </div>
-                    <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: 14, color: "#ef4444", fontWeight: 700, marginBottom: 4 }}>🔴 LIVE</div>
-                      <div style={{ fontSize: 22, fontWeight: 800, color: "#ef4444" }}>{getTimeLabel(f.statusRaw, f.elapsed)}</div>
-                    </div>
-                    <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>{f.away}</div>
-                      <div style={{ fontSize: 36, fontWeight: 900, color: "#f59e0b" }}>{f.score.away ?? 0}</div>
-                    </div>
-                  </div>
-
-                  {/* Possession bar */}
-                  {f.possession?.home && (
-                    <div style={{ marginBottom: 12 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#555", marginBottom: 4 }}>
-                        <span style={{ color: "#4ade80", fontWeight: 700 }}>{f.possession.home}</span>
-                        <span style={{ color: "#888" }}>Possession</span>
-                        <span style={{ color: "#f59e0b", fontWeight: 700 }}>{f.possession.away}</span>
-                      </div>
-                      <div style={{ display: "flex", height: 6, borderRadius: 3, overflow: "hidden" }}>
-                        <div style={{ width: f.possession.home, background: "#4ade80" }} />
-                        <div style={{ flex: 1, background: "#f59e0b" }} />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Cards summary */}
-                  {(f.cards?.home?.yellow > 0 || f.cards?.away?.yellow > 0 || f.cards?.home?.red > 0 || f.cards?.away?.red > 0) && (
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, fontSize: 15 }}>
-                      <div style={{ display: "flex", gap: 6 }}>
-                        {Array.from({ length: f.cards?.home?.yellow || 0 }).map((_, i) => <span key={i}>🟨</span>)}
-                        {Array.from({ length: f.cards?.home?.red || 0 }).map((_, i) => <span key={i}>🟥</span>)}
-                      </div>
-                      <div style={{ fontSize: 13, color: "#555" }}>Cards</div>
-                      <div style={{ display: "flex", gap: 6 }}>
-                        {Array.from({ length: f.cards?.away?.yellow || 0 }).map((_, i) => <span key={i}>🟨</span>)}
-                        {Array.from({ length: f.cards?.away?.red || 0 }).map((_, i) => <span key={i}>🟥</span>)}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Events timeline */}
-                  {f.events?.length > 0 && (
-                    <div style={{ borderTop: "1px solid #1a1a1a", paddingTop: 10 }}>
-                      <div style={{ fontSize: 13, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Match Events</div>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 240, overflowY: "auto" }}>
-                        {[...f.events].reverse().map((e, i) => (
-                          <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15 }}>
-                            <span style={{ color: "#555", minWidth: 32, fontWeight: 700, fontSize: 14 }}>{e.minute}{e.extra}'</span>
-                            <span style={{ fontSize: 17 }}>{e.icon}</span>
-                            <span style={{ color: "#f0f0f0", fontWeight: 600, flex: 1 }}>{e.label}</span>
-                            <span style={{ color: "#444", fontSize: 13 }}>{e.team?.split(" ").slice(-1)[0]}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16 }}>
+                <div style={{ textAlign: "center" }}>
+                  {player1.photo && <img src={player1.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 8px" }} />}
+                  <div style={{ fontSize: 17, fontWeight: 900, color: "#4ade80" }}>{player1.name}</div>
+                  <div style={{ fontSize: 12, color: "#555", marginTop: 2 }}>{matchPlayers.home.team}</div>
                 </div>
-              )}
+                <div style={{ textAlign: "center", padding: "0 8px" }}>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: "#333" }}>VS</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  {player2.photo && <img src={player2.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #f59e0b", margin: "0 auto 8px" }} />}
+                  <div style={{ fontSize: 17, fontWeight: 900, color: "#f59e0b" }}>{player2.name}</div>
+                  <div style={{ fontSize: 12, color: "#555", marginTop: 2 }}>{matchPlayers.away.team}</div>
+                </div>
+              </div>
+
+              <div style={{ height: 1, background: "#1a1a2a", marginBottom: 10 }} />
+
+              {/* HERO: Rating comparison */}
+              <div style={{
+                background: "linear-gradient(135deg, #4ade8014, #f59e0b0e)",
+                border: "1px solid #4ade8033",
+                borderRadius: 12, padding: "14px 16px", marginBottom: 10,
+              }}>
+                <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8, textAlign: "center" }}>⭐ Match Rating</div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: 32, fontWeight: 900, color: "#4ade80" }}>{player1.rating ? parseFloat(player1.rating).toFixed(1) : "—"}</span>
+                  <span style={{ fontSize: 32, fontWeight: 900, color: "#f59e0b" }}>{player2.rating ? parseFloat(player2.rating).toFixed(1) : "—"}</span>
+                </div>
+              </div>
+
+              {/* Bento grid — 2x2 */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                <BentoBox title="Attack" icon="🎯" color="#4ade80">
+                  <MatchCompareRow label="Goals" val1={player1.goals} val2={player2.goals} />
+                  <MatchCompareRow label="Assists" val1={player1.assists} val2={player2.assists} />
+                  <MatchCompareRow label="Shots" val1={player1.shots} val2={player2.shots} />
+                  <MatchCompareRow label="On Target" val1={player1.shotsOnGoal} val2={player2.shotsOnGoal} />
+                </BentoBox>
+
+                <BentoBox title="Creativity" icon="🎨" color="#818cf8">
+                  <MatchCompareRow label="Key Passes" val1={player1.keyPasses} val2={player2.keyPasses} />
+                  <MatchCompareRow label="Pass Acc" val1={player1.passAccuracy} val2={player2.passAccuracy} unit="%" />
+                  <MatchCompareRow label="Dribbles" val1={player1.dribbles} val2={player2.dribbles} />
+                </BentoBox>
+              </div>
+
+              <BentoBox title="Workrate & Caution" icon="⚔️" color="#c084fc">
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                  <MatchCompareRow label="Minutes" val1={player1.minutesPlayed} val2={player2.minutesPlayed} />
+                  <MatchCompareRow label="Tackles" val1={player1.tackles} val2={player2.tackles} />
+                </div>
+                <MatchCompareRow label="Cards" val1={player1.yellowCards} val2={player2.yellowCards} higherIsBetter={false} />
+              </BentoBox>
+            </div>
+          </GraphicCard>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── TRANSFER FIT GRAPHIC ────────────────────────────────────────────────────
+  function PlayerSearchSlot({ label, search, setSearch, suggestions, setSuggestions, player, searching, slot, color, onSelect, onClear, onSearch }) {
+  return (
+    <div style={{ position: "relative" }}>
+      <div style={{ fontSize: 10, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{label}</div>
+      <input
+        placeholder="Search player..."
+        value={player ? player.name : search}
+        onChange={e => {
+          setSearch(e.target.value);
+          onClear();
+          onSearch(e.target.value, slot);
+        }}
+        style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${player ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+      />
+      {searching && <div style={{ position: "absolute", right: 10, top: 38, fontSize: 10, color: "#555" }}>...</div>}
+      {suggestions.length > 0 && !player && (
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, zIndex: 20, marginTop: 4, maxHeight: 220, overflowY: "auto" }}>
+          {suggestions.map(p => (
+            <div key={p.id} onClick={() => onSelect(p, slot)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", cursor: "pointer", borderBottom: "1px solid #1a1a2a" }}>
+              {p.photo && <img src={p.photo} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover" }} />}
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>{p.name}</div>
+                <div style={{ fontSize: 10, color: "#555" }}>{p.team}</div>
+              </div>
             </div>
           ))}
-          <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }`}</style>
         </div>
       )}
+    </div>
+  );
+}
 
-      <div style={{ maxWidth: 600, margin: "0 auto", padding: "20px 16px", display: "flex", flexDirection: "column", gap: 14 }}>
+function TransferFitGraphic() {
+  const cardRef = useRef(null);
+  const [leagueId, setLeagueId] = useState("pl");
 
-        {tab === "predict" && (
-          <>
-            <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-              {[1,2,3].map(s => <div key={s} className={`step-dot${step === s ? " active" : step > s ? " done" : ""}`} />)}
-            </div>
+  const [searchTarget, setSearchTarget] = useState("");
+  const [suggestTarget, setSuggestTarget] = useState([]);
+  const [target, setTarget] = useState(null);
+  const [searchingTarget, setSearchingTarget] = useState(false);
 
-            {step === 1 && (
-              <div className="card">
-                {/* League selector */}
-                <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Competition</div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
-                  {LEAGUES.map(l => (
-                    <button key={l.id} className={`league-btn${selectedLeague === l.id ? " active" : ""}`}
-                      onClick={() => { setSelectedLeague(l.id); setHomeTeam(""); setAwayTeam(""); setFixtureSearch(""); }}>
-                      {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt={l.label} style={{ width: 16, height: 16, objectFit: "contain", marginRight: 5, verticalAlign: "middle" }} crossOrigin="anonymous" />}
-                      {l.label}
-                    </button>
-                  ))}
-                </div>
+  const [searchIncumbent, setSearchIncumbent] = useState("");
+  const [suggestIncumbent, setSuggestIncumbent] = useState([]);
+  const [incumbent, setIncumbent] = useState(null);
+  const [searchingIncumbent, setSearchingIncumbent] = useState(false);
 
-                <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Set Up The Match</div>
+  const [downloading, setDownloading] = useState(false);
+  const [seasonLoading, setSeasonLoading] = useState(false);
 
-                {/* Free text inputs always visible */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 8, marginBottom: 16, alignItems: "center" }}>
-                  <div>
-                    <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Home / Team 1</div>
-                    <input className="team-input" placeholder="e.g. Brazil" value={homeTeam} onChange={e => setHomeTeam(e.target.value)} />
-                  </div>
-                  <div style={{ color: "#333", fontWeight: 700, textAlign: "center", marginTop: 20 }}>vs</div>
-                  <div>
-                    <div style={{ fontSize: 13, color: "#f87171", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Away / Team 2</div>
-                    <input className="team-input away" placeholder="e.g. Argentina" value={awayTeam} onChange={e => setAwayTeam(e.target.value)} />
-                  </div>
-                </div>
+  const searchPlayer = async (query, slot) => {
+    if (query.length < 3) {
+      slot === "target" ? setSuggestTarget([]) : setSuggestIncumbent([]);
+      return;
+    }
+    slot === "target" ? setSearchingTarget(true) : setSearchingIncumbent(true);
+    try {
+      const r = await fetch(`/api/team-stats?mode=playersearch&query=${encodeURIComponent(query)}&leagueId=${leagueId}`);
+      const d = await r.json();
+      slot === "target" ? setSuggestTarget(d.players || []) : setSuggestIncumbent(d.players || []);
+    } catch {}
+    slot === "target" ? setSearchingTarget(false) : setSearchingIncumbent(false);
+  };
 
-                {/* World Cup fixture quick-pick */}
-                {/* Live fixture picker — works for all leagues */}
-                <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Or pick a fixture</div>
-                <input className="search-input" placeholder="🔍 Search team..." value={fixtureSearch} onChange={e => setFixtureSearch(e.target.value)} style={{ marginBottom: 12 }} />
+  const selectPlayer = async (player, slot) => {
+    setSeasonLoading(true);
+    try {
+      const season = leagueId === "wc2026" ? 2026 : 2025;
+      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${player.id}&season=${season}`);
+      const d = await r.json();
+      const enriched = d.available ? { ...player, ...d } : player;
+      if (slot === "target") { setTarget(enriched); setSuggestTarget([]); setSearchTarget(enriched.name); }
+      else { setIncumbent(enriched); setSuggestIncumbent([]); setSearchIncumbent(enriched.name); }
+    } catch {
+      if (slot === "target") setTarget(player); else setIncumbent(player);
+    }
+    setSeasonLoading(false);
+  };
 
-                {fixturesLoading && (
-                  <div style={{ textAlign: "center", color: "#555", fontSize: 16, padding: "20px 0" }}>Loading fixtures...</div>
-                )}
+  const download = async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      if (!window.html2canvas) {
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+        document.head.appendChild(s);
+        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
+      }
+      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
+      const link = document.createElement("a");
+      link.download = `deep433-transfer-fit-${target?.name}-vs-${incumbent?.name}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
 
-                {!fixturesLoading && fixtures.length === 0 && (
-                  <div style={{ textAlign: "center", color: "#444", fontSize: 16, padding: "20px 0" }}>No upcoming fixtures found for this competition</div>
-                )}
-
-                <div style={{ maxHeight: 320, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
-                  {Object.entries(fixturesByDate).map(([date, dateFixtures]) => (
-                    <div key={date}>
-                      <div style={{ fontSize: 13, color: date === "Today" ? "#4ade80" : date === "Tomorrow" ? "#f59e0b" : "#444", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6, marginTop: 4 }}>{date}</div>
-                      {dateFixtures.map((f, i) => {
-                        const status = getMatchStatus(f.home, f.away);
-                        const isLocked = status === "finished" || status === "live";
-                        return (
-                          <div key={i} className={`fixture-row${homeTeam === f.home && awayTeam === f.away ? " selected" : ""}`}
-                            onClick={() => { if (!isLocked) selectFixture(f); }}
-                            style={{ marginBottom: 5, opacity: isLocked ? 0.4 : 1, cursor: isLocked ? "default" : "pointer" }}
-                          >
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
-                              <img src={f.homeLogo || ""} alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
-                              <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{f.home}</span>
-                            </div>
-                            <div style={{ textAlign: "center", minWidth: 60 }}>
-                              {isLocked && status === "finished"
-                                ? <span style={{ fontSize: 15, fontWeight: 800, color: "#555" }}>{f.score.home}-{f.score.away}</span>
-                                : status === "live"
-                                ? <span style={{ fontSize: 13, color: "#ef4444", fontWeight: 700 }}>🔴 LIVE</span>
-                                : <span style={{ fontSize: 13, color: "#555" }}>
-                                    {new Date(f.kickoff).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} BST
-                                  </span>
-                              }
-                              <div style={{ fontSize: 12, color: "#333", marginTop: 2 }}>{f.round}</div>
-                            </div>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, justifyContent: "flex-end" }}>
-                              <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{f.away}</span>
-                              <img src={f.awayLogo || ""} alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ))}
-                </div>
-
-                {error && <div style={{ color: "#f87171", fontSize: 16, margin: "12px 0" }}>{error}</div>}
-                <button className="predict-btn" onClick={goToStep2} disabled={!homeTeam || !awayTeam} style={{ marginTop: 16 }}>
-                  ⚡ Predict This Match
-                </button>
-              </div>
-            )}
-
-            {step === 2 && (
-              <div className="card">
-                <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Your Prediction</div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: "#f0f0f0", marginBottom: 4 }}>{homeTeam} vs {awayTeam}</div>
-                <div style={{ fontSize: 16, color: "#555", marginBottom: 28 }}>{leagueLabel}</div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 28 }}>
-                  <div style={{ textAlign: "center" }}>
-                    <div style={{ fontSize: 15, color: "#4ade80", fontWeight: 700, marginBottom: 8, textTransform: "uppercase" }}>{homeTeam}</div>
-                    <input className="score-input" type="number" min="0" max="20" placeholder="0" value={userHome} onChange={e => setUserHome(e.target.value)} />
-                  </div>
-                  <div style={{ fontSize: 28, color: "#333", fontWeight: 300, marginTop: 24 }}>—</div>
-                  <div style={{ textAlign: "center" }}>
-                    <div style={{ fontSize: 15, color: "#f87171", fontWeight: 700, marginBottom: 8, textTransform: "uppercase" }}>{awayTeam}</div>
-                    <input className="score-input" type="number" min="0" max="20" placeholder="0" value={userAway} onChange={e => setUserAway(e.target.value)} />
-                  </div>
-                </div>
-                {error && <div style={{ color: "#f87171", fontSize: 16, marginBottom: 12 }}>{error}</div>}
-                <button className="predict-btn" onClick={submitAndReveal} disabled={loading} style={{ marginBottom: 10 }}>
-                  {loading ? "AI is thinking..." : "🤖 Submit & See What AI Predicts"}
-                </button>
-                <button className="ghost-btn" onClick={() => setStep(1)}>← Back</button>
-              </div>
-            )}
-
-            {loading && (
-              <div className="card" style={{ textAlign: "center", padding: "40px 20px" }}>
-                <div className="spinner" style={{ marginBottom: 16 }} />
-                <div style={{ color: "#555", fontSize: 16 }}>AI is analysing the match...</div>
-              </div>
-            )}
-
-            {step === 3 && result && !loading && (
-              <>
-                <PitchView
-                  homeTeam={homeTeam}
-                  awayTeam={awayTeam}
-                  homeFormation={confirmedLineup?.home?.formation || result.homeFormation}
-                  awayFormation={confirmedLineup?.away?.formation || result.awayFormation}
-                  homeLineupNames={confirmedLineup ? confirmedLineup.home.players.map(p => p.name) : result.homeLineup}
-                  awayLineupNames={confirmedLineup ? confirmedLineup.away.players.map(p => p.name) : result.awayLineup}
-                  lineupSource={confirmedLineup ? "confirmed" : "predicted"}
-                />
-                {!confirmedLineup && (
-                  <button
-                    onClick={() => fetchConfirmedLineup(homeTeam, awayTeam, selectedLeague, savedPredictionId)}
-                    disabled={lineupFetching}
-                    style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 8, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 15, padding: "8px 16px", width: "100%", marginTop: 4 }}
-                  >
-                    {lineupFetching ? "Checking for confirmed lineup..." : "🔄 Refresh Lineup"}
-                  </button>
-                )}
-
-                <div className="reveal-box">
-                  <div style={{ fontSize: 14, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 16, textAlign: "center" }}>{homeTeam} vs {awayTeam} · {leagueLabel}</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 12, alignItems: "center" }}>
-                    <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, marginBottom: 8, textTransform: "uppercase" }}>👤 Your Call</div>
-                      <div style={{ fontSize: 48, fontWeight: 900, color: "#4ade80" }}>{userPrediction}</div>
-                    </div>
-                    <div style={{ textAlign: "center", fontSize: 20, color: "#333", fontWeight: 700 }}>vs</div>
-                    <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, marginBottom: 8, textTransform: "uppercase" }}>🤖 AI Predicts</div>
-                      <div style={{ fontSize: 48, fontWeight: 900, color: "#f59e0b" }}>{result.scoreline}</div>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 16, flexWrap: "wrap" }}>
-                    <span className="tag" style={{ background: outcomeColor(result.outcome) + "22", color: outcomeColor(result.outcome), border: `1px solid ${outcomeColor(result.outcome)}44` }}>{result.outcome}</span>
-                    <span className="tag" style={{ background: confidenceColor(result.confidence) + "22", color: confidenceColor(result.confidence), border: `1px solid ${confidenceColor(result.confidence)}44` }}>{result.confidence} Confidence</span>
-                  </div>
-                </div>
-
-                <div className="card">
-                  <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>🤖 AI Verdict</div>
-                  <p style={{ fontSize: 17, lineHeight: 1.7, color: "#ccc" }}>{result.verdict}</p>
-                </div>
-
-                <div className="card">
-                  <div style={{ fontSize: 14, color: "#888", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>⚔️ Key Tactical Battle</div>
-                  <p style={{ fontSize: 17, color: "#aaa", lineHeight: 1.6 }}>{result.keyBattle}</p>
-                </div>
-
-                <div className="card" style={{ padding: "14px 16px" }}>
-                  <div style={{ fontSize: 14, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🪑 Bench & Managers</div>
-
-                  {/* Home bench */}
-                  <div style={{ marginBottom: 12 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                      <span style={{ fontSize: 15, fontWeight: 700, color: "#4ade80" }}>{homeTeam}</span>
-                      {confirmedLineup?.home?.coach && (
-                        <span style={{ fontSize: 14, color: "#555" }}>👔 {confirmedLineup.home.coach}</span>
-                      )}
-                    </div>
-                    <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
-                      {(confirmedLineup?.home?.substitutes || []).map((p, i) => (
-                        <div key={i} style={{ background: "#1a1a28", border: "1px solid #2a2a40", borderRadius: 20, padding: "4px 10px", fontSize: 15, fontWeight: 600, color: "#ccc", whiteSpace: "nowrap", flexShrink: 0 }}>
-                          <span style={{ color: "#4ade80", marginRight: 4, fontSize: 14 }}>{p.number}</span>{p.name?.split(" ").pop()}
-                        </div>
-                      ))}
-                      {!confirmedLineup && <span style={{ fontSize: 15, color: "#333", fontStyle: "italic" }}>Available after lineup confirmation</span>}
-                    </div>
-                  </div>
-
-                  {/* Away bench */}
-                  <div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                      <span style={{ fontSize: 15, fontWeight: 700, color: "#a855f7" }}>{awayTeam}</span>
-                      {confirmedLineup?.away?.coach && (
-                        <span style={{ fontSize: 14, color: "#555" }}>👔 {confirmedLineup.away.coach}</span>
-                      )}
-                    </div>
-                    <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
-                      {(confirmedLineup?.away?.substitutes || []).map((p, i) => (
-                        <div key={i} style={{ background: "#1a1a28", border: "1px solid #2a2a40", borderRadius: 20, padding: "4px 10px", fontSize: 15, fontWeight: 600, color: "#ccc", whiteSpace: "nowrap", flexShrink: 0 }}>
-                          <span style={{ color: "#a855f7", marginRight: 4, fontSize: 14 }}>{p.number}</span>{p.name?.split(" ").pop()}
-                        </div>
-                      ))}
-                      {!confirmedLineup && <span style={{ fontSize: 15, color: "#333", fontStyle: "italic" }}>Available after lineup confirmation</span>}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="card" style={{ borderColor: "#2a1f00", background: "#13100a" }}>
-                  <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>🃏 Wildcard Factor</div>
-                  <p style={{ fontSize: 17, color: "#aaa", lineHeight: 1.6 }}>{result.wildcard}</p>
-                </div>
-
-                {deepInsights && (
-                  <div className="card" style={{ borderColor: "#3730a322", background: "#0f0f1f" }}>
-                    <DeepInsightsPanel insights={deepInsights} homeTeam={homeTeam} awayTeam={awayTeam} aiPrediction={result?.scoreline} userPrediction={userPrediction} />
-                  </div>
-                )}
+  const FitRow = ({ label, val1, val2, higherIsBetter = true }) => {
+    const v1 = parseFloat(val1) || 0;
+    const v2 = parseFloat(val2) || 0;
+    const p1Better = higherIsBetter ? v1 > v2 : v1 < v2;
+    const p2Better = higherIsBetter ? v2 > v1 : v2 < v1;
+    return (
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 9 }}>
+        <span style={{ fontSize: 18, fontWeight: p1Better ? 900 : 700, color: "#a855f7", opacity: p1Better ? 1 : 0.65 }}>{val1 ?? "—"}</span>
+        <span style={{ fontSize: 10, color: "#999", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
+        <span style={{ fontSize: 18, fontWeight: p2Better ? 900 : 700, color: "#4ade80", opacity: p2Better ? 1 : 0.65 }}>{val2 ?? "—"}</span>
+      </div>
+    );
+  };
 
 
-                <div className="card" style={{ borderColor: "#4ade8033" }}>
-                  <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>📤 Challenge Your Friends</div>
-                  <div style={{ background: "linear-gradient(135deg, #0d1a0d, #0a0a1f)", border: "1px solid #2a3a2a", borderRadius: 12, padding: 16, marginBottom: 12, textAlign: "center" }}>
-                    <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, letterSpacing: 2, marginBottom: 10 }}>⚽ DEEP433 — YOU vs AI</div>
-                    <div style={{ fontSize: 15, color: "#555", marginBottom: 12, textTransform: "uppercase" }}>{leagueLabel}: {homeTeam} vs {awayTeam}</div>
-                    <div style={{ display: "flex", justifyContent: "center", gap: 24, marginBottom: 12 }}>
-                      <div style={{ textAlign: "center" }}>
-                        <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 700, marginBottom: 4 }}>👤 MY CALL</div>
-                        <div style={{ fontSize: 28, fontWeight: 900, color: "#4ade80" }}>{userPrediction}</div>
-                      </div>
-                      <div style={{ textAlign: "center" }}>
-                        <div style={{ fontSize: 13, color: "#f59e0b", fontWeight: 700, marginBottom: 4 }}>🤖 AI SAYS</div>
-                        <div style={{ fontSize: 28, fontWeight: 900, color: "#f59e0b" }}>{result.scoreline}</div>
-                      </div>
-                    </div>
-                    <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700 }}>deep433.com</div>
-                  </div>
-                  <button className="copy-btn" onClick={copyShare} style={{ marginBottom: 10 }}>{copied ? "✓ Copied!" : "📋 Copy & Share"}</button>
-                  {deepInsights && (
-                    <button onClick={() => setShowShareCard(true)} style={{ background: "linear-gradient(135deg, #818cf8, #6366f1)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px 24px", width: "100%", marginBottom: 10 }}>
-                      📸 Create Share Card
-                    </button>
-                  )}
-                  <button className="ghost-btn" onClick={resetPredict}>⚡ Predict Another Match</button>
-                </div>
-              </>
-            )}
-          </>
-        )}
-
-        {tab === "scores" && (
-          <>
-            {/* Horizontal scrolling completed scores ticker */}
-            {liveData.filter(f => f.status === "finished").length > 0 && (
-              <div style={{ background: "#0d0d18", borderRadius: 10, padding: "10px 0", overflow: "hidden", position: "relative" }}>
-                <div style={{ fontSize: 13, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, padding: "0 14px", marginBottom: 8 }}>FT Results</div>
-                <div style={{ display: "flex", gap: 12, overflowX: "auto", padding: "0 14px 4px", scrollbarWidth: "none" }}>
-                  {liveData.filter(f => f.status === "finished").map((f, i) => (
-                    <div key={i} style={{ background: "#13131f", border: "1px solid #1e1e30", borderRadius: 8, padding: "8px 14px", flexShrink: 0, textAlign: "center", minWidth: 130 }}>
-                      <div style={{ fontSize: 13, color: "#555", marginBottom: 6 }}>FT</div>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                        <span style={{ fontSize: 14, fontWeight: 700, color: "#f0f0f0", textAlign: "right", flex: 1 }}>{f.home.split(" ").slice(-1)[0]}</span>
-                        <span style={{ fontSize: 18, fontWeight: 900, color: "#f0f0f0" }}>{f.score.home ?? 0}-{f.score.away ?? 0}</span>
-                        <span style={{ fontSize: 14, fontWeight: 700, color: "#f0f0f0", textAlign: "left", flex: 1 }}>{f.away.split(" ").slice(-1)[0]}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* All today's fixtures */}
-            <div style={{ fontSize: 14, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Today's Fixtures</div>
-
-            {liveData.length === 0 && (
-              <div style={{ textAlign: "center", color: "#444", fontSize: 17, padding: "40px 0" }}>No fixtures today — check back on matchday</div>
-            )}
-
-            {liveData.map((f, i) => {
-              const isLive = f.status === "live";
-              const isFinished = f.status === "finished";
-              const statusColor = isLive ? "#ef4444" : isFinished ? "#555" : "#4ade80";
-              const statusLabel = isLive ? `🔴 ${getTimeLabel(f.statusRaw, f.elapsed)}` : isFinished ? (f.statusRaw === "AET" ? "AET" : f.statusRaw === "PEN" ? "PEN" : "FT") : "Soon";
-
-              return (
-                <div key={i} style={{ background: "#13131f", border: `1px solid ${isLive ? "#ef444433" : "#1e1e30"}`, borderRadius: 12, overflow: "hidden" }}>
-                  {/* Match header */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", padding: "14px 16px", gap: 8 }}>
-                    <div style={{ textAlign: "center" }}>
-                      <TeamFlag team={f.home} logo={f.homeLogo} size={24} />
-                      <div style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0", marginTop: 4 }}>{f.home}</div>
-                      <div style={{ fontSize: 36, fontWeight: 900, color: isFinished ? "#888" : "#f0f0f0", marginTop: 2 }}>{isLive || isFinished ? (f.score.home ?? 0) : ""}</div>
-                    </div>
-                    <div style={{ textAlign: "center", minWidth: 60 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: statusColor, marginBottom: 4 }}>{statusLabel}</div>
-                      {!isLive && !isFinished && <div style={{ fontSize: 14, color: "#555" }}>{new Date(f.kickoff).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} BST</div>}
-                      {isLive && f.possession?.home && (
-                        <div style={{ fontSize: 13, color: "#555", marginTop: 4 }}>⚽ {f.possession.home}</div>
-                      )}
-                    </div>
-                    <div style={{ textAlign: "center" }}>
-                      <TeamFlag team={f.away} logo={f.awayLogo} size={24} />
-                      <div style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0", marginTop: 4 }}>{f.away}</div>
-                      <div style={{ fontSize: 36, fontWeight: 900, color: isFinished ? "#888" : "#f0f0f0", marginTop: 2 }}>{isLive || isFinished ? (f.score.away ?? 0) : ""}</div>
-                    </div>
-                  </div>
-
-                  {/* Live possession bar */}
-                  {isLive && f.possession?.home && (
-                    <div style={{ display: "flex", height: 3 }}>
-                      <div style={{ width: f.possession.home, background: "#4ade80" }} />
-                      <div style={{ flex: 1, background: "#f59e0b", opacity: 0.5 }} />
-                    </div>
-                  )}
-
-                  {/* Events for live/finished matches */}
-                  {(isLive || isFinished) && f.events?.length > 0 && (
-                    <div style={{ padding: "8px 16px 12px", borderTop: "1px solid #1a1a2a" }}>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                        {f.events.filter(e => e.type === "Goal" || e.type === "Card").map((e, j) => (
-                          <div key={j} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15 }}>
-                            <span style={{ color: "#555", minWidth: 32, fontSize: 14, fontWeight: 700 }}>{e.minute}'</span>
-                            <span style={{ fontSize: 16 }}>{e.icon}</span>
-                            <span style={{ color: "#ccc", fontWeight: 600, flex: 1 }}>{e.label}</span>
-                            <span style={{ color: "#444", fontSize: 13 }}>{e.team?.split(" ").slice(-1)[0]}</span>
-                          </div>
-                        ))}
-                      </div>
-                      {/* Subs collapsed */}
-                      {f.events.filter(e => e.type === "subst").length > 0 && (
-                        <div style={{ marginTop: 6, fontSize: 13, color: "#444" }}>
-                          🔄 {f.events.filter(e => e.type === "subst").length} substitution{f.events.filter(e => e.type === "subst").length !== 1 ? "s" : ""}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </>
-        )}
-
-        {tab === "bracket" && (
-          <>
-            {/* Cup competitions only */}
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {[
-                { id: "wc2026",     label: "World Cup 2026" },
-                { id: "ucl",        label: "Champions League" },
-                { id: "uel",        label: "Europa League" },
-                { id: "facup",      label: "FA Cup" },
-                { id: "copadelrey", label: "Copa del Rey" },
-                { id: "afcon",      label: "AFCON" },
-                { id: "copamerica", label: "Copa America" },
-              ].map(l => (
-                <button key={l.id} className={`league-btn${selectedLeague === l.id ? " active" : ""}`}
-                  onClick={() => setSelectedLeague(l.id)}>
-                  {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt={l.label} style={{ width: 16, height: 16, objectFit: "contain", marginRight: 5, verticalAlign: "middle" }} crossOrigin="anonymous" />}
-                  {l.label}
-                </button>
-              ))}
-            </div>
-
-            {bracketLoading && (
-              <div style={{ textAlign: "center", color: "#555", fontSize: 16, padding: "40px 0" }}>Loading bracket...</div>
-            )}
-
-            {!bracketLoading && bracketRounds.length === 0 && (
-              <div style={{ textAlign: "center", color: "#444", fontSize: 16, padding: "40px 0" }}>No knockout fixtures found for this competition</div>
-            )}
-
-            {/* Bracket rounds — horizontal scroll */}
-            <div style={{ overflowX: "auto", paddingBottom: 8 }}>
-              <div style={{ display: "flex", gap: 16, minWidth: "max-content", alignItems: "flex-start" }}>
-                {bracketRounds.map((round, ri) => (
-                  <div key={round.round} style={{ display: "flex", flexDirection: "column", gap: 12, minWidth: 200 }}>
-                    {/* Round header */}
-                    <div style={{ fontSize: 13, fontWeight: 800, color: "#4ade80", textTransform: "uppercase", letterSpacing: 1.5, textAlign: "center", padding: "6px 0", borderBottom: "1px solid #1a1a2a" }}>
-                      {round.round}
-                    </div>
-
-                    {/* Spacer to vertically centre matches relative to next round */}
-                    <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-around", gap: 8, flex: 1 }}>
-                      {round.matches.map((m, mi) => {
-                        const isLive = m.status === "live";
-                        const isFinished = m.status === "finished";
-                        const homeWon = isFinished && m.score.home > m.score.away;
-                        const awayWon = isFinished && m.score.away > m.score.home;
-
-                        // Check if user predicted this match
-                        const norm = s => (s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
-                        const userPred = history.find(h =>
-                          (norm(h.home_team) === norm(m.home) && norm(h.away_team) === norm(m.away)) ||
-                          (norm(h.home_team) === norm(m.away) && norm(h.away_team) === norm(m.home))
-                        );
-
-                        return (
-                          <div key={m.fixtureId} style={{
-                            background: "#13131f",
-                            border: `1px solid ${isLive ? "#ef4444" : userPred ? "#4ade8044" : "#1e1e30"}`,
-                            borderRadius: 10,
-                            overflow: "hidden",
-                            position: "relative",
-                          }}>
-                            {/* Live indicator */}
-                            {isLive && (
-                              <div style={{ background: "#ef4444", height: 2, width: "100%" }} />
-                            )}
-
-                            {/* Home team */}
-                            <div style={{
-                              display: "flex", alignItems: "center", gap: 8, padding: "8px 10px",
-                              background: homeWon ? "#4ade8010" : "transparent",
-                              borderBottom: "1px solid #0f0f1a"
-                            }}>
-                              {m.homeLogo
-                                ? <img src={m.homeLogo} alt="" style={{ width: 20, height: 20, objectFit: "contain", flexShrink: 0 }} />
-                                : <div style={{ width: 20, height: 20, background: "#1a1a2a", borderRadius: "50%", flexShrink: 0 }} />
-                              }
-                              <span style={{ fontSize: 15, fontWeight: homeWon ? 800 : 600, color: homeWon ? "#4ade80" : "#f0f0f0", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                {m.home || "TBD"}
-                              </span>
-                              {(isLive || isFinished) && (
-                                <span style={{ fontSize: 17, fontWeight: 900, color: homeWon ? "#4ade80" : "#888", minWidth: 16, textAlign: "right" }}>
-                                  {m.score.home ?? 0}
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Away team */}
-                            <div style={{
-                              display: "flex", alignItems: "center", gap: 8, padding: "8px 10px",
-                              background: awayWon ? "#4ade8010" : "transparent",
-                            }}>
-                              {m.awayLogo
-                                ? <img src={m.awayLogo} alt="" style={{ width: 20, height: 20, objectFit: "contain", flexShrink: 0 }} />
-                                : <div style={{ width: 20, height: 20, background: "#1a1a2a", borderRadius: "50%", flexShrink: 0 }} />
-                              }
-                              <span style={{ fontSize: 15, fontWeight: awayWon ? 800 : 600, color: awayWon ? "#4ade80" : "#f0f0f0", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                {m.away || "TBD"}
-                              </span>
-                              {(isLive || isFinished) && (
-                                <span style={{ fontSize: 17, fontWeight: 900, color: awayWon ? "#4ade80" : "#888", minWidth: 16, textAlign: "right" }}>
-                                  {m.score.away ?? 0}
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Status footer */}
-                            <div style={{ padding: "4px 10px", background: "#0d0d18", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                              <span style={{ fontSize: 12, color: isLive ? "#ef4444" : isFinished ? "#555" : "#555", fontWeight: 700 }}>
-                                {isLive ? `🔴 ${getTimeLabel(m.statusRaw, m.elapsed)}` : isFinished ? m.statusRaw : new Date(m.kickoff).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
-                              </span>
-                              {userPred && <span style={{ fontSize: 12, color: "#4ade80" }}>✓ Predicted</span>}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ fontSize: 14, color: "#555", textAlign: "center" }}>
-              Scroll horizontally to see all rounds · Green border = your prediction
-            </div>
-          </>
-        )}
-
-        {tab === "awards" && (
-          <>
-            {/* Cup competition selector */}
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {[
-                { id: "wc2026",     label: "World Cup 2026" },
-                { id: "ucl",        label: "Champions League" },
-                { id: "uel",        label: "Europa League" },
-                { id: "facup",      label: "FA Cup" },
-                { id: "copadelrey", label: "Copa del Rey" },
-                { id: "afcon",      label: "AFCON" },
-                { id: "copamerica", label: "Copa America" },
-              ].map(l => (
-                <button key={l.id} className={`league-btn${awardsLeague === l.id ? " active" : ""}`}
-                  onClick={() => setAwardsLeague(l.id)}>
-                  {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt={l.label} style={{ width: 16, height: 16, objectFit: "contain", marginRight: 5, verticalAlign: "middle" }} crossOrigin="anonymous" />}
-                  {l.label}
-                </button>
-              ))}
-            </div>
-
-            {awardsLoading && (
-              <div style={{ textAlign: "center", color: "#555", fontSize: 16, padding: "30px 0" }}>Loading...</div>
-            )}
-
-            {!awardsLoading && tournamentPred && (
-              <>
-                <div
-                  ref={awardsCardRef}
-                  style={{
-                    background: "linear-gradient(145deg, #0a0a0f 0%, #0d0d1a 60%, #0a0f0a 100%)",
-                    border: "1px solid #1e1e30", borderRadius: 14, overflow: "hidden",
-                    position: "relative", padding: "28px 20px 20px",
-                    fontFamily: "'Inter',sans-serif",
-                  }}
-                >
-                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
-                  <div style={{ position: "absolute", top: 12, right: 14, display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontSize: 13, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
-                    <span style={{ fontSize: 12, color: "#888", fontWeight: 600 }}>deep433.com</span>
-                  </div>
-                  {/* Logo watermark */}
-                  <div style={{ position: "absolute", bottom: 12, left: 12, pointerEvents: "none" }}>
-                    <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, opacity: 0.35, objectFit: "contain", borderRadius: "50%", userSelect: "none" }} />
-                  </div>
-
-                  <div style={{ textAlign: "center", marginBottom: 16, marginTop: 6, position: "relative", zIndex: 1 }}>
-                    <div style={{ fontSize: 16, color: "#f0f0f0", fontWeight: 900, textTransform: "uppercase", letterSpacing: 2 }}>
-                      {LEAGUES.find(l => l.id === awardsLeague)?.label || awardsLeague}
-                    </div>
-                    <div style={{ fontSize: 13, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginTop: 2 }}>🎖 My Season Awards Pick</div>
-                  </div>
-
-                  {/* Winner — hero */}
-                  <div style={{ textAlign: "center", marginBottom: 16, position: "relative", zIndex: 1 }}>
-                    <div style={{ fontSize: 12, color: "#fbbf24", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>🏆 Winner</div>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
-                      <TeamFlag team={tournamentPred.winner} logo={TEAM_LOGOS[tournamentPred.winner]} size={40} />
-                      <span style={{ fontSize: 22, fontWeight: 900, color: "#fbbf24" }}>{tournamentPred.winner}</span>
-                    </div>
-                  </div>
-
-                  <div style={{ height: 1, background: "#1a1a2a", marginBottom: 14, position: "relative", zIndex: 1 }} />
-
-                  {/* Runner-up */}
-                  <div style={{ textAlign: "center", marginBottom: 14, position: "relative", zIndex: 1 }}>
-                    <div style={{ fontSize: 12, color: "#c0c0c0", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>🥈 Runner-up</div>
-                    {(() => {
-                      const runnerUp = [tournamentPred.finalist_1, tournamentPred.finalist_2].find(f => f !== tournamentPred.winner);
-                      return (
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                          <TeamFlag team={runnerUp} logo={TEAM_LOGOS[runnerUp]} size={28} />
-                          <span style={{ fontSize: 17, fontWeight: 800, color: "#f0f0f0" }}>{runnerUp}</span>
-                        </div>
-                      );
-                    })()}
-                  </div>
-
-                  <div style={{ height: 1, background: "#1a1a2a", marginBottom: 14, position: "relative", zIndex: 1 }} />
-
-                  {/* Semi-finalists */}
-                  <div style={{ position: "relative", zIndex: 1 }}>
-                    <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, textAlign: "center", marginBottom: 10 }}>Semi-Finalists</div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                      {[tournamentPred.semi_finalist_1, tournamentPred.semi_finalist_2, tournamentPred.semi_finalist_3, tournamentPred.semi_finalist_4].map((team, i) => (
-                        <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, background: "#13131f", borderRadius: 8, padding: "8px 10px" }}>
-                          <TeamFlag team={team} logo={TEAM_LOGOS[team]} size={18} />
-                          <span style={{ fontSize: 14, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{team}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div style={{ fontSize: 12, color: "#444", textAlign: "center", marginTop: 16, position: "relative", zIndex: 1 }}>
-                    Submitted {new Date(tournamentPred.submitted_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
-                  </div>
-                </div>
-
-                <button onClick={downloadAwardsCard} disabled={awardsDownloading} style={{ marginTop: 12, background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
-                  {awardsDownloading ? "Generating..." : "⬇ Download Prediction Card"}
-                </button>
-                <button onClick={() => {
-                  setAwardsForm({
-                    sf1: tournamentPred.semi_finalist_1, sf2: tournamentPred.semi_finalist_2,
-                    sf3: tournamentPred.semi_finalist_3, sf4: tournamentPred.semi_finalist_4,
-                    finalist1: tournamentPred.finalist_1, finalist2: tournamentPred.finalist_2,
-                    winner: tournamentPred.winner,
-                  });
-                  setAwardsStep(1);
-                  setTournamentPred(null);
-                }} style={{ marginTop: 8, background: "none", border: "1px solid #2a2a3a", borderRadius: 8, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 16, fontWeight: 700, padding: "10px", width: "100%" }}>
-                  ✏️ Edit Prediction
-                </button>
-              </>
-            )}
-
-            {!awardsLoading && !tournamentPred && remainingTeams.length > 0 && (
-              <div className="card" style={{ padding: "24px" }}>
-                {/* Step indicator */}
-                <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
-                  {[1, 2, 3].map(s => (
-                    <div key={s} style={{ flex: 1, height: 4, borderRadius: 2, background: awardsStep >= s ? "#4ade80" : "#2a2a3a" }} />
-                  ))}
-                </div>
-
-                {awardsStep === 1 && (
-                  <>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>Step 1 of 3 — Semi-Finalists</div>
-                    <div style={{ fontSize: 14, color: "#555", marginBottom: 20 }}>Pick the 4 teams you predict will reach the Semi-Finals.</div>
-                    {["sf1", "sf2", "sf3", "sf4"].map((key, i) => (
-                      <div key={key} style={{ marginBottom: 14 }}>
-                        <div style={{ fontSize: 14, color: "#818cf8", fontWeight: 700, marginBottom: 6 }}>Semi-Finalist {i + 1}</div>
-                        <select
-                          value={awardsForm[key]}
-                          onChange={e => setAwardsForm(prev => ({ ...prev, [key]: e.target.value }))}
-                          style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 17, padding: "10px 14px", outline: "none", fontFamily: "inherit" }}
-                        >
-                          <option value="">— Select team —</option>
-                          {remainingTeams.filter(t => ![awardsForm.sf1, awardsForm.sf2, awardsForm.sf3, awardsForm.sf4].includes(t) || awardsForm[key] === t).map(t => <option key={t} value={t}>{t}</option>)}
-                        </select>
-                      </div>
-                    ))}
-                    {awardsError && <div style={{ color: "#f87171", fontSize: 15, marginBottom: 12 }}>{awardsError}</div>}
-                    <button onClick={() => {
-                      if (!awardsForm.sf1 || !awardsForm.sf2 || !awardsForm.sf3 || !awardsForm.sf4) { setAwardsError("Select all 4 semi-finalists"); return; }
-                      setAwardsError(""); setAwardsStep(2);
-                    }} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
-                      Next: Pick Finalists →
-                    </button>
-                  </>
-                )}
-
-                {awardsStep === 2 && (
-                  <>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>Step 2 of 3 — Finalists</div>
-                    <div style={{ fontSize: 14, color: "#555", marginBottom: 20 }}>Which 2 of your semi-finalists reach the Final?</div>
-                    {["finalist1", "finalist2"].map((key, i) => (
-                      <div key={key} style={{ marginBottom: 14 }}>
-                        <div style={{ fontSize: 14, color: "#c084fc", fontWeight: 700, marginBottom: 6 }}>Finalist {i + 1}</div>
-                        <select
-                          value={awardsForm[key]}
-                          onChange={e => setAwardsForm(prev => ({ ...prev, [key]: e.target.value }))}
-                          style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 17, padding: "10px 14px", outline: "none", fontFamily: "inherit" }}
-                        >
-                          <option value="">— Select team —</option>
-                          {[awardsForm.sf1, awardsForm.sf2, awardsForm.sf3, awardsForm.sf4].filter(t => t && (![awardsForm.finalist1, awardsForm.finalist2].includes(t) || awardsForm[key] === t)).map(t => <option key={t} value={t}>{t}</option>)}
-                        </select>
-                      </div>
-                    ))}
-                    {awardsError && <div style={{ color: "#f87171", fontSize: 15, marginBottom: 12 }}>{awardsError}</div>}
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button onClick={() => setAwardsStep(1)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 8, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 700, padding: "12px 20px" }}>← Back</button>
-                      <button onClick={() => {
-                        if (!awardsForm.finalist1 || !awardsForm.finalist2) { setAwardsError("Select both finalists"); return; }
-                        setAwardsError(""); setAwardsStep(3);
-                      }} style={{ flex: 1, background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px" }}>
-                        Next: Pick Winner →
-                      </button>
-                    </div>
-                  </>
-                )}
-
-                {awardsStep === 3 && (
-                  <>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>Step 3 of 3 — Winner</div>
-                    <div style={{ fontSize: 14, color: "#555", marginBottom: 20 }}>Who lifts the trophy?</div>
-                    <div style={{ marginBottom: 14 }}>
-                      <div style={{ fontSize: 14, color: "#fbbf24", fontWeight: 700, marginBottom: 6 }}>🏆 Winner</div>
-                      <select
-                        value={awardsForm.winner}
-                        onChange={e => setAwardsForm(prev => ({ ...prev, winner: e.target.value }))}
-                        style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 17, padding: "10px 14px", outline: "none", fontFamily: "inherit" }}
-                      >
-                        <option value="">— Select team —</option>
-                        {[awardsForm.finalist1, awardsForm.finalist2].filter(Boolean).map(t => <option key={t} value={t}>{t}</option>)}
-                      </select>
-                    </div>
-                    {awardsError && <div style={{ color: "#f87171", fontSize: 15, marginBottom: 12 }}>{awardsError}</div>}
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button onClick={() => setAwardsStep(2)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 8, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 700, padding: "12px 20px" }}>← Back</button>
-                      <button onClick={submitTournamentPrediction} disabled={awardsSubmitting} style={{ flex: 1, background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px" }}>
-                        {awardsSubmitting ? "Submitting..." : "🔒 Submit Final Prediction"}
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-
-            {!awardsLoading && !tournamentPred && remainingTeams.length === 0 && (
-              <div style={{ textAlign: "center", color: "#444", fontSize: 16, padding: "30px 0" }}>No teams found for this competition</div>
-            )}
-          </>
-        )}
-
-        {tab === "graphics" && (
-          userRole === "admin"
-            ? <DataGraphics history={history} supabase={supabase} />
-            : <div className="card" style={{ textAlign: "center", padding: "40px 24px" }}>
-                <div style={{ fontSize: 32, marginBottom: 12 }}>📊</div>
-                <div style={{ fontSize: 18, fontWeight: 800, color: "#f0f0f0", marginBottom: 8 }}>Authorised Users Only</div>
-                <div style={{ fontSize: 16, color: "#555", lineHeight: 1.6 }}>This section is available to authorised Deep433 users. Contact us to request access.</div>
-              </div>
-        )}
-
-        {tab === "standings" && (
-          <>
-            <div className="card" style={{ textAlign: "center", padding: "28px 20px" }}>
-              <div style={{ fontSize: 16, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 20 }}>Head to Head Record</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 16, alignItems: "center" }}>
-                <div>
-                  <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, marginBottom: 8 }}>👤 YOU</div>
-                  <div style={{ fontSize: 56, fontWeight: 900, color: "#4ade80" }}>{stats.userCorrect}</div>
-                  <div style={{ fontSize: 14, color: "#555", marginTop: 4 }}>exact scores</div>
-                </div>
-                <div style={{ fontSize: 22, color: "#333", fontWeight: 700 }}>vs</div>
-                <div>
-                  <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, marginBottom: 8 }}>🤖 AI</div>
-                  <div style={{ fontSize: 56, fontWeight: 900, color: "#f59e0b" }}>{stats.aiCorrect}</div>
-                  <div style={{ fontSize: 14, color: "#555", marginTop: 4 }}>exact scores</div>
-                </div>
-              </div>
-              <div style={{ marginTop: 20, padding: "12px 20px", background: "#0f0f1a", borderRadius: 10 }}>
-                <div style={{ fontSize: 16, color: "#aaa" }}>You've beaten the AI <span style={{ color: "#4ade80", fontWeight: 700 }}>{stats.beatAI}</span> time{stats.beatAI !== 1 ? "s" : ""}</div>
-              </div>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              {[{ label: "Predictions Made", value: stats.total, color: "#60a5fa" }, { label: "Results Logged", value: stats.verified, color: "#a78bfa" }].map(s => (
-                <div key={s.label} className="card" style={{ textAlign: "center", padding: "14px 10px" }}>
-                  <div style={{ fontSize: 24, fontWeight: 900, color: s.color }}>{s.value}</div>
-                  <div style={{ fontSize: 13, color: "#555", marginTop: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>{s.label}</div>
-                </div>
-              ))}
-            </div>
-            {stats.total === 0 && <div style={{ textAlign: "center", color: "#444", fontSize: 17, padding: "32px 0" }}>Make your first prediction to start the battle!</div>}
-          </>
-        )}
-
-        {tab === "badges" && (
-          <>
-            <div className="card" style={{ textAlign: "center", padding: "16px 20px" }}>
-              <div style={{ fontSize: 16, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Your Rank</div>
-              {rank ? <div style={{ fontSize: 22, fontWeight: 900, color: rank.color }}>{rank.icon} {rank.name}</div> : <div style={{ fontSize: 18, color: "#444" }}>Beat the AI to earn your first badge</div>}
-              <div style={{ fontSize: 15, color: "#555", marginTop: 4 }}>{badges.filter(b => b.earned).length} of {badges.length} badges earned</div>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-              {badges.map(b => (
-                <div key={b.name} className={`badge-card${b.earned ? "" : " locked"}`}>
-                  <div style={{ fontSize: 28, marginBottom: 8 }}>{b.icon}</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: b.earned ? b.color : "#555", marginBottom: 4, lineHeight: 1.3 }}>{b.name}</div>
-                  <div style={{ fontSize: 13, color: "#444", lineHeight: 1.4 }}>{b.desc}</div>
-                  {!b.earned && <div style={{ fontSize: 13, color: "#2a2a2a", marginTop: 6 }}>🔒 Locked</div>}
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-
-        {tab === "history" && (
-          <>
-            <div style={{ fontSize: 14, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Prediction History</div>
-            <input className="search-input" placeholder="🔍 Search by team..." value={historySearch} onChange={e => setHistorySearch(e.target.value)} />
-            {history.length === 0 && <div style={{ textAlign: "center", color: "#444", fontSize: 17, padding: "40px 0" }}>No predictions yet — go predict a match!</div>}
-            {history.filter(h => !historySearch.trim() || h.home_team.toLowerCase().includes(historySearch.toLowerCase()) || h.away_team.toLowerCase().includes(historySearch.toLowerCase())).map((h) => {
-              const wc = resultColor(h.result);
-              const matchStatus = getMatchStatus(h.home_team, h.away_team);
-              return (
-                <div key={h.id} className="history-row">
-                  <div style={{ marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <div>
-                      <div style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0", marginBottom: 2 }}>{h.home_team} vs {h.away_team}</div>
-                      <div style={{ fontSize: 14, color: "#555" }}>{new Date(h.created_at).toLocaleDateString("en-GB")}</div>
-                    </div>
-                    {h.ai_data && (
-                      <div style={{ display: "flex", gap: 6 }}>
-                        <button onClick={() => {
-                          // Load from localStorage if available
-                          const cached = (() => { try { const s = localStorage.getItem(`lineup_${h.home_team}_${h.away_team}`); return s ? JSON.parse(s) : null; } catch { return null; } })();
-                          setViewingPitch(cached ? { ...h, confirmed_lineup: cached } : h);
-                        }} style={{ background: "none", border: "1px solid #4ade8044", borderRadius: 6, color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "5px 10px", whiteSpace: "nowrap" }}>⚽ Pitch</button>
-                        <button onClick={() => setViewingAnalysis(h)} style={{ background: "none", border: "1px solid #818cf844", borderRadius: 6, color: "#818cf8", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "5px 10px", whiteSpace: "nowrap" }}>📊 Analysis</button>
-                      </div>
-                    )}
-                  </div>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
-                    <div style={{ flex: 1, textAlign: "center", background: "#13131f", borderRadius: 8, padding: "8px 4px" }}>
-                      <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 700, marginBottom: 4 }}>👤 YOU</div>
-                      <div style={{ fontSize: 20, fontWeight: 900, color: "#4ade80" }}>{h.user_prediction}</div>
-                    </div>
-                    <div style={{ fontSize: 15, color: "#333" }}>vs</div>
-                    <div style={{ flex: 1, textAlign: "center", background: "#13131f", borderRadius: 8, padding: "8px 4px" }}>
-                      <div style={{ fontSize: 13, color: "#f59e0b", fontWeight: 700, marginBottom: 4 }}>🤖 AI</div>
-                      <div style={{ fontSize: 20, fontWeight: 900, color: "#f59e0b" }}>{h.ai_prediction}</div>
-                    </div>
-                    {h.actual_score && (
-                      <div style={{ flex: 1, textAlign: "center", background: "#13131f", borderRadius: 8, padding: "8px 4px" }}>
-                        <div style={{ fontSize: 13, color: "#888", fontWeight: 700, marginBottom: 4 }}>RESULT</div>
-                        <div style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>{h.actual_score}</div>
-                      </div>
-                    )}
-                  </div>
-                  {h.result && (
-                    <div style={{ textAlign: "center", padding: "8px", background: wc + "11", border: `1px solid ${wc}33`, borderRadius: 8, fontSize: 16, fontWeight: 700, color: wc, marginBottom: 8 }}>
-                      {h.result === "user" ? "🏆 You beat the AI!" : h.result === "ai" ? "🤖 AI wins this one" : "🤝 It's a tie"}
-                    </div>
-                  )}
-
-                  {matchStatus === "live" && (
-                    <div style={{ fontSize: 14, color: "#ef4444", fontWeight: 700, textAlign: "center", padding: "6px", marginTop: 4 }}>🔴 Match in progress</div>
-                  )}
-                  {matchStatus === "live" && (() => {
-                    const live = findLiveFixture(h.home_team, h.away_team);
-                    const events = live?.events;
-                    if (!events?.length) return null;
-                    return (
-                      <div style={{ marginTop: 8, background: "#0d0d18", borderRadius: 8, padding: "10px 12px" }}>
-                        <div style={{ fontSize: 13, color: "#ef4444", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
-                          🔴 {getTimeLabel(live.statusRaw, live.elapsed)}
-                        </div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                          {events.map((e, i) => (
-                            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15 }}>
-                              <span style={{ color: "#555", minWidth: 32, fontWeight: 700 }}>{e.minute}{e.extra}'</span>
-                              <span style={{ fontSize: 17 }}>{e.icon}</span>
-                              <span style={{ color: "#f0f0f0", fontWeight: 600 }}>{e.label}</span>
-                              <span style={{ color: "#555", fontSize: 14, marginLeft: "auto" }}>{e.team?.split(" ").pop()}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })()}
-                  {matchStatus === "finished" && !h.actual_score && (
-                    <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, textAlign: "center", padding: "6px", marginTop: 4 }}>🏁 Fetching final score...</div>
-                  )}
-
-                  {/* Edit and Delete only — no manual score logging */}
-                  <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                    <button onClick={() => deletePredict(h.id)} style={{ background: "none", border: "1px solid #f8717133", borderRadius: 6, color: "#f87171", cursor: "pointer", fontFamily: "inherit", fontSize: 15, padding: "6px 12px", flex: 1 }}>🗑️ Delete</button>
-                  </div>
-                </div>
-              );
-            })}
-          </>
-        )}
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {LEAGUE_OPTIONS.map(l => (
+          <button key={l.id} onClick={() => { setLeagueId(l.id); setTarget(null); setIncumbent(null); setSearchTarget(""); setSearchIncumbent(""); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "5px 12px" }}>
+            {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
+            {l.label}
+          </button>
+        ))}
       </div>
 
-      {viewingPitch && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)", zIndex: 50, display: "flex", flexDirection: "column" }}>
-          {/* Fixed header */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", background: "#0d0d18", borderBottom: "1px solid #1a1a2a", flexShrink: 0 }}>
-            <div style={{ fontSize: 16, color: "#f0f0f0", fontWeight: 700 }}>{viewingPitch.home_team} vs {viewingPitch.away_team}</div>
-            <div style={{ display: "flex", gap: 8 }}>
-              {!viewingPitch.confirmed_lineup && (
-                <button
-                  onClick={() => fetchConfirmedLineup(viewingPitch.home_team, viewingPitch.away_team, selectedLeague, viewingPitch.id)}
-                  disabled={lineupFetching}
-                  style={{ background: "none", border: "1px solid #f59e0b44", borderRadius: 6, color: "#f59e0b", cursor: "pointer", fontFamily: "inherit", fontSize: 15, padding: "6px 12px" }}
-                >
-                  {lineupFetching ? "Checking..." : "🔄 Refresh Lineup"}
-                </button>
-              )}
-              <button onClick={() => setViewingPitch(null)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#aaa", cursor: "pointer", fontFamily: "inherit", fontSize: 16, padding: "6px 14px" }}>✕ Close</button>
-            </div>
-          </div>
-          {/* Scrollable pitch content */}
-          <div style={{ flex: 1, overflowY: "auto", padding: 16, maxWidth: 500, width: "100%", margin: "0 auto" }}>
-            <PitchView
-              homeTeam={viewingPitch.home_team}
-              awayTeam={viewingPitch.away_team}
-              homeFormation={viewingPitch.confirmed_lineup?.home?.formation || viewingPitch.ai_data?.homeFormation}
-              awayFormation={viewingPitch.confirmed_lineup?.away?.formation || viewingPitch.ai_data?.awayFormation}
-              homeLineupNames={viewingPitch.confirmed_lineup ? viewingPitch.confirmed_lineup.home.players.map(p => p.name) : viewingPitch.ai_data?.homeLineup}
-              awayLineupNames={viewingPitch.confirmed_lineup ? viewingPitch.confirmed_lineup.away.players.map(p => p.name) : viewingPitch.ai_data?.awayLineup}
-              lineupSource={viewingPitch.confirmed_lineup ? "confirmed" : "predicted"}
-            />
+      <div style={{ fontSize: 11, color: "#666" }}>Compare a transfer target against a current squad player in a similar role.</div>
 
-            {/* Bench & Managers — shown when confirmed lineup is available */}
-            {viewingPitch.confirmed_lineup && (
-              <div className="card" style={{ marginTop: 12, padding: "14px 16px" }}>
-                <div style={{ fontSize: 14, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🪑 Bench & Managers</div>
-                <div style={{ marginBottom: 12 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                    <span style={{ fontSize: 15, fontWeight: 700, color: "#4ade80" }}>{viewingPitch.home_team}</span>
-                    {viewingPitch.confirmed_lineup.home?.coach && (
-                      <span style={{ fontSize: 14, color: "#555" }}>👔 {viewingPitch.confirmed_lineup.home.coach}</span>
-                    )}
-                  </div>
-                  <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
-                    {(viewingPitch.confirmed_lineup.home?.substitutes || []).map((p, i) => (
-                      <div key={i} style={{ background: "#1a1a28", border: "1px solid #4ade8044", borderRadius: 20, padding: "4px 10px", fontSize: 15, fontWeight: 600, color: "#ccc", whiteSpace: "nowrap", flexShrink: 0 }}>
-                        <span style={{ color: "#4ade80", marginRight: 4, fontSize: 14 }}>{p.number}</span>{p.name?.split(" ").pop()}
-                      </div>
-                    ))}
-                  </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <PlayerSearchSlot label="🎯 Transfer Target" search={searchTarget} setSearch={setSearchTarget} suggestions={suggestTarget} setSuggestions={setSuggestTarget} player={target} searching={searchingTarget} slot="target" color="#a855f7" onSelect={selectPlayer} onClear={() => setTarget(null)} onSearch={searchPlayer} />
+        <PlayerSearchSlot label="🏠 Current Squad" search={searchIncumbent} setSearch={setSearchIncumbent} suggestions={suggestIncumbent} setSuggestions={setSuggestIncumbent} player={incumbent} searching={searchingIncumbent} slot="incumbent" color="#4ade80" onSelect={selectPlayer} onClear={() => setIncumbent(null)} onSearch={searchPlayer} />
+      </div>
+
+      {seasonLoading && <div style={{ textAlign: "center", color: "#555", fontSize: 12 }}>Loading season stats...</div>}
+
+      {target && incumbent && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "22px 18px 18px" }}>
+              <div style={{ textAlign: "center", marginBottom: 14 }}>
+                <span style={{ fontSize: 11, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5 }}>🔄 Transfer Fit — Full Season</span>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16 }}>
+                <div style={{ textAlign: "center" }}>
+                  {target.photo && <img src={target.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #a855f7", margin: "0 auto 8px" }} />}
+                  <div style={{ fontSize: 15, fontWeight: 900, color: "#a855f7" }}>{target.name}</div>
+                  <div style={{ fontSize: 10, color: "#666", marginTop: 2 }}>{target.team}</div>
+                  <div style={{ fontSize: 9, color: "#a855f7", fontWeight: 700, marginTop: 2, opacity: 0.7 }}>TARGET</div>
                 </div>
-                <div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                    <span style={{ fontSize: 15, fontWeight: 700, color: "#a855f7" }}>{viewingPitch.away_team}</span>
-                    {viewingPitch.confirmed_lineup.away?.coach && (
-                      <span style={{ fontSize: 14, color: "#555" }}>👔 {viewingPitch.confirmed_lineup.away.coach}</span>
-                    )}
-                  </div>
-                  <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
-                    {(viewingPitch.confirmed_lineup.away?.substitutes || []).map((p, i) => (
-                      <div key={i} style={{ background: "#1a1a28", border: "1px solid #a855f744", borderRadius: 20, padding: "4px 10px", fontSize: 15, fontWeight: 600, color: "#ccc", whiteSpace: "nowrap", flexShrink: 0 }}>
-                        <span style={{ color: "#a855f7", marginRight: 4, fontSize: 14 }}>{p.number}</span>{p.name?.split(" ").pop()}
-                      </div>
-                    ))}
-                  </div>
+                <div style={{ textAlign: "center", padding: "0 8px" }}>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: "#333" }}>VS</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  {incumbent.photo && <img src={incumbent.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 8px" }} />}
+                  <div style={{ fontSize: 15, fontWeight: 900, color: "#4ade80" }}>{incumbent.name}</div>
+                  <div style={{ fontSize: 10, color: "#666", marginTop: 2 }}>{incumbent.team}</div>
+                  <div style={{ fontSize: 9, color: "#4ade80", fontWeight: 700, marginTop: 2, opacity: 0.7 }}>SQUAD</div>
                 </div>
               </div>
-            )}
-          </div>
+
+              <div style={{ height: 1, background: "#1a1a2a", marginBottom: 10 }} />
+
+              <div style={{
+                background: "linear-gradient(135deg, #a855f714, #4ade800e)",
+                border: "1px solid #a855f733",
+                borderRadius: 12, padding: "14px 16px", marginBottom: 10,
+              }}>
+                <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8, textAlign: "center" }}>⭐ Season Rating</div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: 32, fontWeight: 900, color: "#a855f7" }}>{target.rating ? parseFloat(target.rating).toFixed(1) : "—"}</span>
+                  <span style={{ fontSize: 32, fontWeight: 900, color: "#4ade80" }}>{incumbent.rating ? parseFloat(incumbent.rating).toFixed(1) : "—"}</span>
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                <BentoBox title="Output" icon="⚽" color="#a855f7">
+                  <FitRow label="Goals" val1={target.goals} val2={incumbent.goals} />
+                  <FitRow label="Assists" val1={target.assists} val2={incumbent.assists} />
+                  <FitRow label="Apps" val1={target.appearances} val2={incumbent.appearances} />
+                </BentoBox>
+
+                <BentoBox title="Progression" icon="🎨" color="#60a5fa">
+                  <FitRow label="Key Passes" val1={target.keyPasses} val2={incumbent.keyPasses} />
+                  <FitRow label="Dribbles" val1={target.dribbles} val2={incumbent.dribbles} />
+                  <FitRow label="Shots" val1={target.shots} val2={incumbent.shots} />
+                </BentoBox>
+              </div>
+
+              <BentoBox title="Defensive Work" icon="🛡️" color="#f59e0b">
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                  <FitRow label="Tackles" val1={target.tackles} val2={incumbent.tackles} />
+                  <FitRow label="Cards" val1={target.yellowCards} val2={incumbent.yellowCards} higherIsBetter={false} />
+                </div>
+              </BentoBox>
+            </div>
+          </GraphicCard>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#a855f7,#818cf8)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── TEAM SEARCH SLOT (standalone, avoids re-render focus bug) ──────────────
+function TeamSearchSlot({ label, search, setSearch, suggestions, team, searching, slot, color, onSelect, onClear, onSearch }) {
+  return (
+    <div style={{ position: "relative" }}>
+      <div style={{ fontSize: 10, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{label}</div>
+      <input
+        placeholder="Search team..."
+        value={team ? team.name : search}
+        onChange={e => {
+          setSearch(e.target.value);
+          onClear();
+          onSearch(e.target.value, slot);
+        }}
+        style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${team ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+      />
+      {searching && <div style={{ position: "absolute", right: 10, top: 38, fontSize: 10, color: "#555" }}>...</div>}
+      {suggestions.length > 0 && !team && (
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, zIndex: 20, marginTop: 4, maxHeight: 220, overflowY: "auto" }}>
+          {suggestions.map(t => (
+            <div key={t.id} onClick={() => onSelect(t, slot)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", cursor: "pointer", borderBottom: "1px solid #1a1a2a" }}>
+              {t.logo && <img src={t.logo} alt="" style={{ width: 22, height: 22, objectFit: "contain" }} />}
+              <span style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>{t.name}</span>
+            </div>
+          ))}
         </div>
       )}
+    </div>
+  );
+}
 
-      {viewingAnalysis && (
-        <div style={{ position: "fixed", inset: 0, background: "#0a0a0f", zIndex: 50, overflowY: "auto" }}>
-          <div style={{ maxWidth: 600, margin: "0 auto", padding: "16px 16px 60px", display: "flex", flexDirection: "column", gap: 14 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0" }}>
-              <div style={{ fontSize: 17, color: "#f0f0f0", fontWeight: 700 }}>{viewingAnalysis.home_team} vs {viewingAnalysis.away_team}</div>
-              <button onClick={() => setViewingAnalysis(null)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 16, padding: "6px 14px" }}>✕ Close</button>
-            </div>
+// ─── GOAL TIMING GRAPHIC ──────────────────────────────────────────────────────
+function GoalTimingGraphic() {
+  const cardRef = useRef(null);
+  const [leagueId, setLeagueId] = useState("pl");
 
-            {/* Score comparison */}
-            <div className="reveal-box">
-              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 12, alignItems: "center" }}>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, marginBottom: 8 }}>👤 Your Call</div>
-                  <div style={{ fontSize: 40, fontWeight: 900, color: "#4ade80" }}>{viewingAnalysis.user_prediction}</div>
-                </div>
-                <div style={{ textAlign: "center", fontSize: 18, color: "#333" }}>vs</div>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, marginBottom: 8 }}>🤖 AI Predicts</div>
-                  <div style={{ fontSize: 40, fontWeight: 900, color: "#f59e0b" }}>{viewingAnalysis.ai_prediction}</div>
-                </div>
-              </div>
-              {viewingAnalysis.actual_score && (
-                <div style={{ textAlign: "center", marginTop: 12, padding: "8px", background: resultColor(viewingAnalysis.result) + "11", borderRadius: 8, fontSize: 16, fontWeight: 700, color: resultColor(viewingAnalysis.result) }}>
-                  Final: {viewingAnalysis.actual_score} · {viewingAnalysis.result === "user" ? "🏆 You beat the AI!" : viewingAnalysis.result === "ai" ? "🤖 AI wins" : "🤝 Tie"}
-                </div>
-              )}
-            </div>
+  const [search1, setSearch1] = useState("");
+  const [suggest1, setSuggest1] = useState([]);
+  const [team1, setTeam1] = useState(null);
+  const [searching1, setSearching1] = useState(false);
+  const [stats1, setStats1] = useState(null);
 
-            {/* AI Verdict */}
-            {viewingAnalysis.ai_data?.verdict && (
-              <div className="card">
-                <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>🤖 AI Verdict</div>
-                <p style={{ fontSize: 17, lineHeight: 1.7, color: "#ccc" }}>{viewingAnalysis.ai_data.verdict}</p>
-              </div>
-            )}
+  const [search2, setSearch2] = useState("");
+  const [suggest2, setSuggest2] = useState([]);
+  const [team2, setTeam2] = useState(null);
+  const [searching2, setSearching2] = useState(false);
+  const [stats2, setStats2] = useState(null);
 
-            {/* Key battle */}
-            {viewingAnalysis.ai_data?.keyBattle && (
-              <div className="card">
-                <div style={{ fontSize: 14, color: "#888", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>⚔️ Key Tactical Battle</div>
-                <p style={{ fontSize: 16, color: "#aaa", lineHeight: 1.6 }}>{viewingAnalysis.ai_data.keyBattle}</p>
-              </div>
-            )}
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
-            {/* Wildcard */}
-            {viewingAnalysis.ai_data?.wildcard && (
-              <div className="card" style={{ borderColor: "#2a1f00", background: "#13100a" }}>
-                <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>🃏 Wildcard</div>
-                <p style={{ fontSize: 16, color: "#aaa", lineHeight: 1.6 }}>{viewingAnalysis.ai_data.wildcard}</p>
-              </div>
-            )}
+  const INTERVALS = ["0-15", "16-30", "31-45", "46-60", "61-75", "76-90"];
 
-            {/* Bench & Managers — from saved confirmedLineup */}
-            {viewingAnalysis.confirmed_lineup && (
-              <div className="card" style={{ padding: "14px 16px" }}>
-                <div style={{ fontSize: 14, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🪑 Bench & Managers</div>
-                <div style={{ marginBottom: 12 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                    <span style={{ fontSize: 15, fontWeight: 700, color: "#4ade80" }}>{viewingAnalysis.home_team}</span>
-                    {viewingAnalysis.confirmed_lineup.home?.coach && (
-                      <span style={{ fontSize: 14, color: "#555" }}>👔 {viewingAnalysis.confirmed_lineup.home?.coach}</span>
-                    )}
-                  </div>
-                  <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
-                    {(viewingAnalysis.confirmed_lineup.home?.substitutes || []).map((p, i) => (
-                      <div key={i} style={{ background: "#1a1a28", border: "1px solid #2a2a40", borderRadius: 20, padding: "4px 10px", fontSize: 15, fontWeight: 600, color: "#ccc", whiteSpace: "nowrap", flexShrink: 0 }}>
-                        <span style={{ color: "#4ade80", marginRight: 4, fontSize: 14 }}>{p.number}</span>{p.name?.split(" ").pop()}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                    <span style={{ fontSize: 15, fontWeight: 700, color: "#a855f7" }}>{viewingAnalysis.away_team}</span>
-                    {viewingAnalysis.confirmed_lineup.away?.coach && (
-                      <span style={{ fontSize: 14, color: "#555" }}>👔 {viewingAnalysis.confirmed_lineup.away?.coach}</span>
-                    )}
-                  </div>
-                  <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
-                    {(viewingAnalysis.confirmed_lineup.away?.substitutes || []).map((p, i) => (
-                      <div key={i} style={{ background: "#1a1a28", border: "1px solid #2a2a40", borderRadius: 20, padding: "4px 10px", fontSize: 15, fontWeight: 600, color: "#ccc", whiteSpace: "nowrap", flexShrink: 0 }}>
-                        <span style={{ color: "#a855f7", marginRight: 4, fontSize: 14 }}>{p.number}</span>{p.name?.split(" ").pop()}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+  const searchTeam = async (query, slot) => {
+    if (query.length < 3) {
+      slot === 1 ? setSuggest1([]) : setSuggest2([]);
+      return;
+    }
+    slot === 1 ? setSearching1(true) : setSearching2(true);
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
+      const d = await r.json();
+      slot === 1 ? setSuggest1(d.teams || []) : setSuggest2(d.teams || []);
+    } catch {}
+    slot === 1 ? setSearching1(false) : setSearching2(false);
+  };
+
+  const selectTeam = async (t, slot) => {
+    setLoading(true);
+    if (slot === 1) { setTeam1(t); setSuggest1([]); setSearch1(t.name); }
+    else { setTeam2(t); setSuggest2([]); setSearch2(t.name); }
+    try {
+      const r = await fetch(`/api/team-stats?leagueId=${leagueId}&teamId=${t.id}`);
+      const d = await r.json();
+      if (slot === 1) setStats1(d.available ? d : null);
+      else setStats2(d.available ? d : null);
+    } catch {}
+    setLoading(false);
+  };
+
+  const download = async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      if (!window.html2canvas) {
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+        document.head.appendChild(s);
+        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
+      }
+      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
+      const link = document.createElement("a");
+      link.download = `deep433-goal-timing-${team1?.name}-vs-${team2?.name}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const getVal = (obj, key) => {
+    if (!obj) return 0;
+    return parseInt(obj[key]?.total) || 0;
+  };
+
+  const IntervalBar = ({ label, val1, val2, max, color1, color2 }) => (
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+        <span style={{ fontSize: 13, fontWeight: 900, color: color1 }}>{val1}</span>
+        <span style={{ fontSize: 10, color: "#999", fontWeight: 700 }}>{label}'</span>
+        <span style={{ fontSize: 13, fontWeight: 900, color: color2 }}>{val2}</span>
+      </div>
+      <div style={{ display: "flex", gap: 4 }}>
+        <div style={{ flex: 1, height: 7, background: "#1a1a24", borderRadius: 4, overflow: "hidden", display: "flex", justifyContent: "flex-end" }}>
+          <div style={{ width: `${max ? (val1 / max) * 100 : 0}%`, background: color1, borderRadius: 4 }} />
         </div>
-      )}
-      {showShareCard && (
-        <SocialShareCard
-          homeTeam={homeTeam}
-          awayTeam={awayTeam}
-          homeLogo={selectedHomeLogo || findFixture(homeTeam, awayTeam)?.homeLogo || TEAM_LOGOS[homeTeam] || null}
-          awayLogo={selectedAwayLogo || findFixture(homeTeam, awayTeam)?.awayLogo || TEAM_LOGOS[awayTeam] || null}
-          userPrediction={userPrediction}
-          aiPrediction={result?.scoreline || ""}
-          leagueLabel={leagueLabel}
-          deepInsights={deepInsights}
-          onClose={() => setShowShareCard(false)}
-        />
-      )}
+        <div style={{ flex: 1, height: 7, background: "#1a1a24", borderRadius: 4, overflow: "hidden" }}>
+          <div style={{ width: `${max ? (val2 / max) * 100 : 0}%`, background: color2, borderRadius: 4 }} />
+        </div>
+      </div>
+    </div>
+  );
 
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {LEAGUE_OPTIONS.slice(1).map(l => (
+          <button key={l.id} onClick={() => { setLeagueId(l.id); setTeam1(null); setTeam2(null); setStats1(null); setStats2(null); setSearch1(""); setSearch2(""); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
+            {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
+            {l.label}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <TeamSearchSlot label="Team 1" search={search1} setSearch={setSearch1} suggestions={suggest1} team={team1} searching={searching1} slot={1} color="#4ade80" onSelect={selectTeam} onClear={() => setTeam1(null)} onSearch={searchTeam} />
+        <TeamSearchSlot label="Team 2" search={search2} setSearch={setSearch2} suggestions={suggest2} team={team2} searching={searching2} slot={2} color="#f59e0b" onSelect={selectTeam} onClear={() => setTeam2(null)} onSearch={searchTeam} />
+      </div>
+
+      {loading && <div style={{ textAlign: "center", color: "#555", fontSize: 12 }}>Loading...</div>}
+
+      {stats1 && stats2 && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "22px 18px 18px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16, marginTop: 8 }}>
+                <div style={{ textAlign: "center" }}>
+                  {stats1.logo && <img src={stats1.logo} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain", margin: "0 auto 6px" }} />}
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#4ade80" }}>{stats1.team}</div>
+                </div>
+                <div style={{ textAlign: "center", padding: "0 8px" }}>
+                  <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 }}>⏱️ Goal Timing</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  {stats2.logo && <img src={stats2.logo} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain", margin: "0 auto 6px" }} />}
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#f59e0b" }}>{stats2.team}</div>
+                </div>
+              </div>
+
+              <BentoBox title="Goals Scored" icon="⚽" color="#4ade80">
+                {(() => {
+                  const vals1 = INTERVALS.map(k => getVal(stats1.goalIntervalsFor, k));
+                  const vals2 = INTERVALS.map(k => getVal(stats2.goalIntervalsFor, k));
+                  const max = Math.max(...vals1, ...vals2, 1);
+                  return INTERVALS.map((label, i) => (
+                    <IntervalBar key={label} label={label} val1={vals1[i]} val2={vals2[i]} max={max} color1="#4ade80" color2="#f59e0b" />
+                  ));
+                })()}
+              </BentoBox>
+
+              <div style={{ height: 10 }} />
+
+              <BentoBox title="Goals Conceded" icon="🥅" color="#f87171">
+                {(() => {
+                  const vals1 = INTERVALS.map(k => getVal(stats1.goalIntervalsAgainst, k));
+                  const vals2 = INTERVALS.map(k => getVal(stats2.goalIntervalsAgainst, k));
+                  const max = Math.max(...vals1, ...vals2, 1);
+                  return INTERVALS.map((label, i) => (
+                    <IntervalBar key={label} label={label} val1={vals1[i]} val2={vals2[i]} max={max} color1="#4ade80" color2="#f59e0b" />
+                  ));
+                })()}
+              </BentoBox>
+            </div>
+          </GraphicCard>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+export default function DataGraphics({ history = [], supabase }) {
+  const [activeSection, setActiveSection] = useState("match");
+
+  const sections = [
+    { id: "insights", label: "📊 Deep Insights" },
+    { id: "pitch",    label: "⚽ Pitch View" },
+    { id: "h2h",      label: "🆚 Player H2H" },
+    { id: "matchh2h", label: "📋 Match H2H" },
+    { id: "glove",    label: "Golden Glove" },
+    { id: "transfer", label: "🔄 Transfer Fit" },
+    { id: "timing",   label: "⏱️ Goal Timing" },
+    { id: "match",    label: "📈 Match Stats" },
+    { id: "player",   label: "⭐ Player Ratings" },
+    { id: "top",      label: "🥇 Leaderboard" },
+    { id: "team",     label: "🛡 Team Stats" },
+    { id: "recap",    label: "📋 Recap" },
+    { id: "bracket",  label: "🏆 Bracket" },
+  ];
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');`}</style>
+
+      <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
+        {sections.map(s => (
+          <button key={s.id} onClick={() => setActiveSection(s.id)} style={{ background: activeSection === s.id ? "#a855f722" : "none", border: `1px solid ${activeSection === s.id ? "#a855f7" : "#2a2a3a"}`, borderRadius: 20, color: activeSection === s.id ? "#a855f7" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "7px 14px", whiteSpace: "nowrap", flexShrink: 0 }}>
+            {s.label}
+          </button>
+        ))}
+      </div>
+
+      {activeSection === "insights" && <DeepInsightsGraphic history={history} />}
+      {activeSection === "pitch"    && <MatchPitchViewGraphic />}
+      {activeSection === "h2h"      && <PlayerH2HGraphic />}
+      {activeSection === "matchh2h" && <MatchH2HGraphic />}
+      {activeSection === "glove"    && <GoldenGloveGraphic />}
+      {activeSection === "transfer" && <TransferFitGraphic />}
+      {activeSection === "timing"   && <GoalTimingGraphic />}
+      {activeSection === "match"    && <MatchStatsGraphic />}
+      {activeSection === "player"   && <PlayerRatingsGraphic />}
+      {activeSection === "top"      && <TopScorersGraphic />}
+      {activeSection === "team"     && <TeamStatsGraphic />}
+      {activeSection === "recap"    && <RecapGraphic history={history} />}
+      {activeSection === "bracket"  && <BracketGraphic history={history} />}
     </div>
   );
 }
