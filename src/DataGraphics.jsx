@@ -1054,7 +1054,7 @@ function RecapGraphic({ history = [] }) {
               {selectedFixture?.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 44, height: 44, objectFit: "contain" }} />}
               <div style={{ textAlign: "center" }}>
                 <div style={{ fontSize: 12, color: "#555", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Full Time</div>
-                <div style={{ fontSize: 56, fontWeight: 900, color: "#f0f0f0", lineHeight: 1 }}>{fs0}-{fs1}</div>
+                <div style={{ fontSize: 56, fontWeight: 900, color: "#f0f0f0", lineHeight: 1, letterSpacing: -1 }}>{fs0}-{fs1}</div>
               </div>
               {selectedFixture?.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 44, height: 44, objectFit: "contain" }} />}
             </div>
@@ -1110,7 +1110,7 @@ function RecapGraphic({ history = [] }) {
               {selectedFixture?.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 40, height: 40, objectFit: "contain" }} />}
               <div>
                 <div style={{ fontSize: 11, color: "#555", textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }}>Full Time</div>
-                <div style={{ fontSize: 56, fontWeight: 900, color: "#f0f0f0", lineHeight: 1 }}>{fs0}-{fs1}</div>
+                <div style={{ fontSize: 56, fontWeight: 900, color: "#f0f0f0", lineHeight: 1, letterSpacing: -1 }}>{fs0}-{fs1}</div>
               </div>
               {selectedFixture?.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 40, height: 40, objectFit: "contain" }} />}
             </div>
@@ -1132,7 +1132,7 @@ function RecapGraphic({ history = [] }) {
             {[{ label: "👤 Your Call", pred: yourPrediction, result: yourResult, color: "#4ade80" }, { label: "🤖 AI Predicted", pred: aiPrediction, result: aiResult, color: "#818cf8" }].map(p => (
               <div key={p.label} style={{ background: "#13131f", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
                 <div style={{ fontSize: 12, color: p.color, fontWeight: 700, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>{p.label}</div>
-                <div style={{ fontSize: 26, fontWeight: 900, color: p.color, marginBottom: 4 }}>{p.pred || "—"}</div>
+                <div style={{ fontSize: 26, fontWeight: 900, color: p.color, marginBottom: 4, letterSpacing: -0.5 }}>{p.pred || "—"}</div>
                 {p.result && (
                   <>
                     <div style={{ fontSize: 18 }}>{p.result.icon}</div>
@@ -1519,8 +1519,8 @@ function DeepInsightsGraphic({ history = [] }) {
           <div style={{ width: `${a}%`, background: "#4ade80" }} />
           <div style={{ width: `${b}%`, background: "#f59e0b", opacity: 0.6 }} />
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3, fontSize: 12, color: "#444" }}>
-          <span>{home?.split(" ")[0]}</span><span>{away?.split(" ")[0]}</span>
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 9, fontSize: 13, color: "#aaa" }}>
+          <span style={{ color: "#4ade80", fontWeight: 600 }}>{home?.split(" ")[0]}</span><span style={{ color: "#f59e0b", fontWeight: 600 }}>{away?.split(" ")[0]}</span>
         </div>
       </div>
     );
