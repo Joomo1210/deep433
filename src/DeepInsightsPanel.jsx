@@ -1,5 +1,5 @@
 // src/DeepInsightsPanel.jsx
-// Single source of truth for the Deep Insights display — Attack/Defence bars + H2H with PPG.
+// Single source of truth for the Deep Insights display — Attack/Defence bento boxes + H2H + Last 5 Form.
 // Used both in-app (Predict tab Step 3 reveal) and in the Graphics tab (downloadable card).
 
 function capStat(val) {
@@ -10,23 +10,35 @@ function capStat(val) {
   return capped + "%";
 }
 
-function RatingBar({ title, subtitle, homeVal, awayVal, homeTeam, awayTeam }) {
+// ─── Self-contained bento box wrapper ────────────────────────────────────────
+function BentoBox({ title, icon, color, children }) {
+  return (
+    <div style={{ background: "#13131f", border: `1px solid ${color}22`, borderRadius: 10, padding: "12px 14px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+        <span style={{ fontSize: 13 }}>{icon}</span>
+        <span style={{ fontSize: 11, color, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 }}>{title}</span>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function RatingBar({ subtitle, homeVal, awayVal, homeTeam, awayTeam }) {
   if (!homeVal) return null;
   return (
-    <div style={{ background: "#13131f", borderRadius: 8, padding: "12px 14px" }}>
-      <div style={{ fontSize: 15, color: "#ccc", marginBottom: 2, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>{title}</div>
-      <div style={{ fontSize: 13, color: "#666", marginBottom: 8 }}>{subtitle}</div>
+    <div>
+      <div style={{ fontSize: 11, color: "#666", marginBottom: 8 }}>{subtitle}</div>
       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <span style={{ fontSize: 16, fontWeight: 700, color: "#4ade80", minWidth: 34, textAlign: "right" }}>{capStat(homeVal)}</span>
+        <span style={{ fontSize: 17, fontWeight: 900, color: "#4ade80", minWidth: 38, textAlign: "right" }}>{capStat(homeVal)}</span>
         <div style={{ flex: 1, height: 7, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex" }}>
           <div style={{ width: homeVal, background: "#4ade80" }} />
         </div>
         <div style={{ flex: 1, height: 7, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex", flexDirection: "row-reverse" }}>
           <div style={{ width: awayVal, background: "#f59e0b" }} />
         </div>
-        <span style={{ fontSize: 16, fontWeight: 700, color: "#f59e0b", minWidth: 34 }}>{capStat(awayVal)}</span>
+        <span style={{ fontSize: 17, fontWeight: 900, color: "#f59e0b", minWidth: 38 }}>{capStat(awayVal)}</span>
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontSize: 13, color: "#888" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontSize: 11, color: "#888" }}>
         <span style={{ color: "#4ade80" }}>{homeTeam.split(" ")[0]}</span>
         <span style={{ color: "#f59e0b" }}>{awayTeam.split(" ")[0]}</span>
       </div>
@@ -34,23 +46,42 @@ function RatingBar({ title, subtitle, homeVal, awayVal, homeTeam, awayTeam }) {
   );
 }
 
-function TeamH2HRow({ team, record, h2hResults, totalMatches }) {
+function TeamH2HRow({ team, record, h2hResults, totalMatches, color }) {
   const dotColor = (r) => r === "W" ? "#4ade80" : r === "D" ? "#60a5fa" : "#f87171";
   return (
-    <div style={{ background: "#13131f", borderRadius: 8, padding: "12px 14px", marginBottom: 8 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-        <span style={{ fontSize: 16, fontWeight: 800, color: "#f0f0f0" }}>{team}</span>
-        <span style={{ fontSize: 14, color: "#555" }}>PPG: <span style={{ color: "#f0f0f0", fontWeight: 700 }}>{totalMatches ? (record.pts / totalMatches).toFixed(2) : "0.00"}</span></span>
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+        <span style={{ fontSize: 13, fontWeight: 800, color }}>{team}</span>
+        <span style={{ fontSize: 10, color: "#666" }}>PPG: <span style={{ color: "#f0f0f0", fontWeight: 700 }}>{totalMatches ? (record.pts / totalMatches).toFixed(2) : "0.00"}</span></span>
       </div>
-      <div style={{ display: "flex", gap: 5, marginBottom: 10 }}>
+      <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
         {h2hResults.map((r, i) => (
-          <div key={i} style={{ width: 24, height: 24, borderRadius: 4, background: dotColor(r), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900, color: "#0a0a0f" }}>{r}</div>
+          <div key={i} style={{ width: 20, height: 20, borderRadius: 4, background: dotColor(r), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 900, color: "#0a0a0f" }}>{r}</div>
         ))}
       </div>
-      <div style={{ display: "flex", gap: 16, fontSize: 14 }}>
+      <div style={{ display: "flex", gap: 12, fontSize: 11 }}>
         <span style={{ color: "#4ade80" }}>W {record.w}</span>
         <span style={{ color: "#60a5fa" }}>D {record.d}</span>
         <span style={{ color: "#f87171" }}>L {record.l}</span>
+      </div>
+    </div>
+  );
+}
+
+function FormRow({ team, form, color }) {
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div style={{ fontSize: 13, fontWeight: 800, color, marginBottom: 6 }}>{team}</div>
+      <div style={{ display: "flex", gap: 4 }}>
+        {(form || "").split("").slice(-5).map((r, i) => (
+          <div key={i} style={{
+            width: 20, height: 20, borderRadius: 4,
+            background: r === "W" ? "#4ade80" : r === "D" ? "#60a5fa" : "#f87171",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 10, fontWeight: 900, color: "#0a0a0f",
+          }}>{r}</div>
+        ))}
+        {!form && <span style={{ fontSize: 11, color: "#555" }}>No recent form data</span>}
       </div>
     </div>
   );
@@ -90,77 +121,59 @@ export default function DeepInsightsPanel({ insights, homeTeam, awayTeam, showHe
   const awayRecord = buildRecord(awayTeam);
 
   return (
-    <div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       {showHeader && (
-        <>
-          <div style={{ fontSize: 14, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 14 }}>📊 Deep Insights</div>
-          <div style={{ fontSize: 16, color: "#aaa", marginBottom: 14, fontWeight: 600 }}>Statistical model — independent of AI verdict</div>
-        </>
+        <div>
+          <div style={{ fontSize: 13, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>📊 Deep Insights</div>
+          <div style={{ fontSize: 11, color: "#888", fontWeight: 600 }}>Statistical model — independent of AI verdict</div>
+        </div>
       )}
 
       {(aiPrediction || userPrediction) && (
-        <div style={{ background: "#13131f", border: "1px solid #1a1a2a", borderRadius: 8, padding: "12px 14px", marginBottom: 14 }}>
-          <div style={{ fontSize: 13, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, textAlign: "center", marginBottom: 10 }}>🔮 Predicted Scorelines</div>
+        <div style={{
+          background: "linear-gradient(135deg, #818cf814, #4ade800e)",
+          border: "1px solid #818cf833",
+          borderRadius: 12, padding: "14px 16px",
+        }}>
+          <div style={{ fontSize: 11, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, textAlign: "center", marginBottom: 10 }}>🔮 Predicted Scorelines</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 13, color: "#818cf8", fontWeight: 700, marginBottom: 4 }}>🤖 AI Verdict</div>
-              <div style={{ fontSize: 22, fontWeight: 900, color: "#818cf8" }}>{aiPrediction || "—"}</div>
+              <div style={{ fontSize: 11, color: "#818cf8", fontWeight: 700, marginBottom: 4 }}>🤖 AI Verdict</div>
+              <div style={{ fontSize: 26, fontWeight: 900, color: "#818cf8" }}>{aiPrediction || "—"}</div>
             </div>
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 700, marginBottom: 4 }}>👤 My Pick</div>
-              <div style={{ fontSize: 22, fontWeight: 900, color: "#4ade80" }}>{userPrediction || "—"}</div>
+              <div style={{ fontSize: 11, color: "#4ade80", fontWeight: 700, marginBottom: 4 }}>👤 My Pick</div>
+              <div style={{ fontSize: 26, fontWeight: 900, color: "#4ade80" }}>{userPrediction || "—"}</div>
             </div>
           </div>
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
-        <RatingBar
-          title="Attack Rating"
-          subtitle="Relative attacking strength"
-          homeVal={insights.comparison?.attackHome}
-          awayVal={insights.comparison?.attackAway}
-          homeTeam={homeTeam}
-          awayTeam={awayTeam}
-        />
-        <RatingBar
-          title="Defence Rating"
-          subtitle="Relative defensive strength"
-          homeVal={insights.comparison?.defenceHome}
-          awayVal={insights.comparison?.defenceAway}
-          homeTeam={homeTeam}
-          awayTeam={awayTeam}
-        />
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        {insights.comparison?.attackHome && (
+          <BentoBox title="Attack Rating" icon="⚔️" color="#4ade80">
+            <RatingBar subtitle="Relative attacking strength" homeVal={insights.comparison.attackHome} awayVal={insights.comparison.attackAway} homeTeam={homeTeam} awayTeam={awayTeam} />
+          </BentoBox>
+        )}
+        {insights.comparison?.defenceHome && (
+          <BentoBox title="Defence Rating" icon="🛡️" color="#f59e0b">
+            <RatingBar subtitle="Relative defensive strength" homeVal={insights.comparison.defenceHome} awayVal={insights.comparison.defenceAway} homeTeam={homeTeam} awayTeam={awayTeam} />
+          </BentoBox>
+        )}
       </div>
 
       {totalMatches > 0 && (
-        <div style={{ marginBottom: 10 }}>
-          <div style={{ fontSize: 15, color: "#ccc", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Recent H2H</div>
-          <TeamH2HRow team={homeTeam} record={homeRecord} h2hResults={parsed.map(m => getH2HResult(m, homeTeam))} totalMatches={totalMatches} />
-          <TeamH2HRow team={awayTeam} record={awayRecord} h2hResults={parsed.map(m => getH2HResult(m, awayTeam))} totalMatches={totalMatches} />
-        </div>
+        <BentoBox title="Recent H2H" icon="📋" color="#60a5fa">
+          <TeamH2HRow team={homeTeam} record={homeRecord} h2hResults={parsed.map(m => getH2HResult(m, homeTeam))} totalMatches={totalMatches} color="#4ade80" />
+          <TeamH2HRow team={awayTeam} record={awayRecord} h2hResults={parsed.map(m => getH2HResult(m, awayTeam))} totalMatches={totalMatches} color="#f59e0b" />
+        </BentoBox>
       )}
 
       {(insights.form?.home || insights.form?.away) && (
-        <div style={{ marginBottom: 10 }}>
-          <div style={{ fontSize: 15, color: "#ccc", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Last 5 Matches</div>
-          {[{ team: homeTeam, form: insights.form.home }, { team: awayTeam, form: insights.form.away }].map(({ team, form }) => (
-            <div key={team} style={{ background: "#13131f", borderRadius: 8, padding: "12px 14px", marginBottom: 8 }}>
-              <div style={{ fontSize: 16, fontWeight: 800, color: "#f0f0f0", marginBottom: 10 }}>{team}</div>
-              <div style={{ display: "flex", gap: 5 }}>
-                {(form || "").split("").slice(-5).map((r, i) => (
-                  <div key={i} style={{
-                    width: 24, height: 24, borderRadius: 4,
-                    background: r === "W" ? "#4ade80" : r === "D" ? "#60a5fa" : "#f87171",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 12, fontWeight: 900, color: "#0a0a0f",
-                  }}>{r}</div>
-                ))}
-                {!form && <span style={{ fontSize: 13, color: "#555" }}>No recent form data</span>}
-              </div>
-            </div>
-          ))}
-        </div>
+        <BentoBox title="Last 5 Matches" icon="📈" color="#c084fc">
+          <FormRow team={homeTeam} form={insights.form.home} color="#4ade80" />
+          <FormRow team={awayTeam} form={insights.form.away} color="#f59e0b" />
+        </BentoBox>
       )}
     </div>
   );
