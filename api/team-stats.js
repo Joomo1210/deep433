@@ -158,6 +158,8 @@ export default async function handler(req, res) {
       biggestLoss: s.biggest?.loses?.total,
       avgGoalsFor: s.goals?.for?.average?.total,
       avgGoalsAgainst: s.goals?.against?.average?.total,
+      goalIntervalsFor: s.goals?.for?.minute,
+      goalIntervalsAgainst: s.goals?.against?.minute,
     });
   } catch (err) {
     res.status(200).json({ available: false, error: err.message });
