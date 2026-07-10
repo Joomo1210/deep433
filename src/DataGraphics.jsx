@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import DeepInsightsPanel from "./DeepInsightsPanel";
 
 const LEAGUE_OPTIONS = [
   { id: "wc2026", label: "FIFA World Cup 2026" },
@@ -1629,123 +1630,7 @@ function DeepInsightsGraphic({ history = [] }) {
                     );
                   })()}
 
-                  <div style={{ fontSize: 13, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 12 }}>📊 Deep Insights</div>
-
-                  {/* Stat bars — same capStat logic as in-app panel */}
-                  {(() => {
-                    const capStat = (val) => {
-                      if (!val) return val;
-                      const num = parseFloat(val);
-                      if (isNaN(num)) return val;
-                      const capped = Math.min(Math.max(num, 20), 70);
-                      return capped + "%";
-                    };
-                    return (
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
-                        {insights.comparison?.attackHome && (
-                          <div style={{ background: "#13131f", borderRadius: 8, padding: "12px 14px" }}>
-                            <div style={{ fontSize: 15, color: "#ccc", marginBottom: 2, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Attack Rating</div>
-                            <div style={{ fontSize: 13, color: "#666", marginBottom: 8 }}>Relative attacking strength</div>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                              <span style={{ fontSize: 16, fontWeight: 700, color: "#4ade80", minWidth: 34, textAlign: "right" }}>{capStat(insights.comparison.attackHome)}</span>
-                              <div style={{ flex: 1, height: 7, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex" }}>
-                                <div style={{ width: insights.comparison.attackHome, background: "#4ade80" }} />
-                              </div>
-                              <div style={{ flex: 1, height: 7, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex", flexDirection: "row-reverse" }}>
-                                <div style={{ width: insights.comparison.attackAway, background: "#f59e0b" }} />
-                              </div>
-                              <span style={{ fontSize: 16, fontWeight: 700, color: "#f59e0b", minWidth: 34 }}>{capStat(insights.comparison.attackAway)}</span>
-                            </div>
-                            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontSize: 13, color: "#888" }}>
-                              <span style={{ color: "#4ade80" }}>{home.split(" ")[0]}</span>
-                              <span style={{ color: "#f59e0b" }}>{away.split(" ")[0]}</span>
-                            </div>
-                          </div>
-                        )}
-                        {insights.comparison?.defenceHome && (
-                          <div style={{ background: "#13131f", borderRadius: 8, padding: "12px 14px" }}>
-                            <div style={{ fontSize: 15, color: "#ccc", marginBottom: 2, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Defence Rating</div>
-                            <div style={{ fontSize: 13, color: "#666", marginBottom: 8 }}>Relative defensive strength</div>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                              <span style={{ fontSize: 16, fontWeight: 700, color: "#4ade80", minWidth: 34, textAlign: "right" }}>{capStat(insights.comparison.defenceHome)}</span>
-                              <div style={{ flex: 1, height: 7, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex" }}>
-                                <div style={{ width: insights.comparison.defenceHome, background: "#4ade80" }} />
-                              </div>
-                              <div style={{ flex: 1, height: 7, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex", flexDirection: "row-reverse" }}>
-                                <div style={{ width: insights.comparison.defenceAway, background: "#f59e0b" }} />
-                              </div>
-                              <span style={{ fontSize: 16, fontWeight: 700, color: "#f59e0b", minWidth: 34 }}>{capStat(insights.comparison.defenceAway)}</span>
-                            </div>
-                            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontSize: 13, color: "#888" }}>
-                              <span style={{ color: "#4ade80" }}>{home.split(" ")[0]}</span>
-                              <span style={{ color: "#f59e0b" }}>{away.split(" ")[0]}</span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-
-                  {/* H2H — same PPG logic as in-app panel */}
-                  {insights.h2h?.length > 0 && (() => {
-                    const parseH2H = (r) => {
-                      const parts = r.match(/^(.+?)\s+(\d+)-(\d+)\s+(.+)$/);
-                      if (!parts) return null;
-                      return { home: parts[1].trim(), hg: parseInt(parts[2]), ag: parseInt(parts[3]), away: parts[4].trim() };
-                    };
-                    const norm = s => (s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
-
-                    const getResult = (match, perspective) => {
-                      if (!match) return "D";
-                      const { home: mHome, hg, ag } = match;
-                      if (hg === ag) return "D";
-                      const perspWon = (norm(mHome) === norm(perspective) && hg > ag) || (norm(mHome) !== norm(perspective) && ag > hg);
-                      return perspWon ? "W" : "L";
-                    };
-
-                    const parsed = insights.h2h.map(parseH2H).filter(Boolean);
-                    const homeRecord = parsed.reduce((acc, m) => {
-                      const r = getResult(m, home);
-                      if (r === "W") acc.w++; else if (r === "D") acc.d++; else acc.l++;
-                      acc.pts += r === "W" ? 3 : r === "D" ? 1 : 0;
-                      return acc;
-                    }, { w: 0, d: 0, l: 0, pts: 0 });
-                    const awayRecord = parsed.reduce((acc, m) => {
-                      const r = getResult(m, away);
-                      if (r === "W") acc.w++; else if (r === "D") acc.d++; else acc.l++;
-                      acc.pts += r === "W" ? 3 : r === "D" ? 1 : 0;
-                      return acc;
-                    }, { w: 0, d: 0, l: 0, pts: 0 });
-
-                    const dotColor = (r) => r === "W" ? "#4ade80" : r === "D" ? "#60a5fa" : "#f87171";
-
-                    const TeamH2HRow = ({ team, record, h2hResults }) => (
-                      <div style={{ background: "#13131f", borderRadius: 8, padding: "12px 14px", marginBottom: 8 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                          <span style={{ fontSize: 16, fontWeight: 800, color: "#f0f0f0" }}>{team}</span>
-                          <span style={{ fontSize: 14, color: "#555" }}>PPG: <span style={{ color: "#f0f0f0", fontWeight: 700 }}>{parsed.length ? (record.pts / parsed.length).toFixed(2) : "0.00"}</span></span>
-                        </div>
-                        <div style={{ display: "flex", gap: 5, marginBottom: 10 }}>
-                          {h2hResults.map((r, i) => (
-                            <div key={i} style={{ width: 24, height: 24, borderRadius: 4, background: dotColor(r), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900, color: "#0a0a0f" }}>{r}</div>
-                          ))}
-                        </div>
-                        <div style={{ display: "flex", gap: 16, fontSize: 14 }}>
-                          <span style={{ color: "#4ade80" }}>W {record.w}</span>
-                          <span style={{ color: "#60a5fa" }}>D {record.d}</span>
-                          <span style={{ color: "#f87171" }}>L {record.l}</span>
-                        </div>
-                      </div>
-                    );
-
-                    return (
-                      <div style={{ marginBottom: 10 }}>
-                        <div style={{ fontSize: 15, color: "#ccc", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Recent H2H</div>
-                        <TeamH2HRow team={home} record={homeRecord} h2hResults={parsed.map(m => getResult(m, home))} />
-                        <TeamH2HRow team={away} record={awayRecord} h2hResults={parsed.map(m => getResult(m, away))} />
-                      </div>
-                    );
-                  })()}
+                  <DeepInsightsPanel insights={insights} homeTeam={home} awayTeam={away} />
                 </div>
               </GraphicCard>
               <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
