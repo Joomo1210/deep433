@@ -1455,7 +1455,7 @@ function BracketGraphic({ history = [] }) {
 
 
 // ─── DEEP INSIGHTS GRAPHIC ───────────────────────────────────────────────────
-function DeepInsightsGraphic() {
+function DeepInsightsGraphic({ history = [] }) {
   const cardRef = useRef(null);
   const [selectedFixture, setSelectedFixture] = useState(null);
   const [insights, setInsights] = useState(null);
@@ -1602,6 +1602,31 @@ function DeepInsightsGraphic() {
                       {selectedFixture.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
                     </div>
                   </div>
+
+                  {/* Predicted Scorelines row */}
+                  {(() => {
+                    const norm = s => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+                    const pred = history.find(h =>
+                      (norm(h.home_team) === norm(home) && norm(h.away_team) === norm(away)) ||
+                      (norm(h.home_team) === norm(away) && norm(h.away_team) === norm(home))
+                    );
+                    if (!pred) return null;
+                    return (
+                      <div style={{ background: "#13131f", border: "1px solid #1a1a2a", borderRadius: 10, padding: "12px 14px", marginBottom: 14 }}>
+                        <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, textAlign: "center", marginBottom: 10 }}>🔮 Predicted Scorelines</div>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                          <div style={{ textAlign: "center" }}>
+                            <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, marginBottom: 4 }}>🤖 AI Verdict</div>
+                            <div style={{ fontSize: 22, fontWeight: 900, color: "#818cf8" }}>{pred.ai_prediction || "—"}</div>
+                          </div>
+                          <div style={{ textAlign: "center" }}>
+                            <div style={{ fontSize: 10, color: "#4ade80", fontWeight: 700, marginBottom: 4 }}>👤 My Pick</div>
+                            <div style={{ fontSize: 22, fontWeight: 900, color: "#4ade80" }}>{pred.user_prediction || "—"}</div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   <div style={{ fontSize: 13, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 12 }}>📊 Deep Insights</div>
 
@@ -2597,6 +2622,197 @@ function TransferFitGraphic() {
   );
 }
 
+// ─── TEAM SEARCH SLOT (standalone, avoids re-render focus bug) ──────────────
+function TeamSearchSlot({ label, search, setSearch, suggestions, team, searching, slot, color, onSelect, onClear, onSearch }) {
+  return (
+    <div style={{ position: "relative" }}>
+      <div style={{ fontSize: 10, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{label}</div>
+      <input
+        placeholder="Search team..."
+        value={team ? team.name : search}
+        onChange={e => {
+          setSearch(e.target.value);
+          onClear();
+          onSearch(e.target.value, slot);
+        }}
+        style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${team ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+      />
+      {searching && <div style={{ position: "absolute", right: 10, top: 38, fontSize: 10, color: "#555" }}>...</div>}
+      {suggestions.length > 0 && !team && (
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, zIndex: 20, marginTop: 4, maxHeight: 220, overflowY: "auto" }}>
+          {suggestions.map(t => (
+            <div key={t.id} onClick={() => onSelect(t, slot)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", cursor: "pointer", borderBottom: "1px solid #1a1a2a" }}>
+              {t.logo && <img src={t.logo} alt="" style={{ width: 22, height: 22, objectFit: "contain" }} />}
+              <span style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>{t.name}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── GOAL TIMING GRAPHIC ──────────────────────────────────────────────────────
+function GoalTimingGraphic() {
+  const cardRef = useRef(null);
+  const [leagueId, setLeagueId] = useState("pl");
+
+  const [search1, setSearch1] = useState("");
+  const [suggest1, setSuggest1] = useState([]);
+  const [team1, setTeam1] = useState(null);
+  const [searching1, setSearching1] = useState(false);
+  const [stats1, setStats1] = useState(null);
+
+  const [search2, setSearch2] = useState("");
+  const [suggest2, setSuggest2] = useState([]);
+  const [team2, setTeam2] = useState(null);
+  const [searching2, setSearching2] = useState(false);
+  const [stats2, setStats2] = useState(null);
+
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const INTERVALS = ["0-15", "16-30", "31-45", "46-60", "61-75", "76-90"];
+
+  const searchTeam = async (query, slot) => {
+    if (query.length < 3) {
+      slot === 1 ? setSuggest1([]) : setSuggest2([]);
+      return;
+    }
+    slot === 1 ? setSearching1(true) : setSearching2(true);
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
+      const d = await r.json();
+      slot === 1 ? setSuggest1(d.teams || []) : setSuggest2(d.teams || []);
+    } catch {}
+    slot === 1 ? setSearching1(false) : setSearching2(false);
+  };
+
+  const selectTeam = async (t, slot) => {
+    setLoading(true);
+    if (slot === 1) { setTeam1(t); setSuggest1([]); setSearch1(t.name); }
+    else { setTeam2(t); setSuggest2([]); setSearch2(t.name); }
+    try {
+      const r = await fetch(`/api/team-stats?leagueId=${leagueId}&teamId=${t.id}`);
+      const d = await r.json();
+      if (slot === 1) setStats1(d.available ? d : null);
+      else setStats2(d.available ? d : null);
+    } catch {}
+    setLoading(false);
+  };
+
+  const download = async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      if (!window.html2canvas) {
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+        document.head.appendChild(s);
+        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
+      }
+      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
+      const link = document.createElement("a");
+      link.download = `deep433-goal-timing-${team1?.name}-vs-${team2?.name}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const getVal = (obj, key) => {
+    if (!obj) return 0;
+    return parseInt(obj[key]?.total) || 0;
+  };
+
+  const IntervalBar = ({ label, val1, val2, max, color1, color2 }) => (
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+        <span style={{ fontSize: 13, fontWeight: 900, color: color1 }}>{val1}</span>
+        <span style={{ fontSize: 10, color: "#999", fontWeight: 700 }}>{label}'</span>
+        <span style={{ fontSize: 13, fontWeight: 900, color: color2 }}>{val2}</span>
+      </div>
+      <div style={{ display: "flex", gap: 4 }}>
+        <div style={{ flex: 1, height: 7, background: "#1a1a24", borderRadius: 4, overflow: "hidden", display: "flex", justifyContent: "flex-end" }}>
+          <div style={{ width: `${max ? (val1 / max) * 100 : 0}%`, background: color1, borderRadius: 4 }} />
+        </div>
+        <div style={{ flex: 1, height: 7, background: "#1a1a24", borderRadius: 4, overflow: "hidden" }}>
+          <div style={{ width: `${max ? (val2 / max) * 100 : 0}%`, background: color2, borderRadius: 4 }} />
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {LEAGUE_OPTIONS.slice(1).map(l => (
+          <button key={l.id} onClick={() => { setLeagueId(l.id); setTeam1(null); setTeam2(null); setStats1(null); setStats2(null); setSearch1(""); setSearch2(""); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
+            {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
+            {l.label}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <TeamSearchSlot label="Team 1" search={search1} setSearch={setSearch1} suggestions={suggest1} team={team1} searching={searching1} slot={1} color="#4ade80" onSelect={selectTeam} onClear={() => setTeam1(null)} onSearch={searchTeam} />
+        <TeamSearchSlot label="Team 2" search={search2} setSearch={setSearch2} suggestions={suggest2} team={team2} searching={searching2} slot={2} color="#f59e0b" onSelect={selectTeam} onClear={() => setTeam2(null)} onSearch={searchTeam} />
+      </div>
+
+      {loading && <div style={{ textAlign: "center", color: "#555", fontSize: 12 }}>Loading...</div>}
+
+      {stats1 && stats2 && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "22px 18px 18px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16, marginTop: 8 }}>
+                <div style={{ textAlign: "center" }}>
+                  {stats1.logo && <img src={stats1.logo} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain", margin: "0 auto 6px" }} />}
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#4ade80" }}>{stats1.team}</div>
+                </div>
+                <div style={{ textAlign: "center", padding: "0 8px" }}>
+                  <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 }}>⏱️ Goal Timing</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  {stats2.logo && <img src={stats2.logo} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain", margin: "0 auto 6px" }} />}
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#f59e0b" }}>{stats2.team}</div>
+                </div>
+              </div>
+
+              <BentoBox title="Goals Scored" icon="⚽" color="#4ade80">
+                {(() => {
+                  const vals1 = INTERVALS.map(k => getVal(stats1.goalIntervalsFor, k));
+                  const vals2 = INTERVALS.map(k => getVal(stats2.goalIntervalsFor, k));
+                  const max = Math.max(...vals1, ...vals2, 1);
+                  return INTERVALS.map((label, i) => (
+                    <IntervalBar key={label} label={label} val1={vals1[i]} val2={vals2[i]} max={max} color1="#4ade80" color2="#f59e0b" />
+                  ));
+                })()}
+              </BentoBox>
+
+              <div style={{ height: 10 }} />
+
+              <BentoBox title="Goals Conceded" icon="🥅" color="#f87171">
+                {(() => {
+                  const vals1 = INTERVALS.map(k => getVal(stats1.goalIntervalsAgainst, k));
+                  const vals2 = INTERVALS.map(k => getVal(stats2.goalIntervalsAgainst, k));
+                  const max = Math.max(...vals1, ...vals2, 1);
+                  return INTERVALS.map((label, i) => (
+                    <IntervalBar key={label} label={label} val1={vals1[i]} val2={vals2[i]} max={max} color1="#4ade80" color2="#f59e0b" />
+                  ));
+                })()}
+              </BentoBox>
+            </div>
+          </GraphicCard>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function DataGraphics({ history = [], supabase }) {
   const [activeSection, setActiveSection] = useState("match");
 
@@ -2607,6 +2823,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "matchh2h", label: "📋 Match H2H" },
     { id: "glove",    label: "Golden Glove" },
     { id: "transfer", label: "🔄 Transfer Fit" },
+    { id: "timing",   label: "⏱️ Goal Timing" },
     { id: "match",    label: "📈 Match Stats" },
     { id: "player",   label: "⭐ Player Ratings" },
     { id: "top",      label: "🥇 Leaderboard" },
@@ -2627,12 +2844,13 @@ export default function DataGraphics({ history = [], supabase }) {
         ))}
       </div>
 
-      {activeSection === "insights" && <DeepInsightsGraphic />}
+      {activeSection === "insights" && <DeepInsightsGraphic history={history} />}
       {activeSection === "pitch"    && <MatchPitchViewGraphic />}
       {activeSection === "h2h"      && <PlayerH2HGraphic />}
       {activeSection === "matchh2h" && <MatchH2HGraphic />}
       {activeSection === "glove"    && <GoldenGloveGraphic />}
       {activeSection === "transfer" && <TransferFitGraphic />}
+      {activeSection === "timing"   && <GoalTimingGraphic />}
       {activeSection === "match"    && <MatchStatsGraphic />}
       {activeSection === "player"   && <PlayerRatingsGraphic />}
       {activeSection === "top"      && <TopScorersGraphic />}
