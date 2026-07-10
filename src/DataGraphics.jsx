@@ -1619,6 +1619,7 @@ function DeepInsightsGraphic({ history = [] }) {
                         awayTeam={away}
                         aiPrediction={pred?.ai_prediction}
                         userPrediction={pred?.user_prediction}
+                        leagueId="wc2026"
                       />
                     );
                   })()}
