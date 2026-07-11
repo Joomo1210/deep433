@@ -1813,16 +1813,16 @@ function MatchPitchViewGraphic() {
                     <span style={{ fontSize: 11, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
                   </div>
 
-                  {/* Home team flag — positioned at their goal mouth (top) */}
+                  {/* Home team flag — positioned beside keeper, right side of box (top) */}
                   {selectedFixture.homeLogo && (
-                    <div style={{ position: "absolute", top: "5%", left: "50%", transform: "translateX(-50%)", zIndex: 0, opacity: 0.55 }}>
-                      <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, objectFit: "contain" }} />
+                    <div style={{ position: "absolute", top: "9%", right: "18%", zIndex: 0, opacity: 0.6 }}>
+                      <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 28, height: 28, objectFit: "contain" }} />
                     </div>
                   )}
-                  {/* Away team flag — positioned at their goal mouth (bottom) */}
+                  {/* Away team flag — positioned beside keeper, right side of box (bottom) */}
                   {selectedFixture.awayLogo && (
-                    <div style={{ position: "absolute", bottom: "5%", left: "50%", transform: "translateX(-50%)", zIndex: 0, opacity: 0.55 }}>
-                      <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, objectFit: "contain" }} />
+                    <div style={{ position: "absolute", bottom: "9%", right: "18%", zIndex: 0, opacity: 0.6 }}>
+                      <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 28, height: 28, objectFit: "contain" }} />
                     </div>
                   )}
 
