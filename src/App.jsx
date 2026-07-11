@@ -748,7 +748,6 @@ export default function FootballPredictor() {
 
   // Fetch fixtures for the selected league
   useEffect(() => {
-    if (!session) return;
     setFixturesLoading(true);
     setFixtures([]);
     fetch(`/api/fixtures?leagueId=${selectedLeague}`)
@@ -768,8 +767,6 @@ export default function FootballPredictor() {
 
   // Poll live scores every 3 minutes for the currently selected league
   useEffect(() => {
-    if (!session) return;
-
     const fetchLive = async () => {
       const today = new Date().toISOString().split("T")[0];
       try {
