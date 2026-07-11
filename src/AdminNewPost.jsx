@@ -13,48 +13,22 @@ function slugify(title) {
     .replace(/(^-|-$)/g, '');
 }
 
-const emptyPundit = () => ({ pundit_name: '', take: '', predicted_score: '', source_url: '', is_featured: false });
-const emptyFan = () => ({ fan_handle: '', take: '', predicted_score: '', is_featured: false });
-
 export default function AdminNewPost() {
   const [form, setForm] = useState({
     title: '', subtitle: '', body: '',
     competition: '', gameweek: '', match_label: '', match_date: '',
+    home_team: '', away_team: '',
+    user_prediction: '',
     ai_predicted_score: '', ai_confidence_pct: '', ai_note: '',
+    attack_home_pct: '', attack_away_pct: '',
+    defence_home_pct: '', defence_away_pct: '',
+    key_stat: '', h2h_summary: '',
   });
-  const [pundits, setPundits] = useState([{ ...emptyPundit(), is_featured: true }]);
-  const [fans, setFans] = useState([{ ...emptyFan(), is_featured: true }]);
   const [status, setStatus] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
 
   function update(field, value) {
     setForm(prev => ({ ...prev, [field]: value }));
-  }
-
-  function updatePundit(i, field, value) {
-    setPundits(prev => prev.map((p, idx) => idx === i ? { ...p, [field]: value } : p));
-  }
-  function setFeaturedPundit(i) {
-    setPundits(prev => prev.map((p, idx) => ({ ...p, is_featured: idx === i })));
-  }
-  function addPundit() {
-    setPundits(prev => [...prev, emptyPundit()]);
-  }
-  function removePundit(i) {
-    setPundits(prev => prev.filter((_, idx) => idx !== i));
-  }
-
-  function updateFan(i, field, value) {
-    setFans(prev => prev.map((f, idx) => idx === i ? { ...f, [field]: value } : f));
-  }
-  function setFeaturedFan(i) {
-    setFans(prev => prev.map((f, idx) => ({ ...f, is_featured: idx === i })));
-  }
-  function addFan() {
-    setFans(prev => [...prev, emptyFan()]);
-  }
-  function removeFan(i) {
-    setFans(prev => prev.filter((_, idx) => idx !== i));
   }
 
   async function savePost(publish) {
@@ -66,37 +40,26 @@ export default function AdminNewPost() {
       setErrorMsg('Title is required.');
       return;
     }
-    if (pundits.length === 0 || !pundits.some(p => p.pundit_name.trim())) {
+    if (!form.user_prediction.trim() || !form.ai_predicted_score.trim()) {
       setStatus('error');
-      setErrorMsg('Add at least one pundit take.');
+      setErrorMsg('Add both your prediction and the AI\'s prediction.');
       return;
     }
-    if (fans.length === 0 || !fans.some(f => f.fan_handle.trim())) {
-      setStatus('error');
-      setErrorMsg('Add at least one fan take.');
-      return;
-    }
-
-    const featuredPundit = pundits.find(p => p.is_featured) || pundits[0];
-    const featuredFan = fans.find(f => f.is_featured) || fans[0];
 
     const postPayload = {
       ...form,
       slug: slugify(form.title),
       ai_confidence_pct: form.ai_confidence_pct ? parseInt(form.ai_confidence_pct, 10) : null,
+      attack_home_pct: form.attack_home_pct ? parseInt(form.attack_home_pct, 10) : null,
+      attack_away_pct: form.attack_away_pct ? parseInt(form.attack_away_pct, 10) : null,
+      defence_home_pct: form.defence_home_pct ? parseInt(form.defence_home_pct, 10) : null,
+      defence_away_pct: form.defence_away_pct ? parseInt(form.defence_away_pct, 10) : null,
       match_date: form.match_date || null,
-      pundit_name: featuredPundit.pundit_name,
-      pundit_take: featuredPundit.take,
-      pundit_predicted_score: featuredPundit.predicted_score,
-      pundit_source_url: featuredPundit.source_url,
-      fan_handle: featuredFan.fan_handle,
-      fan_take: featuredFan.take,
-      fan_predicted_score: featuredFan.predicted_score,
       published: publish,
       published_at: publish ? new Date().toISOString() : null,
     };
 
-    const { data: post, error: postError } = await supabase
+    const { error: postError } = await supabase
       .from('blog_posts')
       .insert(postPayload)
       .select()
@@ -108,22 +71,6 @@ export default function AdminNewPost() {
       return;
     }
 
-    const punditRows = pundits
-      .filter(p => p.pundit_name.trim())
-      .map(p => ({ ...p, post_id: post.id }));
-    const fanRows = fans
-      .filter(f => f.fan_handle.trim())
-      .map(f => ({ ...f, post_id: post.id }));
-
-    const { error: punditError } = await supabase.from('blog_pundit_takes').insert(punditRows);
-    const { error: fanError } = await supabase.from('blog_fan_takes').insert(fanRows);
-
-    if (punditError || fanError) {
-      setStatus('error');
-      setErrorMsg((punditError || fanError).message);
-      return;
-    }
-
     setStatus('saved');
   }
 
@@ -131,7 +78,7 @@ export default function AdminNewPost() {
     <div style={{ minHeight: '100vh', background: '#0B1F17', maxWidth: 680, margin: '0 auto', padding: '48px 24px 100px', fontFamily: 'sans-serif', color: '#F1F4EC' }}>
       <h1 style={{ fontSize: 32, fontWeight: 900 }}>New Post</h1>
       <p style={{ color: '#9CA89C', marginBottom: 32, fontSize: 15, lineHeight: 1.5 }}>
-        Add as many pundits and fans as you like — pick one of each to feature in the scoreboard. The rest show below as more voices.
+        Deep433's data-driven takes — your call vs the AI's, backed by the stats behind it.
       </p>
 
       <Section title="Post & Match Details">
@@ -141,75 +88,54 @@ export default function AdminNewPost() {
           <Field label="Competition" value={form.competition} onChange={v => update('competition', v)} />
           <Field label="Gameweek / Round" value={form.gameweek} onChange={v => update('gameweek', v)} />
         </Row2>
-        <Field label="Match Label" value={form.match_label} onChange={v => update('match_label', v)} />
+        <Field label="Match Label" value={form.match_label} onChange={v => update('match_label', v)} placeholder="e.g. Spain vs Belgium" />
+        <Row2>
+          <Field label="Home Team" value={form.home_team} onChange={v => update('home_team', v)} />
+          <Field label="Away Team" value={form.away_team} onChange={v => update('away_team', v)} />
+        </Row2>
         <Field label="Kickoff Date/Time" type="datetime-local" value={form.match_date} onChange={v => update('match_date', v)} />
         <Field label="Body (markdown)" textarea value={form.body} onChange={v => update('body', v)} />
       </Section>
 
-      <Section title="Pundit Takes" color="#3D7EFF">
-        {pundits.map((p, i) => (
-          <div key={i} style={voiceCard}>
-            <div style={voiceCardHead}>
-              <label style={radioLabel}>
-                <input type="radio" checked={p.is_featured} onChange={() => setFeaturedPundit(i)} /> Featured in scoreboard
-              </label>
-              {pundits.length > 1 && <button type="button" onClick={() => removePundit(i)} style={removeBtn}>Remove</button>}
-            </div>
-            <Row2>
-              <Field label="Pundit Name" value={p.pundit_name} onChange={v => updatePundit(i, 'pundit_name', v)} />
-              <Field label="Source URL" value={p.source_url} onChange={v => updatePundit(i, 'source_url', v)} />
-            </Row2>
-            <Field label="Their Take" textarea value={p.take} onChange={v => updatePundit(i, 'take', v)} />
-            <Field label="Predicted Score / Outcome" value={p.predicted_score} onChange={v => updatePundit(i, 'predicted_score', v)} placeholder="e.g. 2-0 Brazil, or just 'Brazil win'" />
-          </div>
-        ))}
-        <button type="button" onClick={addPundit} style={addBtn}>+ Add another pundit</button>
-      </Section>
-
-      <Section title="Fan Takes" color="#FF5A2D">
-        {fans.map((f, i) => (
-          <div key={i} style={voiceCard}>
-            <div style={voiceCardHead}>
-              <label style={radioLabel}>
-                <input type="radio" checked={f.is_featured} onChange={() => setFeaturedFan(i)} /> Featured in scoreboard
-              </label>
-              {fans.length > 1 && <button type="button" onClick={() => removeFan(i)} style={removeBtn}>Remove</button>}
-            </div>
-            <Row2>
-              <Field label="Fan Handle" value={f.fan_handle} onChange={v => updateFan(i, 'fan_handle', v)} />
-              <Field label="Predicted Score / Outcome" value={f.predicted_score} onChange={v => updateFan(i, 'predicted_score', v)} />
-            </Row2>
-            <Field label="Their Take" textarea value={f.take} onChange={v => updateFan(i, 'take', v)} />
-          </div>
-        ))}
-        <button type="button" onClick={addFan} style={addBtn}>+ Add another fan</button>
-      </Section>
-
-      <Section title="AI's Guess" color="#C8FF4D">
+      <Section title="The Prediction Battle — You vs AI" color="#C8FF4D">
         <Row2>
-          <Field label="Predicted Score" value={form.ai_predicted_score} onChange={v => update('ai_predicted_score', v)} />
-          <Field label="Confidence %" value={form.ai_confidence_pct} onChange={v => update('ai_confidence_pct', v)} />
+          <Field label="👤 Your Prediction" value={form.user_prediction} onChange={v => update('user_prediction', v)} placeholder="e.g. 2-1" />
+          <Field label="🤖 AI Prediction" value={form.ai_predicted_score} onChange={v => update('ai_predicted_score', v)} placeholder="e.g. 2-1" />
         </Row2>
-        <Field label="Why Note" textarea value={form.ai_note} onChange={v => update('ai_note', v)} />
+        <Field label="AI Confidence %" value={form.ai_confidence_pct} onChange={v => update('ai_confidence_pct', v)} placeholder="e.g. 68" />
+        <Field label="AI Verdict (why note)" textarea value={form.ai_note} onChange={v => update('ai_note', v)} />
+      </Section>
+
+      <Section title="Deep Insights — The Data Behind It" color="#3D7EFF">
+        <p style={{ fontSize: 12, color: '#7E9485', marginBottom: 16 }}>
+          Pull these straight from the app's Deep Insights panel for this fixture — optional, but strengthens the data-driven angle.
+        </p>
+        <Row2>
+          <Field label="Attack Rating — Home %" value={form.attack_home_pct} onChange={v => update('attack_home_pct', v)} placeholder="e.g. 59" />
+          <Field label="Attack Rating — Away %" value={form.attack_away_pct} onChange={v => update('attack_away_pct', v)} placeholder="e.g. 41" />
+        </Row2>
+        <Row2>
+          <Field label="Defence Rating — Home %" value={form.defence_home_pct} onChange={v => update('defence_home_pct', v)} placeholder="e.g. 64" />
+          <Field label="Defence Rating — Away %" value={form.defence_away_pct} onChange={v => update('defence_away_pct', v)} placeholder="e.g. 36" />
+        </Row2>
+        <Field label="Key Stat" value={form.key_stat} onChange={v => update('key_stat', v)} placeholder="e.g. Spain had 68% of the ball" />
+        <Field label="H2H Summary" textarea value={form.h2h_summary} onChange={v => update('h2h_summary', v)} placeholder="e.g. Spain have won 3 of the last 5 meetings" />
       </Section>
 
       <div style={{ display: 'flex', gap: 12, marginTop: 28 }}>
-        <button onClick={() => savePost(false)} disabled={status === 'saving'}>Save Draft</button>
-        <button onClick={() => savePost(true)} disabled={status === 'saving'}>Publish Post</button>
+        <button onClick={() => savePost(false)} disabled={status === 'saving'} style={btnSecondary}>Save Draft</button>
+        <button onClick={() => savePost(true)} disabled={status === 'saving'} style={btnPrimary}>Publish Post</button>
       </div>
 
-      {status === 'saving' && <p>Saving…</p>}
-      {status === 'saved' && <p style={{ color: '#3D7EFF' }}>Saved.</p>}
-      {status === 'error' && <p style={{ color: '#FF5A2D' }}>Couldn't save: {errorMsg}</p>}
+      {status === 'saving' && <p style={{ color: '#9CA89C', marginTop: 12 }}>Saving…</p>}
+      {status === 'saved' && <p style={{ color: '#C8FF4D', marginTop: 12 }}>Saved.</p>}
+      {status === 'error' && <p style={{ color: '#FF5A2D', marginTop: 12 }}>Couldn't save: {errorMsg}</p>}
     </div>
   );
 }
 
-const voiceCard = { border: '1px solid #173A28', borderRadius: 6, padding: 16, marginBottom: 14, background: 'rgba(255,255,255,0.02)' };
-const voiceCardHead = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 };
-const radioLabel = { fontSize: 12, color: '#7E9485', display: 'flex', alignItems: 'center', gap: 6 };
-const removeBtn = { background: 'none', border: '1px solid #FF5A2D55', color: '#FF5A2D', borderRadius: 4, fontSize: 11, padding: '4px 8px', cursor: 'pointer' };
-const addBtn = { background: 'none', border: '1px dashed #173A28', color: '#7E9485', borderRadius: 4, fontSize: 12, padding: '8px 14px', cursor: 'pointer', width: '100%' };
+const btnPrimary = { background: '#C8FF4D', color: '#0B1F17', border: 'none', borderRadius: 4, padding: '12px 24px', fontSize: 14, fontWeight: 700, cursor: 'pointer' };
+const btnSecondary = { background: 'none', border: '1px solid #2A4A3A', color: '#F1F4EC', borderRadius: 4, padding: '12px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer' };
 
 function Section({ title, color = '#F1F4EC', children }) {
   return (
