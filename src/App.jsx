@@ -483,7 +483,7 @@ function getTimeLabel(statusRaw, elapsed) {
   }
 }
 
-function AuthScreen() {
+function AuthScreen({ onGuestMode }) {
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -520,7 +520,7 @@ function AuthScreen() {
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div style={{ fontSize: 40, marginBottom: 8 }}>⚽</div>
           <div style={{ fontSize: 28, fontWeight: 900, color: "#4ade80", textShadow: "0 0 30px rgba(74,222,128,0.4)" }}>DEEP433</div>
-          <div style={{ fontSize: 16, color: "#555", marginTop: 4 }}>PUNDITS VS FANS · PREDICT NOW</div>
+          <div style={{ fontSize: 16, color: "#999", marginTop: 4 }}>DATA-DRIVEN FOOTBALL PREDICTIONS</div>
         </div>
         <div style={{ background: "#13131f", border: "1px solid #1e1e30", borderRadius: 16, padding: 24 }}>
           <button onClick={handleGoogle} disabled={loading} style={{ width: "100%", background: "#fff", border: "none", borderRadius: 10, color: "#111", cursor: "pointer", fontSize: 17, fontWeight: 700, padding: "13px 20px", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontFamily: "inherit" }}>
@@ -545,6 +545,9 @@ function AuthScreen() {
             ) : (<>Already have an account? <button onClick={() => { setMode("login"); setError(""); setMessage(""); }} style={{ background: "none", border: "none", color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 16, fontWeight: 700 }}>Sign in</button></>)}
           </div>
         </div>
+        <button onClick={onGuestMode} style={{ width: "100%", background: "none", border: "1px solid #2a2a3a", borderRadius: 10, color: "#999", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "13px", marginTop: 14 }}>
+          ⚡ Try Predict without an account
+        </button>
       </div>
     </div>
   );
@@ -554,6 +557,7 @@ export default function FootballPredictor() {
   const [session, setSession] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [showLanding, setShowLanding] = useState(true);
+  const [guestMode, setGuestMode] = useState(false);
   const [tab, setTab] = useState("predict");
   const [homeTeam, setHomeTeam] = useState("");
   const [awayTeam, setAwayTeam] = useState("");
@@ -869,14 +873,16 @@ export default function FootballPredictor() {
       setResult(parsed);
       setStep(3);
       const aiPrediction = (parsed.scoreline || "").replace(" - ", "-").replace(" – ", "-");
-      const { data: saved } = await supabase.from("predictions").insert({
-        user_id: session.user.id, home_team: homeTeam, away_team: awayTeam,
-        user_prediction: up, ai_prediction: aiPrediction, ai_verdict: parsed.verdict,
-        ai_data: parsed,
-      }).select().single();
-      if (saved) {
-        setHistory(prev => [saved, ...prev]);
-        setSavedPredictionId(saved.id);
+      if (session) {
+        const { data: saved } = await supabase.from("predictions").insert({
+          user_id: session.user.id, home_team: homeTeam, away_team: awayTeam,
+          user_prediction: up, ai_prediction: aiPrediction, ai_verdict: parsed.verdict,
+          ai_data: parsed,
+        }).select().single();
+        if (saved) {
+          setHistory(prev => [saved, ...prev]);
+          setSavedPredictionId(saved.id);
+        }
       }
     } catch (e) { setError(e.message || "Something went wrong. Try again."); }
     setLoading(false);
@@ -1062,7 +1068,9 @@ export default function FootballPredictor() {
     return capped + '%';
   };
 
-  const TABS = [
+  const TABS = !session ? [
+    { id: "predict", label: "⚡ Predict" },
+  ] : [
     { id: "predict",   label: "⚡ Predict" },
     { id: "scores",    label: "🔴 Scores" },
     { id: "bracket",   label: "🏆 Bracket" },
@@ -1080,9 +1088,9 @@ export default function FootballPredictor() {
     </div>
   );
 
-  if (!session) {
+  if (!session && !guestMode) {
     if (showLanding) return <LandingPage onGetStarted={() => setShowLanding(false)} />;
-    return <AuthScreen />;
+    return <AuthScreen onGuestMode={() => setGuestMode(true)} />;
   }
 
   return (
@@ -1133,12 +1141,16 @@ export default function FootballPredictor() {
             <span style={{ fontSize: 26 }}>⚽</span>
             <div>
               <div style={{ fontSize: 18, fontWeight: 900, color: "#4ade80" }} className="glow">DEEP433</div>
-              <div style={{ fontSize: 13, color: "#555", letterSpacing: 1 }}>PUNDITS VS FANS · PREDICT NOW</div>
+              <div style={{ fontSize: 13, color: "#999", letterSpacing: 1 }}>DATA-DRIVEN FOOTBALL PREDICTIONS</div>
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {rank && <div style={{ textAlign: "right" }}><div style={{ fontSize: 17 }}>{rank.icon}</div><div style={{ fontSize: 13, color: rank.color, fontWeight: 700 }}>{rank.name}</div></div>}
-            <button onClick={signOut} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "5px 10px" }}>Sign out</button>
+            {session ? (
+              <button onClick={signOut} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#999", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "5px 10px" }}>Sign out</button>
+            ) : (
+              <button onClick={() => setGuestMode(false)} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px" }}>Sign In</button>
+            )}
           </div>
         </div>
       </div>
