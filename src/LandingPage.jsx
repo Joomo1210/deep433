@@ -81,7 +81,7 @@ export default function LandingPage({ onGetStarted }) {
         </div>
 
         <p style={{ fontSize: 19, color: "#888", lineHeight: 1.7, maxWidth: 580, margin: "0 auto 36px" }}>
-          Every matchday, we put what the pundits are saying next to what fans are actually saying, then throw in an AI guess for good measure. Read it, argue with it, then go predict the score yourself.
+         "Every matchday, Deep433 breaks down the stats, the AI makes its call, then it's over to you. Predict the score and find out if you can out-think the machine."
         </p>
 
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
