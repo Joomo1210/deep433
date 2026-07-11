@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -6,206 +6,180 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY
 );
 
-const TEAM_FLAGS = {
-  "Mexico": "🇲🇽", "South Africa": "🇿🇦", "Korea Republic": "🇰🇷", "Czechia": "🇨🇿",
-  "Canada": "🇨🇦", "Bosnia and Herzegovina": "🇧🇦", "USA": "🇺🇸", "Paraguay": "🇵🇾",
-  "Qatar": "🇶🇦", "Switzerland": "🇨🇭", "Brazil": "🇧🇷", "Morocco": "🇲🇦",
-  "Haiti": "🇭🇹", "Scotland": "🏴", "Australia": "🇦🇺", "Türkiye": "🇹🇷",
-  "Germany": "🇩🇪", "Curaçao": "🇨🇼", "Netherlands": "🇳🇱", "Japan": "🇯🇵",
-  "Côte d'Ivoire": "🇨🇮", "Ecuador": "🇪🇨", "Sweden": "🇸🇪", "Tunisia": "🇹🇳",
-  "Spain": "🇪🇸", "Cabo Verde": "🇨🇻", "Belgium": "🇧🇪", "Egypt": "🇪🇬",
-  "Saudi Arabia": "🇸🇦", "Uruguay": "🇺🇾", "IR Iran": "🇮🇷", "New Zealand": "🇳🇿",
-  "France": "🇫🇷", "Senegal": "🇸🇳", "Iraq": "🇮🇶", "Norway": "🇳🇴",
-  "Argentina": "🇦🇷", "Algeria": "🇩🇿", "Austria": "🇦🇹", "Jordan": "🇯🇴",
-  "Portugal": "🇵🇹", "Congo DR": "🇨🇩", "England": "🏴", "Croatia": "🇭🇷",
-  "Ghana": "🇬🇭", "Panama": "🇵🇦", "Uzbekistan": "🇺🇿", "Colombia": "🇨🇴",
-};
-
-function withFlags(matchLabel) {
-  if (!matchLabel) return matchLabel;
-  const parts = matchLabel.split(/\s+vs\s+/i);
-  if (parts.length !== 2) return matchLabel;
-  const [home, away] = parts;
-  const homeFlag = TEAM_FLAGS[home.trim()] || '';
-  const awayFlag = TEAM_FLAGS[away.trim()] || '';
-  return (
-    <>
-      {homeFlag && <span style={{ marginRight: 8 }}>{homeFlag}</span>}
-      {home}
-      <span style={{ margin: '0 8px', opacity: 0.5 }}>vs</span>
-      {away}
-      {awayFlag && <span style={{ marginLeft: 8 }}>{awayFlag}</span>}
-    </>
-  );
+function slugify(title) {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
 }
 
-export default function BlogPost() {
-  const slug = window.location.pathname.split('/blog/')[1];
-  const [post, setPost] = useState(null);
-  const [status, setStatus] = useState('loading');
+export default function AdminNewPost() {
+  const [form, setForm] = useState({
+    title: '', subtitle: '', body: '',
+    competition: '', gameweek: '', match_label: '', match_date: '',
+    home_team: '', away_team: '',
+    home_team_logo: '', away_team_logo: '',
+    user_prediction: '',
+    ai_predicted_score: '', ai_confidence_pct: '', ai_note: '',
+    attack_home_pct: '', attack_away_pct: '',
+    defence_home_pct: '', defence_away_pct: '',
+    key_stat: '', h2h_summary: '',
+  });
+  const [status, setStatus] = useState(null);
+  const [errorMsg, setErrorMsg] = useState('');
 
-  useEffect(() => {
-    async function load() {
-      const { data: postData, error } = await supabase
-        .from('blog_posts')
-        .select('*')
-        .eq('slug', slug)
-        .eq('published', true)
-        .single();
+  function update(field, value) {
+    setForm(prev => ({ ...prev, [field]: value }));
+  }
 
-      if (error || !postData) {
-        setStatus('not_found');
-        return;
-      }
-      setPost(postData);
-      setStatus('ready');
+  async function savePost(publish) {
+    setStatus('saving');
+    setErrorMsg('');
+
+    if (!form.title.trim()) {
+      setStatus('error');
+      setErrorMsg('Title is required.');
+      return;
     }
-    load();
-  }, [slug]);
+    if (!form.user_prediction.trim() || !form.ai_predicted_score.trim()) {
+      setStatus('error');
+      setErrorMsg('Add both your prediction and the AI\'s prediction.');
+      return;
+    }
 
-  if (status === 'loading') return <Centered>Loading…</Centered>;
-  if (status === 'not_found') return <Centered>Post not found.</Centered>;
+    const postPayload = {
+      ...form,
+      slug: slugify(form.title),
+      ai_confidence_pct: form.ai_confidence_pct ? parseInt(form.ai_confidence_pct, 10) : null,
+      attack_home_pct: form.attack_home_pct ? parseInt(form.attack_home_pct, 10) : null,
+      attack_away_pct: form.attack_away_pct ? parseInt(form.attack_away_pct, 10) : null,
+      defence_home_pct: form.defence_home_pct ? parseInt(form.defence_home_pct, 10) : null,
+      defence_away_pct: form.defence_away_pct ? parseInt(form.defence_away_pct, 10) : null,
+      match_date: form.match_date || null,
+      published: publish,
+      published_at: publish ? new Date().toISOString() : null,
+    };
 
-  const isSettled = !!post.final_score;
-  const hasDeepInsights = post.attack_home_pct != null || post.key_stat || post.h2h_summary;
+    const { error: postError } = await supabase
+      .from('blog_posts')
+      .insert(postPayload)
+      .select()
+      .single();
+
+    if (postError) {
+      setStatus('error');
+      setErrorMsg(postError.message);
+      return;
+    }
+
+    setStatus('saved');
+  }
 
   return (
-    <div style={page}>
-      <div style={topbar}>
-        <div style={logo}>DEEP4<span style={{ color: '#C8FF4D' }}>33</span> / BLOG</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-          <a href="https://x.com/Deep_433" target="_blank" rel="noreferrer" aria-label="Follow Deep433 on X" style={{ display: 'inline-flex', color: '#7E9485' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-          </a>
-          <div style={navTag}>{post.category?.toUpperCase()} {post.gameweek ? `· ${post.gameweek.toUpperCase()}` : ''}</div>
-        </div>
+    <div style={{ minHeight: '100vh', background: '#0B1F17', maxWidth: 680, margin: '0 auto', padding: '48px 24px 100px', fontFamily: 'sans-serif', color: '#F1F4EC' }}>
+      <h1 style={{ fontSize: 32, fontWeight: 900 }}>New Post</h1>
+      <p style={{ color: '#9CA89C', marginBottom: 32, fontSize: 15, lineHeight: 1.5 }}>
+        Deep433's data-driven takes — your call vs the AI's, backed by the stats behind it.
+      </p>
+
+      <Section title="Post & Match Details">
+        <Field label="Title" value={form.title} onChange={v => update('title', v)} />
+        <Field label="Subtitle" value={form.subtitle} onChange={v => update('subtitle', v)} />
+        <Row2>
+          <Field label="Competition" value={form.competition} onChange={v => update('competition', v)} />
+          <Field label="Gameweek / Round" value={form.gameweek} onChange={v => update('gameweek', v)} />
+        </Row2>
+        <Field label="Match Label" value={form.match_label} onChange={v => update('match_label', v)} placeholder="e.g. Spain vs Belgium" />
+        <Row2>
+          <Field label="Home Team" value={form.home_team} onChange={v => update('home_team', v)} />
+          <Field label="Away Team" value={form.away_team} onChange={v => update('away_team', v)} />
+        </Row2>
+        <Row2>
+          <Field label="Home Crest URL" value={form.home_team_logo} onChange={v => update('home_team_logo', v)} placeholder="For club teams — paste crest URL" />
+          <Field label="Away Crest URL" value={form.away_team_logo} onChange={v => update('away_team_logo', v)} placeholder="Leave blank for internationals" />
+        </Row2>
+        <p style={{ fontSize: 12, color: '#7E9485', marginTop: -8, marginBottom: 16 }}>
+          For internationals, leave crest URLs blank — the flag emoji shows automatically. For club teams, copy the crest URL from the Deep433 app (e.g. media.api-sports.io/football/teams/...).
+        </p>
+        <Field label="Kickoff Date/Time" type="datetime-local" value={form.match_date} onChange={v => update('match_date', v)} />
+        <Field label="Body (markdown)" textarea value={form.body} onChange={v => update('body', v)} />
+      </Section>
+
+      <Section title="The Prediction Battle — You vs AI" color="#C8FF4D">
+        <Row2>
+          <Field label="👤 Your Prediction" value={form.user_prediction} onChange={v => update('user_prediction', v)} placeholder="e.g. 2-1" />
+          <Field label="🤖 AI Prediction" value={form.ai_predicted_score} onChange={v => update('ai_predicted_score', v)} placeholder="e.g. 2-1" />
+        </Row2>
+        <Field label="AI Confidence %" value={form.ai_confidence_pct} onChange={v => update('ai_confidence_pct', v)} placeholder="e.g. 68" />
+        <Field label="AI Verdict (why note)" textarea value={form.ai_note} onChange={v => update('ai_note', v)} />
+      </Section>
+
+      <Section title="Deep Insights — The Data Behind It" color="#3D7EFF">
+        <p style={{ fontSize: 12, color: '#7E9485', marginBottom: 16 }}>
+          Pull these straight from the app's Deep Insights panel for this fixture — optional, but strengthens the data-driven angle.
+        </p>
+        <Row2>
+          <Field label="Attack Rating — Home %" value={form.attack_home_pct} onChange={v => update('attack_home_pct', v)} placeholder="e.g. 59" />
+          <Field label="Attack Rating — Away %" value={form.attack_away_pct} onChange={v => update('attack_away_pct', v)} placeholder="e.g. 41" />
+        </Row2>
+        <Row2>
+          <Field label="Defence Rating — Home %" value={form.defence_home_pct} onChange={v => update('defence_home_pct', v)} placeholder="e.g. 64" />
+          <Field label="Defence Rating — Away %" value={form.defence_away_pct} onChange={v => update('defence_away_pct', v)} placeholder="e.g. 36" />
+        </Row2>
+        <Field label="Key Stat" value={form.key_stat} onChange={v => update('key_stat', v)} placeholder="e.g. Spain had 68% of the ball" />
+        <Field label="H2H Summary" textarea value={form.h2h_summary} onChange={v => update('h2h_summary', v)} placeholder="e.g. Spain have won 3 of the last 5 meetings" />
+      </Section>
+
+      <div style={{ display: 'flex', gap: 12, marginTop: 28 }}>
+        <button onClick={() => savePost(false)} disabled={status === 'saving'} style={btnSecondary}>Save Draft</button>
+        <button onClick={() => savePost(true)} disabled={status === 'saving'} style={btnPrimary}>Publish Post</button>
       </div>
 
-      <div style={eyebrow}>{post.category}</div>
-      <h1 style={h1}>{post.title}</h1>
-      {post.subtitle && <p style={sub}>{post.subtitle}</p>}
-      <div style={meta}>
-        <span>{post.read_minutes || 4} MIN READ</span>
-        {post.competition && <span>{post.competition.toUpperCase()}</span>}
-      </div>
-      {post.match_label && <div style={matchTag}>{withFlags(post.match_label)}</div>}
-
-      {/* Scoreboard — You vs AI */}
-      <div style={scoreboard}>
-        <div style={scoreboardHead}>You vs AI — {withFlags(post.match_label)} · who called it?</div>
-        <div style={scoreRow}>
-          <ScoreCell color="#3D7EFF" label="👤 Your Call" value={post.user_prediction} />
-
-          <ScoreCell color="#C8FF4D" label="🤖 AI's Guess" value={post.ai_predicted_score} note={post.ai_note}>
-            {post.ai_confidence_pct && <Attribution color="#C8FF4D">{post.ai_confidence_pct}% confidence</Attribution>}
-          </ScoreCell>
-
-          <ScoreCell
-            color="#F1F4EC"
-            label="Final Score"
-            value={isSettled ? post.final_score : '— : —'}
-            note={isSettled ? "This is the one that actually settles it." : null}
-            pending={!isSettled}
-          />
-        </div>
-      </div>
-
-      {/* Deep Insights */}
-      {hasDeepInsights && (
-        <div style={insightsBox}>
-          <div style={insightsHead}>📊 Deep Insights — the data behind it</div>
-
-          {post.attack_home_pct != null && (
-            <StatBar label="Attack Rating" home={post.attack_home_pct} away={post.attack_away_pct} homeTeam={post.home_team} awayTeam={post.away_team} />
-          )}
-          {post.defence_home_pct != null && (
-            <StatBar label="Defence Rating" home={post.defence_home_pct} away={post.defence_away_pct} homeTeam={post.home_team} awayTeam={post.away_team} />
-          )}
-          {post.key_stat && <div style={keyStat}>📌 {post.key_stat}</div>}
-          {post.h2h_summary && <div style={h2hSummary}>{post.h2h_summary}</div>}
-        </div>
-      )}
-
-      {/* Body */}
-      <div style={articleBody}>
-        {post.body?.split('\n\n').map((para, i) => (
-          <p key={i} style={i === 0 ? { ...pStyle, fontSize: 19, color: '#F1F4EC' } : pStyle}>{para}</p>
-        ))}
-      </div>
-
-      <div style={cta}>
-        <div style={ctaText}>
-          Have your say before kickoff
-          <span style={ctaSub}>Predict the score. See how it compares to the AI.</span>
-        </div>
-        <a href="/" style={ctaBtn}>Predict Now →</a>
-      </div>
+      {status === 'saving' && <p style={{ color: '#9CA89C', marginTop: 12 }}>Saving…</p>}
+      {status === 'saved' && <p style={{ color: '#C8FF4D', marginTop: 12 }}>Saved.</p>}
+      {status === 'error' && <p style={{ color: '#FF5A2D', marginTop: 12 }}>Couldn't save: {errorMsg}</p>}
     </div>
   );
 }
 
-function StatBar({ label, home, away, homeTeam, awayTeam }) {
+const btnPrimary = { background: '#C8FF4D', color: '#0B1F17', border: 'none', borderRadius: 4, padding: '12px 24px', fontSize: 14, fontWeight: 700, cursor: 'pointer' };
+const btnSecondary = { background: 'none', border: '1px solid #2A4A3A', color: '#F1F4EC', borderRadius: 4, padding: '12px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer' };
+
+function Section({ title, color = '#F1F4EC', children }) {
+  return (
+    <div style={{ border: '1px solid #2A4A3A', borderRadius: 6, padding: 24, marginBottom: 24, background: '#0E2419' }}>
+      <div style={{ color, fontSize: 14, letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700, marginBottom: 18, paddingBottom: 12, borderBottom: '1px solid #2A4A3A' }}>
+        {title}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Row2({ children }) {
+  return <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>{children}</div>;
+}
+
+function Field({ label, value, onChange, placeholder, textarea, type = 'text' }) {
   return (
     <div style={{ marginBottom: 16 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#7E9485', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-        <span>{label}</span>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ fontSize: 15, fontWeight: 700, color: '#3D7EFF', minWidth: 34 }}>{home}%</span>
-        <div style={{ flex: 1, height: 6, background: '#173A28', borderRadius: 3, overflow: 'hidden', display: 'flex' }}>
-          <div style={{ width: `${home}%`, background: '#3D7EFF' }} />
-          <div style={{ width: `${away}%`, background: '#C8FF4D' }} />
-        </div>
-        <span style={{ fontSize: 15, fontWeight: 700, color: '#C8FF4D', minWidth: 34, textAlign: 'right' }}>{away}%</span>
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#7E9485', marginTop: 4 }}>
-        <span>{homeTeam}</span>
-        <span>{awayTeam}</span>
-      </div>
+      <label style={{ display: 'block', fontSize: 13, color: '#9CA89C', marginBottom: 8, textTransform: 'uppercase', fontWeight: 600, letterSpacing: 0.5 }}>{label}</label>
+      {textarea ? (
+        <textarea
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          style={{ width: '100%', minHeight: 80, padding: 12, background: '#0E2419', color: '#F1F4EC', border: '1px solid #2A4A3A', borderRadius: 4, fontSize: 15, lineHeight: 1.5 }}
+        />
+      ) : (
+        <input
+          type={type}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          style={{ width: '100%', padding: 12, background: '#0E2419', color: '#F1F4EC', border: '1px solid #2A4A3A', borderRadius: 4, fontSize: 15 }}
+        />
+      )}
     </div>
   );
 }
-
-function ScoreCell({ color, label, value, note, pending, children }) {
-  return (
-    <div style={{ flex: 1, padding: '24px 20px', borderRight: '1px solid #173A28', opacity: pending ? 0.6 : 1 }}>
-      <div style={{ fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color, marginBottom: 10 }}>{label}</div>
-      <div style={{ fontWeight: 700, fontSize: 24 }}>{value || '—'}</div>
-      {note && <div style={{ fontSize: 13, color: '#7E9485', marginTop: 8, lineHeight: 1.4 }}>{note}</div>}
-      {children}
-      {pending && <span style={pendingTag}>Updates after kickoff</span>}
-    </div>
-  );
-}
-
-function Attribution({ color, children }) {
-  return <div style={{ fontSize: 11, color, marginTop: 10, fontFamily: 'monospace' }}>{children}</div>;
-}
-
-function Centered({ children }) {
-  return <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7E9485', background: '#0B1F17' }}>{children}</div>;
-}
-
-const page = { background: '#0B1F17', color: '#F1F4EC', minHeight: '100vh', fontFamily: 'sans-serif' };
-const topbar = { maxWidth: 760, margin: '0 auto', display: 'flex', justifyContent: 'space-between', padding: '48px 24px 24px', borderBottom: '1px solid #173A28' };
-const logo = { fontWeight: 900, fontSize: 18 };
-const navTag = { fontSize: 11, color: '#7E9485', fontFamily: 'monospace', letterSpacing: 1 };
-const eyebrow = { maxWidth: 760, margin: '40px auto 0', padding: '0 24px', color: '#FF5A2D', fontSize: 12, letterSpacing: 2, textTransform: 'uppercase' };
-const h1 = { maxWidth: 760, margin: '14px auto 0', padding: '0 24px', fontSize: 38, lineHeight: 1.1, fontWeight: 900 };
-const sub = { maxWidth: 760, margin: '14px auto 0', padding: '0 24px', color: '#7E9485', fontSize: 17, lineHeight: 1.5 };
-const meta = { maxWidth: 760, margin: '24px auto 0', padding: '0 24px', display: 'flex', gap: 18, fontSize: 12, color: '#7E9485', fontFamily: 'monospace' };
-const matchTag = { maxWidth: 760, margin: '16px auto 0', padding: '0 24px', fontSize: 22, fontWeight: 700 };
-const scoreboard = { maxWidth: 760, margin: '44px auto 0', padding: '0 24px' };
-const scoreboardHead = { fontSize: 11, letterSpacing: 1, color: '#7E9485', padding: '14px 0', borderTop: '1px solid #173A28', borderBottom: '1px solid #173A28', textTransform: 'uppercase' };
-const scoreRow = { display: 'flex', border: '1px solid #173A28', borderTop: 'none' };
-const insightsBox = { maxWidth: 760, margin: '28px auto 0', padding: '24px', border: '1px solid #173A28', borderRadius: 6, background: '#0E2419' };
-const insightsHead = { fontSize: 12, letterSpacing: 1, color: '#3D7EFF', textTransform: 'uppercase', marginBottom: 18, fontWeight: 700 };
-const keyStat = { fontSize: 14, color: '#F1F4EC', background: '#173A2855', padding: '12px 14px', borderRadius: 4, marginTop: 12, lineHeight: 1.5 };
-const h2hSummary = { fontSize: 13, color: '#9CA89C', marginTop: 12, lineHeight: 1.5 };
-const articleBody = { maxWidth: 760, margin: '48px auto 0', padding: '0 24px 100px', fontSize: 17, lineHeight: 1.7 };
-const pStyle = { marginBottom: 20, color: '#D6DED2' };
-const cta = { maxWidth: 760, margin: '0 auto 100px', padding: '24px', border: '1px solid #C8FF4D', borderRadius: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' };
-const ctaText = { fontWeight: 900, fontSize: 16 };
-const ctaSub = { display: 'block', fontSize: 12, color: '#7E9485', fontWeight: 400, marginTop: 6 };
-const ctaBtn = { fontSize: 12, background: '#C8FF4D', color: '#0B1F17', padding: '12px 20px', borderRadius: 3, whiteSpace: 'nowrap', textDecoration: 'none', fontWeight: 700, display: 'inline-block' };
-const pendingTag = { display: 'inline-block', fontSize: 10, color: '#7E9485', border: '1px solid #173A28', padding: '3px 8px', borderRadius: 20, marginTop: 8 };
