@@ -518,9 +518,9 @@ function AuthScreen({ onGuestMode }) {
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; }`}</style>
       <div style={{ width: "100%", maxWidth: 400 }}>
         <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div style={{ fontSize: 40, marginBottom: 8 }}>⚽</div>
+          <img src="/deep433.jpg" alt="Deep433" style={{ width: 64, height: 64, borderRadius: "50%", objectFit: "cover", marginBottom: 8 }} />
           <div style={{ fontSize: 28, fontWeight: 900, color: "#4ade80", textShadow: "0 0 30px rgba(74,222,128,0.4)" }}>DEEP433</div>
-          <div style={{ fontSize: 16, color: "#999", marginTop: 4 }}>DATA-DRIVEN FOOTBALL PREDICTIONS</div>
+          <div style={{ fontSize: 16, color: "#999", marginTop: 4 }}>DATA-DRIVEN FOOTBALL INSIGHTS</div>
         </div>
         <div style={{ background: "#13131f", border: "1px solid #1e1e30", borderRadius: 16, padding: 24 }}>
           <button onClick={handleGoogle} disabled={loading} style={{ width: "100%", background: "#fff", border: "none", borderRadius: 10, color: "#111", cursor: "pointer", fontSize: 17, fontWeight: 700, padding: "13px 20px", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontFamily: "inherit" }}>
@@ -1135,10 +1135,10 @@ export default function FootballPredictor() {
       <div style={{ background: "#0d0d18", borderBottom: "1px solid #1a1a2e", padding: "16px 20px" }}>
         <div style={{ maxWidth: 600, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 26 }}>⚽</span>
+            <img src="/deep433.jpg" alt="Deep433" style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover" }} />
             <div>
               <div style={{ fontSize: 18, fontWeight: 900, color: "#4ade80" }} className="glow">DEEP433</div>
-              <div style={{ fontSize: 13, color: "#999", letterSpacing: 1 }}>DATA-DRIVEN FOOTBALL PREDICTIONS</div>
+              <div style={{ fontSize: 13, color: "#999", letterSpacing: 1 }}>DATA-DRIVEN FOOTBALL INSIGHTS</div>
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
