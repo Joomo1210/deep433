@@ -1813,6 +1813,19 @@ function MatchPitchViewGraphic() {
                     <span style={{ fontSize: 11, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
                   </div>
 
+                  {/* Home team flag — positioned at their goal mouth (top) */}
+                  {selectedFixture.homeLogo && (
+                    <div style={{ position: "absolute", top: "5%", left: "50%", transform: "translateX(-50%)", zIndex: 0, opacity: 0.55 }}>
+                      <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, objectFit: "contain" }} />
+                    </div>
+                  )}
+                  {/* Away team flag — positioned at their goal mouth (bottom) */}
+                  {selectedFixture.awayLogo && (
+                    <div style={{ position: "absolute", bottom: "5%", left: "50%", transform: "translateX(-50%)", zIndex: 0, opacity: 0.55 }}>
+                      <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, objectFit: "contain" }} />
+                    </div>
+                  )}
+
                   {/* Watermark — corner */}
                   <div style={{ position: "absolute", bottom: 10, left: 10, pointerEvents: "none" }}>
                     <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 26, height: 26, opacity: 0.35, objectFit: "contain", borderRadius: "50%", userSelect: "none" }} />
@@ -1820,7 +1833,6 @@ function MatchPitchViewGraphic() {
 
                   {/* Home team header */}
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4, paddingLeft: 4 }}>
-                    {selectedFixture.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 18, height: 18, objectFit: "contain" }} />}
                     <span style={{ fontSize: 13, fontWeight: 800, color: "#4ade80" }}>{selectedFixture.home}</span>
                     <span style={{ fontSize: 12, color: "#555" }}>{lineup.home?.formation}</span>
                   </div>
@@ -1842,7 +1854,6 @@ function MatchPitchViewGraphic() {
 
                   {/* Away team header */}
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, paddingLeft: 4 }}>
-                    {selectedFixture.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 18, height: 18, objectFit: "contain" }} />}
                     <span style={{ fontSize: 13, fontWeight: 800, color: "#f59e0b" }}>{selectedFixture.away}</span>
                     <span style={{ fontSize: 12, color: "#555" }}>{lineup.away?.formation}</span>
                   </div>
