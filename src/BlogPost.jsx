@@ -42,8 +42,6 @@ function withFlags(matchLabel) {
 export default function BlogPost() {
   const slug = window.location.pathname.split('/blog/')[1];
   const [post, setPost] = useState(null);
-  const [pundits, setPundits] = useState([]);
-  const [fans, setFans] = useState([]);
   const [status, setStatus] = useState('loading');
 
   useEffect(() => {
@@ -60,14 +58,6 @@ export default function BlogPost() {
         return;
       }
       setPost(postData);
-
-      const [{ data: punditData }, { data: fanData }] = await Promise.all([
-        supabase.from('blog_pundit_takes').select('*').eq('post_id', postData.id).order('created_at'),
-        supabase.from('blog_fan_takes').select('*').eq('post_id', postData.id).order('created_at'),
-      ]);
-
-      setPundits(punditData || []);
-      setFans(fanData || []);
       setStatus('ready');
     }
     load();
@@ -76,16 +66,8 @@ export default function BlogPost() {
   if (status === 'loading') return <Centered>Loading…</Centered>;
   if (status === 'not_found') return <Centered>Post not found.</Centered>;
 
-  const featuredPundit = pundits.find(p => p.is_featured) || pundits[0] || {
-    pundit_name: post.pundit_name, take: post.pundit_take, predicted_score: post.pundit_predicted_score, source_url: post.pundit_source_url,
-  };
-  const featuredFan = fans.find(f => f.is_featured) || fans[0] || {
-    fan_handle: post.fan_handle, take: post.fan_take, predicted_score: post.fan_predicted_score,
-  };
-  const morePundits = pundits.filter(p => p !== featuredPundit && !p.is_featured);
-  const moreFans = fans.filter(f => f !== featuredFan && !f.is_featured);
-
   const isSettled = !!post.final_score;
+  const hasDeepInsights = post.attack_home_pct != null || post.key_stat || post.h2h_summary;
 
   return (
     <div style={page}>
@@ -108,23 +90,13 @@ export default function BlogPost() {
       </div>
       {post.match_label && <div style={matchTag}>{withFlags(post.match_label)}</div>}
 
-      {/* Scoreboard */}
+      {/* Scoreboard — You vs AI */}
       <div style={scoreboard}>
-        <div style={scoreboardHead}>Predictions Board — {withFlags(post.match_label)} · what's your call?</div>
+        <div style={scoreboardHead}>You vs AI — {withFlags(post.match_label)} · who called it?</div>
         <div style={scoreRow}>
-          <ScoreCell color="#3D7EFF" label="Pundit Take" value={featuredPundit.predicted_score} note={featuredPundit.take}>
-            {featuredPundit.pundit_name && (
-              <Attribution color="#3D7EFF">
-                — {featuredPundit.pundit_name}{featuredPundit.source_url && <> · <a href={featuredPundit.source_url} target="_blank" rel="noreferrer" style={{ color: 'inherit' }}>Source</a></>}
-              </Attribution>
-            )}
-          </ScoreCell>
+          <ScoreCell color="#3D7EFF" label="👤 Your Call" value={post.user_prediction} />
 
-          <ScoreCell color="#FF5A2D" label="Fan Take" value={featuredFan.predicted_score} note={featuredFan.take}>
-            {featuredFan.fan_handle && <Attribution color="#FF5A2D">— {featuredFan.fan_handle}</Attribution>}
-          </ScoreCell>
-
-          <ScoreCell color="#C8FF4D" label="AI's Guess" value={post.ai_predicted_score} note={post.ai_note}>
+          <ScoreCell color="#C8FF4D" label="🤖 AI's Guess" value={post.ai_predicted_score} note={post.ai_note}>
             {post.ai_confidence_pct && <Attribution color="#C8FF4D">{post.ai_confidence_pct}% confidence</Attribution>}
           </ScoreCell>
 
@@ -138,16 +110,19 @@ export default function BlogPost() {
         </div>
       </div>
 
-      {/* More voices */}
-      {(morePundits.length > 0 || moreFans.length > 0) && (
-        <div style={moreVoices}>
-          <div style={moreVoicesHead}>More voices on this one</div>
-          {morePundits.map(p => (
-            <VoiceRow key={p.id} color="#3D7EFF" name={p.pundit_name} take={p.take} score={p.predicted_score} />
-          ))}
-          {moreFans.map(f => (
-            <VoiceRow key={f.id} color="#FF5A2D" name={f.fan_handle} take={f.take} score={f.predicted_score} />
-          ))}
+      {/* Deep Insights */}
+      {hasDeepInsights && (
+        <div style={insightsBox}>
+          <div style={insightsHead}>📊 Deep Insights — the data behind it</div>
+
+          {post.attack_home_pct != null && (
+            <StatBar label="Attack Rating" home={post.attack_home_pct} away={post.attack_away_pct} homeTeam={post.home_team} awayTeam={post.away_team} />
+          )}
+          {post.defence_home_pct != null && (
+            <StatBar label="Defence Rating" home={post.defence_home_pct} away={post.defence_away_pct} homeTeam={post.home_team} awayTeam={post.away_team} />
+          )}
+          {post.key_stat && <div style={keyStat}>📌 {post.key_stat}</div>}
+          {post.h2h_summary && <div style={h2hSummary}>{post.h2h_summary}</div>}
         </div>
       )}
 
@@ -161,7 +136,7 @@ export default function BlogPost() {
       <div style={cta}>
         <div style={ctaText}>
           Have your say before kickoff
-          <span style={ctaSub}>Predict the score. See how it compares.</span>
+          <span style={ctaSub}>Predict the score. See how it compares to the AI.</span>
         </div>
         <a href="/" style={ctaBtn}>Predict Now →</a>
       </div>
@@ -169,11 +144,24 @@ export default function BlogPost() {
   );
 }
 
-function VoiceRow({ color, name, take, score }) {
+function StatBar({ label, home, away, homeTeam, awayTeam }) {
   return (
-    <div style={voiceRow}>
-      <div style={{ ...voiceRowName, color }}>{name}{score && <span style={{ color: '#7E9485', fontWeight: 400 }}> · predicted {score}</span>}</div>
-      {take && <div style={voiceRowTake}>{take}</div>}
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#7E9485', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+        <span>{label}</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ fontSize: 15, fontWeight: 700, color: '#3D7EFF', minWidth: 34 }}>{home}%</span>
+        <div style={{ flex: 1, height: 6, background: '#173A28', borderRadius: 3, overflow: 'hidden', display: 'flex' }}>
+          <div style={{ width: `${home}%`, background: '#3D7EFF' }} />
+          <div style={{ width: `${away}%`, background: '#C8FF4D' }} />
+        </div>
+        <span style={{ fontSize: 15, fontWeight: 700, color: '#C8FF4D', minWidth: 34, textAlign: 'right' }}>{away}%</span>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#7E9485', marginTop: 4 }}>
+        <span>{homeTeam}</span>
+        <span>{awayTeam}</span>
+      </div>
     </div>
   );
 }
@@ -210,11 +198,10 @@ const matchTag = { maxWidth: 760, margin: '16px auto 0', padding: '0 24px', font
 const scoreboard = { maxWidth: 760, margin: '44px auto 0', padding: '0 24px' };
 const scoreboardHead = { fontSize: 11, letterSpacing: 1, color: '#7E9485', padding: '14px 0', borderTop: '1px solid #173A28', borderBottom: '1px solid #173A28', textTransform: 'uppercase' };
 const scoreRow = { display: 'flex', border: '1px solid #173A28', borderTop: 'none' };
-const moreVoices = { maxWidth: 760, margin: '28px auto 0', padding: '0 24px' };
-const moreVoicesHead = { fontSize: 11, letterSpacing: 1, color: '#7E9485', textTransform: 'uppercase', marginBottom: 12, fontFamily: 'monospace' };
-const voiceRow = { borderTop: '1px solid #173A28', padding: '12px 0' };
-const voiceRowName = { fontSize: 13, fontWeight: 700, marginBottom: 4 };
-const voiceRowTake = { fontSize: 14, color: '#D6DED2', lineHeight: 1.5 };
+const insightsBox = { maxWidth: 760, margin: '28px auto 0', padding: '24px', border: '1px solid #173A28', borderRadius: 6, background: '#0E2419' };
+const insightsHead = { fontSize: 12, letterSpacing: 1, color: '#3D7EFF', textTransform: 'uppercase', marginBottom: 18, fontWeight: 700 };
+const keyStat = { fontSize: 14, color: '#F1F4EC', background: '#173A2855', padding: '12px 14px', borderRadius: 4, marginTop: 12, lineHeight: 1.5 };
+const h2hSummary = { fontSize: 13, color: '#9CA89C', marginTop: 12, lineHeight: 1.5 };
 const articleBody = { maxWidth: 760, margin: '48px auto 0', padding: '0 24px 100px', fontSize: 17, lineHeight: 1.7 };
 const pStyle = { marginBottom: 20, color: '#D6DED2' };
 const cta = { maxWidth: 760, margin: '0 auto 100px', padding: '24px', border: '1px solid #C8FF4D', borderRadius: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' };
