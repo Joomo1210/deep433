@@ -48,22 +48,21 @@ export default function LandingPage({ onGetStarted }) {
         .predict-strip { background: linear-gradient(135deg, #13102a, #0d0018); border: 1px solid #2a1f4a; border-radius: 16px; padding: 28px; display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
         @media (max-width: 768px) {
           .posts-grid { grid-template-columns: 1fr !important; }
-          .hero-title { font-size: 48px !important; }
+          .hero-title { font-size: 44px !important; }
         }
       `}</style>
 
       {/* NAV */}
       <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, background: "rgba(10,0,16,0.95)", backdropFilter: "blur(12px)", borderBottom: "1px solid #2a1f4a", padding: "0 24px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontSize: 24 }}>⚽</span>
+          <img src="/deep433.jpg" alt="Deep433" style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover" }} />
           <div>
             <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 22, color: "#4ade80", letterSpacing: 2 }}>DEEP433</div>
-            <div style={{ fontSize: 9, color: "#7c3aed", letterSpacing: 2, fontWeight: 700 }}>PUNDITS VS FANS</div>
+            <div style={{ fontSize: 9, color: "#7c3aed", letterSpacing: 2, fontWeight: 700 }}>DATA-DRIVEN FOOTBALL INSIGHTS</div>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <button className="ghost-btn" onClick={onGetStarted}>Predict a Match</button>
-          <button className="cta-btn" style={{ fontSize: 13, padding: "10px 20px" }} onClick={onGetStarted}>Sign Up Free</button>
         </div>
       </nav>
 
@@ -75,18 +74,22 @@ export default function LandingPage({ onGetStarted }) {
         </div>
 
         <div className="hero-title" style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 64, lineHeight: 1.0, marginBottom: 24 }}>
-          The pundits have their say.<br/>
-          <span style={{ color: "#7c3aed" }}>The fans have theirs.</span><br/>
-          <span style={{ color: "#4ade80" }}>What's your call?</span>
+          The stats have spoken.<br/>
+          <span style={{ color: "#7c3aed" }}>The AI has its call.</span><br/>
+          <span style={{ color: "#4ade80" }}>What's yours?</span>
         </div>
 
-        <p style={{ fontSize: 19, color: "#888", lineHeight: 1.7, maxWidth: 580, margin: "0 auto 36px" }}>
+        <p style={{ fontSize: 19, color: "#888", lineHeight: 1.7, maxWidth: 580, margin: "0 auto 20px" }}>
          "Every matchday, Deep433 breaks down the stats, the AI makes its call, then it's over to you. Predict the score and find out if you can out-think the machine."
         </p>
 
+        <p style={{ fontSize: 15, color: "#666", lineHeight: 1.7, maxWidth: 620, margin: "0 auto 36px" }}>
+          Whether you're predicting for fun, tracking betting odds, scouting transfer fits, creating football content and need a quick stat, or just a fan who loves the numbers — Deep433 is your football data engine.
+        </p>
+
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-          <a href="/blog" className="cta-btn">📰 Read the Latest</a>
-          <button className="ghost-btn" onClick={onGetStarted}>⚡ Or Predict a Match</button>
+          <button className="cta-btn" onClick={onGetStarted}>⚡ Predict a Match</button>
+          <a href="/blog" className="ghost-btn">📰 Read the Latest</a>
         </div>
       </section>
 
@@ -136,7 +139,7 @@ export default function LandingPage({ onGetStarted }) {
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: "#4ade80", textTransform: "uppercase", marginBottom: 8 }}>Your Turn</div>
             <div style={{ fontSize: 22, fontWeight: 800 }}>Done reading? Make your own prediction.</div>
-            <div style={{ fontSize: 14, color: "#888", marginTop: 6 }}>Lock in a scoreline, see how it compares to the AI's guess, climb the leaderboard.</div>
+            <div style={{ fontSize: 14, color: "#888", marginTop: 6 }}>Lock in a scoreline, see how it compares to the AI's guess — no account needed.</div>
           </div>
           <button className="cta-btn" onClick={onGetStarted}>⚡ Predict Now</button>
         </div>
@@ -144,8 +147,11 @@ export default function LandingPage({ onGetStarted }) {
 
       {/* FOOTER */}
       <footer style={{ borderTop: "1px solid #2a1f4a", padding: "32px 24px", textAlign: "center" }}>
-        <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 22, color: "#4ade80", letterSpacing: 2, marginBottom: 8 }}>⚽ DEEP433</div>
-        <div style={{ fontSize: 12, color: "#444", marginBottom: 8 }}>Pundits vs Fans, brought to you by deep433.com</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 8 }}>
+          <img src="/deep433.jpg" alt="Deep433" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover" }} />
+          <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 22, color: "#4ade80", letterSpacing: 2 }}>DEEP433</div>
+        </div>
+        <div style={{ fontSize: 12, color: "#444", marginBottom: 8 }}>Data-driven football insights, brought to you by deep433.com</div>
         <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 16, marginTop: 4 }}>
           <a href="/blog" style={{ fontSize: 12, color: "#7c3aed", textDecoration: "none" }}>Read the Journal →</a>
           <a href="https://x.com/Deep_433" target="_blank" rel="noreferrer" aria-label="Follow Deep433 on X" style={{ display: "inline-flex", color: "#888" }}>
