@@ -21,7 +21,8 @@ const TEAM_FLAGS = {
   "Ghana": "🇬🇭", "Panama": "🇵🇦", "Uzbekistan": "🇺🇿", "Colombia": "🇨🇴",
 };
 
-function flagsFor(matchLabel) {
+function flagsFor(matchLabel, homeCrest, awayCrest) {
+  if (homeCrest || awayCrest) return null; // handled separately as images when crests exist
   if (!matchLabel) return '';
   const parts = matchLabel.split(/\s+vs\s+/i);
   if (parts.length !== 2) return '';
@@ -56,7 +57,10 @@ export default function BlogIndex() {
   return (
     <div style={page}>
       <div style={topbar}>
-        <a href="/" style={logo}>DEEP4<span style={{ color: '#C8FF4D' }}>33</span></a>
+        <a href="/" style={logo}>
+          <img src="/deep433.jpg" alt="Deep433" style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover', verticalAlign: 'middle', marginRight: 8 }} />
+          DEEP4<span style={{ color: '#C8FF4D' }}>33</span>
+        </a>
         <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
           <a href="https://x.com/Deep_433" target="_blank" rel="noreferrer" aria-label="Follow Deep433 on X" style={{ display: 'inline-flex', color: '#7E9485' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
@@ -67,8 +71,8 @@ export default function BlogIndex() {
 
       <div style={hero}>
         <div style={heroTag}>The Deep433 Journal</div>
-        <h1 style={h1}>Pundits vs Fans</h1>
-        <p style={heroSub}>The official line, the fan reaction, and an AI guess thrown in. Read what's been said — then have your own say.</p>
+        <h1 style={h1}>Data-Driven Takes</h1>
+        <p style={heroSub}>The stats, the AI's call, and the data behind it — read the breakdown, then have your own say.</p>
       </div>
 
       <div style={list}>
@@ -87,7 +91,12 @@ export default function BlogIndex() {
             {post.subtitle && <p style={cardSub}>{post.subtitle}</p>}
             <div style={cardFooter}>
               {post.match_label && (
-                <span style={cardMatch}>{flagsFor(post.match_label)} {post.match_label}</span>
+                <span style={cardMatch}>
+                  {post.home_team_logo && <img src={post.home_team_logo} alt="" style={{ width: 14, height: 14, objectFit: 'contain', verticalAlign: 'middle', marginRight: 4 }} />}
+                  {!post.home_team_logo && !post.away_team_logo && flagsFor(post.match_label)}
+                  {' '}{post.match_label}
+                  {post.away_team_logo && <img src={post.away_team_logo} alt="" style={{ width: 14, height: 14, objectFit: 'contain', verticalAlign: 'middle', marginLeft: 4 }} />}
+                </span>
               )}
               <span style={cardArrow}>Read →</span>
             </div>
@@ -100,7 +109,7 @@ export default function BlogIndex() {
 
 const page = { background: '#0B1F17', color: '#F1F4EC', minHeight: '100vh', fontFamily: 'sans-serif' };
 const topbar = { maxWidth: 800, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '32px 24px', borderBottom: '1px solid #173A28' };
-const logo = { fontWeight: 900, fontSize: 18, color: '#F1F4EC', textDecoration: 'none' };
+const logo = { fontWeight: 900, fontSize: 18, color: '#F1F4EC', textDecoration: 'none', display: 'flex', alignItems: 'center' };
 const backLink = { fontSize: 12, color: '#7E9485', textDecoration: 'none', fontFamily: 'monospace' };
 const hero = { maxWidth: 800, margin: '0 auto', padding: '56px 24px 0' };
 const heroTag = { fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: '#FF5A2D', fontFamily: 'monospace' };
