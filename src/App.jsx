@@ -540,9 +540,7 @@ function AuthScreen({ onGuestMode }) {
             {loading ? "..." : mode === "login" ? "Sign In" : "Create Account"}
           </button>
           <div style={{ textAlign: "center", fontSize: 16, color: "#555" }}>
-            {mode === "login" ? (
-              <span style={{ color: "#555" }}>New signups are currently paused</span>
-            ) : (<>Already have an account? <button onClick={() => { setMode("login"); setError(""); setMessage(""); }} style={{ background: "none", border: "none", color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 16, fontWeight: 700 }}>Sign in</button></>)}
+            {mode === "login" ? null : (<>Already have an account? <button onClick={() => { setMode("login"); setError(""); setMessage(""); }} style={{ background: "none", border: "none", color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 16, fontWeight: 700 }}>Sign in</button></>)}
           </div>
         </div>
         <button onClick={onGuestMode} style={{ width: "100%", background: "none", border: "1px solid #2a2a3a", borderRadius: 10, color: "#999", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "13px", marginTop: 14 }}>
