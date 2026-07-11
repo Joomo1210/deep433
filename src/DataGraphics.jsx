@@ -1658,6 +1658,16 @@ function MatchPitchViewGraphic() {
     setLineup(null);
     setError("");
     if (!f.fixtureId) { setError("No fixture ID available"); return; }
+
+    // Lineups are typically only announced 40-60 min before kickoff — skip the fetch until then
+    if (f.status === "upcoming" && f.kickoff) {
+      const minutesToKickoff = (new Date(f.kickoff) - new Date()) / 60000;
+      if (minutesToKickoff > 60) {
+        setError(`Lineups are usually announced 40-60 minutes before kickoff. Check back closer to ${new Date(f.kickoff).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} BST.`);
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       const r = await fetch(`/api/match-lineup?fixtureId=${f.fixtureId}`);
