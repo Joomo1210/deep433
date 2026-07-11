@@ -255,7 +255,7 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
       <div style={{ position: "absolute", top: 12, right: 14, zIndex: 2, display: "flex", alignItems: "center", gap: 6 }}>
         <span style={{ fontSize: 14, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
-        <span style={{ fontSize: 13, color: "#888", fontWeight: 600 }}>deep433.com</span>
+        
       </div>
       {/* Corner watermark */}
       <div style={{ position: "absolute", bottom: 10, left: 10, pointerEvents: "none", zIndex: 0 }}>
@@ -1772,7 +1772,7 @@ export default function FootballPredictor() {
                   <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
                   <div style={{ position: "absolute", top: 12, right: 14, display: "flex", alignItems: "center", gap: 6 }}>
                     <span style={{ fontSize: 13, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
-                    <span style={{ fontSize: 12, color: "#888", fontWeight: 600 }}>deep433.com</span>
+                    
                   </div>
                   {/* Logo watermark */}
                   <div style={{ position: "absolute", bottom: 12, left: 12, pointerEvents: "none" }}>
