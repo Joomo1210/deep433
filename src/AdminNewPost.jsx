@@ -18,6 +18,7 @@ export default function AdminNewPost() {
     title: '', subtitle: '', body: '',
     competition: '', gameweek: '', match_label: '', match_date: '',
     home_team: '', away_team: '',
+    home_team_logo: '', away_team_logo: '',
     user_prediction: '',
     ai_predicted_score: '', ai_confidence_pct: '', ai_note: '',
     attack_home_pct: '', attack_away_pct: '',
@@ -93,6 +94,13 @@ export default function AdminNewPost() {
           <Field label="Home Team" value={form.home_team} onChange={v => update('home_team', v)} />
           <Field label="Away Team" value={form.away_team} onChange={v => update('away_team', v)} />
         </Row2>
+        <Row2>
+          <Field label="Home Crest URL" value={form.home_team_logo} onChange={v => update('home_team_logo', v)} placeholder="For club teams — paste crest URL" />
+          <Field label="Away Crest URL" value={form.away_team_logo} onChange={v => update('away_team_logo', v)} placeholder="Leave blank for internationals" />
+        </Row2>
+        <p style={{ fontSize: 12, color: '#7E9485', marginTop: -8, marginBottom: 16 }}>
+          For internationals, leave crest URLs blank — the flag emoji shows automatically. For club teams, copy the crest URL from the Deep433 app (e.g. media.api-sports.io/football/teams/...).
+        </p>
         <Field label="Kickoff Date/Time" type="datetime-local" value={form.match_date} onChange={v => update('match_date', v)} />
         <Field label="Body (markdown)" textarea value={form.body} onChange={v => update('body', v)} />
       </Section>
