@@ -56,6 +56,7 @@ export default async function handler(req, res) {
         venue: f.fixture?.venue?.name,
         city: f.fixture?.venue?.city,
         score: { home: f.goals?.home, away: f.goals?.away },
+        fulltimeScore: { home: f.score?.fulltime?.home, away: f.score?.fulltime?.away },
       }));
       return res.status(200).json({ fixtures });
     } catch (err) {
@@ -103,6 +104,10 @@ export default async function handler(req, res) {
             score: {
               home: f.goals?.home,
               away: f.goals?.away,
+            },
+            fulltimeScore: {
+              home: f.score?.fulltime?.home,
+              away: f.score?.fulltime?.away,
             },
           });
         });
