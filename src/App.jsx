@@ -1780,10 +1780,12 @@ export default function FootballPredictor() {
                   </div>
 
                   <div style={{ textAlign: "center", marginBottom: 16, marginTop: 6, position: "relative", zIndex: 1 }}>
-                    <div style={{ fontSize: 16, color: "#f0f0f0", fontWeight: 900, textTransform: "uppercase", letterSpacing: 2 }}>
-                      {LEAGUES.find(l => l.id === awardsLeague)?.label || awardsLeague}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                      {awardsLeague === "wc2026" && <img src="/fifa.png" alt="" crossOrigin="anonymous" style={{ width: 22, height: 22, objectFit: "contain" }} />}
+                      <div style={{ fontSize: 16, color: "#f0f0f0", fontWeight: 900, textTransform: "uppercase", letterSpacing: 2 }}>
+                        {LEAGUES.find(l => l.id === awardsLeague)?.label || awardsLeague}
+                      </div>
                     </div>
-                    <div style={{ fontSize: 13, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginTop: 2 }}>🎖 My Season Awards Pick</div>
                   </div>
 
                   {/* Winner — hero */}
