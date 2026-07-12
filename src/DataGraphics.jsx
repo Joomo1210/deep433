@@ -2887,31 +2887,38 @@ function HalftimeRecapGraphic() {
                 <span style={{ fontSize: 11, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>⏱ Halftime Recap</span>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 18 }}>
-                <div style={{ textAlign: "center" }}>
-                  {selectedFixture.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, objectFit: "contain", margin: "0 auto 6px" }} />}
-                  <div style={{ fontSize: 14, fontWeight: 800, color: "#4ade80" }}>{selectedFixture.home}</div>
-                </div>
-                <div style={{ textAlign: "center", padding: "0 10px" }}>
-                  <div style={{ fontSize: 10, color: "#999", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>HT</div>
-                  <div style={{ fontSize: 34, fontWeight: 900, color: "#f0f0f0", letterSpacing: -1 }}>{htHomeGoals}-{htAwayGoals}</div>
-                </div>
-                <div style={{ textAlign: "center" }}>
-                  {selectedFixture.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, objectFit: "contain", margin: "0 auto 6px" }} />}
-                  <div style={{ fontSize: 14, fontWeight: 800, color: "#f59e0b" }}>{selectedFixture.away}</div>
+              {/* HERO: HT Score */}
+              <div style={{
+                background: "linear-gradient(135deg, #818cf814, #4ade800e)",
+                border: "1px solid #818cf833",
+                borderRadius: 12, padding: "18px 16px", marginBottom: 14,
+              }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center" }}>
+                  <div style={{ textAlign: "center" }}>
+                    {selectedFixture.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 38, height: 38, objectFit: "contain", margin: "0 auto 8px" }} />}
+                    <div style={{ fontSize: 15, fontWeight: 800, color: "#4ade80" }}>{selectedFixture.home}</div>
+                  </div>
+                  <div style={{ textAlign: "center", padding: "0 14px" }}>
+                    <div style={{ fontSize: 11, color: "#999", textTransform: "uppercase", letterSpacing: 1, fontWeight: 700, marginBottom: 4 }}>HT</div>
+                    <div style={{ fontSize: 44, fontWeight: 900, color: "#f0f0f0", letterSpacing: -1.5, lineHeight: 1 }}>{htHomeGoals}-{htAwayGoals}</div>
+                  </div>
+                  <div style={{ textAlign: "center" }}>
+                    {selectedFixture.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 38, height: 38, objectFit: "contain", margin: "0 auto 8px" }} />}
+                    <div style={{ fontSize: 15, fontWeight: 800, color: "#f59e0b" }}>{selectedFixture.away}</div>
+                  </div>
                 </div>
               </div>
 
               <BentoBox title="First Half Events" icon="📋" color="#60a5fa">
                 {firstHalfEvents.length === 0 && (
-                  <div style={{ fontSize: 12, color: "#999", textAlign: "center", padding: "8px 0" }}>No goals or cards in the first half</div>
+                  <div style={{ fontSize: 13, color: "#999", textAlign: "center", padding: "10px 0" }}>No goals or cards in the first half</div>
                 )}
                 {firstHalfEvents.map((e, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: i < firstHalfEvents.length - 1 ? "1px solid #1a1a2a" : "none" }}>
-                    <span style={{ fontSize: 12, color: "#999", minWidth: 30, fontWeight: 700 }}>{e.minute}'</span>
-                    <span style={{ fontSize: 14 }}>{e.icon}</span>
-                    <span style={{ fontSize: 13, color: "#f0f0f0", fontWeight: 600, flex: 1 }}>{(e.label || "").split("(")[0].trim()}</span>
-                    <span style={{ fontSize: 11, color: normalizeTeam(e.team) === normalizeTeam(selectedFixture.home) ? "#4ade80" : "#f59e0b", fontWeight: 700 }}>
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: i < firstHalfEvents.length - 1 ? "1px solid #1a1a2a" : "none" }}>
+                    <span style={{ fontSize: 14, color: "#ccc", minWidth: 34, fontWeight: 800 }}>{e.minute}'</span>
+                    <span style={{ fontSize: 17 }}>{e.icon}</span>
+                    <span style={{ fontSize: 15, color: "#f0f0f0", fontWeight: 700, flex: 1 }}>{(e.label || "").split("(")[0].trim()}</span>
+                    <span style={{ fontSize: 13, color: normalizeTeam(e.team) === normalizeTeam(selectedFixture.home) ? "#4ade80" : "#f59e0b", fontWeight: 800 }}>
                       {(e.team || "").split(" ").slice(-1)[0]}
                     </span>
                   </div>
