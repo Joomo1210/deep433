@@ -939,7 +939,9 @@ function RecapGraphic({ history = [] }) {
             // Scorer is before the bracket e.g. "Kane (Bellingham)" -> "Kane"
             const scorerFull = e.label?.split("(")[0]?.trim() || "";
             const surname = scorerFull.split(" ").slice(-1)[0]?.trim();
-            const time = `${e.minute}'`;
+            const min = parseInt(e.minute) || 0;
+            // Label extra time clearly — ET starts at 91', second ET half from 106'
+            const time = min > 90 ? `ET ${min - 90}'` : `${min}'`;
             const entry = `${e.icon} ${surname} ${time}`;
             if (norm(e.team) === norm(f.home)) homeGoals.push(entry);
             else awayGoals.push(entry);
@@ -2927,7 +2929,9 @@ function HalftimeRecapGraphic() {
 
               {selectedFixture.status === "finished" && (
                 <div style={{ background: "#13131f", borderRadius: 10, padding: "12px 14px", marginTop: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{ fontSize: 12, color: "#ccc", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Full Time</span>
+                  <span style={{ fontSize: 12, color: "#ccc", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>
+                    {selectedFixture.statusRaw === "AET" ? "Full Time (AET)" : selectedFixture.statusRaw === "PEN" ? "Full Time (Pens)" : "Full Time"}
+                  </span>
                   <span style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5 }}>{selectedFixture.score?.home}-{selectedFixture.score?.away}</span>
                 </div>
               )}
