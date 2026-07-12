@@ -973,6 +973,9 @@ function RecapGraphic({ history = [] }) {
 
     setMatchData({
       finalScore: fs,
+      regulationScore: (f.fulltimeScore?.home != null && f.fulltimeScore?.away != null)
+        ? `${f.fulltimeScore.home}-${f.fulltimeScore.away}`
+        : fs, // fall back to aggregate if fulltime data unavailable
       yourPrediction: pred?.user_prediction || null,
       aiPrediction: pred?.ai_prediction || null,
       homeGoals,
@@ -1003,7 +1006,10 @@ function RecapGraphic({ history = [] }) {
   };
 
   const fs = matchData?.finalScore || "0-0";
+  const regScore = matchData?.regulationScore || fs;
+  const [rs0, rs1] = regScore.split("-").map(n => parseInt(n) || 0);
   const [fs0, fs1] = fs.split("-").map(n => parseInt(n) || 0);
+  const wentToExtraTime = regScore !== fs;
   const yourPrediction = matchData?.yourPrediction;
   const aiPrediction = matchData?.aiPrediction;
   const finalScore = matchData?.finalScore;
@@ -1011,10 +1017,11 @@ function RecapGraphic({ history = [] }) {
   const getOutcome = (pred) => {
     if (!pred || !matchData?.finalScore) return null;
     const [p0, p1] = pred.split("-").map(n => parseInt(n) || 0);
-    if (p0 === fs0 && p1 === fs1) return { icon: "✅", label: "Exact", color: "#4ade80" };
-    const homeWon = fs0 > fs1;
-    const awayWon = fs1 > fs0;
-    const draw = fs0 === fs1;
+    // Grade against the 90-minute regulation score — that's what predictions are actually judged on
+    if (p0 === rs0 && p1 === rs1) return { icon: "✅", label: "Exact", color: "#4ade80" };
+    const homeWon = rs0 > rs1;
+    const awayWon = rs1 > rs0;
+    const draw = rs0 === rs1;
     const correct = (homeWon && p0 > p1) || (awayWon && p1 > p0) || (draw && p0 === p1);
     if (correct) return { icon: "🟡", label: "Outcome ✓", color: "#f59e0b" };
     return { icon: "❌", label: "Missed", color: "#f87171" };
@@ -1050,7 +1057,7 @@ function RecapGraphic({ history = [] }) {
             <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 8 }}>
               {selectedFixture?.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 44, height: 44, objectFit: "contain" }} />}
               <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 14, color: "#999", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Full Time</div>
+                <div style={{ fontSize: 14, color: "#999", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Full Time{wentToExtraTime ? " (AET)" : ""}</div>
                 <div style={{ fontSize: 56, fontWeight: 900, color: "#f0f0f0", lineHeight: 1, letterSpacing: -1 }}>{fs0}-{fs1}</div>
               </div>
               {selectedFixture?.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 44, height: 44, objectFit: "contain" }} />}
@@ -1110,7 +1117,7 @@ function RecapGraphic({ history = [] }) {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 6 }}>
               {selectedFixture?.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 40, height: 40, objectFit: "contain" }} />}
               <div>
-                <div style={{ fontSize: 14, color: "#999", textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }}>Full Time</div>
+                <div style={{ fontSize: 14, color: "#999", textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }}>Full Time{wentToExtraTime ? " (AET)" : ""}</div>
                 <div style={{ fontSize: 56, fontWeight: 900, color: "#f0f0f0", lineHeight: 1, letterSpacing: -1 }}>{fs0}-{fs1}</div>
               </div>
               {selectedFixture?.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 40, height: 40, objectFit: "contain" }} />}
