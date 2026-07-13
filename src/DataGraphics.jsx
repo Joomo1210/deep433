@@ -1391,44 +1391,41 @@ function BracketGraphic({ history = [] }) {
             <DropDown label="Semi-Final 2" skey="sf2" />
           </div>
 
-          {/* Manual finalist picks — SF winners aren't confirmed yet */}
-          {(sel.sf1 || sel.sf2) && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              {sel.sf1 && (() => {
-                const m = getMatch(sel.sf1);
-                return (
-                  <div>
-                    <div style={{ fontSize: 12, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Who advances? (SF1)</div>
-                    <select value={finalist1} onChange={e => setFinalist1(e.target.value)} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 15, padding: "7px 10px", outline: "none", fontFamily: "inherit" }}>
-                      <option value="">— Select —</option>
-                      {m?.home && <option value="home">{m.home}</option>}
-                      {m?.away && <option value="away">{m.away}</option>}
-                    </select>
-                  </div>
-                );
-              })()}
-              {sel.sf2 && (() => {
-                const m = getMatch(sel.sf2);
-                return (
-                  <div>
-                    <div style={{ fontSize: 12, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Who advances? (SF2)</div>
-                    <select value={finalist2} onChange={e => setFinalist2(e.target.value)} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 15, padding: "7px 10px", outline: "none", fontFamily: "inherit" }}>
-                      <option value="">— Select —</option>
-                      {m?.home && <option value="home">{m.home}</option>}
-                      {m?.away && <option value="away">{m.away}</option>}
-                    </select>
-                  </div>
-                );
-              })()}
-            </div>
-          )}
+          {/* All finalist/champion pickers always visible — no gating */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            {(() => {
+              const m = getMatch(sel.sf1);
+              return (
+                <div>
+                  <div style={{ fontSize: 12, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Who advances? (SF1)</div>
+                  <select value={finalist1} onChange={e => setFinalist1(e.target.value)} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 15, padding: "7px 10px", outline: "none", fontFamily: "inherit" }}>
+                    <option value="">— Select —</option>
+                    {m?.home && <option value="home">{m.home}</option>}
+                    {m?.away && <option value="away">{m.away}</option>}
+                  </select>
+                </div>
+              );
+            })()}
+            {(() => {
+              const m = getMatch(sel.sf2);
+              return (
+                <div>
+                  <div style={{ fontSize: 12, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Who advances? (SF2)</div>
+                  <select value={finalist2} onChange={e => setFinalist2(e.target.value)} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 15, padding: "7px 10px", outline: "none", fontFamily: "inherit" }}>
+                    <option value="">— Select —</option>
+                    {m?.home && <option value="home">{m.home}</option>}
+                    {m?.away && <option value="away">{m.away}</option>}
+                  </select>
+                </div>
+              );
+            })()}
+          </div>
 
-          {/* Predicted champion pick */}
-          {finalist1 && finalist2 && (() => {
+          {(() => {
             const m1 = getMatch(sel.sf1);
             const m2 = getMatch(sel.sf2);
-            const f1Name = finalist1 === "home" ? m1?.home : m1?.away;
-            const f2Name = finalist2 === "home" ? m2?.home : m2?.away;
+            const f1Name = finalist1 === "home" ? m1?.home : finalist1 === "away" ? m1?.away : null;
+            const f2Name = finalist2 === "home" ? m2?.home : finalist2 === "away" ? m2?.away : null;
             return (
               <div>
                 <div style={{ fontSize: 12, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>🏆 Predicted Champion</div>
