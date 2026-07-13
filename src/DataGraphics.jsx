@@ -1222,8 +1222,8 @@ function BracketGraphic({ history = [] }) {
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
-  // 7 manual selectors: 4 QF + 2 SF + 1 Final
-  const [sel, setSel] = useState({ qf1:"", qf2:"", qf3:"", qf4:"", sf1:"", sf2:"", fin:"" });
+  // 3 manual selectors: 2 SF + 1 Final (down to the Final Four)
+  const [sel, setSel] = useState({ sf1:"", sf2:"", fin:"" });
   const setS = (key) => (val) => setSel(prev => ({ ...prev, [key]: val }));
 
   const CUP_LEAGUES = [
@@ -1238,7 +1238,7 @@ function BracketGraphic({ history = [] }) {
 
   useEffect(() => {
     setLoading(true); setRounds([]);
-    setSel({ qf1:"", qf2:"", qf3:"", qf4:"", sf1:"", sf2:"", fin:"" });
+    setSel({ sf1:"", sf2:"", fin:"" });
     fetch(`/api/bracket?leagueId=${leagueId}`)
       .then(r => r.json())
       .then(d => setRounds(d.rounds || []))
@@ -1382,14 +1382,10 @@ function BracketGraphic({ history = [] }) {
       {!loading && rounds.length > 0 && (
         <>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            <DropDown label="QF Match 1 (top left)" skey="qf1" />
-            <DropDown label="QF Match 2 (bottom left)" skey="qf2" />
-            <DropDown label="QF Match 3 (top right)" skey="qf3" />
-            <DropDown label="QF Match 4 (bottom right)" skey="qf4" />
-            <DropDown label="SF Match 1 (top)" skey="sf1" />
-            <DropDown label="SF Match 2 (bottom)" skey="sf2" />
-            <DropDown label="🏆 Final" skey="fin" />
+            <DropDown label="Semi-Final 1" skey="sf1" />
+            <DropDown label="Semi-Final 2" skey="sf2" />
           </div>
+          <DropDown label="🏆 Final" skey="fin" />
 
           <div ref={cardRef} style={{ background: "linear-gradient(145deg, #0a0a0f 0%, #0d0d1a 60%, #0a0f0a 100%)", border: "1px solid #1e1e30", borderRadius: 14, overflow: "hidden", position: "relative", padding: "28px 16px 16px", fontFamily: "'Inter',sans-serif" }}>
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
@@ -1403,52 +1399,64 @@ function BracketGraphic({ history = [] }) {
               </div>
             </div>
 
-            <div style={{ position: "relative", width: "100%", maxWidth: 460, margin: "0 auto", padding: "10px 0" }}>
-              {/* Grid: 3 columns x 2 rows, Final spans center */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 170px 1fr", gridTemplateRows: "auto auto", gap: "16px 12px", alignItems: "center" }}>
+            <div style={{ position: "relative", width: "100%", maxWidth: 420, margin: "0 auto", padding: "10px 0" }}>
 
-                {/* Top-left: QF1 */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-                  <div style={{ fontSize: 12, color: "#4ade80", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Quarter-Final</div>
-                  <Node val={sel.qf1} w={140} />
-                </div>
-
-                {/* Top-center: SF1 */}
+              {/* Semi-Finals side by side */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <div style={{ fontSize: 12, color: "#c084fc", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Semi-Final</div>
-                  <Node val={sel.sf1} w={150} />
+                  <div style={{ fontSize: 12, color: "#c084fc", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Semi-Final</div>
+                  <Node val={sel.sf1} w={165} />
                 </div>
-
-                {/* Top-right: QF3 */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-                  <div style={{ fontSize: 12, color: "#4ade80", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Quarter-Final</div>
-                  <Node val={sel.qf3} w={140} />
-                </div>
-
-                {/* Bottom-left: QF2 */}
-                <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                  <Node val={sel.qf2} w={140} />
-                </div>
-
-                {/* Bottom-center: SF2 */}
-                <div style={{ display: "flex", justifyContent: "center" }}>
-                  <Node val={sel.sf2} w={150} />
-                </div>
-
-                {/* Bottom-right: QF4 */}
-                <div style={{ display: "flex", justifyContent: "flex-start" }}>
-                  <Node val={sel.qf4} w={140} />
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <div style={{ fontSize: 12, color: "#c084fc", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Semi-Final</div>
+                  <Node val={sel.sf2} w={165} />
                 </div>
               </div>
 
-              {/* Final — dead centre, overlaid */}
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 20 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, marginBottom: 8 }}>
-                  <TrophyIcon size={18} />
-                  <span style={{ fontSize: 15, color: "#fbbf24", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5 }}>Final</span>
-                </div>
-                <Node val={sel.fin} w={180} />
+              {/* Down arrows into Final */}
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}>
+                <span style={{ fontSize: 20, color: "#4a4a5a", fontWeight: 900 }}>▼</span>
               </div>
+
+              {/* Final */}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 20 }}>
+                <div style={{ fontSize: 13, color: "#fbbf24", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>Final</div>
+                <Node val={sel.fin} w={190} />
+              </div>
+
+              {/* Champion reveal */}
+              {(() => {
+                const finalMatch = getMatch(sel.fin);
+                const isFinished = finalMatch?.status === "finished";
+                const champion = isFinished
+                  ? (finalMatch.score.home > finalMatch.score.away ? { name: finalMatch.home, logo: finalMatch.homeLogo } : { name: finalMatch.away, logo: finalMatch.awayLogo })
+                  : null;
+                return (
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                    <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
+                      <span style={{ fontSize: 20, color: "#4a4a5a", fontWeight: 900 }}>▼</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+                      <TrophyIcon size={22} />
+                      <span style={{ fontSize: 15, color: "#fbbf24", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5 }}>Champion</span>
+                    </div>
+                    {champion ? (
+                      <div style={{
+                        display: "flex", alignItems: "center", gap: 12,
+                        background: "linear-gradient(135deg, rgba(255,215,0,0.12), rgba(255,215,0,0.02))",
+                        border: "1px solid rgba(255,215,0,0.3)", borderRadius: 12, padding: "16px 28px",
+                      }}>
+                        {champion.logo && <img src={champion.logo} alt="" crossOrigin="anonymous" style={{ width: 44, height: 44, objectFit: "contain" }} />}
+                        <span style={{ fontSize: 22, fontWeight: 900, color: "#FFD700" }}>{champion.name}</span>
+                      </div>
+                    ) : (
+                      <div style={{ width: 190, background: "#161622", border: "1px dashed #2a2a3a", borderRadius: 8, padding: "18px 8px", textAlign: "center" }}>
+                        <span style={{ fontSize: 13, color: "#666", fontWeight: 600 }}>Awaiting Final result</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
             <div style={{ textAlign: "center", marginTop: 10 }}>
