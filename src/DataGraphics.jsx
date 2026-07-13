@@ -1224,6 +1224,10 @@ function BracketGraphic({ history = [] }) {
 
   // 3 manual selectors: 2 SF + 1 Final (down to the Final Four)
   const [sel, setSel] = useState({ sf1:"", sf2:"", fin:"" });
+  // Since SF winners aren't confirmed yet, let Joseph manually pick who advances
+  const [finalist1, setFinalist1] = useState(""); // "home" or "away" of sf1 match
+  const [finalist2, setFinalist2] = useState(""); // "home" or "away" of sf2 match
+  const [predictedChampion, setPredictedChampion] = useState(""); // "1" or "2"
   const setS = (key) => (val) => setSel(prev => ({ ...prev, [key]: val }));
 
   const CUP_LEAGUES = [
@@ -1239,6 +1243,7 @@ function BracketGraphic({ history = [] }) {
   useEffect(() => {
     setLoading(true); setRounds([]);
     setSel({ sf1:"", sf2:"", fin:"" });
+    setFinalist1(""); setFinalist2(""); setPredictedChampion("");
     fetch(`/api/bracket?leagueId=${leagueId}`)
       .then(r => r.json())
       .then(d => setRounds(d.rounds || []))
@@ -1364,7 +1369,7 @@ function BracketGraphic({ history = [] }) {
     </div>
   );
 
-  const hasAny = Object.values(sel).some(v => v);
+  const hasAny = Object.values(sel).some(v => v) || finalist1 || finalist2 || predictedChampion;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -1385,7 +1390,56 @@ function BracketGraphic({ history = [] }) {
             <DropDown label="Semi-Final 1" skey="sf1" />
             <DropDown label="Semi-Final 2" skey="sf2" />
           </div>
-          <DropDown label="🏆 Final" skey="fin" />
+
+          {/* Manual finalist picks — SF winners aren't confirmed yet */}
+          {(sel.sf1 || sel.sf2) && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              {sel.sf1 && (() => {
+                const m = getMatch(sel.sf1);
+                return (
+                  <div>
+                    <div style={{ fontSize: 12, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Who advances? (SF1)</div>
+                    <select value={finalist1} onChange={e => setFinalist1(e.target.value)} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 15, padding: "7px 10px", outline: "none", fontFamily: "inherit" }}>
+                      <option value="">— Select —</option>
+                      {m?.home && <option value="home">{m.home}</option>}
+                      {m?.away && <option value="away">{m.away}</option>}
+                    </select>
+                  </div>
+                );
+              })()}
+              {sel.sf2 && (() => {
+                const m = getMatch(sel.sf2);
+                return (
+                  <div>
+                    <div style={{ fontSize: 12, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Who advances? (SF2)</div>
+                    <select value={finalist2} onChange={e => setFinalist2(e.target.value)} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 15, padding: "7px 10px", outline: "none", fontFamily: "inherit" }}>
+                      <option value="">— Select —</option>
+                      {m?.home && <option value="home">{m.home}</option>}
+                      {m?.away && <option value="away">{m.away}</option>}
+                    </select>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* Predicted champion pick */}
+          {finalist1 && finalist2 && (() => {
+            const m1 = getMatch(sel.sf1);
+            const m2 = getMatch(sel.sf2);
+            const f1Name = finalist1 === "home" ? m1?.home : m1?.away;
+            const f2Name = finalist2 === "home" ? m2?.home : m2?.away;
+            return (
+              <div>
+                <div style={{ fontSize: 12, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>🏆 Predicted Champion</div>
+                <select value={predictedChampion} onChange={e => setPredictedChampion(e.target.value)} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 15, padding: "7px 10px", outline: "none", fontFamily: "inherit" }}>
+                  <option value="">— Select —</option>
+                  {f1Name && <option value="1">{f1Name}</option>}
+                  {f2Name && <option value="2">{f2Name}</option>}
+                </select>
+              </div>
+            );
+          })()}
 
           <div ref={cardRef} style={{ background: "linear-gradient(145deg, #0a0a0f 0%, #0d0d1a 60%, #0a0f0a 100%)", border: "1px solid #1e1e30", borderRadius: 14, overflow: "hidden", position: "relative", padding: "28px 16px 16px", fontFamily: "'Inter',sans-serif" }}>
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
@@ -1418,19 +1472,46 @@ function BracketGraphic({ history = [] }) {
                 <span style={{ fontSize: 20, color: "#4a4a5a", fontWeight: 900 }}>▼</span>
               </div>
 
-              {/* Final */}
+              {/* Final — built from manual finalist picks */}
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 20 }}>
                 <div style={{ fontSize: 13, color: "#fbbf24", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>Final</div>
-                <Node val={sel.fin} w={190} />
+                {(() => {
+                  const m1 = getMatch(sel.sf1);
+                  const m2 = getMatch(sel.sf2);
+                  const f1Name = finalist1 === "home" ? m1?.home : finalist1 === "away" ? m1?.away : null;
+                  const f1Logo = finalist1 === "home" ? m1?.homeLogo : finalist1 === "away" ? m1?.awayLogo : null;
+                  const f2Name = finalist2 === "home" ? m2?.home : finalist2 === "away" ? m2?.away : null;
+                  const f2Logo = finalist2 === "home" ? m2?.homeLogo : finalist2 === "away" ? m2?.awayLogo : null;
+
+                  if (!f1Name || !f2Name) {
+                    return (
+                      <div style={{ width: 190, background: "#161622", border: "1px dashed #2a2a3a", borderRadius: 8, padding: "14px 8px", textAlign: "center" }}>
+                        <span style={{ fontSize: 13, color: "#666", fontWeight: 600 }}>Pick both finalists above</span>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div style={{ width: 190, background: "#181826", border: "2px solid #333", borderRadius: 8, overflow: "hidden" }}>
+                      {[{ name: f1Name, logo: f1Logo }, { name: f2Name, logo: f2Logo }].map((t, i) => (
+                        <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, padding: "8px 10px", borderBottom: i === 0 ? "1px solid #26263a" : "none" }}>
+                          {t.logo ? <img src={t.logo} alt="" crossOrigin="anonymous" style={{ width: 20, height: 20, objectFit: "contain", flexShrink: 0 }} /> : <div style={{ width: 20, height: 20, background: "#26263a", borderRadius: "50%", flexShrink: 0 }} />}
+                          <span style={{ fontSize: 15, fontWeight: 700, color: "#f5f5f5", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
 
-              {/* Champion reveal */}
+              {/* Champion reveal — from predicted champion pick */}
               {(() => {
-                const finalMatch = getMatch(sel.fin);
-                const isFinished = finalMatch?.status === "finished";
-                const champion = isFinished
-                  ? (finalMatch.score.home > finalMatch.score.away ? { name: finalMatch.home, logo: finalMatch.homeLogo } : { name: finalMatch.away, logo: finalMatch.awayLogo })
-                  : null;
+                const m1 = getMatch(sel.sf1);
+                const m2 = getMatch(sel.sf2);
+                const f1Name = finalist1 === "home" ? m1?.home : finalist1 === "away" ? m1?.away : null;
+                const f1Logo = finalist1 === "home" ? m1?.homeLogo : finalist1 === "away" ? m1?.awayLogo : null;
+                const f2Name = finalist2 === "home" ? m2?.home : finalist2 === "away" ? m2?.away : null;
+                const f2Logo = finalist2 === "home" ? m2?.homeLogo : finalist2 === "away" ? m2?.awayLogo : null;
+                const champion = predictedChampion === "1" ? { name: f1Name, logo: f1Logo } : predictedChampion === "2" ? { name: f2Name, logo: f2Logo } : null;
                 return (
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                     <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
@@ -1451,7 +1532,7 @@ function BracketGraphic({ history = [] }) {
                       </div>
                     ) : (
                       <div style={{ width: 190, background: "#161622", border: "1px dashed #2a2a3a", borderRadius: 8, padding: "18px 8px", textAlign: "center" }}>
-                        <span style={{ fontSize: 13, color: "#666", fontWeight: 600 }}>Awaiting Final result</span>
+                        <span style={{ fontSize: 13, color: "#666", fontWeight: 600 }}>Pick your Champion above</span>
                       </div>
                     )}
                   </div>
