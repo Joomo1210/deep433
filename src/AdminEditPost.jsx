@@ -6,50 +6,108 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY
 );
 
-export default function AdminEditPost() {
-  const [slug, setSlug] = useState('');
-  const [post, setPost] = useState(null);
-  const [finalScore, setFinalScore] = useState('');
-  const [status, setStatus] = useState(null); // null | loading | found | not_found | saving | saved | error
+function slugify(title) {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
+
+export default function AdminNewPost() {
+  const [form, setForm] = useState({
+    title: '', subtitle: '', body: '',
+    competition: '', gameweek: '', match_label: '', match_date: '',
+    home_team: '', away_team: '',
+    home_team_logo: '', away_team_logo: '',
+    user_prediction: '',
+    ai_predicted_score: '', ai_confidence_pct: '', ai_note: '',
+    attack_home_pct: '', attack_away_pct: '',
+    defence_home_pct: '', defence_away_pct: '',
+    key_stat: '', h2h_summary: '',
+  });
+  const [status, setStatus] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
+  const [uploading, setUploading] = useState(false);
 
-  async function loadPost() {
-    if (!slug.trim()) return;
-    setStatus('loading');
-    setErrorMsg('');
-
-    const { data, error } = await supabase
-      .from('blog_posts')
-      .select('*')
-      .eq('slug', slug.trim())
-      .single();
-
-    if (error || !data) {
-      setStatus('not_found');
-      setPost(null);
-      return;
-    }
-
-    setPost(data);
-    setFinalScore(data.final_score || '');
-    setStatus('found');
+  function update(field, value) {
+    setForm(prev => ({ ...prev, [field]: value }));
   }
 
-  async function saveFinalScore() {
+  function handleImageSelect(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  }
+
+  async function uploadImage() {
+    if (!imageFile) return null;
+    setUploading(true);
+    const ext = imageFile.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('blog-images')
+      .upload(fileName, imageFile);
+
+    setUploading(false);
+
+    if (uploadError) {
+      setStatus('error');
+      setErrorMsg(`Image upload failed: ${uploadError.message}`);
+      return null;
+    }
+
+    const { data } = supabase.storage.from('blog-images').getPublicUrl(fileName);
+    return data.publicUrl;
+  }
+
+  async function savePost(publish) {
     setStatus('saving');
     setErrorMsg('');
 
-    const { error } = await supabase
-      .from('blog_posts')
-      .update({
-        final_score: finalScore.trim() || null,
-        settled_at: finalScore.trim() ? new Date().toISOString() : null,
-      })
-      .eq('id', post.id);
-
-    if (error) {
+    if (!form.title.trim()) {
       setStatus('error');
-      setErrorMsg(error.message);
+      setErrorMsg('Title is required.');
+      return;
+    }
+    if (!form.user_prediction.trim() || !form.ai_predicted_score.trim()) {
+      setStatus('error');
+      setErrorMsg('Add both your prediction and the AI\'s prediction.');
+      return;
+    }
+
+    let uploadedImageUrl = null;
+    if (imageFile) {
+      uploadedImageUrl = await uploadImage();
+      if (imageFile && !uploadedImageUrl) return; // upload failed, error already set
+    }
+
+    const postPayload = {
+      ...form,
+      image_url: uploadedImageUrl,
+      slug: slugify(form.title),
+      ai_confidence_pct: form.ai_confidence_pct ? parseInt(form.ai_confidence_pct, 10) : null,
+      attack_home_pct: form.attack_home_pct ? parseInt(form.attack_home_pct, 10) : null,
+      attack_away_pct: form.attack_away_pct ? parseInt(form.attack_away_pct, 10) : null,
+      defence_home_pct: form.defence_home_pct ? parseInt(form.defence_home_pct, 10) : null,
+      defence_away_pct: form.defence_away_pct ? parseInt(form.defence_away_pct, 10) : null,
+      match_date: form.match_date || null,
+      published: publish,
+      published_at: publish ? new Date().toISOString() : null,
+    };
+
+    const { error: postError } = await supabase
+      .from('blog_posts')
+      .insert(postPayload)
+      .select()
+      .single();
+
+    if (postError) {
+      setStatus('error');
+      setErrorMsg(postError.message);
       return;
     }
 
@@ -57,69 +115,120 @@ export default function AdminEditPost() {
   }
 
   return (
-    <div style={page}>
-      <h1 style={{ fontSize: 32, fontWeight: 900 }}>Edit Post — Final Score</h1>
+    <div style={{ minHeight: '100vh', background: '#0B1F17', maxWidth: 680, margin: '0 auto', padding: '48px 24px 100px', fontFamily: 'sans-serif', color: '#F1F4EC' }}>
+      <h1 style={{ fontSize: 32, fontWeight: 900 }}>New Post</h1>
       <p style={{ color: '#9CA89C', marginBottom: 32, fontSize: 15, lineHeight: 1.5 }}>
-        Enter the post's slug to load it, then update the final score once the match has finished.
+        Deep433's data-driven takes — your call vs the AI's, backed by the stats behind it.
       </p>
 
-      <div style={field}>
-        <label style={label}>Post Slug</label>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <input
-            value={slug}
-            onChange={e => setSlug(e.target.value)}
-            placeholder="e.g. knockouts-are-here-so-is-pundits-vs-fans"
-            style={{ ...input, flex: 1 }}
-            onKeyDown={e => e.key === 'Enter' && loadPost()}
-          />
-          <button onClick={loadPost} style={btnSecondary}>Load Post</button>
+      <Section title="Post & Match Details">
+        <Field label="Title" value={form.title} onChange={v => update('title', v)} />
+        <Field label="Subtitle" value={form.subtitle} onChange={v => update('subtitle', v)} />
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', fontSize: 13, color: '#9CA89C', marginBottom: 8, textTransform: 'uppercase', fontWeight: 600, letterSpacing: 0.5 }}>Featured Image</label>
+          <input type="file" accept="image/*" onChange={handleImageSelect} style={{ color: '#F1F4EC', fontSize: 14 }} />
+          {imagePreview && (
+            <img src={imagePreview} alt="Preview" style={{ width: '100%', maxHeight: 240, objectFit: 'cover', borderRadius: 6, marginTop: 12 }} />
+          )}
+          {uploading && <p style={{ fontSize: 12, color: '#7E9485', marginTop: 8 }}>Uploading image…</p>}
         </div>
-        <p style={{ fontSize: 12, color: '#7E9485', marginTop: 8 }}>
-          The slug is the part of the URL after /blog/ — e.g. for deep433.com/blog/my-post, the slug is "my-post".
+
+        <Row2>
+          <Field label="Competition" value={form.competition} onChange={v => update('competition', v)} />
+          <Field label="Gameweek / Round" value={form.gameweek} onChange={v => update('gameweek', v)} />
+        </Row2>
+        <Field label="Match Label" value={form.match_label} onChange={v => update('match_label', v)} placeholder="e.g. Spain vs Belgium" />
+        <Row2>
+          <Field label="Home Team" value={form.home_team} onChange={v => update('home_team', v)} />
+          <Field label="Away Team" value={form.away_team} onChange={v => update('away_team', v)} />
+        </Row2>
+        <Row2>
+          <Field label="Home Crest URL" value={form.home_team_logo} onChange={v => update('home_team_logo', v)} placeholder="For club teams — paste crest URL" />
+          <Field label="Away Crest URL" value={form.away_team_logo} onChange={v => update('away_team_logo', v)} placeholder="Leave blank for internationals" />
+        </Row2>
+        <p style={{ fontSize: 12, color: '#7E9485', marginTop: -8, marginBottom: 16 }}>
+          For internationals, leave crest URLs blank — the flag emoji shows automatically. For club teams, copy the crest URL from the Deep433 app (e.g. media.api-sports.io/football/teams/...).
         </p>
+        <Field label="Kickoff Date/Time" type="datetime-local" value={form.match_date} onChange={v => update('match_date', v)} />
+        <Field label="Body (markdown)" textarea value={form.body} onChange={v => update('body', v)} />
+      </Section>
+
+      <Section title="The Prediction Battle — You vs AI" color="#C8FF4D">
+        <Row2>
+          <Field label="👤 Your Prediction" value={form.user_prediction} onChange={v => update('user_prediction', v)} placeholder="e.g. 2-1" />
+          <Field label="🤖 AI Prediction" value={form.ai_predicted_score} onChange={v => update('ai_predicted_score', v)} placeholder="e.g. 2-1" />
+        </Row2>
+        <Field label="AI Confidence %" value={form.ai_confidence_pct} onChange={v => update('ai_confidence_pct', v)} placeholder="e.g. 68" />
+        <Field label="AI Verdict (why note)" textarea value={form.ai_note} onChange={v => update('ai_note', v)} />
+      </Section>
+
+      <Section title="Deep Insights — The Data Behind It" color="#3D7EFF">
+        <p style={{ fontSize: 12, color: '#7E9485', marginBottom: 16 }}>
+          Pull these straight from the app's Deep Insights panel for this fixture — optional, but strengthens the data-driven angle.
+        </p>
+        <Row2>
+          <Field label="Attack Rating — Home %" value={form.attack_home_pct} onChange={v => update('attack_home_pct', v)} placeholder="e.g. 59" />
+          <Field label="Attack Rating — Away %" value={form.attack_away_pct} onChange={v => update('attack_away_pct', v)} placeholder="e.g. 41" />
+        </Row2>
+        <Row2>
+          <Field label="Defence Rating — Home %" value={form.defence_home_pct} onChange={v => update('defence_home_pct', v)} placeholder="e.g. 64" />
+          <Field label="Defence Rating — Away %" value={form.defence_away_pct} onChange={v => update('defence_away_pct', v)} placeholder="e.g. 36" />
+        </Row2>
+        <Field label="Key Stat" value={form.key_stat} onChange={v => update('key_stat', v)} placeholder="e.g. Spain had 68% of the ball" />
+        <Field label="H2H Summary" textarea value={form.h2h_summary} onChange={v => update('h2h_summary', v)} placeholder="e.g. Spain have won 3 of the last 5 meetings" />
+      </Section>
+
+      <div style={{ display: 'flex', gap: 12, marginTop: 28 }}>
+        <button onClick={() => savePost(false)} disabled={status === 'saving' || uploading} style={btnSecondary}>Save Draft</button>
+        <button onClick={() => savePost(true)} disabled={status === 'saving' || uploading} style={btnPrimary}>Publish Post</button>
       </div>
 
-      {status === 'loading' && <p style={{ color: '#9CA89C' }}>Loading…</p>}
-      {status === 'not_found' && <p style={{ color: '#FF5A2D' }}>No post found with that slug.</p>}
-
-      {post && (status === 'found' || status === 'saving' || status === 'saved' || status === 'error') && (
-        <div style={card}>
-          <div style={{ fontSize: 12, color: '#7E9485', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>
-            {post.category} {post.gameweek ? `· ${post.gameweek}` : ''}
-          </div>
-          <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>{post.title}</div>
-          {post.match_label && <div style={{ fontSize: 14, color: '#9CA89C', marginBottom: 20 }}>{post.match_label}</div>}
-
-          <div style={field}>
-            <label style={label}>Final Score</label>
-            <input
-              value={finalScore}
-              onChange={e => setFinalScore(e.target.value)}
-              placeholder="e.g. 2-1, or leave blank to clear"
-              style={input}
-            />
-            <p style={{ fontSize: 12, color: '#7E9485', marginTop: 8 }}>
-              This is what shows in the "Final Score" column on the public post once filled in.
-            </p>
-          </div>
-
-          <button onClick={saveFinalScore} disabled={status === 'saving'} style={btnPrimary}>
-            {status === 'saving' ? 'Saving…' : 'Save Final Score'}
-          </button>
-
-          {status === 'saved' && <p style={{ color: '#C8FF4D', marginTop: 12 }}>Saved.</p>}
-          {status === 'error' && <p style={{ color: '#FF5A2D', marginTop: 12 }}>Couldn't save: {errorMsg}</p>}
-        </div>
-      )}
+      {status === 'saving' && <p style={{ color: '#9CA89C', marginTop: 12 }}>Saving…</p>}
+      {status === 'saved' && <p style={{ color: '#C8FF4D', marginTop: 12 }}>Saved.</p>}
+      {status === 'error' && <p style={{ color: '#FF5A2D', marginTop: 12 }}>Couldn't save: {errorMsg}</p>}
     </div>
   );
 }
 
-const page = { minHeight: '100vh', background: '#0B1F17', maxWidth: 680, margin: '0 auto', padding: '48px 24px 100px', fontFamily: 'sans-serif', color: '#F1F4EC' };
-const field = { marginBottom: 24 };
-const label = { display: 'block', fontSize: 13, color: '#9CA89C', marginBottom: 8, textTransform: 'uppercase', fontWeight: 600, letterSpacing: 0.5 };
-const input = { width: '100%', padding: 12, background: '#0E2419', color: '#F1F4EC', border: '1px solid #2A4A3A', borderRadius: 4, fontSize: 15 };
-const card = { border: '1px solid #2A4A3A', borderRadius: 6, padding: 24, marginTop: 24, background: '#0E2419' };
 const btnPrimary = { background: '#C8FF4D', color: '#0B1F17', border: 'none', borderRadius: 4, padding: '12px 24px', fontSize: 14, fontWeight: 700, cursor: 'pointer' };
-const btnSecondary = { background: 'none', border: '1px solid #2A4A3A', color: '#F1F4EC', borderRadius: 4, padding: '12px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' };
+const btnSecondary = { background: 'none', border: '1px solid #2A4A3A', color: '#F1F4EC', borderRadius: 4, padding: '12px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer' };
+
+function Section({ title, color = '#F1F4EC', children }) {
+  return (
+    <div style={{ border: '1px solid #2A4A3A', borderRadius: 6, padding: 24, marginBottom: 24, background: '#0E2419' }}>
+      <div style={{ color, fontSize: 14, letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700, marginBottom: 18, paddingBottom: 12, borderBottom: '1px solid #2A4A3A' }}>
+        {title}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Row2({ children }) {
+  return <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>{children}</div>;
+}
+
+function Field({ label, value, onChange, placeholder, textarea, type = 'text' }) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <label style={{ display: 'block', fontSize: 13, color: '#9CA89C', marginBottom: 8, textTransform: 'uppercase', fontWeight: 600, letterSpacing: 0.5 }}>{label}</label>
+      {textarea ? (
+        <textarea
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          style={{ width: '100%', minHeight: 80, padding: 12, background: '#0E2419', color: '#F1F4EC', border: '1px solid #2A4A3A', borderRadius: 4, fontSize: 15, lineHeight: 1.5 }}
+        />
+      ) : (
+        <input
+          type={type}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          style={{ width: '100%', padding: 12, background: '#0E2419', color: '#F1F4EC', border: '1px solid #2A4A3A', borderRadius: 4, fontSize: 15 }}
+        />
+      )}
+    </div>
+  );
+}
