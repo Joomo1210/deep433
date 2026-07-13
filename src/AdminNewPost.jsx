@@ -27,9 +27,41 @@ export default function AdminNewPost() {
   });
   const [status, setStatus] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
+  const [uploading, setUploading] = useState(false);
 
   function update(field, value) {
     setForm(prev => ({ ...prev, [field]: value }));
+  }
+
+  function handleImageSelect(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  }
+
+  async function uploadImage() {
+    if (!imageFile) return null;
+    setUploading(true);
+    const ext = imageFile.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('blog-images')
+      .upload(fileName, imageFile);
+
+    setUploading(false);
+
+    if (uploadError) {
+      setStatus('error');
+      setErrorMsg(`Image upload failed: ${uploadError.message}`);
+      return null;
+    }
+
+    const { data } = supabase.storage.from('blog-images').getPublicUrl(fileName);
+    return data.publicUrl;
   }
 
   async function savePost(publish) {
@@ -47,8 +79,15 @@ export default function AdminNewPost() {
       return;
     }
 
+    let uploadedImageUrl = null;
+    if (imageFile) {
+      uploadedImageUrl = await uploadImage();
+      if (imageFile && !uploadedImageUrl) return; // upload failed, error already set
+    }
+
     const postPayload = {
       ...form,
+      image_url: uploadedImageUrl,
       slug: slugify(form.title),
       ai_confidence_pct: form.ai_confidence_pct ? parseInt(form.ai_confidence_pct, 10) : null,
       attack_home_pct: form.attack_home_pct ? parseInt(form.attack_home_pct, 10) : null,
@@ -85,6 +124,16 @@ export default function AdminNewPost() {
       <Section title="Post & Match Details">
         <Field label="Title" value={form.title} onChange={v => update('title', v)} />
         <Field label="Subtitle" value={form.subtitle} onChange={v => update('subtitle', v)} />
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', fontSize: 13, color: '#9CA89C', marginBottom: 8, textTransform: 'uppercase', fontWeight: 600, letterSpacing: 0.5 }}>Featured Image</label>
+          <input type="file" accept="image/*" onChange={handleImageSelect} style={{ color: '#F1F4EC', fontSize: 14 }} />
+          {imagePreview && (
+            <img src={imagePreview} alt="Preview" style={{ width: '100%', maxHeight: 240, objectFit: 'cover', borderRadius: 6, marginTop: 12 }} />
+          )}
+          {uploading && <p style={{ fontSize: 12, color: '#7E9485', marginTop: 8 }}>Uploading image…</p>}
+        </div>
+
         <Row2>
           <Field label="Competition" value={form.competition} onChange={v => update('competition', v)} />
           <Field label="Gameweek / Round" value={form.gameweek} onChange={v => update('gameweek', v)} />
@@ -131,8 +180,8 @@ export default function AdminNewPost() {
       </Section>
 
       <div style={{ display: 'flex', gap: 12, marginTop: 28 }}>
-        <button onClick={() => savePost(false)} disabled={status === 'saving'} style={btnSecondary}>Save Draft</button>
-        <button onClick={() => savePost(true)} disabled={status === 'saving'} style={btnPrimary}>Publish Post</button>
+        <button onClick={() => savePost(false)} disabled={status === 'saving' || uploading} style={btnSecondary}>Save Draft</button>
+        <button onClick={() => savePost(true)} disabled={status === 'saving' || uploading} style={btnPrimary}>Publish Post</button>
       </div>
 
       {status === 'saving' && <p style={{ color: '#9CA89C', marginTop: 12 }}>Saving…</p>}
