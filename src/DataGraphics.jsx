@@ -2779,7 +2779,9 @@ function TransferFitGraphic() {
                   <div style={{ fontSize: 12, color: "#a855f7", fontWeight: 700, marginTop: 2, opacity: 0.7 }}>INCOMING</div>
                 </div>
                 <div style={{ textAlign: "center", padding: "0 8px" }}>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: "#333" }}>VS</div>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: "#a855f7", textTransform: "uppercase", letterSpacing: 0.5 }}>NEW</div>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: "#555", margin: "2px 0" }}>→</div>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: "#4ade80", textTransform: "uppercase", letterSpacing: 0.5 }}>OLD</div>
                 </div>
                 <div style={{ textAlign: "center" }}>
                   {incumbent.photo && <img src={incumbent.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 8px" }} />}
