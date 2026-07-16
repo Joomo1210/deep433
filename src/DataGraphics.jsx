@@ -2074,7 +2074,7 @@ function PlayerH2HGraphic() {
     const p1Better = higherIsBetter ? v1 > v2 : v1 < v2;
     const p2Better = higherIsBetter ? v2 > v1 : v2 < v1;
     return (
-      <div style={{ display: "flex", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #0f0f1a" }}>
+      <div style={{ display: "flex", alignItems: "center", padding: "6px 0", borderBottom: "1px solid #0f0f1a" }}>
         <span style={{ flex: 1, textAlign: "right", fontSize: 20, fontWeight: p1Better ? 900 : 700, color: "#4ade80", opacity: p1Better ? 1 : 0.65, paddingRight: 12 }}>{val1 ?? "—"}</span>
         <span style={{ fontSize: 13, color: "#999", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, width: 90, textAlign: "center" }}>{label}</span>
         <span style={{ flex: 1, textAlign: "left", fontSize: 20, fontWeight: p2Better ? 900 : 700, color: "#f59e0b", opacity: p2Better ? 1 : 0.65, paddingLeft: 12 }}>{val2 ?? "—"}</span>
@@ -2384,7 +2384,7 @@ function MatchH2HGraphic() {
     const p1Better = higherIsBetter ? v1 > v2 : v1 < v2;
     const p2Better = higherIsBetter ? v2 > v1 : v2 < v1;
     return (
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 9 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
         <span style={{ fontSize: 20, fontWeight: p1Better ? 900 : 700, color: "#4ade80", opacity: p1Better ? 1 : 0.65 }}>{val1 != null ? val1 + unit : "—"}</span>
         <span style={{ fontSize: 13, color: "#999", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
         <span style={{ fontSize: 20, fontWeight: p2Better ? 900 : 700, color: "#f59e0b", opacity: p2Better ? 1 : 0.65 }}>{val2 != null ? val2 + unit : "—"}</span>
@@ -2708,7 +2708,7 @@ function TransferFitGraphic() {
     const p1Better = higherIsBetter ? v1 > v2 : v1 < v2;
     const p2Better = higherIsBetter ? v2 > v1 : v2 < v1;
     return (
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 9 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
         <span style={{ fontSize: 20, fontWeight: p1Better ? 900 : 700, color: "#a855f7", opacity: p1Better ? 1 : 0.65 }}>{val1 ?? "—"}</span>
         <span style={{ fontSize: 13, color: "#999", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
         <span style={{ fontSize: 20, fontWeight: p2Better ? 900 : 700, color: "#4ade80", opacity: p2Better ? 1 : 0.65 }}>{val2 ?? "—"}</span>
