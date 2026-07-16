@@ -6,12 +6,12 @@
 
 const LEAGUE_MAP = {
   wc2026:      { id: 1,   season: 2026 },
-  pl:          { id: 39,  season: 2025 },
-  laliga:      { id: 140, season: 2025 },
-  seriea:      { id: 135, season: 2025 },
-  bundesliga:  { id: 78,  season: 2025 },
-  ligue1:      { id: 61,  season: 2025 },
-  ucl:         { id: 2,   season: 2025 },
+  pl:          { id: 39,  season: 2026 },
+  laliga:      { id: 140, season: 2026 },
+  seriea:      { id: 135, season: 2026 },
+  bundesliga:  { id: 78,  season: 2026 },
+  ligue1:      { id: 61,  season: 2026 },
+  ucl:         { id: 2,   season: 2026 },
 };
 
 export default async function handler(req, res) {
@@ -19,6 +19,33 @@ export default async function handler(req, res) {
   const apiKey = process.env.API_FOOTBALL_KEY;
 
   // ── Team name search ──
+  // ── League search (any of API-Football's 1000+ leagues, not just our curated 7) ──
+  if (mode === "leaguesearch") {
+    if (!query || query.length < 3) return res.status(200).json({ leagues: [] });
+    try {
+      const r = await fetch(`https://v3.football.api-sports.io/leagues?search=${encodeURIComponent(query)}`, {
+        headers: { "x-apisports-key": apiKey }
+      });
+      const data = await r.json();
+      const leagues = (data.response || []).slice(0, 10).map(l => {
+        const seasons = l.seasons || [];
+        const current = seasons.find(s => s.current) || seasons[seasons.length - 1];
+        return {
+          id: l.league?.id,
+          name: l.league?.name,
+          logo: l.league?.logo,
+          country: l.country?.name,
+          countryFlag: l.country?.flag,
+          type: l.league?.type,
+          currentSeason: current?.year || null,
+        };
+      });
+      return res.status(200).json({ leagues });
+    } catch (err) {
+      return res.status(200).json({ leagues: [], error: err.message });
+    }
+  }
+
   if (mode === "teamsearch") {
     if (!query || query.length < 3) return res.status(200).json({ teams: [] });
     try {
@@ -209,13 +236,27 @@ export default async function handler(req, res) {
   }
 
   // ── Default: team season statistics ──
-  if (!leagueId || !teamId) return res.status(400).json({ error: "leagueId and teamId required" });
+  if (!teamId) return res.status(400).json({ error: "teamId required" });
 
-  const league = LEAGUE_MAP[leagueId];
-  if (!league) return res.status(400).json({ error: "Unknown league" });
+  const { apiLeagueId, season: rawSeason } = req.query;
+  let leagueApiId, leagueSeason;
+
+  if (apiLeagueId && rawSeason) {
+    // Raw mode — any of API-Football's 1000+ leagues, from leaguesearch results
+    leagueApiId = apiLeagueId;
+    leagueSeason = rawSeason;
+  } else if (leagueId) {
+    // Curated mode — our fixed shortlist
+    const league = LEAGUE_MAP[leagueId];
+    if (!league) return res.status(400).json({ error: "Unknown league" });
+    leagueApiId = league.id;
+    leagueSeason = league.season;
+  } else {
+    return res.status(400).json({ error: "leagueId or (apiLeagueId + season) required" });
+  }
 
   try {
-    const r = await fetch(`https://v3.football.api-sports.io/teams/statistics?league=${league.id}&season=${league.season}&team=${teamId}`, {
+    const r = await fetch(`https://v3.football.api-sports.io/teams/statistics?league=${leagueApiId}&season=${leagueSeason}&team=${teamId}`, {
       headers: { "x-apisports-key": apiKey }
     });
     const data = await r.json();
