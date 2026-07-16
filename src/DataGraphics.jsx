@@ -2541,6 +2541,16 @@ function MatchH2HGraphic() {
 }
 
 // ─── TEAM-THEN-PLAYER PICKER (standalone, avoids re-render focus bug) ───────
+// ─── Solo stat row (no comparison, just one player's number) ────────────────
+function SoloStatRow({ label, val }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+      <span style={{ fontSize: 11, color: "#999", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
+      <span style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>{val ?? "—"}</span>
+    </div>
+  );
+}
+
 function TeamThenPlayerPicker({ label, search, setSearch, suggestions, team, searching, slot, color, squad, playerId, onSearchTeam, onSelectTeam, onSelectPlayer, onClearTeam }) {
   return (
     <div>
@@ -2733,7 +2743,7 @@ function TransferFitGraphic() {
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
         <TeamThenPlayerPicker label="🎯 Transfer Target" search={searchTargetTeam} setSearch={setSearchTargetTeam} suggestions={suggestTargetTeam} team={targetTeam} searching={searchingTargetTeam} slot="target" color="#a855f7" squad={targetSquad} playerId={targetPlayerId} onSearchTeam={searchTeam} onSelectTeam={selectTeam} onSelectPlayer={selectPlayerFromSquad} onClearTeam={() => setTargetTeam(null)} />
-        <TeamThenPlayerPicker label="🏠 Current Squad" search={searchIncumbentTeam} setSearch={setSearchIncumbentTeam} suggestions={suggestIncumbentTeam} team={incumbentTeam} searching={searchingIncumbentTeam} slot="incumbent" color="#4ade80" squad={incumbentSquad} playerId={incumbentPlayerId} onSearchTeam={searchTeam} onSelectTeam={selectTeam} onSelectPlayer={selectPlayerFromSquad} onClearTeam={() => setIncumbentTeam(null)} />
+        <TeamThenPlayerPicker label="🏠 Current Squad (optional)" search={searchIncumbentTeam} setSearch={setSearchIncumbentTeam} suggestions={suggestIncumbentTeam} team={incumbentTeam} searching={searchingIncumbentTeam} slot="incumbent" color="#4ade80" squad={incumbentSquad} playerId={incumbentPlayerId} onSearchTeam={searchTeam} onSelectTeam={selectTeam} onSelectPlayer={selectPlayerFromSquad} onClearTeam={() => setIncumbentTeam(null)} />
       </div>
 
       {(loadingSquad || loadingStats) && <div style={{ textAlign: "center", color: "#999", fontSize: 15 }}>Loading...</div>}
@@ -2825,6 +2835,58 @@ function TransferFitGraphic() {
               {JSON.stringify(debugData, null, 2)}
             </pre>
           )}
+        </>
+      )}
+
+      {/* Solo signing — no comparison, just the incoming player's own stats */}
+      {target && !incumbent && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "22px 18px 18px" }}>
+              <div style={{ textAlign: "center", marginBottom: 14 }}>
+                <div style={{ fontSize: 22, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5, marginBottom: 4 }}>Incoming Signing</div>
+                <span style={{ fontSize: 14, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>🔄 Transfer Fit · {season === 2026 ? "2026 World Cup" : `${season}/${season + 1}`}</span>
+              </div>
+
+              <div style={{ textAlign: "center", marginBottom: 18 }}>
+                {target.photo && <img src={target.photo} alt="" crossOrigin="anonymous" style={{ width: 72, height: 72, borderRadius: "50%", objectFit: "cover", border: "2px solid #a855f7", margin: "0 auto 10px" }} />}
+                <div style={{ fontSize: 20, fontWeight: 900, color: "#a855f7" }}>{target.name}</div>
+                <div style={{ fontSize: 13, color: "#aaa", marginTop: 3 }}>{target.team}</div>
+              </div>
+
+              <div style={{
+                background: "linear-gradient(135deg, #a855f714, #4ade800e)",
+                border: "1px solid #a855f733",
+                borderRadius: 12, padding: "16px", marginBottom: 10, textAlign: "center",
+              }}>
+                <div style={{ fontSize: 15, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>⭐ Season Rating</div>
+                <div style={{ fontSize: 44, fontWeight: 900, color: "#a855f7", letterSpacing: -1.5 }}>{target.rating ? parseFloat(target.rating).toFixed(1) : "—"}</div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                <BentoBox title="Output" icon="⚽" color="#a855f7">
+                  <SoloStatRow label="Goals" val={target.goals} />
+                  <SoloStatRow label="Assists" val={target.assists} />
+                  <SoloStatRow label="Apps" val={target.appearances} />
+                </BentoBox>
+                <BentoBox title="Progression" icon="🎨" color="#60a5fa">
+                  <SoloStatRow label="Key Passes" val={target.keyPasses} />
+                  <SoloStatRow label="Dribbles" val={target.dribbles} />
+                  <SoloStatRow label="Shots" val={target.shots} />
+                </BentoBox>
+              </div>
+
+              <BentoBox title="Defensive Work" icon="🛡️" color="#f59e0b">
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                  <SoloStatRow label="Tackles" val={target.tackles} />
+                  <SoloStatRow label="Cards" val={target.yellowCards} />
+                </div>
+              </BentoBox>
+            </div>
+          </GraphicCard>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#a855f7,#818cf8)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
         </>
       )}
     </div>
