@@ -2726,7 +2726,7 @@ function TransferFitGraphic() {
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "22px 18px 18px" }}>
               <div style={{ textAlign: "center", marginBottom: 14 }}>
-                <span style={{ fontSize: 11, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5 }}>🔄 Transfer Fit — Full Season</span>
+                <span style={{ fontSize: 11, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5 }}>🔄 Transfer Fit — {season === 2026 ? "2026 World Cup" : `${season}/${season + 1}`}</span>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16 }}>
@@ -2734,7 +2734,7 @@ function TransferFitGraphic() {
                   {target.photo && <img src={target.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #a855f7", margin: "0 auto 8px" }} />}
                   <div style={{ fontSize: 15, fontWeight: 900, color: "#a855f7" }}>{target.name}</div>
                   <div style={{ fontSize: 10, color: "#666", marginTop: 2 }}>{target.team}</div>
-                  <div style={{ fontSize: 9, color: "#a855f7", fontWeight: 700, marginTop: 2, opacity: 0.7 }}>TARGET</div>
+                  <div style={{ fontSize: 9, color: "#a855f7", fontWeight: 700, marginTop: 2, opacity: 0.7 }}>INCOMING</div>
                 </div>
                 <div style={{ textAlign: "center", padding: "0 8px" }}>
                   <div style={{ fontSize: 16, fontWeight: 900, color: "#333" }}>VS</div>
@@ -2743,7 +2743,7 @@ function TransferFitGraphic() {
                   {incumbent.photo && <img src={incumbent.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 8px" }} />}
                   <div style={{ fontSize: 15, fontWeight: 900, color: "#4ade80" }}>{incumbent.name}</div>
                   <div style={{ fontSize: 10, color: "#666", marginTop: 2 }}>{incumbent.team}</div>
-                  <div style={{ fontSize: 9, color: "#4ade80", fontWeight: 700, marginTop: 2, opacity: 0.7 }}>SQUAD</div>
+                  <div style={{ fontSize: 9, color: "#4ade80", fontWeight: 700, marginTop: 2, opacity: 0.7 }}>OUTGOING</div>
                 </div>
               </div>
 
