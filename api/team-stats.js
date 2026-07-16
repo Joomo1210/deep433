@@ -77,8 +77,15 @@ export default async function handler(req, res) {
       // Deduplicate by team+league combo — API-Football occasionally returns
       // a duplicate stats block for the same competition, which would double-count
       const rawStats = entry.statistics || [];
+
+      // Exclude entries with a null league ID — API-Football occasionally returns
+      // a malformed duplicate record (e.g. mislabeled "Super Cup" with 30+ appearances,
+      // which is impossible for a one-off match) that isn't caught by team+league dedup
+      // since null never matches a real league ID
+      const validStats = rawStats.filter(s => s.league?.id != null);
+
       const seen = new Set();
-      let statsArr = rawStats.filter(s => {
+      let statsArr = validStats.filter(s => {
         const key = `${s.team?.id}-${s.league?.id}`;
         if (seen.has(key)) return false;
         seen.add(key);
@@ -96,7 +103,8 @@ export default async function handler(req, res) {
         return res.status(200).json({
           debug: true,
           rawEntryCount: rawStats.length,
-          afterDedupeCount: (rawStats.length ? rawStats.filter((s, i, arr) => {
+          afterNullLeagueFilterCount: validStats.length,
+          afterDedupeCount: (validStats.length ? validStats.filter((s, i, arr) => {
             const key = `${s.team?.id}-${s.league?.id}`;
             return arr.findIndex(x => `${x.team?.id}-${x.league?.id}` === key) === i;
           }).length : 0),
