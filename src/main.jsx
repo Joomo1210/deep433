@@ -5,21 +5,25 @@ import BlogIndex from './BlogIndex.jsx'
 import BlogPost from './BlogPost.jsx'
 import AdminNewPost from './AdminNewPost.jsx'
 import AdminEditPost from './AdminEditPost.jsx'
+import SubmitTake from './SubmitTake.jsx'
+import AdminGate from './AdminGate.jsx'
 
 function Router() {
   const path = window.location.pathname;
-
   if (path === '/blog' || path === '/blog/') {
     return <BlogIndex />;
   }
   if (path.startsWith('/blog/')) {
     return <BlogPost />;
   }
+  if (path === '/submit' || path === '/submit/') {
+    return <SubmitTake />;
+  }
   if (path === '/admin/new-post') {
-    return <AdminNewPost />;
+    return <AdminGate><AdminNewPost /></AdminGate>;
   }
   if (path === '/admin/edit-post') {
-    return <AdminEditPost />;
+    return <AdminGate><AdminEditPost /></AdminGate>;
   }
   return <App />;
 }
