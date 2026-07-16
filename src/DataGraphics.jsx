@@ -2540,6 +2540,53 @@ function MatchH2HGraphic() {
   );
 }
 
+// ─── TEAM-THEN-PLAYER PICKER (standalone, avoids re-render focus bug) ───────
+function TeamThenPlayerPicker({ label, search, setSearch, suggestions, team, searching, slot, color, squad, playerId, onSearchTeam, onSelectTeam, onSelectPlayer, onClearTeam }) {
+  return (
+    <div>
+      <div style={{ position: "relative", marginBottom: 8 }}>
+        <div style={{ fontSize: 10, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{label} — Team</div>
+        <input
+          placeholder="Search any team worldwide..."
+          value={team ? team.name : search}
+          onChange={e => {
+            setSearch(e.target.value);
+            onClearTeam();
+            onSearchTeam(e.target.value, slot);
+          }}
+          style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${team ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+        />
+        {searching && <div style={{ position: "absolute", right: 10, top: 38, fontSize: 10, color: "#555" }}>...</div>}
+        {suggestions.length > 0 && !team && (
+          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, zIndex: 20, marginTop: 4, maxHeight: 220, overflowY: "auto" }}>
+            {suggestions.map(t => (
+              <div key={t.id} onClick={() => onSelectTeam(t, slot)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", cursor: "pointer", borderBottom: "1px solid #1a1a2a" }}>
+                {t.logo && <img src={t.logo} alt="" style={{ width: 22, height: 22, objectFit: "contain" }} />}
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>{t.name}</span>
+                <span style={{ fontSize: 10, color: "#555" }}>{t.country}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {team && (
+        <div>
+          <div style={{ fontSize: 10, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{label} — Player</div>
+          <select
+            value={playerId}
+            onChange={e => onSelectPlayer(e.target.value, slot)}
+            style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${playerId ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+          >
+            <option value="">{squad.length ? "— Select player —" : "Loading squad..."}</option>
+            {squad.map(p => <option key={p.id} value={p.id}>{p.name}{p.position ? ` (${p.position})` : ""}</option>)}
+          </select>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TransferFitGraphic() {
   const cardRef = useRef(null);
   const [season, setSeason] = useState(2025);
@@ -2652,50 +2699,6 @@ function TransferFitGraphic() {
     );
   };
 
-  const TeamThenPlayerPicker = ({ label, search, setSearch, suggestions, team, searching, slot, color, squad, playerId }) => (
-    <div>
-      <div style={{ position: "relative", marginBottom: 8 }}>
-        <div style={{ fontSize: 10, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{label} — Team</div>
-        <input
-          placeholder="Search any team worldwide..."
-          value={team ? team.name : search}
-          onChange={e => {
-            setSearch(e.target.value);
-            slot === "target" ? setTargetTeam(null) : setIncumbentTeam(null);
-            searchTeam(e.target.value, slot);
-          }}
-          style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${team ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
-        />
-        {searching && <div style={{ position: "absolute", right: 10, top: 38, fontSize: 10, color: "#555" }}>...</div>}
-        {suggestions.length > 0 && !team && (
-          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, zIndex: 20, marginTop: 4, maxHeight: 220, overflowY: "auto" }}>
-            {suggestions.map(t => (
-              <div key={t.id} onClick={() => selectTeam(t, slot)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", cursor: "pointer", borderBottom: "1px solid #1a1a2a" }}>
-                {t.logo && <img src={t.logo} alt="" style={{ width: 22, height: 22, objectFit: "contain" }} />}
-                <span style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>{t.name}</span>
-                <span style={{ fontSize: 10, color: "#555" }}>{t.country}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {team && (
-        <div>
-          <div style={{ fontSize: 10, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{label} — Player</div>
-          <select
-            value={playerId}
-            onChange={e => selectPlayerFromSquad(e.target.value, slot)}
-            style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${playerId ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
-          >
-            <option value="">{squad.length ? "— Select player —" : "Loading squad..."}</option>
-            {squad.map(p => <option key={p.id} value={p.id}>{p.name}{p.position ? ` (${p.position})` : ""}</option>)}
-          </select>
-        </div>
-      )}
-    </div>
-  );
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ fontSize: 11, color: "#666" }}>Compare a transfer target against a current squad player — search any team, any league worldwide.</div>
@@ -2712,8 +2715,8 @@ function TransferFitGraphic() {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        <TeamThenPlayerPicker label="🎯 Transfer Target" search={searchTargetTeam} setSearch={setSearchTargetTeam} suggestions={suggestTargetTeam} team={targetTeam} searching={searchingTargetTeam} slot="target" color="#a855f7" squad={targetSquad} playerId={targetPlayerId} />
-        <TeamThenPlayerPicker label="🏠 Current Squad" search={searchIncumbentTeam} setSearch={setSearchIncumbentTeam} suggestions={suggestIncumbentTeam} team={incumbentTeam} searching={searchingIncumbentTeam} slot="incumbent" color="#4ade80" squad={incumbentSquad} playerId={incumbentPlayerId} />
+        <TeamThenPlayerPicker label="🎯 Transfer Target" search={searchTargetTeam} setSearch={setSearchTargetTeam} suggestions={suggestTargetTeam} team={targetTeam} searching={searchingTargetTeam} slot="target" color="#a855f7" squad={targetSquad} playerId={targetPlayerId} onSearchTeam={searchTeam} onSelectTeam={selectTeam} onSelectPlayer={selectPlayerFromSquad} onClearTeam={() => setTargetTeam(null)} />
+        <TeamThenPlayerPicker label="🏠 Current Squad" search={searchIncumbentTeam} setSearch={setSearchIncumbentTeam} suggestions={suggestIncumbentTeam} team={incumbentTeam} searching={searchingIncumbentTeam} slot="incumbent" color="#4ade80" squad={incumbentSquad} playerId={incumbentPlayerId} onSearchTeam={searchTeam} onSelectTeam={selectTeam} onSelectPlayer={selectPlayerFromSquad} onClearTeam={() => setIncumbentTeam(null)} />
       </div>
 
       {(loadingSquad || loadingStats) && <div style={{ textAlign: "center", color: "#555", fontSize: 12 }}>Loading...</div>}
