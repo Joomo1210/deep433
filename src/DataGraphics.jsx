@@ -2542,47 +2542,81 @@ function MatchH2HGraphic() {
 
 function TransferFitGraphic() {
   const cardRef = useRef(null);
-  const [season, setSeason] = useState(2025); // 2025 = current club season, 2026 = World Cup year
+  const [season, setSeason] = useState(2025);
 
-  const [searchTarget, setSearchTarget] = useState("");
-  const [suggestTarget, setSuggestTarget] = useState([]);
+  // Target side
+  const [searchTargetTeam, setSearchTargetTeam] = useState("");
+  const [suggestTargetTeam, setSuggestTargetTeam] = useState([]);
+  const [targetTeam, setTargetTeam] = useState(null);
+  const [searchingTargetTeam, setSearchingTargetTeam] = useState(false);
+  const [targetSquad, setTargetSquad] = useState([]);
+  const [targetPlayerId, setTargetPlayerId] = useState("");
   const [target, setTarget] = useState(null);
-  const [searchingTarget, setSearchingTarget] = useState(false);
 
-  const [searchIncumbent, setSearchIncumbent] = useState("");
-  const [suggestIncumbent, setSuggestIncumbent] = useState([]);
+  // Incumbent side
+  const [searchIncumbentTeam, setSearchIncumbentTeam] = useState("");
+  const [suggestIncumbentTeam, setSuggestIncumbentTeam] = useState([]);
+  const [incumbentTeam, setIncumbentTeam] = useState(null);
+  const [searchingIncumbentTeam, setSearchingIncumbentTeam] = useState(false);
+  const [incumbentSquad, setIncumbentSquad] = useState([]);
+  const [incumbentPlayerId, setIncumbentPlayerId] = useState("");
   const [incumbent, setIncumbent] = useState(null);
-  const [searchingIncumbent, setSearchingIncumbent] = useState(false);
 
+  const [loadingSquad, setLoadingSquad] = useState(false);
+  const [loadingStats, setLoadingStats] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const [seasonLoading, setSeasonLoading] = useState(false);
 
-  const searchPlayer = async (query, slot) => {
+  const searchTeam = async (query, slot) => {
     if (query.length < 3) {
-      slot === "target" ? setSuggestTarget([]) : setSuggestIncumbent([]);
+      slot === "target" ? setSuggestTargetTeam([]) : setSuggestIncumbentTeam([]);
       return;
     }
-    slot === "target" ? setSearchingTarget(true) : setSearchingIncumbent(true);
+    slot === "target" ? setSearchingTargetTeam(true) : setSearchingIncumbentTeam(true);
     try {
-      const r = await fetch(`/api/team-stats?mode=playersearch&query=${encodeURIComponent(query)}&season=${season}`);
+      const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
       const d = await r.json();
-      slot === "target" ? setSuggestTarget(d.players || []) : setSuggestIncumbent(d.players || []);
+      slot === "target" ? setSuggestTargetTeam(d.teams || []) : setSuggestIncumbentTeam(d.teams || []);
     } catch {}
-    slot === "target" ? setSearchingTarget(false) : setSearchingIncumbent(false);
+    slot === "target" ? setSearchingTargetTeam(false) : setSearchingIncumbentTeam(false);
   };
 
-  const selectPlayer = async (player, slot) => {
-    setSeasonLoading(true);
-    try {
-      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${player.id}&season=${season}`);
-      const d = await r.json();
-      const enriched = d.available ? { ...player, ...d } : player;
-      if (slot === "target") { setTarget(enriched); setSuggestTarget([]); setSearchTarget(enriched.name); }
-      else { setIncumbent(enriched); setSuggestIncumbent([]); setSearchIncumbent(enriched.name); }
-    } catch {
-      if (slot === "target") setTarget(player); else setIncumbent(player);
+  const selectTeam = async (t, slot) => {
+    setLoadingSquad(true);
+    if (slot === "target") {
+      setTargetTeam(t); setSuggestTargetTeam([]); setSearchTargetTeam(t.name);
+      setTargetPlayerId(""); setTarget(null); setTargetSquad([]);
+    } else {
+      setIncumbentTeam(t); setSuggestIncumbentTeam([]); setSearchIncumbentTeam(t.name);
+      setIncumbentPlayerId(""); setIncumbent(null); setIncumbentSquad([]);
     }
-    setSeasonLoading(false);
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsquad&teamId=${t.id}`);
+      const d = await r.json();
+      if (slot === "target") setTargetSquad(d.players || []);
+      else setIncumbentSquad(d.players || []);
+    } catch {}
+    setLoadingSquad(false);
+  };
+
+  const selectPlayerFromSquad = async (playerId, slot) => {
+    if (slot === "target") setTargetPlayerId(playerId); else setIncumbentPlayerId(playerId);
+    const squad = slot === "target" ? targetSquad : incumbentSquad;
+    const basePlayer = squad.find(p => String(p.id) === String(playerId));
+    if (!basePlayer) return;
+
+    setLoadingStats(true);
+    try {
+      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${playerId}&season=${season}`);
+      const d = await r.json();
+      const teamInfo = slot === "target" ? targetTeam : incumbentTeam;
+      const enriched = d.available
+        ? { ...d, photo: basePlayer.photo, team: teamInfo?.name, teamLogo: teamInfo?.logo }
+        : { ...basePlayer, team: teamInfo?.name, teamLogo: teamInfo?.logo };
+      if (slot === "target") setTarget(enriched); else setIncumbent(enriched);
+    } catch {
+      if (slot === "target") setTarget(basePlayer); else setIncumbent(basePlayer);
+    }
+    setLoadingStats(false);
   };
 
   const download = async () => {
@@ -2618,16 +2652,59 @@ function TransferFitGraphic() {
     );
   };
 
+  const TeamThenPlayerPicker = ({ label, search, setSearch, suggestions, team, searching, slot, color, squad, playerId }) => (
+    <div>
+      <div style={{ position: "relative", marginBottom: 8 }}>
+        <div style={{ fontSize: 10, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{label} — Team</div>
+        <input
+          placeholder="Search any team worldwide..."
+          value={team ? team.name : search}
+          onChange={e => {
+            setSearch(e.target.value);
+            slot === "target" ? setTargetTeam(null) : setIncumbentTeam(null);
+            searchTeam(e.target.value, slot);
+          }}
+          style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${team ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+        />
+        {searching && <div style={{ position: "absolute", right: 10, top: 38, fontSize: 10, color: "#555" }}>...</div>}
+        {suggestions.length > 0 && !team && (
+          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, zIndex: 20, marginTop: 4, maxHeight: 220, overflowY: "auto" }}>
+            {suggestions.map(t => (
+              <div key={t.id} onClick={() => selectTeam(t, slot)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", cursor: "pointer", borderBottom: "1px solid #1a1a2a" }}>
+                {t.logo && <img src={t.logo} alt="" style={{ width: 22, height: 22, objectFit: "contain" }} />}
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>{t.name}</span>
+                <span style={{ fontSize: 10, color: "#555" }}>{t.country}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {team && (
+        <div>
+          <div style={{ fontSize: 10, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{label} — Player</div>
+          <select
+            value={playerId}
+            onChange={e => selectPlayerFromSquad(e.target.value, slot)}
+            style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${playerId ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+          >
+            <option value="">{squad.length ? "— Select player —" : "Loading squad..."}</option>
+            {squad.map(p => <option key={p.id} value={p.id}>{p.name}{p.position ? ` (${p.position})` : ""}</option>)}
+          </select>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#666" }}>Compare a transfer target against a current squad player — search covers every competition API-Football tracks.</div>
+      <div style={{ fontSize: 11, color: "#666" }}>Compare a transfer target against a current squad player — search any team, any league worldwide.</div>
 
       <div>
         <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Season</div>
         <div style={{ display: "flex", gap: 6 }}>
           {[{ v: 2025, label: "2025-26 Season" }, { v: 2026, label: "2026 (World Cup)" }].map(s => (
-            <button key={s.v} onClick={() => { setSeason(s.v); setTarget(null); setIncumbent(null); setSearchTarget(""); setSearchIncumbent(""); }} style={{ background: season === s.v ? "#4ade8022" : "none", border: `1px solid ${season === s.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: season === s.v ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px" }}>
+            <button key={s.v} onClick={() => setSeason(s.v)} style={{ background: season === s.v ? "#4ade8022" : "none", border: `1px solid ${season === s.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: season === s.v ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px" }}>
               {s.label}
             </button>
           ))}
@@ -2635,11 +2712,11 @@ function TransferFitGraphic() {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        <PlayerSearchSlot label="🎯 Transfer Target" search={searchTarget} setSearch={setSearchTarget} suggestions={suggestTarget} setSuggestions={setSuggestTarget} player={target} searching={searchingTarget} slot="target" color="#a855f7" onSelect={selectPlayer} onClear={() => setTarget(null)} onSearch={searchPlayer} />
-        <PlayerSearchSlot label="🏠 Current Squad" search={searchIncumbent} setSearch={setSearchIncumbent} suggestions={suggestIncumbent} setSuggestions={setSuggestIncumbent} player={incumbent} searching={searchingIncumbent} slot="incumbent" color="#4ade80" onSelect={selectPlayer} onClear={() => setIncumbent(null)} onSearch={searchPlayer} />
+        <TeamThenPlayerPicker label="🎯 Transfer Target" search={searchTargetTeam} setSearch={setSearchTargetTeam} suggestions={suggestTargetTeam} team={targetTeam} searching={searchingTargetTeam} slot="target" color="#a855f7" squad={targetSquad} playerId={targetPlayerId} />
+        <TeamThenPlayerPicker label="🏠 Current Squad" search={searchIncumbentTeam} setSearch={setSearchIncumbentTeam} suggestions={suggestIncumbentTeam} team={incumbentTeam} searching={searchingIncumbentTeam} slot="incumbent" color="#4ade80" squad={incumbentSquad} playerId={incumbentPlayerId} />
       </div>
 
-      {seasonLoading && <div style={{ textAlign: "center", color: "#555", fontSize: 12 }}>Loading season stats...</div>}
+      {(loadingSquad || loadingStats) && <div style={{ textAlign: "center", color: "#555", fontSize: 12 }}>Loading...</div>}
 
       {target && incumbent && (
         <>
