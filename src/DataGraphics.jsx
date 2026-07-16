@@ -2651,11 +2651,12 @@ function TransferFitGraphic() {
     const basePlayer = squad.find(p => String(p.id) === String(playerId));
     if (!basePlayer) return;
 
+    const teamInfo = slot === "target" ? targetTeam : incumbentTeam;
+
     setLoadingStats(true);
     try {
-      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${playerId}&season=${season}`);
+      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${playerId}&season=${season}&teamId=${teamInfo?.id}`);
       const d = await r.json();
-      const teamInfo = slot === "target" ? targetTeam : incumbentTeam;
       const enriched = d.available
         ? { ...d, photo: basePlayer.photo, team: teamInfo?.name, teamLogo: teamInfo?.logo }
         : { ...basePlayer, team: teamInfo?.name, teamLogo: teamInfo?.logo };
