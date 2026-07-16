@@ -2612,6 +2612,8 @@ function TransferFitGraphic() {
   const [loadingSquad, setLoadingSquad] = useState(false);
   const [loadingStats, setLoadingStats] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [debugData, setDebugData] = useState(null);
+  const [debugLoading, setDebugLoading] = useState(false);
 
   const searchTeam = async (query, slot) => {
     if (query.length < 3) {
@@ -2665,6 +2667,20 @@ function TransferFitGraphic() {
       if (slot === "target") setTarget(basePlayer); else setIncumbent(basePlayer);
     }
     setLoadingStats(false);
+  };
+
+  const fetchDebug = async () => {
+    if (!target || !targetTeam) return;
+    setDebugLoading(true);
+    setDebugData(null);
+    try {
+      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${target.id}&season=${season}&teamId=${targetTeam.id}&debug=true`);
+      const d = await r.json();
+      setDebugData(d);
+    } catch (e) {
+      setDebugData({ error: e.message });
+    }
+    setDebugLoading(false);
   };
 
   const download = async () => {
@@ -2800,6 +2816,14 @@ function TransferFitGraphic() {
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#a855f7,#818cf8)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
           </button>
+          <button onClick={fetchDebug} disabled={debugLoading} style={{ background: "none", border: "1px dashed #444", borderRadius: 8, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: "8px", width: "100%" }}>
+            {debugLoading ? "Loading raw data..." : "🐛 Show Raw Data (Target)"}
+          </button>
+          {debugData && (
+            <pre style={{ background: "#0a0a0f", border: "1px solid #2a2a3a", borderRadius: 8, padding: 12, fontSize: 11, color: "#8f8", overflowX: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+              {JSON.stringify(debugData, null, 2)}
+            </pre>
+          )}
         </>
       )}
     </div>
