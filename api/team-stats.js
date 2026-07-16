@@ -38,6 +38,30 @@ export default async function handler(req, res) {
     }
   }
 
+  // ── Team squad (full roster, any team worldwide, no league needed) ──
+  if (mode === "teamsquad") {
+    const { teamId } = req.query;
+    if (!teamId) return res.status(400).json({ error: "teamId required" });
+    try {
+      const r = await fetch(`https://v3.football.api-sports.io/players/squads?team=${teamId}`, {
+        headers: { "x-apisports-key": apiKey }
+      });
+      const data = await r.json();
+      const squad = data.response?.[0];
+      if (!squad) return res.status(200).json({ players: [] });
+      const players = (squad.players || []).map(p => ({
+        id: p.id,
+        name: p.name,
+        photo: p.photo,
+        position: p.position,
+        number: p.number,
+      }));
+      return res.status(200).json({ players, team: squad.team });
+    } catch (err) {
+      return res.status(200).json({ players: [], error: err.message });
+    }
+  }
+
   // ── Player season stats (aggregated across all competitions) ──
   if (mode === "playerseason") {
     const { playerId, season } = req.query;
