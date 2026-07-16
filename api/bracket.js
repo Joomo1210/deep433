@@ -4,10 +4,10 @@
 
 const LEAGUE_MAP = {
   wc2026:      { id: 1,   season: 2026 },
-  ucl:         { id: 2,   season: 2025 },
-  uel:         { id: 3,   season: 2025 },
-  facup:       { id: 45,  season: 2025 },
-  copadelrey:  { id: 143, season: 2025 },
+  ucl:         { id: 2,   season: 2026 },
+  uel:         { id: 3,   season: 2026 },
+  facup:       { id: 45,  season: 2026 },
+  copadelrey:  { id: 143, season: 2026 },
   afcon:       { id: 6,   season: 2025 },
   copamerica:  { id: 9,   season: 2024 },
 };
