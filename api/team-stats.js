@@ -74,7 +74,17 @@ export default async function handler(req, res) {
       const entry = data.response?.[0];
       if (!entry) return res.status(200).json({ available: false });
 
-      const statsArr = entry.statistics || [];
+      // Deduplicate by team+league combo — API-Football occasionally returns
+      // a duplicate stats block for the same competition, which would double-count
+      const rawStats = entry.statistics || [];
+      const seen = new Set();
+      const statsArr = rawStats.filter(s => {
+        const key = `${s.team?.id}-${s.league?.id}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
       const sum = (path) => statsArr.reduce((acc, s) => {
         const val = path.split(".").reduce((o, k) => o?.[k], s);
         return acc + (parseFloat(val) || 0);
