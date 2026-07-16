@@ -2729,6 +2729,19 @@ function TransferFitGraphic() {
                 <span style={{ fontSize: 11, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5 }}>🔄 Transfer Fit — {season === 2026 ? "2026 World Cup" : `${season}/${season + 1}`}</span>
               </div>
 
+              {/* Destination club — prominent banner */}
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                background: "linear-gradient(135deg, #4ade8018, #4ade8005)",
+                border: "1px solid #4ade8033", borderRadius: 10, padding: "10px 16px", marginBottom: 16,
+              }}>
+                {incumbent.teamLogo && <img src={incumbent.teamLogo} alt="" crossOrigin="anonymous" style={{ width: 28, height: 28, objectFit: "contain" }} />}
+                <div style={{ textAlign: "left" }}>
+                  <div style={{ fontSize: 9, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Destination Club</div>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: "#f0f0f0" }}>{incumbent.team}</div>
+                </div>
+              </div>
+
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16 }}>
                 <div style={{ textAlign: "center" }}>
                   {target.photo && <img src={target.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #a855f7", margin: "0 auto 8px" }} />}
