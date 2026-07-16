@@ -91,10 +91,20 @@ export default async function handler(req, res) {
   // ── Player name search ──
   if (mode === "playersearch") {
     if (!query || query.length < 3) return res.status(200).json({ players: [] });
-    const league = LEAGUE_MAP[leagueId];
-    if (!league) return res.status(400).json({ error: "Unknown league" });
+    const { season: seasonParam } = req.query;
+    let apiUrl;
+    if (leagueId) {
+      // Scoped search within one of our curated leagues
+      const league = LEAGUE_MAP[leagueId];
+      if (!league) return res.status(400).json({ error: "Unknown league" });
+      apiUrl = `https://v3.football.api-sports.io/players?search=${encodeURIComponent(query)}&league=${league.id}&season=${league.season}`;
+    } else {
+      // Global search across ALL competitions API-Football covers — just name + season
+      const season = seasonParam || 2025;
+      apiUrl = `https://v3.football.api-sports.io/players?search=${encodeURIComponent(query)}&season=${season}`;
+    }
     try {
-      const r = await fetch(`https://v3.football.api-sports.io/players?search=${encodeURIComponent(query)}&league=${league.id}&season=${league.season}`, {
+      const r = await fetch(apiUrl, {
         headers: { "x-apisports-key": apiKey }
       });
       const data = await r.json();
