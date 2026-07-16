@@ -64,7 +64,7 @@ export default async function handler(req, res) {
 
   // ── Player season stats (aggregated across all competitions) ──
   if (mode === "playerseason") {
-    const { playerId, season } = req.query;
+    const { playerId, season, teamId } = req.query;
     if (!playerId || !season) return res.status(400).json({ error: "playerId and season required" });
     try {
       const r = await fetch(`https://v3.football.api-sports.io/players?id=${playerId}&season=${season}`, {
@@ -78,12 +78,18 @@ export default async function handler(req, res) {
       // a duplicate stats block for the same competition, which would double-count
       const rawStats = entry.statistics || [];
       const seen = new Set();
-      const statsArr = rawStats.filter(s => {
+      let statsArr = rawStats.filter(s => {
         const key = `${s.team?.id}-${s.league?.id}`;
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
       });
+
+      // If a specific club is given, restrict to that club's competitions only —
+      // excludes international caps or spells at other clubs mixed into the same season
+      if (teamId) {
+        statsArr = statsArr.filter(s => String(s.team?.id) === String(teamId));
+      }
 
       const sum = (path) => statsArr.reduce((acc, s) => {
         const val = path.split(".").reduce((o, k) => o?.[k], s);
