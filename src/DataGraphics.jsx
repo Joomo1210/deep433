@@ -2709,22 +2709,22 @@ function TransferFitGraphic() {
     const p2Better = higherIsBetter ? v2 > v1 : v2 < v1;
     return (
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 9 }}>
-        <span style={{ fontSize: 18, fontWeight: p1Better ? 900 : 700, color: "#a855f7", opacity: p1Better ? 1 : 0.65 }}>{val1 ?? "—"}</span>
-        <span style={{ fontSize: 10, color: "#999", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
-        <span style={{ fontSize: 18, fontWeight: p2Better ? 900 : 700, color: "#4ade80", opacity: p2Better ? 1 : 0.65 }}>{val2 ?? "—"}</span>
+        <span style={{ fontSize: 20, fontWeight: p1Better ? 900 : 700, color: "#a855f7", opacity: p1Better ? 1 : 0.65 }}>{val1 ?? "—"}</span>
+        <span style={{ fontSize: 13, color: "#999", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
+        <span style={{ fontSize: 20, fontWeight: p2Better ? 900 : 700, color: "#4ade80", opacity: p2Better ? 1 : 0.65 }}>{val2 ?? "—"}</span>
       </div>
     );
   };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#666" }}>Compare a transfer target against a current squad player — search any team, any league worldwide.</div>
+      <div style={{ fontSize: 14, color: "#aaa" }}>Compare a transfer target against a current squad player — search any team, any league worldwide.</div>
 
       <div>
-        <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Season</div>
+        <div style={{ fontSize: 13, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Season</div>
         <div style={{ display: "flex", gap: 6 }}>
           {[{ v: 2025, label: "2025-26 Season" }, { v: 2026, label: "2026 (World Cup)" }].map(s => (
-            <button key={s.v} onClick={() => setSeason(s.v)} style={{ background: season === s.v ? "#4ade8022" : "none", border: `1px solid ${season === s.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: season === s.v ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px" }}>
+            <button key={s.v} onClick={() => setSeason(s.v)} style={{ background: season === s.v ? "#4ade8022" : "none", border: `1px solid ${season === s.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: season === s.v ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "6px 12px" }}>
               {s.label}
             </button>
           ))}
@@ -2736,15 +2736,15 @@ function TransferFitGraphic() {
         <TeamThenPlayerPicker label="🏠 Current Squad" search={searchIncumbentTeam} setSearch={setSearchIncumbentTeam} suggestions={suggestIncumbentTeam} team={incumbentTeam} searching={searchingIncumbentTeam} slot="incumbent" color="#4ade80" squad={incumbentSquad} playerId={incumbentPlayerId} onSearchTeam={searchTeam} onSelectTeam={selectTeam} onSelectPlayer={selectPlayerFromSquad} onClearTeam={() => setIncumbentTeam(null)} />
       </div>
 
-      {(loadingSquad || loadingStats) && <div style={{ textAlign: "center", color: "#555", fontSize: 12 }}>Loading...</div>}
+      {(loadingSquad || loadingStats) && <div style={{ textAlign: "center", color: "#999", fontSize: 15 }}>Loading...</div>}
 
       {target && incumbent && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "22px 18px 18px" }}>
               <div style={{ textAlign: "center", marginBottom: 14 }}>
-                <div style={{ fontSize: 22, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5, marginBottom: 4 }}>Does He Fit The XI?</div>
-                <span style={{ fontSize: 11, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>🔄 Transfer Fit · {season === 2026 ? "2026 World Cup" : `${season}/${season + 1}`}</span>
+                <div style={{ fontSize: 24, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5, marginBottom: 4 }}>Does He Fit The XI?</div>
+                <span style={{ fontSize: 14, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>🔄 Transfer Fit · {season === 2026 ? "2026 World Cup" : `${season}/${season + 1}`}</span>
               </div>
 
               {/* Destination club — prominent banner */}
@@ -2755,26 +2755,26 @@ function TransferFitGraphic() {
               }}>
                 {incumbent.teamLogo && <img src={incumbent.teamLogo} alt="" crossOrigin="anonymous" style={{ width: 28, height: 28, objectFit: "contain" }} />}
                 <div style={{ textAlign: "left" }}>
-                  <div style={{ fontSize: 9, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Destination Club</div>
-                  <div style={{ fontSize: 16, fontWeight: 900, color: "#f0f0f0" }}>{incumbent.team}</div>
+                  <div style={{ fontSize: 12, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Destination Club</div>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: "#f0f0f0" }}>{incumbent.team}</div>
                 </div>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16 }}>
                 <div style={{ textAlign: "center" }}>
                   {target.photo && <img src={target.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #a855f7", margin: "0 auto 8px" }} />}
-                  <div style={{ fontSize: 15, fontWeight: 900, color: "#a855f7" }}>{target.name}</div>
-                  <div style={{ fontSize: 10, color: "#666", marginTop: 2 }}>{target.team}</div>
-                  <div style={{ fontSize: 9, color: "#a855f7", fontWeight: 700, marginTop: 2, opacity: 0.7 }}>INCOMING</div>
+                  <div style={{ fontSize: 17, fontWeight: 900, color: "#a855f7" }}>{target.name}</div>
+                  <div style={{ fontSize: 13, color: "#aaa", marginTop: 2 }}>{target.team}</div>
+                  <div style={{ fontSize: 12, color: "#a855f7", fontWeight: 700, marginTop: 2, opacity: 0.7 }}>INCOMING</div>
                 </div>
                 <div style={{ textAlign: "center", padding: "0 8px" }}>
-                  <div style={{ fontSize: 16, fontWeight: 900, color: "#333" }}>VS</div>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: "#333" }}>VS</div>
                 </div>
                 <div style={{ textAlign: "center" }}>
                   {incumbent.photo && <img src={incumbent.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 8px" }} />}
-                  <div style={{ fontSize: 15, fontWeight: 900, color: "#4ade80" }}>{incumbent.name}</div>
-                  <div style={{ fontSize: 10, color: "#666", marginTop: 2 }}>{incumbent.team}</div>
-                  <div style={{ fontSize: 9, color: "#4ade80", fontWeight: 700, marginTop: 2, opacity: 0.7 }}>OUTGOING</div>
+                  <div style={{ fontSize: 17, fontWeight: 900, color: "#4ade80" }}>{incumbent.name}</div>
+                  <div style={{ fontSize: 13, color: "#aaa", marginTop: 2 }}>{incumbent.team}</div>
+                  <div style={{ fontSize: 12, color: "#4ade80", fontWeight: 700, marginTop: 2, opacity: 0.7 }}>OUTGOING</div>
                 </div>
               </div>
 
@@ -2785,10 +2785,10 @@ function TransferFitGraphic() {
                 border: "1px solid #a855f733",
                 borderRadius: 12, padding: "14px 16px", marginBottom: 10,
               }}>
-                <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8, textAlign: "center" }}>⭐ Season Rating</div>
+                <div style={{ fontSize: 15, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8, textAlign: "center" }}>⭐ Season Rating</div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: 32, fontWeight: 900, color: "#a855f7" }}>{target.rating ? parseFloat(target.rating).toFixed(1) : "—"}</span>
-                  <span style={{ fontSize: 32, fontWeight: 900, color: "#4ade80" }}>{incumbent.rating ? parseFloat(incumbent.rating).toFixed(1) : "—"}</span>
+                  <span style={{ fontSize: 34, fontWeight: 900, color: "#a855f7", letterSpacing: -1 }}>{target.rating ? parseFloat(target.rating).toFixed(1) : "—"}</span>
+                  <span style={{ fontSize: 34, fontWeight: 900, color: "#4ade80", letterSpacing: -1 }}>{incumbent.rating ? parseFloat(incumbent.rating).toFixed(1) : "—"}</span>
                 </div>
               </div>
 
@@ -2814,14 +2814,14 @@ function TransferFitGraphic() {
               </BentoBox>
             </div>
           </GraphicCard>
-          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#a855f7,#818cf8)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#a855f7,#818cf8)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 19, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
           </button>
-          <button onClick={fetchDebug} disabled={debugLoading} style={{ background: "none", border: "1px dashed #444", borderRadius: 8, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: "8px", width: "100%" }}>
+          <button onClick={fetchDebug} disabled={debugLoading} style={{ background: "none", border: "1px dashed #444", borderRadius: 8, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 16, fontWeight: 600, padding: "8px", width: "100%" }}>
             {debugLoading ? "Loading raw data..." : "🐛 Show Raw Data (Target)"}
           </button>
           {debugData && (
-            <pre style={{ background: "#0a0a0f", border: "1px solid #2a2a3a", borderRadius: 8, padding: 12, fontSize: 11, color: "#8f8", overflowX: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+            <pre style={{ background: "#0a0a0f", border: "1px solid #2a2a3a", borderRadius: 8, padding: 12, fontSize: 14, color: "#8f8", overflowX: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
               {JSON.stringify(debugData, null, 2)}
             </pre>
           )}
