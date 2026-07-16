@@ -91,6 +91,29 @@ export default async function handler(req, res) {
         statsArr = statsArr.filter(s => String(s.team?.id) === String(teamId));
       }
 
+      // Debug mode — see exactly what's being summed, per competition
+      if (req.query.debug === "true") {
+        return res.status(200).json({
+          debug: true,
+          rawEntryCount: rawStats.length,
+          afterDedupeCount: (rawStats.length ? rawStats.filter((s, i, arr) => {
+            const key = `${s.team?.id}-${s.league?.id}`;
+            return arr.findIndex(x => `${x.team?.id}-${x.league?.id}` === key) === i;
+          }).length : 0),
+          afterTeamFilterCount: statsArr.length,
+          entries: statsArr.map(s => ({
+            team: s.team?.name,
+            teamId: s.team?.id,
+            league: s.league?.name,
+            leagueId: s.league?.id,
+            season: s.league?.season,
+            appearances: s.games?.appearences,
+            goals: s.goals?.total,
+            assists: s.goals?.assists,
+          })),
+        });
+      }
+
       const sum = (path) => statsArr.reduce((acc, s) => {
         const val = path.split(".").reduce((o, k) => o?.[k], s);
         return acc + (parseFloat(val) || 0);
