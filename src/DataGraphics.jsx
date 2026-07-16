@@ -2542,7 +2542,8 @@ function MatchH2HGraphic() {
 
 function TransferFitGraphic() {
   const cardRef = useRef(null);
-  const [leagueId, setLeagueId] = useState("pl");
+  const [targetLeagueId, setTargetLeagueId] = useState("pl");
+  const [incumbentLeagueId, setIncumbentLeagueId] = useState("pl");
 
   const [searchTarget, setSearchTarget] = useState("");
   const [suggestTarget, setSuggestTarget] = useState([]);
@@ -2563,8 +2564,9 @@ function TransferFitGraphic() {
       return;
     }
     slot === "target" ? setSearchingTarget(true) : setSearchingIncumbent(true);
+    const leagueForSlot = slot === "target" ? targetLeagueId : incumbentLeagueId;
     try {
-      const r = await fetch(`/api/team-stats?mode=playersearch&query=${encodeURIComponent(query)}&leagueId=${leagueId}`);
+      const r = await fetch(`/api/team-stats?mode=playersearch&query=${encodeURIComponent(query)}&leagueId=${leagueForSlot}`);
       const d = await r.json();
       slot === "target" ? setSuggestTarget(d.players || []) : setSuggestIncumbent(d.players || []);
     } catch {}
@@ -2573,8 +2575,9 @@ function TransferFitGraphic() {
 
   const selectPlayer = async (player, slot) => {
     setSeasonLoading(true);
+    const leagueForSlot = slot === "target" ? targetLeagueId : incumbentLeagueId;
     try {
-      const season = leagueId === "wc2026" ? 2026 : 2025;
+      const season = leagueForSlot === "wc2026" ? 2026 : 2025;
       const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${player.id}&season=${season}`);
       const d = await r.json();
       const enriched = d.available ? { ...player, ...d } : player;
@@ -2622,16 +2625,22 @@ function TransferFitGraphic() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        {LEAGUE_OPTIONS.map(l => (
-          <button key={l.id} onClick={() => { setLeagueId(l.id); setTarget(null); setIncumbent(null); setSearchTarget(""); setSearchIncumbent(""); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "5px 12px" }}>
-            {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
-            {l.label}
-          </button>
-        ))}
-      </div>
+      <div style={{ fontSize: 11, color: "#666" }}>Compare a transfer target against a current squad player in a similar role — from any two competitions.</div>
 
-      <div style={{ fontSize: 11, color: "#666" }}>Compare a transfer target against a current squad player in a similar role.</div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <div>
+          <div style={{ fontSize: 10, color: "#a855f7", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>🎯 Target's Competition</div>
+          <select value={targetLeagueId} onChange={e => { setTargetLeagueId(e.target.value); setTarget(null); setSearchTarget(""); }} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "8px 10px", outline: "none", fontFamily: "inherit" }}>
+            {LEAGUE_OPTIONS.map(l => <option key={l.id} value={l.id}>{l.label}</option>)}
+          </select>
+        </div>
+        <div>
+          <div style={{ fontSize: 10, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>🏠 Squad Player's Competition</div>
+          <select value={incumbentLeagueId} onChange={e => { setIncumbentLeagueId(e.target.value); setIncumbent(null); setSearchIncumbent(""); }} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "8px 10px", outline: "none", fontFamily: "inherit" }}>
+            {LEAGUE_OPTIONS.map(l => <option key={l.id} value={l.id}>{l.label}</option>)}
+          </select>
+        </div>
+      </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
         <PlayerSearchSlot label="🎯 Transfer Target" search={searchTarget} setSearch={setSearchTarget} suggestions={suggestTarget} setSuggestions={setSuggestTarget} player={target} searching={searchingTarget} slot="target" color="#a855f7" onSelect={selectPlayer} onClear={() => setTarget(null)} onSearch={searchPlayer} />
