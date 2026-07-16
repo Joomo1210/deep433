@@ -2720,7 +2720,7 @@ function TransferFitGraphic() {
     return (
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
         <span style={{ fontSize: 20, fontWeight: p1Better ? 900 : 700, color: "#a855f7", opacity: p1Better ? 1 : 0.65 }}>{val1 ?? "—"}</span>
-        <span style={{ fontSize: 13, color: "#999", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
+        <span style={{ fontSize: 13, color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, opacity: 0.7 }}>{label}</span>
         <span style={{ fontSize: 20, fontWeight: p2Better ? 900 : 700, color: "#4ade80", opacity: p2Better ? 1 : 0.65 }}>{val2 ?? "—"}</span>
       </div>
     );
@@ -2762,6 +2762,7 @@ function TransferFitGraphic() {
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
                 background: "linear-gradient(135deg, #4ade8018, #4ade8005)",
                 border: "1px solid #4ade8033", borderRadius: 10, padding: "10px 16px", marginBottom: 16,
+                boxShadow: "0 0 15px rgba(74,222,128,0.15)",
               }}>
                 {incumbent.teamLogo && <img src={incumbent.teamLogo} alt="" crossOrigin="anonymous" style={{ width: 28, height: 28, objectFit: "contain" }} />}
                 <div style={{ textAlign: "left" }}>
