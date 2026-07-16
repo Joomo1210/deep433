@@ -4,12 +4,12 @@
 
 const LEAGUE_MAP = {
   wc2026:      { id: 1,   season: 2026 },
-  pl:          { id: 39,  season: 2025 },
-  laliga:      { id: 140, season: 2025 },
-  seriea:      { id: 135, season: 2025 },
-  bundesliga:  { id: 78,  season: 2025 },
-  ligue1:      { id: 61,  season: 2025 },
-  ucl:         { id: 2,   season: 2025 },
+  pl:          { id: 39,  season: 2026 },
+  laliga:      { id: 140, season: 2026 },
+  seriea:      { id: 135, season: 2026 },
+  bundesliga:  { id: 78,  season: 2026 },
+  ligue1:      { id: 61,  season: 2026 },
+  ucl:         { id: 2,   season: 2026 },
 };
 
 export default async function handler(req, res) {
