@@ -2542,8 +2542,7 @@ function MatchH2HGraphic() {
 
 function TransferFitGraphic() {
   const cardRef = useRef(null);
-  const [targetLeagueId, setTargetLeagueId] = useState("pl");
-  const [incumbentLeagueId, setIncumbentLeagueId] = useState("pl");
+  const [season, setSeason] = useState(2025); // 2025 = current club season, 2026 = World Cup year
 
   const [searchTarget, setSearchTarget] = useState("");
   const [suggestTarget, setSuggestTarget] = useState([]);
@@ -2564,9 +2563,8 @@ function TransferFitGraphic() {
       return;
     }
     slot === "target" ? setSearchingTarget(true) : setSearchingIncumbent(true);
-    const leagueForSlot = slot === "target" ? targetLeagueId : incumbentLeagueId;
     try {
-      const r = await fetch(`/api/team-stats?mode=playersearch&query=${encodeURIComponent(query)}&leagueId=${leagueForSlot}`);
+      const r = await fetch(`/api/team-stats?mode=playersearch&query=${encodeURIComponent(query)}&season=${season}`);
       const d = await r.json();
       slot === "target" ? setSuggestTarget(d.players || []) : setSuggestIncumbent(d.players || []);
     } catch {}
@@ -2575,9 +2573,7 @@ function TransferFitGraphic() {
 
   const selectPlayer = async (player, slot) => {
     setSeasonLoading(true);
-    const leagueForSlot = slot === "target" ? targetLeagueId : incumbentLeagueId;
     try {
-      const season = leagueForSlot === "wc2026" ? 2026 : 2025;
       const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${player.id}&season=${season}`);
       const d = await r.json();
       const enriched = d.available ? { ...player, ...d } : player;
@@ -2625,20 +2621,16 @@ function TransferFitGraphic() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#666" }}>Compare a transfer target against a current squad player in a similar role — from any two competitions.</div>
+      <div style={{ fontSize: 11, color: "#666" }}>Compare a transfer target against a current squad player — search covers every competition API-Football tracks.</div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        <div>
-          <div style={{ fontSize: 10, color: "#a855f7", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>🎯 Target's Competition</div>
-          <select value={targetLeagueId} onChange={e => { setTargetLeagueId(e.target.value); setTarget(null); setSearchTarget(""); }} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "8px 10px", outline: "none", fontFamily: "inherit" }}>
-            {LEAGUE_OPTIONS.map(l => <option key={l.id} value={l.id}>{l.label}</option>)}
-          </select>
-        </div>
-        <div>
-          <div style={{ fontSize: 10, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>🏠 Squad Player's Competition</div>
-          <select value={incumbentLeagueId} onChange={e => { setIncumbentLeagueId(e.target.value); setIncumbent(null); setSearchIncumbent(""); }} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "8px 10px", outline: "none", fontFamily: "inherit" }}>
-            {LEAGUE_OPTIONS.map(l => <option key={l.id} value={l.id}>{l.label}</option>)}
-          </select>
+      <div>
+        <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Season</div>
+        <div style={{ display: "flex", gap: 6 }}>
+          {[{ v: 2025, label: "2025-26 Season" }, { v: 2026, label: "2026 (World Cup)" }].map(s => (
+            <button key={s.v} onClick={() => { setSeason(s.v); setTarget(null); setIncumbent(null); setSearchTarget(""); setSearchIncumbent(""); }} style={{ background: season === s.v ? "#4ade8022" : "none", border: `1px solid ${season === s.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: season === s.v ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px" }}>
+              {s.label}
+            </button>
+          ))}
         </div>
       </div>
 
