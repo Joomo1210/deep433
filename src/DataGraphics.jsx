@@ -285,7 +285,7 @@ function MatchStatsGraphic() {
     if (!fid) return;
     setLoading(true); setError(""); setData(null);
     try {
-      const r = await fetch(`/api/match-stats?fixtureId=${fid}`);
+      const r = await fetch(`/api/fixture-data?type=stats&fixtureId=${fid}`);
       const d = await r.json();
       if (!d.available) throw new Error("No stats available for this fixture yet — try after kickoff");
       setData(d);
@@ -445,7 +445,7 @@ function PlayerRatingsGraphic() {
     if (!fixtureId) return;
     setLoading(true); setError(""); setData(null);
     try {
-      const r = await fetch(`/api/player-ratings?fixtureId=${fixtureId}`);
+      const r = await fetch(`/api/fixture-data?type=ratings&fixtureId=${fixtureId}`);
       const d = await r.json();
       if (!d.available) throw new Error("No player ratings available yet — try after kickoff");
       setData(d);
@@ -923,8 +923,8 @@ function RecapGraphic({ history = [] }) {
       try {
         // Fetch match stats and events in parallel
         const [statsRes, eventsRes] = await Promise.all([
-          fetch(`/api/match-stats?fixtureId=${f.fixtureId}`),
-          fetch(`/api/match-events?fixtureId=${f.fixtureId}`),
+          fetch(`/api/fixture-data?type=stats&fixtureId=${f.fixtureId}`),
+          fetch(`/api/fixture-data?type=events&fixtureId=${f.fixtureId}`),
         ]);
         const statsData = await statsRes.json();
         const eventsData = await eventsRes.json();
@@ -2351,7 +2351,7 @@ function MatchH2HGraphic() {
     if (!f.fixtureId) { setError("No fixture ID available"); return; }
     setLoading(true);
     try {
-      const r = await fetch(`/api/player-ratings?fixtureId=${f.fixtureId}`);
+      const r = await fetch(`/api/fixture-data?type=ratings&fixtureId=${f.fixtureId}`);
       const d = await r.json();
       if (!d.available) throw new Error("Player stats not available yet — check back after the match");
       setMatchPlayers(d);
@@ -3151,7 +3151,7 @@ function HalftimeRecapGraphic() {
     if (f.status === "upcoming") { setError("This match hasn't kicked off yet"); return; }
     setLoading(true);
     try {
-      const r = await fetch(`/api/match-events?fixtureId=${f.fixtureId}`);
+      const r = await fetch(`/api/fixture-data?type=events&fixtureId=${f.fixtureId}`);
       const d = await r.json();
       setEvents(d.events || []);
     } catch (e) { setError("Could not load match events"); }
