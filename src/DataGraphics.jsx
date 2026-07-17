@@ -153,14 +153,14 @@ function StatRow({ label, home, away, icon }) {
   );
 }
 
-function GraphicCard({ children, cardRef, label }) {
+function GraphicCard({ children, cardRef, label, light = false }) {
   return (
     <div>
       <div
         ref={cardRef}
         style={{
-          background: "linear-gradient(145deg, #0a0a0f 0%, #0d0d1a 60%, #0a0f0a 100%)",
-          border: "1px solid #1e1e30",
+          background: light ? "#ffffff" : "linear-gradient(145deg, #0a0a0f 0%, #0d0d1a 60%, #0a0f0a 100%)",
+          border: light ? "1px solid #e5e5e5" : "1px solid #1e1e30",
           borderRadius: 14,
           overflow: "hidden",
           position: "relative",
@@ -171,7 +171,7 @@ function GraphicCard({ children, cardRef, label }) {
       >
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
         <div style={{ position: "absolute", top: 12, right: 14, zIndex: 2 }}>
-          <span style={{ fontSize: 13, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
+          <span style={{ fontSize: 13, fontWeight: 900, color: light ? "#16a34a" : "#4ade80", letterSpacing: 1 }}>DEEP433</span>
         </div>
         {/* Centre background watermark */}
         <div style={{
@@ -179,7 +179,7 @@ function GraphicCard({ children, cardRef, label }) {
           pointerEvents: "none", zIndex: 0,
         }}>
           <div style={{
-            fontSize: 72, fontWeight: 900, color: "#4ade80", opacity: 0.04,
+            fontSize: 72, fontWeight: 900, color: light ? "#a855f7" : "#4ade80", opacity: light ? 0.05 : 0.04,
             letterSpacing: 6, textTransform: "uppercase", userSelect: "none",
             transform: "rotate(-15deg)", whiteSpace: "nowrap",
           }}>
@@ -245,11 +245,11 @@ function AnimatedStatBar({ label, homeVal, awayVal, unit = "", animate }) {
 }
 
 // ─── Bento box wrapper ────────────────────────────────────────────────────────
-function BentoBox({ title, icon, color, children, span }) {
+function BentoBox({ title, icon, color, children, span, light = false }) {
   return (
     <div style={{
-      background: "#13131f",
-      border: `1px solid ${color}22`,
+      background: light ? "#f8f8fa" : "#13131f",
+      border: `1px solid ${color}${light ? "44" : "22"}`,
       borderRadius: 10,
       padding: "12px 14px",
       gridColumn: span ? "span " + span : undefined,
@@ -2712,16 +2712,16 @@ function TransferFitGraphic() {
     setDownloading(false);
   };
 
-  const FitRow = ({ label, val1, val2, higherIsBetter = true }) => {
+  const FitRow = ({ label, val1, val2, higherIsBetter = true, light = false }) => {
     const v1 = parseFloat(val1) || 0;
     const v2 = parseFloat(val2) || 0;
     const p1Better = higherIsBetter ? v1 > v2 : v1 < v2;
     const p2Better = higherIsBetter ? v2 > v1 : v2 < v1;
     return (
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
-        <span style={{ fontSize: 20, fontWeight: p1Better ? 900 : 700, color: "#a855f7", opacity: p1Better ? 1 : 0.65 }}>{val1 ?? "—"}</span>
-        <span style={{ fontSize: 13, color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, opacity: 0.7 }}>{label}</span>
-        <span style={{ fontSize: 20, fontWeight: p2Better ? 900 : 700, color: "#4ade80", opacity: p2Better ? 1 : 0.65 }}>{val2 ?? "—"}</span>
+        <span style={{ fontSize: 20, fontWeight: p1Better ? 900 : 700, color: light ? "#9333ea" : "#a855f7", opacity: p1Better ? 1 : 0.5 }}>{val1 ?? "—"}</span>
+        <span style={{ fontSize: 13, color: light ? "#64748b" : "#94a3b8", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, opacity: light ? 0.85 : 0.7 }}>{label}</span>
+        <span style={{ fontSize: 20, fontWeight: p2Better ? 900 : 700, color: light ? "#16a34a" : "#4ade80", opacity: p2Better ? 1 : 0.5 }}>{val2 ?? "—"}</span>
       </div>
     );
   };
@@ -2750,79 +2750,79 @@ function TransferFitGraphic() {
 
       {target && incumbent && (
         <>
-          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share" light>
             <div style={{ padding: "22px 18px 18px" }}>
               <div style={{ textAlign: "center", marginBottom: 14 }}>
-                <div style={{ fontSize: 24, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5, marginBottom: 4 }}>Does He Fit The XI?</div>
-                <span style={{ fontSize: 14, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>🔄 Transfer Fit · {season === 2026 ? "2026 World Cup" : `${season}/${season + 1}`}</span>
+                <div style={{ fontSize: 24, fontWeight: 900, color: "#111", letterSpacing: -0.5, marginBottom: 4 }}>Does He Fit The XI?</div>
+                <span style={{ fontSize: 14, color: "#7c3aed", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>🔄 Transfer Fit · {season === 2026 ? "2026 World Cup" : `${season}/${season + 1}`}</span>
               </div>
 
               {/* Destination club — prominent banner */}
               <div style={{
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-                background: "linear-gradient(135deg, #4ade8018, #4ade8005)",
-                border: "1px solid #4ade8033", borderRadius: 10, padding: "10px 16px", marginBottom: 16,
-                boxShadow: "0 0 15px rgba(74,222,128,0.15)",
+                background: "linear-gradient(135deg, #4ade8014, #4ade8004)",
+                border: "1px solid #4ade8055", borderRadius: 10, padding: "10px 16px", marginBottom: 16,
+                boxShadow: "0 0 15px rgba(74,222,128,0.12)",
               }}>
                 {incumbent.teamLogo && <img src={incumbent.teamLogo} alt="" crossOrigin="anonymous" style={{ width: 28, height: 28, objectFit: "contain" }} />}
                 <div style={{ textAlign: "left" }}>
-                  <div style={{ fontSize: 12, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Destination Club</div>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: "#f0f0f0" }}>{incumbent.team}</div>
+                  <div style={{ fontSize: 12, color: "#16a34a", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Destination Club</div>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: "#111" }}>{incumbent.team}</div>
                 </div>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16 }}>
                 <div style={{ textAlign: "center" }}>
-                  {target.photo && <img src={target.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #a855f7", margin: "0 auto 8px" }} />}
-                  <div style={{ fontSize: 17, fontWeight: 900, color: "#a855f7" }}>{target.name}</div>
-                  <div style={{ fontSize: 13, color: "#aaa", marginTop: 2 }}>{target.team}</div>
-                  <div style={{ fontSize: 12, color: "#a855f7", fontWeight: 700, marginTop: 2, opacity: 0.7 }}>INCOMING</div>
+                  {target.photo && <img src={target.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #9333ea", margin: "0 auto 8px" }} />}
+                  <div style={{ fontSize: 17, fontWeight: 900, color: "#9333ea" }}>{target.name}</div>
+                  <div style={{ fontSize: 13, color: "#666", marginTop: 2 }}>{target.team}</div>
+                  <div style={{ fontSize: 12, color: "#9333ea", fontWeight: 700, marginTop: 2, opacity: 0.8 }}>INCOMING</div>
                 </div>
                 <div style={{ textAlign: "center", padding: "0 8px" }}>
-                  <div style={{ fontSize: 10, fontWeight: 800, color: "#a855f7", textTransform: "uppercase", letterSpacing: 0.5 }}>NEW</div>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: "#555", margin: "2px 0" }}>→</div>
-                  <div style={{ fontSize: 10, fontWeight: 800, color: "#4ade80", textTransform: "uppercase", letterSpacing: 0.5 }}>OLD</div>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: "#9333ea", textTransform: "uppercase", letterSpacing: 0.5 }}>NEW</div>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: "#999", margin: "2px 0" }}>→</div>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: "#16a34a", textTransform: "uppercase", letterSpacing: 0.5 }}>OLD</div>
                 </div>
                 <div style={{ textAlign: "center" }}>
-                  {incumbent.photo && <img src={incumbent.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 8px" }} />}
-                  <div style={{ fontSize: 17, fontWeight: 900, color: "#4ade80" }}>{incumbent.name}</div>
-                  <div style={{ fontSize: 13, color: "#aaa", marginTop: 2 }}>{incumbent.team}</div>
-                  <div style={{ fontSize: 12, color: "#4ade80", fontWeight: 700, marginTop: 2, opacity: 0.7 }}>OUTGOING</div>
+                  {incumbent.photo && <img src={incumbent.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #16a34a", margin: "0 auto 8px" }} />}
+                  <div style={{ fontSize: 17, fontWeight: 900, color: "#16a34a" }}>{incumbent.name}</div>
+                  <div style={{ fontSize: 13, color: "#666", marginTop: 2 }}>{incumbent.team}</div>
+                  <div style={{ fontSize: 12, color: "#16a34a", fontWeight: 700, marginTop: 2, opacity: 0.8 }}>OUTGOING</div>
                 </div>
               </div>
 
-              <div style={{ height: 1, background: "#1a1a2a", marginBottom: 10 }} />
+              <div style={{ height: 1, background: "#e5e5e5", marginBottom: 10 }} />
 
               <div style={{
-                background: "linear-gradient(135deg, #a855f714, #4ade800e)",
-                border: "1px solid #a855f733",
+                background: "linear-gradient(135deg, #9333ea10, #4ade8008)",
+                border: "1px solid #9333ea33",
                 borderRadius: 12, padding: "14px 16px", marginBottom: 10,
               }}>
-                <div style={{ fontSize: 15, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8, textAlign: "center" }}>⭐ Season Rating</div>
+                <div style={{ fontSize: 15, color: "#7c3aed", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8, textAlign: "center" }}>⭐ Season Rating</div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: 34, fontWeight: 900, color: "#a855f7", letterSpacing: -1 }}>{target.rating ? parseFloat(target.rating).toFixed(1) : "—"}</span>
-                  <span style={{ fontSize: 34, fontWeight: 900, color: "#4ade80", letterSpacing: -1 }}>{incumbent.rating ? parseFloat(incumbent.rating).toFixed(1) : "—"}</span>
+                  <span style={{ fontSize: 34, fontWeight: 900, color: "#9333ea", letterSpacing: -1 }}>{target.rating ? parseFloat(target.rating).toFixed(1) : "—"}</span>
+                  <span style={{ fontSize: 34, fontWeight: 900, color: "#16a34a", letterSpacing: -1 }}>{incumbent.rating ? parseFloat(incumbent.rating).toFixed(1) : "—"}</span>
                 </div>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-                <BentoBox title="Output" icon="⚽" color="#a855f7">
-                  <FitRow label="Goals" val1={target.goals} val2={incumbent.goals} />
-                  <FitRow label="Assists" val1={target.assists} val2={incumbent.assists} />
-                  <FitRow label="Apps" val1={target.appearances} val2={incumbent.appearances} />
+                <BentoBox title="Output" icon="⚽" color="#9333ea" light>
+                  <FitRow label="Goals" val1={target.goals} val2={incumbent.goals} light />
+                  <FitRow label="Assists" val1={target.assists} val2={incumbent.assists} light />
+                  <FitRow label="Apps" val1={target.appearances} val2={incumbent.appearances} light />
                 </BentoBox>
 
-                <BentoBox title="Progression" icon="🎨" color="#60a5fa">
-                  <FitRow label="Key Passes" val1={target.keyPasses} val2={incumbent.keyPasses} />
-                  <FitRow label="Dribbles" val1={target.dribbles} val2={incumbent.dribbles} />
-                  <FitRow label="Shots" val1={target.shots} val2={incumbent.shots} />
+                <BentoBox title="Progression" icon="🎨" color="#2563eb" light>
+                  <FitRow label="Key Passes" val1={target.keyPasses} val2={incumbent.keyPasses} light />
+                  <FitRow label="Dribbles" val1={target.dribbles} val2={incumbent.dribbles} light />
+                  <FitRow label="Shots" val1={target.shots} val2={incumbent.shots} light />
                 </BentoBox>
               </div>
 
-              <BentoBox title="Defensive Work" icon="🛡️" color="#f59e0b">
+              <BentoBox title="Defensive Work" icon="🛡️" color="#d97706" light>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                  <FitRow label="Tackles" val1={target.tackles} val2={incumbent.tackles} />
-                  <FitRow label="Cards" val1={target.yellowCards} val2={incumbent.yellowCards} higherIsBetter={false} />
+                  <FitRow label="Tackles" val1={target.tackles} val2={incumbent.tackles} light />
+                  <FitRow label="Cards" val1={target.yellowCards} val2={incumbent.yellowCards} higherIsBetter={false} light />
                 </div>
               </BentoBox>
             </div>
@@ -2897,6 +2897,38 @@ function TransferFitGraphic() {
 }
 
 // ─── TEAM SEARCH SLOT (standalone, avoids re-render focus bug) ──────────────
+// ─── LEAGUE SEARCH SLOT (any of API-Football's 1000+ leagues) ───────────────
+function LeagueSearchSlot({ search, setSearch, suggestions, league, searching, onSelect, onClear, onSearch }) {
+  return (
+    <div style={{ position: "relative" }}>
+      <input
+        placeholder="Search any league worldwide..."
+        value={league ? league.name : search}
+        onChange={e => {
+          setSearch(e.target.value);
+          onClear();
+          onSearch(e.target.value);
+        }}
+        style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${league ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+      />
+      {searching && <div style={{ position: "absolute", right: 10, top: 10, fontSize: 10, color: "#555" }}>...</div>}
+      {suggestions.length > 0 && !league && (
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, zIndex: 20, marginTop: 4, maxHeight: 260, overflowY: "auto" }}>
+          {suggestions.map((l, i) => (
+            <div key={i} onClick={() => onSelect(l)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", cursor: "pointer", borderBottom: "1px solid #1a1a2a" }}>
+              {l.logo && <img src={l.logo} alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />}
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>{l.name}</div>
+                <div style={{ fontSize: 10, color: "#555" }}>{l.country} · {l.type}{l.currentSeason ? ` · ${l.currentSeason}` : ""}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TeamSearchSlot({ label, search, setSearch, suggestions, team, searching, slot, color, onSelect, onClear, onSearch }) {
   return (
     <div style={{ position: "relative" }}>
@@ -2929,7 +2961,10 @@ function TeamSearchSlot({ label, search, setSearch, suggestions, team, searching
 // ─── GOAL TIMING GRAPHIC ──────────────────────────────────────────────────────
 function GoalTimingGraphic() {
   const cardRef = useRef(null);
-  const [leagueId, setLeagueId] = useState("pl");
+  const [searchLeague, setSearchLeague] = useState("");
+  const [suggestLeague, setSuggestLeague] = useState([]);
+  const [league, setLeague] = useState(null);
+  const [searchingLeague, setSearchingLeague] = useState(false);
 
   const [search1, setSearch1] = useState("");
   const [suggest1, setSuggest1] = useState([]);
@@ -2948,6 +2983,22 @@ function GoalTimingGraphic() {
 
   const INTERVALS = ["0-15", "16-30", "31-45", "46-60", "61-75", "76-90"];
 
+  const searchLeagueFn = async (query) => {
+    if (query.length < 3) { setSuggestLeague([]); return; }
+    setSearchingLeague(true);
+    try {
+      const r = await fetch(`/api/team-stats?mode=leaguesearch&query=${encodeURIComponent(query)}`);
+      const d = await r.json();
+      setSuggestLeague(d.leagues || []);
+    } catch {}
+    setSearchingLeague(false);
+  };
+
+  const selectLeague = (l) => {
+    setLeague(l); setSuggestLeague([]); setSearchLeague(l.name);
+    setTeam1(null); setTeam2(null); setStats1(null); setStats2(null); setSearch1(""); setSearch2("");
+  };
+
   const searchTeam = async (query, slot) => {
     if (query.length < 3) {
       slot === 1 ? setSuggest1([]) : setSuggest2([]);
@@ -2963,11 +3014,12 @@ function GoalTimingGraphic() {
   };
 
   const selectTeam = async (t, slot) => {
+    if (!league) return;
     setLoading(true);
     if (slot === 1) { setTeam1(t); setSuggest1([]); setSearch1(t.name); }
     else { setTeam2(t); setSuggest2([]); setSearch2(t.name); }
     try {
-      const r = await fetch(`/api/team-stats?leagueId=${leagueId}&teamId=${t.id}`);
+      const r = await fetch(`/api/team-stats?apiLeagueId=${league.id}&season=${league.currentSeason}&teamId=${t.id}`);
       const d = await r.json();
       if (slot === 1) setStats1(d.available ? d : null);
       else setStats2(d.available ? d : null);
@@ -3019,13 +3071,9 @@ function GoalTimingGraphic() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        {LEAGUE_OPTIONS.slice(1).map(l => (
-          <button key={l.id} onClick={() => { setLeagueId(l.id); setTeam1(null); setTeam2(null); setStats1(null); setStats2(null); setSearch1(""); setSearch2(""); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
-            {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
-            {l.label}
-          </button>
-        ))}
+      <div>
+        <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Competition</div>
+        <LeagueSearchSlot search={searchLeague} setSearch={setSearchLeague} suggestions={suggestLeague} league={league} searching={searchingLeague} onSelect={selectLeague} onClear={() => setLeague(null)} onSearch={searchLeagueFn} />
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
