@@ -103,30 +103,44 @@ export default function BlogPost() {
         </div>
       )}
 
-      {/* Scoreboard — You vs AI */}
-      <div style={scoreboard}>
-        <div style={scoreboardHead}>You vs AI — {withFlags(post.match_label, post.home_team_logo, post.away_team_logo)} · who called it?</div>
-        <div style={scoreRow}>
-          <ScoreCell color="#3D7EFF" label="👤 Your Call" value={post.user_prediction} />
-
-          <ScoreCell color="#C8FF4D" label="🤖 AI's Guess" value={post.ai_predicted_score} note={post.ai_note}>
-            {post.ai_confidence_pct && <Attribution color="#C8FF4D">{post.ai_confidence_pct}% confidence</Attribution>}
-          </ScoreCell>
-
-          <ScoreCell
-            color="#F1F4EC"
-            label="Final Score"
-            value={isSettled ? post.final_score : '— : —'}
-            note={isSettled ? "This is the one that actually settles it." : null}
-            pending={!isSettled}
-          />
+      {post.is_community_take ? (
+        /* Community Take byline */
+        <div style={{ maxWidth: 760, margin: '28px auto 0', padding: '0 24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#0E2419', border: '1px solid #173A28', borderRadius: 8, padding: '14px 18px' }}>
+            <div style={{ fontSize: 11, color: '#FF5A2D', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>Community Take</div>
+            <div style={{ width: 1, height: 16, background: '#173A28' }} />
+            <div style={{ fontSize: 14, color: '#F1F4EC' }}>
+              By <strong>{post.writer_name}</strong>
+              {post.writer_handle && <span style={{ color: '#7E9485' }}> · {post.writer_handle}</span>}
+            </div>
+          </div>
         </div>
-      </div>
+      ) : (
+        <>
+          {/* Scoreboard — You vs AI */}
+          <div style={scoreboard}>
+            <div style={scoreboardHead}>You vs AI — {withFlags(post.match_label, post.home_team_logo, post.away_team_logo)} · who called it?</div>
+            <div style={scoreRow}>
+              <ScoreCell color="#3D7EFF" label="👤 Your Call" value={post.user_prediction} />
 
-      {/* Deep Insights */}
-      {hasDeepInsights && (
-        <div style={insightsBox}>
-          <div style={insightsHead}>📊 Deep Insights — the data behind it</div>
+              <ScoreCell color="#C8FF4D" label="🤖 AI's Guess" value={post.ai_predicted_score} note={post.ai_note}>
+                {post.ai_confidence_pct && <Attribution color="#C8FF4D">{post.ai_confidence_pct}% confidence</Attribution>}
+              </ScoreCell>
+
+              <ScoreCell
+                color="#F1F4EC"
+                label="Final Score"
+                value={isSettled ? post.final_score : '— : —'}
+                note={isSettled ? "This is the one that actually settles it." : null}
+                pending={!isSettled}
+              />
+            </div>
+          </div>
+
+          {/* Deep Insights */}
+          {hasDeepInsights && (
+            <div style={insightsBox}>
+              <div style={insightsHead}>📊 Deep Insights — the data behind it</div>
 
           {post.attack_home_pct != null && (
             <StatBar label="Attack Rating" home={post.attack_home_pct} away={post.attack_away_pct} homeTeam={post.home_team} awayTeam={post.away_team} />
@@ -137,6 +151,8 @@ export default function BlogPost() {
           {post.key_stat && <div style={keyStat}>📌 {post.key_stat}</div>}
           {post.h2h_summary && <div style={h2hSummary}>{post.h2h_summary}</div>}
         </div>
+      )}
+        </>
       )}
 
       {/* Body */}
