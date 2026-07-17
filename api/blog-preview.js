@@ -52,9 +52,10 @@ export default async function handler(req, res) {
     return res.end();
   }
 
-  // If this isn't a known crawler, just redirect to the real SPA — humans get the full app
+  // If this isn't a known crawler, redirect with a bypass flag so the rewrite
+  // rule sends it straight to the real app instead of back through this function
   if (!isCrawler(userAgent)) {
-    res.writeHead(302, { Location: `/blog/${pathSlug}` });
+    res.writeHead(302, { Location: `/blog/${pathSlug}?spa=1` });
     return res.end();
   }
 
@@ -106,7 +107,7 @@ export default async function handler(req, res) {
     res.setHeader('Content-Type', 'text/html');
     return res.status(200).send(html);
   } catch (err) {
-    res.writeHead(302, { Location: `/blog/${pathSlug}` });
+    res.writeHead(302, { Location: `/blog/${pathSlug}?spa=1` });
     return res.end();
   }
 }
