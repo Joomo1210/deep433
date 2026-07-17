@@ -97,6 +97,9 @@ export default function LandingPage({ onGetStarted }) {
       {loaded && featured && (
         <section style={{ padding: "20px 24px 60px", maxWidth: 1000, margin: "0 auto" }}>
           <a href={`/blog/${featured.slug}`} className="featured-card">
+            {featured.image_url && (
+              <img src={featured.image_url} alt="" style={{ width: '100%', height: 260, objectFit: 'cover', borderRadius: 12, marginBottom: 20 }} />
+            )}
             <div style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase", letterSpacing: 2, marginBottom: 14 }}>
               {featured.category}{featured.gameweek ? ` · ${featured.gameweek}` : ""}
             </div>
