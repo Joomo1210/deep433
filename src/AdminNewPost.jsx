@@ -14,6 +14,7 @@ function slugify(title) {
 }
 
 export default function AdminNewPost() {
+  const [postType, setPostType] = useState('data'); // 'data' | 'community'
   const [form, setForm] = useState({
     title: '', subtitle: '', body: '',
     competition: '', gameweek: '', match_label: '', match_date: '',
@@ -24,6 +25,7 @@ export default function AdminNewPost() {
     attack_home_pct: '', attack_away_pct: '',
     defence_home_pct: '', defence_away_pct: '',
     key_stat: '', h2h_summary: '',
+    writer_name: '', writer_handle: '',
   });
   const [status, setStatus] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
@@ -73,10 +75,18 @@ export default function AdminNewPost() {
       setErrorMsg('Title is required.');
       return;
     }
-    if (!form.user_prediction.trim() || !form.ai_predicted_score.trim()) {
-      setStatus('error');
-      setErrorMsg('Add both your prediction and the AI\'s prediction.');
-      return;
+    if (postType === 'data') {
+      if (!form.user_prediction.trim() || !form.ai_predicted_score.trim()) {
+        setStatus('error');
+        setErrorMsg('Add both your prediction and the AI\'s prediction.');
+        return;
+      }
+    } else {
+      if (!form.writer_name.trim() || !form.writer_handle.trim() || !form.body.trim()) {
+        setStatus('error');
+        setErrorMsg('Writer name, X handle, and the take itself are all required.');
+        return;
+      }
     }
 
     let uploadedImageUrl = null;
@@ -87,6 +97,7 @@ export default function AdminNewPost() {
 
     const postPayload = {
       ...form,
+      is_community_take: postType === 'community',
       image_url: uploadedImageUrl,
       slug: slugify(form.title),
       ai_confidence_pct: form.ai_confidence_pct ? parseInt(form.ai_confidence_pct, 10) : null,
@@ -117,9 +128,18 @@ export default function AdminNewPost() {
   return (
     <div style={{ minHeight: '100vh', background: '#0B1F17', maxWidth: 680, margin: '0 auto', padding: '48px 24px 100px', fontFamily: 'sans-serif', color: '#F1F4EC' }}>
       <h1 style={{ fontSize: 32, fontWeight: 900 }}>New Post</h1>
-      <p style={{ color: '#9CA89C', marginBottom: 32, fontSize: 15, lineHeight: 1.5 }}>
+      <p style={{ color: '#9CA89C', marginBottom: 24, fontSize: 15, lineHeight: 1.5 }}>
         Deep433's data-driven takes — your call vs the AI's, backed by the stats behind it.
       </p>
+
+      <div style={{ display: 'flex', gap: 10, marginBottom: 32 }}>
+        <button onClick={() => setPostType('data')} style={{ flex: 1, background: postType === 'data' ? '#C8FF4D22' : 'none', border: `1.5px solid ${postType === 'data' ? '#C8FF4D' : '#2A4A3A'}`, borderRadius: 6, color: postType === 'data' ? '#C8FF4D' : '#9CA89C', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 700, padding: '12px' }}>
+          📊 Data-Driven Take
+        </button>
+        <button onClick={() => setPostType('community')} style={{ flex: 1, background: postType === 'community' ? '#C8FF4D22' : 'none', border: `1.5px solid ${postType === 'community' ? '#C8FF4D' : '#2A4A3A'}`, borderRadius: 6, color: postType === 'community' ? '#C8FF4D' : '#9CA89C', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 700, padding: '12px' }}>
+          👥 Community Take
+        </button>
+      </div>
 
       <Section title="Post & Match Details">
         <Field label="Title" value={form.title} onChange={v => update('title', v)} />
@@ -154,30 +174,46 @@ export default function AdminNewPost() {
         <Field label="Body (markdown)" textarea value={form.body} onChange={v => update('body', v)} />
       </Section>
 
-      <Section title="The Prediction Battle — You vs AI" color="#C8FF4D">
-        <Row2>
-          <Field label="👤 Your Prediction" value={form.user_prediction} onChange={v => update('user_prediction', v)} placeholder="e.g. 2-1" />
-          <Field label="🤖 AI Prediction" value={form.ai_predicted_score} onChange={v => update('ai_predicted_score', v)} placeholder="e.g. 2-1" />
-        </Row2>
-        <Field label="AI Confidence %" value={form.ai_confidence_pct} onChange={v => update('ai_confidence_pct', v)} placeholder="e.g. 68" />
-        <Field label="AI Verdict (why note)" textarea value={form.ai_note} onChange={v => update('ai_note', v)} />
-      </Section>
+      {postType === 'community' && (
+        <Section title="Community Writer" color="#FF5A2D">
+          <Row2>
+            <Field label="Writer Name" value={form.writer_name} onChange={v => update('writer_name', v)} />
+            <Field label="Writer X Handle" value={form.writer_handle} onChange={v => update('writer_handle', v)} placeholder="@handle" />
+          </Row2>
+          <p style={{ fontSize: 12, color: '#7E9485', marginTop: -8 }}>
+            The take itself goes in the "Body" field above — this is a simple credit byline, no prediction data needed.
+          </p>
+        </Section>
+      )}
 
-      <Section title="Deep Insights — The Data Behind It" color="#3D7EFF">
-        <p style={{ fontSize: 12, color: '#7E9485', marginBottom: 16 }}>
-          Pull these straight from the app's Deep Insights panel for this fixture — optional, but strengthens the data-driven angle.
-        </p>
-        <Row2>
-          <Field label="Attack Rating — Home %" value={form.attack_home_pct} onChange={v => update('attack_home_pct', v)} placeholder="e.g. 59" />
-          <Field label="Attack Rating — Away %" value={form.attack_away_pct} onChange={v => update('attack_away_pct', v)} placeholder="e.g. 41" />
-        </Row2>
-        <Row2>
-          <Field label="Defence Rating — Home %" value={form.defence_home_pct} onChange={v => update('defence_home_pct', v)} placeholder="e.g. 64" />
-          <Field label="Defence Rating — Away %" value={form.defence_away_pct} onChange={v => update('defence_away_pct', v)} placeholder="e.g. 36" />
-        </Row2>
-        <Field label="Key Stat" value={form.key_stat} onChange={v => update('key_stat', v)} placeholder="e.g. Spain had 68% of the ball" />
-        <Field label="H2H Summary" textarea value={form.h2h_summary} onChange={v => update('h2h_summary', v)} placeholder="e.g. Spain have won 3 of the last 5 meetings" />
-      </Section>
+      {postType === 'data' && (
+        <>
+          <Section title="The Prediction Battle — You vs AI" color="#C8FF4D">
+            <Row2>
+              <Field label="👤 Your Prediction" value={form.user_prediction} onChange={v => update('user_prediction', v)} placeholder="e.g. 2-1" />
+              <Field label="🤖 AI Prediction" value={form.ai_predicted_score} onChange={v => update('ai_predicted_score', v)} placeholder="e.g. 2-1" />
+            </Row2>
+            <Field label="AI Confidence %" value={form.ai_confidence_pct} onChange={v => update('ai_confidence_pct', v)} placeholder="e.g. 68" />
+            <Field label="AI Verdict (why note)" textarea value={form.ai_note} onChange={v => update('ai_note', v)} />
+          </Section>
+
+          <Section title="Deep Insights — The Data Behind It" color="#3D7EFF">
+            <p style={{ fontSize: 12, color: '#7E9485', marginBottom: 16 }}>
+              Pull these straight from the app's Deep Insights panel for this fixture — optional, but strengthens the data-driven angle.
+            </p>
+            <Row2>
+              <Field label="Attack Rating — Home %" value={form.attack_home_pct} onChange={v => update('attack_home_pct', v)} placeholder="e.g. 59" />
+              <Field label="Attack Rating — Away %" value={form.attack_away_pct} onChange={v => update('attack_away_pct', v)} placeholder="e.g. 41" />
+            </Row2>
+            <Row2>
+              <Field label="Defence Rating — Home %" value={form.defence_home_pct} onChange={v => update('defence_home_pct', v)} placeholder="e.g. 64" />
+              <Field label="Defence Rating — Away %" value={form.defence_away_pct} onChange={v => update('defence_away_pct', v)} placeholder="e.g. 36" />
+            </Row2>
+            <Field label="Key Stat" value={form.key_stat} onChange={v => update('key_stat', v)} placeholder="e.g. Spain had 68% of the ball" />
+            <Field label="H2H Summary" textarea value={form.h2h_summary} onChange={v => update('h2h_summary', v)} placeholder="e.g. Spain have won 3 of the last 5 meetings" />
+          </Section>
+        </>
+      )}
 
       <div style={{ display: 'flex', gap: 12, marginTop: 28 }}>
         <button onClick={() => savePost(false)} disabled={status === 'saving' || uploading} style={btnSecondary}>Save Draft</button>
