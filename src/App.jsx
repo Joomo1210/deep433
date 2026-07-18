@@ -40,7 +40,7 @@ const LEAGUES = [
 ];
 
 const BADGE_DEFS = [
-  { icon: "⚽", name: "Sunday League Scout", desc: "First prediction made", color: "#888", condition: (s) => s.total >= 1 },
+  { icon: "⚽", name: "Sunday League Scout", desc: "First prediction made", color: "#e2e8f0", condition: (s) => s.total >= 1 },
   { icon: "🤖", name: "AI Beater", desc: "Beat the AI once", color: "#60a5fa", condition: (s) => s.beatAI >= 1 },
   { icon: "🎯", name: "Sharp Eye", desc: "Beat the AI 3 times", color: "#a78bfa", condition: (s) => s.beatAI >= 3 },
   { icon: "🔥", name: "On Fire", desc: "Beat the AI 5 times", color: "#f97316", condition: (s) => s.beatAI >= 5 },
@@ -199,8 +199,8 @@ function H2HSummaryShare({ h2h, homeTeam, awayTeam }) {
         const p = parse(r);
         if (!p) return <div key={i} style={{ fontSize: 13, color: "#444", textAlign: "center" }}>{r}</div>;
         const { hg, ag } = p;
-        const homeColor = hg > ag ? "#4ade80" : hg < ag ? "#f87171" : "#aaa";
-        const awayColor = ag > hg ? "#4ade80" : ag < hg ? "#f87171" : "#aaa";
+        const homeColor = hg > ag ? "#4ade80" : hg < ag ? "#f87171" : "#e2e8f0";
+        const awayColor = ag > hg ? "#4ade80" : ag < hg ? "#f87171" : "#e2e8f0";
         return (
           <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "3px 0", borderBottom: "1px solid #1a1a2a" }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: homeColor, flex: 1 }}>{p.homeTeam}</span>
@@ -263,7 +263,7 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
       </div>
       {/* Competition context */}
       <div style={{ textAlign: "center", paddingTop: 18, paddingBottom: 4 }}>
-        <span style={{ fontSize: 12, color: "#888", letterSpacing: 2, textTransform: "uppercase", fontWeight: 600 }}>{leagueLabel}</span>
+        <span style={{ fontSize: 12, color: "#e2e8f0", letterSpacing: 2, textTransform: "uppercase", fontWeight: 600 }}>{leagueLabel}</span>
       </div>
     </>
   );
@@ -281,14 +281,14 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
           <div key={s.label}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
               <span style={{ fontSize: 20, fontWeight: 900, color: "#4ade80" }}>{hp}%</span>
-              <span style={{ fontSize: 12, color: "#aaa", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>{s.label}</span>
+              <span style={{ fontSize: 12, color: "#e2e8f0", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>{s.label}</span>
               <span style={{ fontSize: 20, fontWeight: 900, color: "#f59e0b" }}>{ap}%</span>
             </div>
             <div style={{ display: "flex", height: 6, borderRadius: 3, overflow: "hidden" }}>
               <div style={{ width: hp + "%", background: "#4ade80" }} />
               <div style={{ width: ap + "%", background: "#f59e0b", opacity: 0.6 }} />
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 9, fontSize: 13, color: "#aaa" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 9, fontSize: 13, color: "#e2e8f0" }}>
               <span style={{ color: "#4ade80", fontWeight: 600 }}>{homeTeam.split(" ")[0]}</span><span style={{ color: "#f59e0b", fontWeight: 600 }}>{awayTeam.split(" ")[0]}</span>
             </div>
           </div>
@@ -301,14 +301,14 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)", zIndex: 60, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 16, overflowY: "auto" }}>
       <div style={{ display: "flex", gap: 8, marginBottom: 12, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
         {["square", "landscape"].map(v => (
-          <button key={v} onClick={() => setVariant(v)} style={{ background: variant === v ? "#4ade80" : "none", border: "1px solid " + (variant === v ? "#4ade80" : "#333"), borderRadius: 6, color: variant === v ? "#0a0f0a" : "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "6px 14px" }}>
+          <button key={v} onClick={() => setVariant(v)} style={{ background: variant === v ? "#4ade80" : "none", border: "1px solid " + (variant === v ? "#4ade80" : "#333"), borderRadius: 6, color: variant === v ? "#0a0f0a" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "6px 14px" }}>
             {v === "square" ? "1:1" : "16:9"}
           </button>
         ))}
         <button onClick={downloadImage} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 800, padding: "6px 16px", opacity: downloading ? 0.6 : 1 }}>
           {downloading ? "Generating..." : "⬇ Download PNG"}
         </button>
-        <button onClick={onClose} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 15, padding: "6px 12px" }}>✕ Close</button>
+        <button onClick={onClose} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 15, padding: "6px 12px" }}>✕ Close</button>
       </div>
 
       <div
@@ -378,7 +378,7 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
           </div>
         )}
       </div>
-      <div style={{ fontSize: 13, color: "#555", marginTop: 10 }}>Tap Download PNG to save and share</div>
+      <div style={{ fontSize: 13, color: "#e2e8f0", marginTop: 10 }}>Tap Download PNG to save and share</div>
     </div>
   );
 }
@@ -520,7 +520,7 @@ function AuthScreen({ onGuestMode }) {
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <img src="/deep433.jpg" alt="Deep433" style={{ width: 64, height: 64, borderRadius: "50%", objectFit: "cover", marginBottom: 8 }} />
           <div style={{ fontSize: 28, fontWeight: 900, color: "#4ade80", textShadow: "0 0 30px rgba(74,222,128,0.4)" }}>DEEP433</div>
-          <div style={{ fontSize: 16, color: "#999", marginTop: 4 }}>DATA-DRIVEN FOOTBALL INSIGHTS</div>
+          <div style={{ fontSize: 16, color: "#e2e8f0", marginTop: 4 }}>DATA-DRIVEN FOOTBALL INSIGHTS</div>
         </div>
         <div style={{ background: "#13131f", border: "1px solid #1e1e30", borderRadius: 16, padding: 24 }}>
           <button onClick={handleGoogle} disabled={loading} style={{ width: "100%", background: "#fff", border: "none", borderRadius: 10, color: "#111", cursor: "pointer", fontSize: 17, fontWeight: 700, padding: "13px 20px", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontFamily: "inherit" }}>
@@ -529,7 +529,7 @@ function AuthScreen({ onGuestMode }) {
           </button>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
             <div style={{ flex: 1, height: 1, background: "#1e1e30" }} />
-            <span style={{ color: "#555", fontSize: 15 }}>or</span>
+            <span style={{ color: "#e2e8f0", fontSize: 15 }}>or</span>
             <div style={{ flex: 1, height: 1, background: "#1e1e30" }} />
           </div>
           <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 10, color: "#f0f0f0", fontSize: 17, padding: "12px 16px", outline: "none", marginBottom: 10, fontFamily: "inherit" }}/>
@@ -539,11 +539,11 @@ function AuthScreen({ onGuestMode }) {
           <button onClick={handleEmail} disabled={loading} style={{ width: "100%", background: "linear-gradient(135deg, #4ade80, #22c55e)", border: "none", borderRadius: 10, color: "#0a0f0a", fontSize: 18, fontWeight: 800, padding: "13px", cursor: "pointer", fontFamily: "inherit", marginBottom: 14 }}>
             {loading ? "..." : mode === "login" ? "Sign In" : "Create Account"}
           </button>
-          <div style={{ textAlign: "center", fontSize: 16, color: "#555" }}>
+          <div style={{ textAlign: "center", fontSize: 16, color: "#e2e8f0" }}>
             {mode === "login" ? null : (<>Already have an account? <button onClick={() => { setMode("login"); setError(""); setMessage(""); }} style={{ background: "none", border: "none", color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 16, fontWeight: 700 }}>Sign in</button></>)}
           </div>
         </div>
-        <button onClick={onGuestMode} style={{ width: "100%", background: "none", border: "1px solid #2a2a3a", borderRadius: 10, color: "#999", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "13px", marginTop: 14 }}>
+        <button onClick={onGuestMode} style={{ width: "100%", background: "none", border: "1px solid #2a2a3a", borderRadius: 10, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "13px", marginTop: 14 }}>
           ⚡ Try Predict without an account
         </button>
       </div>
@@ -821,7 +821,7 @@ export default function FootballPredictor() {
 
   const confidenceColor = (c) => c === "High" ? "#22c55e" : c === "Medium" ? "#f59e0b" : "#ef4444";
   const outcomeColor = (o) => o === "Home Win" ? "#60a5fa" : o === "Away Win" ? "#f87171" : "#a78bfa";
-  const resultColor = (r) => r === "user" ? "#4ade80" : r === "ai" ? "#f87171" : r === "tie" ? "#f59e0b" : "#555";
+  const resultColor = (r) => r === "user" ? "#4ade80" : r === "ai" ? "#f87171" : r === "tie" ? "#f59e0b" : "#e2e8f0";
 
   const selectFixture = (fix) => {
     setHomeTeam(fix.home);
@@ -1107,8 +1107,8 @@ export default function FootballPredictor() {
         .predict-btn { background: linear-gradient(135deg, #4ade80, #22c55e); border: none; border-radius: 10px; color: #0a0f0a; font-size: 16px; font-weight: 800; padding: 14px 32px; cursor: pointer; width: 100%; transition: opacity 0.2s; font-family: inherit; }
         .predict-btn:hover { opacity: 0.9; }
         .predict-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .ghost-btn { background: none; border: 1.5px solid #2a2a3a; border-radius: 10px; color: #666; font-size: 14px; font-weight: 600; padding: 12px; cursor: pointer; width: 100%; font-family: inherit; }
-        .nav-tab { background: none; border: none; border-bottom: 2px solid transparent; color: #555; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 600; padding: 12px 4px; transition: all 0.15s; white-space: nowrap; }
+        .ghost-btn { background: none; border: 1.5px solid #2a2a3a; border-radius: 10px; color: #e2e8f0; font-size: 14px; font-weight: 600; padding: 12px; cursor: pointer; width: 100%; font-family: inherit; }
+        .nav-tab { background: none; border: none; border-bottom: 2px solid transparent; color: #e2e8f0; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 600; padding: 12px 4px; transition: all 0.15s; white-space: nowrap; }
         .nav-tab.active { border-bottom-color: #4ade80; color: #4ade80; }
         .tag { display: inline-block; border-radius: 6px; font-size: 12px; font-weight: 700; padding: 4px 10px; text-transform: uppercase; }
         .player-chip { background: #1a1a28; border: 1px solid #2a2a40; border-radius: 6px; font-size: 12px; padding: 5px 10px; color: #ccc; }
@@ -1120,7 +1120,7 @@ export default function FootballPredictor() {
         .badge-card.locked { opacity: 0.35; filter: grayscale(1); }
         .copy-btn { background: #4ade80; border: none; border-radius: 8px; color: #0a0f0a; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 800; padding: 12px 24px; width: 100%; transition: opacity 0.2s; }
         .log-input { background: #1a1a24; border: 1.5px solid #2a2a3a; border-radius: 6px; color: #f0f0f0; font-size: 13px; padding: 6px 10px; width: 80px; outline: none; font-family: inherit; text-align: center; }
-        .league-btn { background: #1a1a24; border: 1.5px solid #2a2a3a; border-radius: 20px; color: #666; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 600; padding: 7px 14px; transition: all 0.12s; white-space: nowrap; }
+        .league-btn { background: #1a1a24; border: 1.5px solid #2a2a3a; border-radius: 20px; color: #e2e8f0; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 600; padding: 7px 14px; transition: all 0.12s; white-space: nowrap; }
         .league-btn.active { background: #4ade8018; border-color: #4ade80; color: #4ade80; }
         .fixture-row { background: #0f0f1a; border: 1px solid #1a1a2a; border-radius: 10px; padding: 10px 14px; cursor: pointer; transition: border-color 0.15s; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
         .fixture-row:hover { border-color: #4ade80; }
@@ -1136,13 +1136,13 @@ export default function FootballPredictor() {
             <img src="/deep433.jpg" alt="Deep433" style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover" }} />
             <div>
               <div style={{ fontSize: 18, fontWeight: 900, color: "#4ade80" }} className="glow">DEEP433</div>
-              <div style={{ fontSize: 13, color: "#999", letterSpacing: 1 }}>DATA-DRIVEN FOOTBALL INSIGHTS</div>
+              <div style={{ fontSize: 13, color: "#e2e8f0", letterSpacing: 1 }}>DATA-DRIVEN FOOTBALL INSIGHTS</div>
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {rank && <div style={{ textAlign: "right" }}><div style={{ fontSize: 17 }}>{rank.icon}</div><div style={{ fontSize: 13, color: rank.color, fontWeight: 700 }}>{rank.name}</div></div>}
             {session ? (
-              <button onClick={signOut} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#999", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "5px 10px" }}>Sign out</button>
+              <button onClick={signOut} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "5px 10px" }}>Sign out</button>
             ) : (
               <button onClick={() => setGuestMode(false)} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px" }}>Sign In</button>
             )}
@@ -1172,13 +1172,13 @@ export default function FootballPredictor() {
                 </div>
                 <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0", flex: 1 }}>
                   {f.home} <span style={{ color: "#4ade80" }}>{f.score.home ?? 0}</span>
-                  <span style={{ color: "#555", margin: "0 4px" }}>-</span>
+                  <span style={{ color: "#e2e8f0", margin: "0 4px" }}>-</span>
                   <span style={{ color: "#4ade80" }}>{f.score.away ?? 0}</span> {f.away}
                 </span>
                 {f.possession?.home && (
-                  <span style={{ fontSize: 13, color: "#555" }}>⚽ {f.possession.home}</span>
+                  <span style={{ fontSize: 13, color: "#e2e8f0" }}>⚽ {f.possession.home}</span>
                 )}
-                <span style={{ fontSize: 13, color: "#555" }}>{expandedLive === f.fixtureId ? "▲" : "▼"}</span>
+                <span style={{ fontSize: 13, color: "#e2e8f0" }}>{expandedLive === f.fixtureId ? "▲" : "▼"}</span>
               </div>
 
               {/* Expanded live card */}
@@ -1204,9 +1204,9 @@ export default function FootballPredictor() {
                   {/* Possession bar */}
                   {f.possession?.home && (
                     <div style={{ marginBottom: 12 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#555", marginBottom: 4 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#e2e8f0", marginBottom: 4 }}>
                         <span style={{ color: "#4ade80", fontWeight: 700 }}>{f.possession.home}</span>
-                        <span style={{ color: "#888" }}>Possession</span>
+                        <span style={{ color: "#e2e8f0" }}>Possession</span>
                         <span style={{ color: "#f59e0b", fontWeight: 700 }}>{f.possession.away}</span>
                       </div>
                       <div style={{ display: "flex", height: 6, borderRadius: 3, overflow: "hidden" }}>
@@ -1223,7 +1223,7 @@ export default function FootballPredictor() {
                         {Array.from({ length: f.cards?.home?.yellow || 0 }).map((_, i) => <span key={i}>🟨</span>)}
                         {Array.from({ length: f.cards?.home?.red || 0 }).map((_, i) => <span key={i}>🟥</span>)}
                       </div>
-                      <div style={{ fontSize: 13, color: "#555" }}>Cards</div>
+                      <div style={{ fontSize: 13, color: "#e2e8f0" }}>Cards</div>
                       <div style={{ display: "flex", gap: 6 }}>
                         {Array.from({ length: f.cards?.away?.yellow || 0 }).map((_, i) => <span key={i}>🟨</span>)}
                         {Array.from({ length: f.cards?.away?.red || 0 }).map((_, i) => <span key={i}>🟥</span>)}
@@ -1234,11 +1234,11 @@ export default function FootballPredictor() {
                   {/* Events timeline */}
                   {f.events?.length > 0 && (
                     <div style={{ borderTop: "1px solid #1a1a1a", paddingTop: 10 }}>
-                      <div style={{ fontSize: 13, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Match Events</div>
+                      <div style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Match Events</div>
                       <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 240, overflowY: "auto" }}>
                         {[...f.events].reverse().map((e, i) => (
                           <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15 }}>
-                            <span style={{ color: "#555", minWidth: 32, fontWeight: 700, fontSize: 14 }}>{e.minute}{e.extra}'</span>
+                            <span style={{ color: "#e2e8f0", minWidth: 32, fontWeight: 700, fontSize: 14 }}>{e.minute}{e.extra}'</span>
                             <span style={{ fontSize: 17 }}>{e.icon}</span>
                             <span style={{ color: "#f0f0f0", fontWeight: 600, flex: 1 }}>{e.label}</span>
                             <span style={{ color: "#444", fontSize: 13 }}>{e.team?.split(" ").slice(-1)[0]}</span>
@@ -1298,7 +1298,7 @@ export default function FootballPredictor() {
                 <input className="search-input" placeholder="🔍 Search team..." value={fixtureSearch} onChange={e => setFixtureSearch(e.target.value)} style={{ marginBottom: 12 }} />
 
                 {fixturesLoading && (
-                  <div style={{ textAlign: "center", color: "#555", fontSize: 16, padding: "20px 0" }}>Loading fixtures...</div>
+                  <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 16, padding: "20px 0" }}>Loading fixtures...</div>
                 )}
 
                 {!fixturesLoading && fixtures.length === 0 && (
@@ -1323,10 +1323,10 @@ export default function FootballPredictor() {
                             </div>
                             <div style={{ textAlign: "center", minWidth: 60 }}>
                               {isLocked && status === "finished"
-                                ? <span style={{ fontSize: 15, fontWeight: 800, color: "#555" }}>{f.score.home}-{f.score.away}</span>
+                                ? <span style={{ fontSize: 15, fontWeight: 800, color: "#e2e8f0" }}>{f.score.home}-{f.score.away}</span>
                                 : status === "live"
                                 ? <span style={{ fontSize: 13, color: "#ef4444", fontWeight: 700 }}>🔴 LIVE</span>
-                                : <span style={{ fontSize: 13, color: "#555" }}>
+                                : <span style={{ fontSize: 13, color: "#e2e8f0" }}>
                                     {new Date(f.kickoff).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} BST
                                   </span>
                               }
@@ -1354,7 +1354,7 @@ export default function FootballPredictor() {
               <div className="card">
                 <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Your Prediction</div>
                 <div style={{ fontSize: 20, fontWeight: 800, color: "#f0f0f0", marginBottom: 4 }}>{homeTeam} vs {awayTeam}</div>
-                <div style={{ fontSize: 16, color: "#555", marginBottom: 28 }}>{leagueLabel}</div>
+                <div style={{ fontSize: 16, color: "#e2e8f0", marginBottom: 28 }}>{leagueLabel}</div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 28 }}>
                   <div style={{ textAlign: "center" }}>
                     <div style={{ fontSize: 15, color: "#4ade80", fontWeight: 700, marginBottom: 8, textTransform: "uppercase" }}>{homeTeam}</div>
@@ -1377,7 +1377,7 @@ export default function FootballPredictor() {
             {loading && (
               <div className="card" style={{ textAlign: "center", padding: "40px 20px" }}>
                 <div className="spinner" style={{ marginBottom: 16 }} />
-                <div style={{ color: "#555", fontSize: 16 }}>AI is analysing the match...</div>
+                <div style={{ color: "#e2e8f0", fontSize: 16 }}>AI is analysing the match...</div>
               </div>
             )}
 
@@ -1396,14 +1396,14 @@ export default function FootballPredictor() {
                   <button
                     onClick={() => fetchConfirmedLineup(homeTeam, awayTeam, selectedLeague, savedPredictionId)}
                     disabled={lineupFetching}
-                    style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 8, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 15, padding: "8px 16px", width: "100%", marginTop: 4 }}
+                    style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 15, padding: "8px 16px", width: "100%", marginTop: 4 }}
                   >
                     {lineupFetching ? "Checking for confirmed lineup..." : "🔄 Refresh Lineup"}
                   </button>
                 )}
 
                 <div className="reveal-box">
-                  <div style={{ fontSize: 14, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 16, textAlign: "center" }}>{homeTeam} vs {awayTeam} · {leagueLabel}</div>
+                  <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 16, textAlign: "center" }}>{homeTeam} vs {awayTeam} · {leagueLabel}</div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 12, alignItems: "center" }}>
                     <div style={{ textAlign: "center" }}>
                       <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, marginBottom: 8, textTransform: "uppercase" }}>👤 Your Call</div>
@@ -1427,19 +1427,19 @@ export default function FootballPredictor() {
                 </div>
 
                 <div className="card">
-                  <div style={{ fontSize: 14, color: "#888", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>⚔️ Key Tactical Battle</div>
-                  <p style={{ fontSize: 17, color: "#aaa", lineHeight: 1.6 }}>{result.keyBattle}</p>
+                  <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>⚔️ Key Tactical Battle</div>
+                  <p style={{ fontSize: 17, color: "#e2e8f0", lineHeight: 1.6 }}>{result.keyBattle}</p>
                 </div>
 
                 <div className="card" style={{ padding: "14px 16px" }}>
-                  <div style={{ fontSize: 14, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🪑 Bench & Managers</div>
+                  <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🪑 Bench & Managers</div>
 
                   {/* Home bench */}
                   <div style={{ marginBottom: 12 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                       <span style={{ fontSize: 15, fontWeight: 700, color: "#4ade80" }}>{homeTeam}</span>
                       {confirmedLineup?.home?.coach && (
-                        <span style={{ fontSize: 14, color: "#555" }}>👔 {confirmedLineup.home.coach}</span>
+                        <span style={{ fontSize: 14, color: "#e2e8f0" }}>👔 {confirmedLineup.home.coach}</span>
                       )}
                     </div>
                     <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
@@ -1457,7 +1457,7 @@ export default function FootballPredictor() {
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                       <span style={{ fontSize: 15, fontWeight: 700, color: "#a855f7" }}>{awayTeam}</span>
                       {confirmedLineup?.away?.coach && (
-                        <span style={{ fontSize: 14, color: "#555" }}>👔 {confirmedLineup.away.coach}</span>
+                        <span style={{ fontSize: 14, color: "#e2e8f0" }}>👔 {confirmedLineup.away.coach}</span>
                       )}
                     </div>
                     <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
@@ -1473,7 +1473,7 @@ export default function FootballPredictor() {
 
                 <div className="card" style={{ borderColor: "#2a1f00", background: "#13100a" }}>
                   <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>🃏 Wildcard Factor</div>
-                  <p style={{ fontSize: 17, color: "#aaa", lineHeight: 1.6 }}>{result.wildcard}</p>
+                  <p style={{ fontSize: 17, color: "#e2e8f0", lineHeight: 1.6 }}>{result.wildcard}</p>
                 </div>
 
                 {deepInsights && (
@@ -1487,7 +1487,7 @@ export default function FootballPredictor() {
                   <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>📤 Challenge Your Friends</div>
                   <div style={{ background: "linear-gradient(135deg, #0d1a0d, #0a0a1f)", border: "1px solid #2a3a2a", borderRadius: 12, padding: 16, marginBottom: 12, textAlign: "center" }}>
                     <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, letterSpacing: 2, marginBottom: 10 }}>⚽ DEEP433 — YOU vs AI</div>
-                    <div style={{ fontSize: 15, color: "#555", marginBottom: 12, textTransform: "uppercase" }}>{leagueLabel}: {homeTeam} vs {awayTeam}</div>
+                    <div style={{ fontSize: 15, color: "#e2e8f0", marginBottom: 12, textTransform: "uppercase" }}>{leagueLabel}: {homeTeam} vs {awayTeam}</div>
                     <div style={{ display: "flex", justifyContent: "center", gap: 24, marginBottom: 12 }}>
                       <div style={{ textAlign: "center" }}>
                         <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 700, marginBottom: 4 }}>👤 MY CALL</div>
@@ -1518,11 +1518,11 @@ export default function FootballPredictor() {
             {/* Horizontal scrolling completed scores ticker */}
             {liveData.filter(f => f.status === "finished").length > 0 && (
               <div style={{ background: "#0d0d18", borderRadius: 10, padding: "10px 0", overflow: "hidden", position: "relative" }}>
-                <div style={{ fontSize: 13, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, padding: "0 14px", marginBottom: 8 }}>FT Results</div>
+                <div style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, padding: "0 14px", marginBottom: 8 }}>FT Results</div>
                 <div style={{ display: "flex", gap: 12, overflowX: "auto", padding: "0 14px 4px", scrollbarWidth: "none" }}>
                   {liveData.filter(f => f.status === "finished").map((f, i) => (
                     <div key={i} style={{ background: "#13131f", border: "1px solid #1e1e30", borderRadius: 8, padding: "8px 14px", flexShrink: 0, textAlign: "center", minWidth: 130 }}>
-                      <div style={{ fontSize: 13, color: "#555", marginBottom: 6 }}>FT</div>
+                      <div style={{ fontSize: 13, color: "#e2e8f0", marginBottom: 6 }}>FT</div>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                         <span style={{ fontSize: 14, fontWeight: 700, color: "#f0f0f0", textAlign: "right", flex: 1 }}>{f.home.split(" ").slice(-1)[0]}</span>
                         <span style={{ fontSize: 18, fontWeight: 900, color: "#f0f0f0" }}>{f.score.home ?? 0}-{f.score.away ?? 0}</span>
@@ -1535,7 +1535,7 @@ export default function FootballPredictor() {
             )}
 
             {/* All today's fixtures */}
-            <div style={{ fontSize: 14, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Today's Fixtures</div>
+            <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Today's Fixtures</div>
 
             {liveData.length === 0 && (
               <div style={{ textAlign: "center", color: "#444", fontSize: 17, padding: "40px 0" }}>No fixtures today — check back on matchday</div>
@@ -1544,7 +1544,7 @@ export default function FootballPredictor() {
             {liveData.map((f, i) => {
               const isLive = f.status === "live";
               const isFinished = f.status === "finished";
-              const statusColor = isLive ? "#ef4444" : isFinished ? "#555" : "#4ade80";
+              const statusColor = isLive ? "#ef4444" : isFinished ? "#e2e8f0" : "#4ade80";
               const statusLabel = isLive ? `🔴 ${getTimeLabel(f.statusRaw, f.elapsed)}` : isFinished ? (f.statusRaw === "AET" ? "AET" : f.statusRaw === "PEN" ? "PEN" : "FT") : "Soon";
 
               return (
@@ -1554,19 +1554,19 @@ export default function FootballPredictor() {
                     <div style={{ textAlign: "center" }}>
                       <TeamFlag team={f.home} logo={f.homeLogo} size={24} />
                       <div style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0", marginTop: 4 }}>{f.home}</div>
-                      <div style={{ fontSize: 36, fontWeight: 900, color: isFinished ? "#888" : "#f0f0f0", marginTop: 2 }}>{isLive || isFinished ? (f.score.home ?? 0) : ""}</div>
+                      <div style={{ fontSize: 36, fontWeight: 900, color: isFinished ? "#e2e8f0" : "#f0f0f0", marginTop: 2 }}>{isLive || isFinished ? (f.score.home ?? 0) : ""}</div>
                     </div>
                     <div style={{ textAlign: "center", minWidth: 60 }}>
                       <div style={{ fontSize: 14, fontWeight: 700, color: statusColor, marginBottom: 4 }}>{statusLabel}</div>
-                      {!isLive && !isFinished && <div style={{ fontSize: 14, color: "#555" }}>{new Date(f.kickoff).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} BST</div>}
+                      {!isLive && !isFinished && <div style={{ fontSize: 14, color: "#e2e8f0" }}>{new Date(f.kickoff).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} BST</div>}
                       {isLive && f.possession?.home && (
-                        <div style={{ fontSize: 13, color: "#555", marginTop: 4 }}>⚽ {f.possession.home}</div>
+                        <div style={{ fontSize: 13, color: "#e2e8f0", marginTop: 4 }}>⚽ {f.possession.home}</div>
                       )}
                     </div>
                     <div style={{ textAlign: "center" }}>
                       <TeamFlag team={f.away} logo={f.awayLogo} size={24} />
                       <div style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0", marginTop: 4 }}>{f.away}</div>
-                      <div style={{ fontSize: 36, fontWeight: 900, color: isFinished ? "#888" : "#f0f0f0", marginTop: 2 }}>{isLive || isFinished ? (f.score.away ?? 0) : ""}</div>
+                      <div style={{ fontSize: 36, fontWeight: 900, color: isFinished ? "#e2e8f0" : "#f0f0f0", marginTop: 2 }}>{isLive || isFinished ? (f.score.away ?? 0) : ""}</div>
                     </div>
                   </div>
 
@@ -1584,7 +1584,7 @@ export default function FootballPredictor() {
                       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                         {f.events.filter(e => e.type === "Goal" || e.type === "Card").map((e, j) => (
                           <div key={j} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15 }}>
-                            <span style={{ color: "#555", minWidth: 32, fontSize: 14, fontWeight: 700 }}>{e.minute}'</span>
+                            <span style={{ color: "#e2e8f0", minWidth: 32, fontSize: 14, fontWeight: 700 }}>{e.minute}'</span>
                             <span style={{ fontSize: 16 }}>{e.icon}</span>
                             <span style={{ color: "#ccc", fontWeight: 600, flex: 1 }}>{e.label}</span>
                             <span style={{ color: "#444", fontSize: 13 }}>{e.team?.split(" ").slice(-1)[0]}</span>
@@ -1627,7 +1627,7 @@ export default function FootballPredictor() {
             </div>
 
             {bracketLoading && (
-              <div style={{ textAlign: "center", color: "#555", fontSize: 16, padding: "40px 0" }}>Loading bracket...</div>
+              <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 16, padding: "40px 0" }}>Loading bracket...</div>
             )}
 
             {!bracketLoading && bracketRounds.length === 0 && (
@@ -1686,7 +1686,7 @@ export default function FootballPredictor() {
                                 {m.home || "TBD"}
                               </span>
                               {(isLive || isFinished) && (
-                                <span style={{ fontSize: 17, fontWeight: 900, color: homeWon ? "#4ade80" : "#888", minWidth: 16, textAlign: "right" }}>
+                                <span style={{ fontSize: 17, fontWeight: 900, color: homeWon ? "#4ade80" : "#e2e8f0", minWidth: 16, textAlign: "right" }}>
                                   {m.score.home ?? 0}
                                 </span>
                               )}
@@ -1705,7 +1705,7 @@ export default function FootballPredictor() {
                                 {m.away || "TBD"}
                               </span>
                               {(isLive || isFinished) && (
-                                <span style={{ fontSize: 17, fontWeight: 900, color: awayWon ? "#4ade80" : "#888", minWidth: 16, textAlign: "right" }}>
+                                <span style={{ fontSize: 17, fontWeight: 900, color: awayWon ? "#4ade80" : "#e2e8f0", minWidth: 16, textAlign: "right" }}>
                                   {m.score.away ?? 0}
                                 </span>
                               )}
@@ -1713,7 +1713,7 @@ export default function FootballPredictor() {
 
                             {/* Status footer */}
                             <div style={{ padding: "4px 10px", background: "#0d0d18", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                              <span style={{ fontSize: 12, color: isLive ? "#ef4444" : isFinished ? "#555" : "#555", fontWeight: 700 }}>
+                              <span style={{ fontSize: 12, color: isLive ? "#ef4444" : isFinished ? "#e2e8f0" : "#e2e8f0", fontWeight: 700 }}>
                                 {isLive ? `🔴 ${getTimeLabel(m.statusRaw, m.elapsed)}` : isFinished ? m.statusRaw : new Date(m.kickoff).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
                               </span>
                               {userPred && <span style={{ fontSize: 12, color: "#4ade80" }}>✓ Predicted</span>}
@@ -1727,7 +1727,7 @@ export default function FootballPredictor() {
               </div>
             </div>
 
-            <div style={{ fontSize: 14, color: "#555", textAlign: "center" }}>
+            <div style={{ fontSize: 14, color: "#e2e8f0", textAlign: "center" }}>
               Scroll horizontally to see all rounds · Green border = your prediction
             </div>
           </>
@@ -1755,7 +1755,7 @@ export default function FootballPredictor() {
             </div>
 
             {awardsLoading && (
-              <div style={{ textAlign: "center", color: "#555", fontSize: 16, padding: "30px 0" }}>Loading...</div>
+              <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 16, padding: "30px 0" }}>Loading...</div>
             )}
 
             {!awardsLoading && tournamentPred && (
@@ -1845,7 +1845,7 @@ export default function FootballPredictor() {
                   });
                   setAwardsStep(1);
                   setTournamentPred(null);
-                }} style={{ marginTop: 8, background: "none", border: "1px solid #2a2a3a", borderRadius: 8, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 16, fontWeight: 700, padding: "10px", width: "100%" }}>
+                }} style={{ marginTop: 8, background: "none", border: "1px solid #2a2a3a", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 16, fontWeight: 700, padding: "10px", width: "100%" }}>
                   ✏️ Edit Prediction
                 </button>
               </>
@@ -1863,7 +1863,7 @@ export default function FootballPredictor() {
                 {awardsStep === 1 && (
                   <>
                     <div style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>Step 1 of 3 — Semi-Finalists</div>
-                    <div style={{ fontSize: 14, color: "#555", marginBottom: 20 }}>Pick the 4 teams you predict will reach the Semi-Finals.</div>
+                    <div style={{ fontSize: 14, color: "#e2e8f0", marginBottom: 20 }}>Pick the 4 teams you predict will reach the Semi-Finals.</div>
                     {["sf1", "sf2", "sf3", "sf4"].map((key, i) => (
                       <div key={key} style={{ marginBottom: 14 }}>
                         <div style={{ fontSize: 14, color: "#818cf8", fontWeight: 700, marginBottom: 6 }}>Semi-Finalist {i + 1}</div>
@@ -1890,7 +1890,7 @@ export default function FootballPredictor() {
                 {awardsStep === 2 && (
                   <>
                     <div style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>Step 2 of 3 — Finalists</div>
-                    <div style={{ fontSize: 14, color: "#555", marginBottom: 20 }}>Which 2 of your semi-finalists reach the Final?</div>
+                    <div style={{ fontSize: 14, color: "#e2e8f0", marginBottom: 20 }}>Which 2 of your semi-finalists reach the Final?</div>
                     {["finalist1", "finalist2"].map((key, i) => (
                       <div key={key} style={{ marginBottom: 14 }}>
                         <div style={{ fontSize: 14, color: "#c084fc", fontWeight: 700, marginBottom: 6 }}>Finalist {i + 1}</div>
@@ -1906,7 +1906,7 @@ export default function FootballPredictor() {
                     ))}
                     {awardsError && <div style={{ color: "#f87171", fontSize: 15, marginBottom: 12 }}>{awardsError}</div>}
                     <div style={{ display: "flex", gap: 8 }}>
-                      <button onClick={() => setAwardsStep(1)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 8, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 700, padding: "12px 20px" }}>← Back</button>
+                      <button onClick={() => setAwardsStep(1)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 700, padding: "12px 20px" }}>← Back</button>
                       <button onClick={() => {
                         if (!awardsForm.finalist1 || !awardsForm.finalist2) { setAwardsError("Select both finalists"); return; }
                         setAwardsError(""); setAwardsStep(3);
@@ -1920,7 +1920,7 @@ export default function FootballPredictor() {
                 {awardsStep === 3 && (
                   <>
                     <div style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>Step 3 of 3 — Winner</div>
-                    <div style={{ fontSize: 14, color: "#555", marginBottom: 20 }}>Who lifts the trophy?</div>
+                    <div style={{ fontSize: 14, color: "#e2e8f0", marginBottom: 20 }}>Who lifts the trophy?</div>
                     <div style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 14, color: "#fbbf24", fontWeight: 700, marginBottom: 6 }}>🏆 Winner</div>
                       <select
@@ -1934,7 +1934,7 @@ export default function FootballPredictor() {
                     </div>
                     {awardsError && <div style={{ color: "#f87171", fontSize: 15, marginBottom: 12 }}>{awardsError}</div>}
                     <div style={{ display: "flex", gap: 8 }}>
-                      <button onClick={() => setAwardsStep(2)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 8, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 700, padding: "12px 20px" }}>← Back</button>
+                      <button onClick={() => setAwardsStep(2)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 700, padding: "12px 20px" }}>← Back</button>
                       <button onClick={submitTournamentPrediction} disabled={awardsSubmitting} style={{ flex: 1, background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px" }}>
                         {awardsSubmitting ? "Submitting..." : "🔒 Submit Final Prediction"}
                       </button>
@@ -1956,36 +1956,36 @@ export default function FootballPredictor() {
             : <div className="card" style={{ textAlign: "center", padding: "40px 24px" }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>📊</div>
                 <div style={{ fontSize: 18, fontWeight: 800, color: "#f0f0f0", marginBottom: 8 }}>Authorised Users Only</div>
-                <div style={{ fontSize: 16, color: "#555", lineHeight: 1.6 }}>This section is available to authorised Deep433 users. Contact us to request access.</div>
+                <div style={{ fontSize: 16, color: "#e2e8f0", lineHeight: 1.6 }}>This section is available to authorised Deep433 users. Contact us to request access.</div>
               </div>
         )}
 
         {tab === "standings" && (
           <>
             <div className="card" style={{ textAlign: "center", padding: "28px 20px" }}>
-              <div style={{ fontSize: 16, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 20 }}>Head to Head Record</div>
+              <div style={{ fontSize: 16, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 20 }}>Head to Head Record</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 16, alignItems: "center" }}>
                 <div>
                   <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, marginBottom: 8 }}>👤 YOU</div>
                   <div style={{ fontSize: 56, fontWeight: 900, color: "#4ade80" }}>{stats.userCorrect}</div>
-                  <div style={{ fontSize: 14, color: "#555", marginTop: 4 }}>exact scores</div>
+                  <div style={{ fontSize: 14, color: "#e2e8f0", marginTop: 4 }}>exact scores</div>
                 </div>
                 <div style={{ fontSize: 22, color: "#333", fontWeight: 700 }}>vs</div>
                 <div>
                   <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, marginBottom: 8 }}>🤖 AI</div>
                   <div style={{ fontSize: 56, fontWeight: 900, color: "#f59e0b" }}>{stats.aiCorrect}</div>
-                  <div style={{ fontSize: 14, color: "#555", marginTop: 4 }}>exact scores</div>
+                  <div style={{ fontSize: 14, color: "#e2e8f0", marginTop: 4 }}>exact scores</div>
                 </div>
               </div>
               <div style={{ marginTop: 20, padding: "12px 20px", background: "#0f0f1a", borderRadius: 10 }}>
-                <div style={{ fontSize: 16, color: "#aaa" }}>You've beaten the AI <span style={{ color: "#4ade80", fontWeight: 700 }}>{stats.beatAI}</span> time{stats.beatAI !== 1 ? "s" : ""}</div>
+                <div style={{ fontSize: 16, color: "#e2e8f0" }}>You've beaten the AI <span style={{ color: "#4ade80", fontWeight: 700 }}>{stats.beatAI}</span> time{stats.beatAI !== 1 ? "s" : ""}</div>
               </div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               {[{ label: "Predictions Made", value: stats.total, color: "#60a5fa" }, { label: "Results Logged", value: stats.verified, color: "#a78bfa" }].map(s => (
                 <div key={s.label} className="card" style={{ textAlign: "center", padding: "14px 10px" }}>
                   <div style={{ fontSize: 24, fontWeight: 900, color: s.color }}>{s.value}</div>
-                  <div style={{ fontSize: 13, color: "#555", marginTop: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>{s.label}</div>
+                  <div style={{ fontSize: 13, color: "#e2e8f0", marginTop: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>{s.label}</div>
                 </div>
               ))}
             </div>
@@ -1996,15 +1996,15 @@ export default function FootballPredictor() {
         {tab === "badges" && (
           <>
             <div className="card" style={{ textAlign: "center", padding: "16px 20px" }}>
-              <div style={{ fontSize: 16, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Your Rank</div>
+              <div style={{ fontSize: 16, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Your Rank</div>
               {rank ? <div style={{ fontSize: 22, fontWeight: 900, color: rank.color }}>{rank.icon} {rank.name}</div> : <div style={{ fontSize: 18, color: "#444" }}>Beat the AI to earn your first badge</div>}
-              <div style={{ fontSize: 15, color: "#555", marginTop: 4 }}>{badges.filter(b => b.earned).length} of {badges.length} badges earned</div>
+              <div style={{ fontSize: 15, color: "#e2e8f0", marginTop: 4 }}>{badges.filter(b => b.earned).length} of {badges.length} badges earned</div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
               {badges.map(b => (
                 <div key={b.name} className={`badge-card${b.earned ? "" : " locked"}`}>
                   <div style={{ fontSize: 28, marginBottom: 8 }}>{b.icon}</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: b.earned ? b.color : "#555", marginBottom: 4, lineHeight: 1.3 }}>{b.name}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: b.earned ? b.color : "#e2e8f0", marginBottom: 4, lineHeight: 1.3 }}>{b.name}</div>
                   <div style={{ fontSize: 13, color: "#444", lineHeight: 1.4 }}>{b.desc}</div>
                   {!b.earned && <div style={{ fontSize: 13, color: "#2a2a2a", marginTop: 6 }}>🔒 Locked</div>}
                 </div>
@@ -2015,7 +2015,7 @@ export default function FootballPredictor() {
 
         {tab === "history" && (
           <>
-            <div style={{ fontSize: 14, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Prediction History</div>
+            <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Prediction History</div>
             <input className="search-input" placeholder="🔍 Search by team..." value={historySearch} onChange={e => setHistorySearch(e.target.value)} />
             {history.length === 0 && <div style={{ textAlign: "center", color: "#444", fontSize: 17, padding: "40px 0" }}>No predictions yet — go predict a match!</div>}
             {history.filter(h => !historySearch.trim() || h.home_team.toLowerCase().includes(historySearch.toLowerCase()) || h.away_team.toLowerCase().includes(historySearch.toLowerCase())).map((h) => {
@@ -2026,7 +2026,7 @@ export default function FootballPredictor() {
                   <div style={{ marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                     <div>
                       <div style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0", marginBottom: 2 }}>{h.home_team} vs {h.away_team}</div>
-                      <div style={{ fontSize: 14, color: "#555" }}>{new Date(h.created_at).toLocaleDateString("en-GB")}</div>
+                      <div style={{ fontSize: 14, color: "#e2e8f0" }}>{new Date(h.created_at).toLocaleDateString("en-GB")}</div>
                     </div>
                     {h.ai_data && (
                       <div style={{ display: "flex", gap: 6 }}>
@@ -2051,7 +2051,7 @@ export default function FootballPredictor() {
                     </div>
                     {h.actual_score && (
                       <div style={{ flex: 1, textAlign: "center", background: "#13131f", borderRadius: 8, padding: "8px 4px" }}>
-                        <div style={{ fontSize: 13, color: "#888", fontWeight: 700, marginBottom: 4 }}>RESULT</div>
+                        <div style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 700, marginBottom: 4 }}>RESULT</div>
                         <div style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>{h.actual_score}</div>
                       </div>
                     )}
@@ -2077,10 +2077,10 @@ export default function FootballPredictor() {
                         <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                           {events.map((e, i) => (
                             <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15 }}>
-                              <span style={{ color: "#555", minWidth: 32, fontWeight: 700 }}>{e.minute}{e.extra}'</span>
+                              <span style={{ color: "#e2e8f0", minWidth: 32, fontWeight: 700 }}>{e.minute}{e.extra}'</span>
                               <span style={{ fontSize: 17 }}>{e.icon}</span>
                               <span style={{ color: "#f0f0f0", fontWeight: 600 }}>{e.label}</span>
-                              <span style={{ color: "#555", fontSize: 14, marginLeft: "auto" }}>{e.team?.split(" ").pop()}</span>
+                              <span style={{ color: "#e2e8f0", fontSize: 14, marginLeft: "auto" }}>{e.team?.split(" ").pop()}</span>
                             </div>
                           ))}
                         </div>
@@ -2117,7 +2117,7 @@ export default function FootballPredictor() {
                   {lineupFetching ? "Checking..." : "🔄 Refresh Lineup"}
                 </button>
               )}
-              <button onClick={() => setViewingPitch(null)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#aaa", cursor: "pointer", fontFamily: "inherit", fontSize: 16, padding: "6px 14px" }}>✕ Close</button>
+              <button onClick={() => setViewingPitch(null)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 16, padding: "6px 14px" }}>✕ Close</button>
             </div>
           </div>
           {/* Scrollable pitch content */}
@@ -2135,12 +2135,12 @@ export default function FootballPredictor() {
             {/* Bench & Managers — shown when confirmed lineup is available */}
             {viewingPitch.confirmed_lineup && (
               <div className="card" style={{ marginTop: 12, padding: "14px 16px" }}>
-                <div style={{ fontSize: 14, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🪑 Bench & Managers</div>
+                <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🪑 Bench & Managers</div>
                 <div style={{ marginBottom: 12 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                     <span style={{ fontSize: 15, fontWeight: 700, color: "#4ade80" }}>{viewingPitch.home_team}</span>
                     {viewingPitch.confirmed_lineup.home?.coach && (
-                      <span style={{ fontSize: 14, color: "#555" }}>👔 {viewingPitch.confirmed_lineup.home.coach}</span>
+                      <span style={{ fontSize: 14, color: "#e2e8f0" }}>👔 {viewingPitch.confirmed_lineup.home.coach}</span>
                     )}
                   </div>
                   <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
@@ -2155,7 +2155,7 @@ export default function FootballPredictor() {
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                     <span style={{ fontSize: 15, fontWeight: 700, color: "#a855f7" }}>{viewingPitch.away_team}</span>
                     {viewingPitch.confirmed_lineup.away?.coach && (
-                      <span style={{ fontSize: 14, color: "#555" }}>👔 {viewingPitch.confirmed_lineup.away.coach}</span>
+                      <span style={{ fontSize: 14, color: "#e2e8f0" }}>👔 {viewingPitch.confirmed_lineup.away.coach}</span>
                     )}
                   </div>
                   <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
@@ -2177,7 +2177,7 @@ export default function FootballPredictor() {
           <div style={{ maxWidth: 600, margin: "0 auto", padding: "16px 16px 60px", display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0" }}>
               <div style={{ fontSize: 17, color: "#f0f0f0", fontWeight: 700 }}>{viewingAnalysis.home_team} vs {viewingAnalysis.away_team}</div>
-              <button onClick={() => setViewingAnalysis(null)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 16, padding: "6px 14px" }}>✕ Close</button>
+              <button onClick={() => setViewingAnalysis(null)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 16, padding: "6px 14px" }}>✕ Close</button>
             </div>
 
             {/* Score comparison */}
@@ -2211,8 +2211,8 @@ export default function FootballPredictor() {
             {/* Key battle */}
             {viewingAnalysis.ai_data?.keyBattle && (
               <div className="card">
-                <div style={{ fontSize: 14, color: "#888", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>⚔️ Key Tactical Battle</div>
-                <p style={{ fontSize: 16, color: "#aaa", lineHeight: 1.6 }}>{viewingAnalysis.ai_data.keyBattle}</p>
+                <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>⚔️ Key Tactical Battle</div>
+                <p style={{ fontSize: 16, color: "#e2e8f0", lineHeight: 1.6 }}>{viewingAnalysis.ai_data.keyBattle}</p>
               </div>
             )}
 
@@ -2220,19 +2220,19 @@ export default function FootballPredictor() {
             {viewingAnalysis.ai_data?.wildcard && (
               <div className="card" style={{ borderColor: "#2a1f00", background: "#13100a" }}>
                 <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>🃏 Wildcard</div>
-                <p style={{ fontSize: 16, color: "#aaa", lineHeight: 1.6 }}>{viewingAnalysis.ai_data.wildcard}</p>
+                <p style={{ fontSize: 16, color: "#e2e8f0", lineHeight: 1.6 }}>{viewingAnalysis.ai_data.wildcard}</p>
               </div>
             )}
 
             {/* Bench & Managers — from saved confirmedLineup */}
             {viewingAnalysis.confirmed_lineup && (
               <div className="card" style={{ padding: "14px 16px" }}>
-                <div style={{ fontSize: 14, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🪑 Bench & Managers</div>
+                <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🪑 Bench & Managers</div>
                 <div style={{ marginBottom: 12 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                     <span style={{ fontSize: 15, fontWeight: 700, color: "#4ade80" }}>{viewingAnalysis.home_team}</span>
                     {viewingAnalysis.confirmed_lineup.home?.coach && (
-                      <span style={{ fontSize: 14, color: "#555" }}>👔 {viewingAnalysis.confirmed_lineup.home?.coach}</span>
+                      <span style={{ fontSize: 14, color: "#e2e8f0" }}>👔 {viewingAnalysis.confirmed_lineup.home?.coach}</span>
                     )}
                   </div>
                   <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
@@ -2247,7 +2247,7 @@ export default function FootballPredictor() {
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                     <span style={{ fontSize: 15, fontWeight: 700, color: "#a855f7" }}>{viewingAnalysis.away_team}</span>
                     {viewingAnalysis.confirmed_lineup.away?.coach && (
-                      <span style={{ fontSize: 14, color: "#555" }}>👔 {viewingAnalysis.confirmed_lineup.away?.coach}</span>
+                      <span style={{ fontSize: 14, color: "#e2e8f0" }}>👔 {viewingAnalysis.confirmed_lineup.away?.coach}</span>
                     )}
                   </div>
                   <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
