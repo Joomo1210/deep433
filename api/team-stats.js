@@ -20,6 +20,55 @@ export default async function handler(req, res) {
 
   // ── Team name search ──
   // ── League search (any of API-Football's 1000+ leagues, not just our curated 7) ──
+  // ── Best of Europe: top 2 teams from each of the 5 major leagues, last completed season ──
+  if (mode === "eurotop10") {
+    const BIG5 = ["pl", "laliga", "seriea", "bundesliga", "ligue1"];
+    try {
+      const teams = [];
+
+      for (const leagueKey of BIG5) {
+        const league = LEAGUE_MAP[leagueKey];
+        // Use last completed season (LEAGUE_MAP holds the upcoming season)
+        const lastSeason = league.season - 1;
+
+        const standingsR = await fetch(`https://v3.football.api-sports.io/standings?league=${league.id}&season=${lastSeason}`, {
+          headers: { "x-apisports-key": apiKey }
+        });
+        const standingsData = await standingsR.json();
+        const table = standingsData.response?.[0]?.league?.standings?.[0] || [];
+        const top2 = table.slice(0, 2);
+
+        for (const row of top2) {
+          const teamId = row.team?.id;
+          const statsR = await fetch(`https://v3.football.api-sports.io/teams/statistics?league=${league.id}&season=${lastSeason}&team=${teamId}`, {
+            headers: { "x-apisports-key": apiKey }
+          });
+          const statsData = await statsR.json();
+          const s = statsData.response;
+          if (!s) continue;
+
+          teams.push({
+            team: s.team?.name,
+            logo: s.team?.logo,
+            league: leagueKey,
+            leagueLabel: { pl: "Premier League", laliga: "La Liga", seriea: "Serie A", bundesliga: "Bundesliga", ligue1: "Ligue 1" }[leagueKey],
+            position: row.rank,
+            season: lastSeason,
+            played: s.fixtures?.played?.total,
+            wins: s.fixtures?.wins?.total,
+            goalsFor: s.goals?.for?.total?.total,
+            goalsAgainst: s.goals?.against?.total?.total,
+            cleanSheets: s.clean_sheet?.total,
+          });
+        }
+      }
+
+      return res.status(200).json({ teams });
+    } catch (err) {
+      return res.status(200).json({ teams: [], error: err.message });
+    }
+  }
+
   if (mode === "leaguesearch") {
     if (!query || query.length < 3) return res.status(200).json({ leagues: [] });
     try {
