@@ -3410,6 +3410,9 @@ function TeamStatsCompareGraphic() {
           { label: "Losses",  value: data.losses,       color: "#f87171" },
           { label: "GF",      value: data.goalsFor,     color: "#4ade80" },
           { label: "GA",      value: data.goalsAgainst,  color: "#f87171" },
+          { label: "Clean Sheets", value: data.cleanSheets,     color: "#60a5fa" },
+          { label: "Avg Scored",   value: data.avgGoalsFor,     color: "#4ade80" },
+          { label: "Avg Conceded", value: data.avgGoalsAgainst, color: "#f87171" },
         ].map(s => (
           <div key={s.label} style={{ background: "#13131f", borderRadius: 8, padding: "8px 6px", textAlign: "center" }}>
             <div style={{ fontSize: 20, fontWeight: 900, color: s.color }}>{s.value ?? "—"}</div>
