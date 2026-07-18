@@ -165,7 +165,8 @@ function GraphicCard({ children, cardRef, label, light = false }) {
           overflow: "hidden",
           position: "relative",
           fontFamily: "'Inter',sans-serif",
-          maxWidth: 460,
+          width: "100%",
+          maxWidth: typeof window !== "undefined" ? Math.min(460, window.innerWidth - 32) : 460,
           margin: "0 auto",
         }}
       >
@@ -254,9 +255,9 @@ function BentoBox({ title, icon, color, children, span, light = false }) {
       padding: "12px 14px",
       gridColumn: span ? "span " + span : undefined,
     }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-        <span style={{ fontSize: 15 }}>{icon}</span>
-        <span style={{ fontSize: 14, color, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 }}>{title}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10, minWidth: 0 }}>
+        <span style={{ fontSize: 15, flexShrink: 0 }}>{icon}</span>
+        <span style={{ fontSize: 14, color, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</span>
       </div>
       {children}
     </div>
