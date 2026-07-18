@@ -3297,6 +3297,165 @@ function HalftimeRecapGraphic() {
   );
 }
 
+// ─── TEAM STATS COMPARISON ───────────────────────────────────────────────────
+function TeamStatsCompareGraphic() {
+  const cardRef = useRef(null);
+  const [leagueId, setLeagueId] = useState("pl");
+
+  const [search1, setSearch1] = useState("");
+  const [suggest1, setSuggest1] = useState([]);
+  const [team1, setTeam1] = useState(null);
+  const [searching1, setSearching1] = useState(false);
+  const [data1, setData1] = useState(null);
+
+  const [search2, setSearch2] = useState("");
+  const [suggest2, setSuggest2] = useState([]);
+  const [team2, setTeam2] = useState(null);
+  const [searching2, setSearching2] = useState(false);
+  const [data2, setData2] = useState(null);
+
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const searchTeam = async (query, slot) => {
+    if (query.length < 3) {
+      slot === 1 ? setSuggest1([]) : setSuggest2([]);
+      return;
+    }
+    slot === 1 ? setSearching1(true) : setSearching2(true);
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
+      const d = await r.json();
+      slot === 1 ? setSuggest1(d.teams || []) : setSuggest2(d.teams || []);
+    } catch {}
+    slot === 1 ? setSearching1(false) : setSearching2(false);
+  };
+
+  const selectTeam = async (t, slot) => {
+    setLoading(true);
+    if (slot === 1) { setTeam1(t); setSuggest1([]); setSearch1(t.name); }
+    else { setTeam2(t); setSuggest2([]); setSearch2(t.name); }
+    try {
+      const r = await fetch(`/api/team-stats?leagueId=${leagueId}&teamId=${t.id}`);
+      const d = await r.json();
+      if (slot === 1) setData1(d.available ? d : null);
+      else setData2(d.available ? d : null);
+    } catch {}
+    setLoading(false);
+  };
+
+  const download = async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      if (!window.html2canvas) {
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+        document.head.appendChild(s);
+        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
+      }
+      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
+      const link = document.createElement("a");
+      link.download = `deep433-team-compare-${data1?.team}-vs-${data2?.team}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const formDot = (r) => (
+    <div style={{ width: 20, height: 20, borderRadius: "50%", background: r === "W" ? "#4ade80" : r === "D" ? "#a78bfa" : "#f87171", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 900, color: "#0a0a0f" }}>{r}</div>
+  );
+
+  const TeamBlock = ({ data }) => (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+        {data.logo && <img src={data.logo} alt="" crossOrigin="anonymous" style={{ width: 36, height: 36, objectFit: "contain" }} />}
+        <div>
+          <div style={{ fontSize: 18, fontWeight: 900, color: "#f0f0f0" }}>{data.team}</div>
+          <div style={{ fontSize: 12, color: "#94A3B8" }}>
+            {LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label} {data.seasonUsed}/{parseInt(data.seasonUsed) + 1} · Final Stats
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
+        {data.position && (
+          <div style={{ background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 6, padding: "5px 10px", fontSize: 11, fontWeight: 700, color: "#f0f0f0" }}>
+            POS: <span style={{ color: "#4ade80" }}>{data.position}{data.position === 1 ? "st" : data.position === 2 ? "nd" : data.position === 3 ? "rd" : "th"}</span>
+          </div>
+        )}
+        <div style={{ background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 6, padding: "5px 10px", fontSize: 11, fontWeight: 700, color: "#f0f0f0" }}>
+          PTS: <span style={{ color: "#4ade80" }}>{(data.wins || 0) * 3 + (data.draws || 0)}</span>
+        </div>
+        <div style={{ background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 6, padding: "5px 10px", fontSize: 11, fontWeight: 700, color: "#f0f0f0" }}>
+          GD: <span style={{ color: (data.goalsFor - data.goalsAgainst) >= 0 ? "#4ade80" : "#f87171" }}>{(data.goalsFor - data.goalsAgainst) >= 0 ? "+" : ""}{data.goalsFor - data.goalsAgainst}</span>
+        </div>
+      </div>
+
+      {data.form && (
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: 2, marginBottom: 8 }}>Final 10 Match Form</div>
+          <div style={{ display: "flex", gap: 4 }}>
+            {data.form.slice(-10).split("").map((r, i) => <div key={i}>{formDot(r)}</div>)}
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+        {[
+          { label: "Played",  value: data.played,       color: "#f0f0f0" },
+          { label: "Wins",    value: data.wins,         color: "#4ade80" },
+          { label: "Draws",   value: data.draws,        color: "#a78bfa" },
+          { label: "Losses",  value: data.losses,       color: "#f87171" },
+          { label: "GF",      value: data.goalsFor,     color: "#4ade80" },
+          { label: "GA",      value: data.goalsAgainst,  color: "#f87171" },
+        ].map(s => (
+          <div key={s.label} style={{ background: "#13131f", borderRadius: 8, padding: "8px 6px", textAlign: "center" }}>
+            <div style={{ fontSize: 20, fontWeight: 900, color: s.color }}>{s.value ?? "—"}</div>
+            <div style={{ fontSize: 10, color: "#94A3B8", marginTop: 2, textTransform: "uppercase", letterSpacing: 0.5 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {LEAGUE_OPTIONS.slice(1).map(l => (
+          <button key={l.id} onClick={() => { setLeagueId(l.id); setTeam1(null); setTeam2(null); setData1(null); setData2(null); setSearch1(""); setSearch2(""); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
+            {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
+            {l.label}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <TeamSearchSlot label="Team 1" search={search1} setSearch={setSearch1} suggestions={suggest1} team={team1} searching={searching1} slot={1} color="#4ade80" onSelect={selectTeam} onClear={() => setTeam1(null)} onSearch={searchTeam} />
+        <TeamSearchSlot label="Team 2" search={search2} setSearch={setSearch2} suggestions={suggest2} team={team2} searching={searching2} slot={2} color="#f59e0b" onSelect={selectTeam} onClear={() => setTeam2(null)} onSearch={searchTeam} />
+      </div>
+
+      {loading && <div style={{ textAlign: "center", color: "#999", fontSize: 13 }}>Loading...</div>}
+
+      {data1 && data2 && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "22px 18px 18px" }}>
+              <TeamBlock data={data1} />
+              <div style={{ height: 1, background: "#1a1a2a", margin: "18px 0" }} />
+              <TeamBlock data={data2} />
+            </div>
+          </GraphicCard>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function DataGraphics({ history = [], supabase }) {
   const [activeSection, setActiveSection] = useState("match");
 
@@ -3313,6 +3472,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "player",   label: "⭐ Player Ratings" },
     { id: "top",      label: "🥇 Leaderboard" },
     { id: "team",     label: "🛡 Team Stats" },
+    { id: "teamcompare", label: "⚔️ Team Compare" },
     { id: "recap",    label: "📋 Recap" },
     { id: "bracket",  label: "🏆 Bracket" },
   ];
@@ -3341,6 +3501,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "player"   && <PlayerRatingsGraphic />}
       {activeSection === "top"      && <TopScorersGraphic />}
       {activeSection === "team"     && <TeamStatsGraphic />}
+      {activeSection === "teamcompare" && <TeamStatsCompareGraphic />}
       {activeSection === "recap"    && <RecapGraphic history={history} />}
       {activeSection === "bracket"  && <BracketGraphic history={history} />}
     </div>
