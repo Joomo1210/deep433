@@ -2540,6 +2540,7 @@ function TransferFitGraphic() {
   const [targetSquad, setTargetSquad] = useState([]);
   const [targetPlayerId, setTargetPlayerId] = useState("");
   const [target, setTarget] = useState(null);
+  const [targetPrice, setTargetPrice] = useState("");
 
   // Incumbent side
   const [searchIncumbentTeam, setSearchIncumbentTeam] = useState("");
@@ -2549,6 +2550,7 @@ function TransferFitGraphic() {
   const [incumbentSquad, setIncumbentSquad] = useState([]);
   const [incumbentPlayerId, setIncumbentPlayerId] = useState("");
   const [incumbent, setIncumbent] = useState(null);
+  const [incumbentPrice, setIncumbentPrice] = useState("");
 
   const [loadingSquad, setLoadingSquad] = useState(false);
   const [loadingStats, setLoadingStats] = useState(false);
@@ -2666,6 +2668,29 @@ function TransferFitGraphic() {
         <TeamThenPlayerPicker label="🎯 Player 2 (optional)" search={searchIncumbentTeam} setSearch={setSearchIncumbentTeam} suggestions={suggestIncumbentTeam} team={incumbentTeam} searching={searchingIncumbentTeam} slot="incumbent" color="#4ade80" squad={incumbentSquad} playerId={incumbentPlayerId} onSearchTeam={searchTeam} onSelectTeam={selectTeam} onSelectPlayer={selectPlayerFromSquad} onClearTeam={() => setIncumbentTeam(null)} />
       </div>
 
+      {(target || incumbent) && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <div>
+            <div style={{ fontSize: 10, color: "#a855f7", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Price Tag (optional)</div>
+            <input
+              placeholder="e.g. £30m"
+              value={targetPrice}
+              onChange={e => setTargetPrice(e.target.value)}
+              style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+            />
+          </div>
+          <div>
+            <div style={{ fontSize: 10, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Price Tag (optional)</div>
+            <input
+              placeholder="e.g. £8m"
+              value={incumbentPrice}
+              onChange={e => setIncumbentPrice(e.target.value)}
+              style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+            />
+          </div>
+        </div>
+      )}
+
       {(loadingSquad || loadingStats) && <div style={{ textAlign: "center", color: "#999", fontSize: 15 }}>Loading...</div>}
 
       {target && incumbent && (
@@ -2673,7 +2698,7 @@ function TransferFitGraphic() {
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "22px 18px 18px" }}>
               <div style={{ textAlign: "center", marginBottom: 14 }}>
-                <div style={{ fontSize: 24, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5, marginBottom: 4 }}>Does He Fit The XI?</div>
+                <div style={{ fontSize: 24, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5, marginBottom: 4 }}>The Comparison</div>
                 <span style={{ fontSize: 14, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>🔄 Transfer Fit · {season === 2026 ? "2026 World Cup" : `${season}/${season + 1}`}</span>
               </div>
 
@@ -2682,6 +2707,7 @@ function TransferFitGraphic() {
                   {target.photo && <img src={target.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #a855f7", margin: "0 auto 8px" }} />}
                   <div style={{ fontSize: 17, fontWeight: 900, color: "#a855f7" }}>{target.name}</div>
                   <div style={{ fontSize: 13, color: "#aaa", marginTop: 2 }}>{target.team}{target.age ? ` · ${target.age}y` : ""}</div>
+                  {targetPrice && <div style={{ fontSize: 13, color: "#a855f7", fontWeight: 700, marginTop: 3 }}>{targetPrice}</div>}
                 </div>
                 <div style={{ textAlign: "center", padding: "0 8px" }}>
                   <div style={{ fontSize: 16, fontWeight: 900, color: "#333" }}>VS</div>
@@ -2690,6 +2716,7 @@ function TransferFitGraphic() {
                   {incumbent.photo && <img src={incumbent.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 8px" }} />}
                   <div style={{ fontSize: 17, fontWeight: 900, color: "#4ade80" }}>{incumbent.name}</div>
                   <div style={{ fontSize: 13, color: "#aaa", marginTop: 2 }}>{incumbent.team}{incumbent.age ? ` · ${incumbent.age}y` : ""}</div>
+                  {incumbentPrice && <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 700, marginTop: 3 }}>{incumbentPrice}</div>}
                 </div>
               </div>
 
@@ -2746,6 +2773,7 @@ function TransferFitGraphic() {
                 {target.photo && <img src={target.photo} alt="" crossOrigin="anonymous" style={{ width: 72, height: 72, borderRadius: "50%", objectFit: "cover", border: "2px solid #a855f7", margin: "0 auto 10px" }} />}
                 <div style={{ fontSize: 20, fontWeight: 900, color: "#a855f7" }}>{target.name}</div>
                 <div style={{ fontSize: 13, color: "#aaa", marginTop: 3 }}>{target.team}{target.age ? ` · ${target.age}y` : ""}</div>
+                {targetPrice && <div style={{ fontSize: 14, color: "#a855f7", fontWeight: 700, marginTop: 4 }}>{targetPrice}</div>}
               </div>
 
 
