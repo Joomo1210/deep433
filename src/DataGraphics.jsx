@@ -95,7 +95,7 @@ function FixturePicker({ onSelect }) {
       {/* League selector */}
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         {LEAGUE_OPTIONS.map(l => (
-          <button key={l.id} onClick={() => setLeagueId(l.id)} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px" }}>
+          <button key={l.id} onClick={() => setLeagueId(l.id)} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px" }}>
             {l.label}
           </button>
         ))}
@@ -109,13 +109,13 @@ function FixturePicker({ onSelect }) {
         style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 16, padding: "9px 14px", outline: "none", fontFamily: "inherit" }}
       />
 
-      {loading && <div style={{ fontSize: 15, color: "#555", textAlign: "center" }}>Loading fixtures...</div>}
+      {loading && <div style={{ fontSize: 15, color: "#e2e8f0", textAlign: "center" }}>Loading fixtures...</div>}
 
       {/* Fixture list */}
       <div style={{ maxHeight: 260, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
         {Object.entries(byDate).map(([date, dateFixtures]) => (
           <div key={date}>
-            <div style={{ fontSize: 13, color: date === "Today" ? "#4ade80" : date === "Yesterday" ? "#888" : date === "Tomorrow" ? "#f59e0b" : "#444", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, padding: "6px 0 4px" }}>{date}</div>
+            <div style={{ fontSize: 13, color: date === "Today" ? "#4ade80" : date === "Yesterday" ? "#e2e8f0" : date === "Tomorrow" ? "#f59e0b" : "#444", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, padding: "6px 0 4px" }}>{date}</div>
             {dateFixtures.map((f, i) => (
               <div
                 key={i}
@@ -128,10 +128,10 @@ function FixturePicker({ onSelect }) {
                 </div>
                 <div style={{ textAlign: "center", fontSize: 14 }}>
                   {f.status === "finished"
-                    ? <span style={{ color: "#888", fontWeight: 800 }}>{f.score.home}-{f.score.away}</span>
+                    ? <span style={{ color: "#e2e8f0", fontWeight: 800 }}>{f.score.home}-{f.score.away}</span>
                     : f.status === "live"
                     ? <span style={{ color: "#ef4444", fontWeight: 700 }}>🔴 LIVE</span>
-                    : <span style={{ color: "#555" }}>{new Date(f.kickoff).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} BST</span>
+                    : <span style={{ color: "#e2e8f0" }}>{new Date(f.kickoff).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} BST</span>
                   }
                   <div style={{ fontSize: 12, color: "#333", marginTop: 2 }}>{f.round}</div>
                 </div>
@@ -160,7 +160,7 @@ const LEAGUE_LOGOS = {
 
 const ratingColor = (r) => {
   const n = parseFloat(r);
-  if (!n) return "#555";
+  if (!n) return "#e2e8f0";
   if (n >= 8) return "#4ade80";
   if (n >= 7) return "#f59e0b";
   if (n >= 6) return "#f97316";
@@ -176,7 +176,7 @@ function StatRow({ label, home, away, icon }) {
     <div style={{ marginBottom: 10 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
         <span style={{ fontSize: 17, fontWeight: 800, color: "#4ade80", minWidth: 36 }}>{home ?? "0"}</span>
-        <span style={{ fontSize: 13, color: "#aaa", fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>{icon && icon + " "}{label}</span>
+        <span style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>{icon && icon + " "}{label}</span>
         <span style={{ fontSize: 17, fontWeight: 800, color: "#f59e0b", minWidth: 36, textAlign: "right" }}>{away ?? "0"}</span>
       </div>
       <div style={{ display: "flex", height: 6, borderRadius: 3, overflow: "hidden" }}>
@@ -225,7 +225,7 @@ function GraphicCard({ children, cardRef, label, light = false }) {
           {children}
         </div>
       </div>
-      <div style={{ fontSize: 13, color: "#555", textAlign: "center", marginTop: 8 }}>{label}</div>
+      <div style={{ fontSize: 13, color: "#e2e8f0", textAlign: "center", marginTop: 8 }}>{label}</div>
     </div>
   );
 }
@@ -268,7 +268,7 @@ function AnimatedStatBar({ label, homeVal, awayVal, unit = "", animate }) {
     <div style={{ marginBottom: 10 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
         <span style={{ fontSize: 17, fontWeight: 900, color: "#4ade80" }}>{displayHv.toFixed(unit === "%" ? 0 : (Number.isInteger(hv) ? 0 : 1))}{unit}</span>
-        <span style={{ fontSize: 12, color: "#aaa", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
+        <span style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
         <span style={{ fontSize: 17, fontWeight: 900, color: "#f59e0b" }}>{displayAv.toFixed(unit === "%" ? 0 : (Number.isInteger(av) ? 0 : 1))}{unit}</span>
       </div>
       <div style={{ display: "flex", height: 6, borderRadius: 3, overflow: "hidden", background: "#1a1a24" }}>
@@ -350,7 +350,7 @@ function MatchStatsGraphic() {
         <>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
             <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
-            <button onClick={() => { setSelectedFixture(null); setData(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
+            <button onClick={() => { setSelectedFixture(null); setData(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
           </div>
           {!data && (
             <button onClick={() => fetch_()} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "10px" }}>
@@ -372,7 +372,7 @@ function MatchStatsGraphic() {
                   <div style={{ fontSize: 15, fontWeight: 800, color: "#4ade80" }}>{s.home.team}</div>
                 </div>
                 <div style={{ textAlign: "center", padding: "0 12px" }}>
-                  <div style={{ fontSize: 12, color: "#888", textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Match Stats</div>
+                  <div style={{ fontSize: 12, color: "#e2e8f0", textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Match Stats</div>
                 </div>
                 <div style={{ textAlign: "center" }}>
                   {s.away.logo && <img src={s.away.logo} alt="" crossOrigin="anonymous" style={{ width: 34, height: 34, objectFit: "contain", marginBottom: 4, display: "block", margin: "0 auto 6px" }} />}
@@ -496,7 +496,7 @@ function PlayerRatingsGraphic() {
         <>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
             <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
-            <button onClick={() => { setSelectedFixture(null); setData(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
+            <button onClick={() => { setSelectedFixture(null); setData(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
           </div>
           {!data && (
             <button onClick={fetch_} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "10px" }}>
@@ -511,7 +511,7 @@ function PlayerRatingsGraphic() {
         <>
           <div style={{ display: "flex", gap: 8 }}>
             {["home", "away"].map(t => (
-              <button key={t} onClick={() => setSelectedTeam(t)} style={{ flex: 1, background: selectedTeam === t ? "#4ade80" : "none", border: `1px solid ${selectedTeam === t ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: selectedTeam === t ? "#0a0f0a" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "8px" }}>
+              <button key={t} onClick={() => setSelectedTeam(t)} style={{ flex: 1, background: selectedTeam === t ? "#4ade80" : "none", border: `1px solid ${selectedTeam === t ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: selectedTeam === t ? "#0a0f0a" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "8px" }}>
                 {data[t]?.team}
               </button>
             ))}
@@ -523,17 +523,17 @@ function PlayerRatingsGraphic() {
                 {teamData?.logo && <img src={teamData.logo} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
                 <div>
                   <div style={{ fontSize: 17, fontWeight: 900, color: "#f0f0f0" }}>{teamData?.team}</div>
-                  <div style={{ fontSize: 13, color: "#555" }}>Player Ratings</div>
+                  <div style={{ fontSize: 13, color: "#e2e8f0" }}>Player Ratings</div>
                 </div>
               </div>
               <div style={{ height: 1, background: "#1a1a2a", marginBottom: 12 }} />
               {players.map((p, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid #0f0f1a" }}>
-                  <div style={{ width: 24, textAlign: "center", fontSize: 14, color: "#555", fontWeight: 700 }}>{i + 1}</div>
+                  <div style={{ width: 24, textAlign: "center", fontSize: 14, color: "#e2e8f0", fontWeight: 700 }}>{i + 1}</div>
                   {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                    <div style={{ fontSize: 13, color: "#555" }}>
+                    <div style={{ fontSize: 13, color: "#e2e8f0" }}>
                       {p.position} · {p.minutesPlayed}'
                       {p.goals ? ` · ⚽ ${p.goals}` : ""}
                       {p.assists ? ` · 🎯 ${p.assists}` : ""}
@@ -606,7 +606,7 @@ function TopScorersGraphic() {
     if (i === 0) return "#FFD700"; // Gold
     if (i === 1) return "#C0C0C0"; // Silver
     if (i === 2) return "#CD7F32"; // Bronze
-    return "#555";
+    return "#e2e8f0";
   };
 
   const rankBg = (i) => {
@@ -620,7 +620,7 @@ function TopScorersGraphic() {
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         {LEAGUE_OPTIONS.slice(0, 7).map(l => (
-          <button key={l.id} onClick={() => setLeagueId(l.id)} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
+          <button key={l.id} onClick={() => setLeagueId(l.id)} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
             {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
             {l.label}
           </button>
@@ -628,7 +628,7 @@ function TopScorersGraphic() {
       </div>
       <div style={{ display: "flex", gap: 6 }}>
         {["scorers", "assists", "cards"].map(t => (
-          <button key={t} onClick={() => setType(t)} style={{ flex: 1, background: type === t ? "#a855f7" : "none", border: `1px solid ${type === t ? "#a855f7" : "#2a2a3a"}`, borderRadius: 8, color: type === t ? "#fff" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "8px" }}>
+          <button key={t} onClick={() => setType(t)} style={{ flex: 1, background: type === t ? "#a855f7" : "none", border: `1px solid ${type === t ? "#a855f7" : "#2a2a3a"}`, borderRadius: 8, color: type === t ? "#fff" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "8px" }}>
             {typeIcons[t]} {typeLabels[t]}
           </button>
         ))}
@@ -647,9 +647,9 @@ function TopScorersGraphic() {
                 {LEAGUE_LOGOS[leagueId] && <img src={LEAGUE_LOGOS[leagueId]} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 17, fontWeight: 900, color: "#f0f0f0" }}>{typeLabels[type]}</div>
-                  <div style={{ fontSize: 13, color: "#555" }}>{LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label}</div>
+                  <div style={{ fontSize: 13, color: "#e2e8f0" }}>{LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label}</div>
                 </div>
-                <div style={{ fontSize: 12, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{statLabel[type]}</div>
+                <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{statLabel[type]}</div>
               </div>
               <div style={{ height: 1, background: "#1a1a2a", marginBottom: 8 }} />
 
@@ -698,7 +698,7 @@ function TopScorersGraphic() {
                       <div style={{ fontSize: isTop3 ? 14 : 12, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
                       <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
                         {p.teamLogo && <img src={p.teamLogo} alt="" crossOrigin="anonymous" style={{ width: 12, height: 12, objectFit: "contain" }} />}
-                        <span style={{ fontSize: 13, color: "#555" }}>{p.team}</span>
+                        <span style={{ fontSize: 13, color: "#e2e8f0" }}>{p.team}</span>
                         {secondary && <span style={{ fontSize: 12, color: "#444", marginLeft: 4 }}>· {secondary}</span>}
                       </div>
                     </div>
@@ -772,7 +772,7 @@ function TeamStatsGraphic() {
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         {LEAGUE_OPTIONS.slice(1).map(l => (
-          <button key={l.id} onClick={() => { setLeagueId(l.id); setData(null); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
+          <button key={l.id} onClick={() => { setLeagueId(l.id); setData(null); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
             {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
             {l.label}
           </button>
@@ -792,7 +792,7 @@ function TeamStatsGraphic() {
           }}
           style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${selectedTeam ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 17, padding: "10px 14px", outline: "none", fontFamily: "inherit" }}
         />
-        {searching && <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 14, color: "#555" }}>Searching...</div>}
+        {searching && <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 14, color: "#e2e8f0" }}>Searching...</div>}
         {teamSuggestions.length > 0 && !selectedTeam && (
           <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, zIndex: 10, marginTop: 4, maxHeight: 200, overflowY: "auto" }}>
             {teamSuggestions.map(t => (
@@ -800,7 +800,7 @@ function TeamStatsGraphic() {
                 {t.logo && <img src={t.logo} alt="" style={{ width: 24, height: 24, objectFit: "contain" }} />}
                 <div>
                   <div style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{t.name}</div>
-                  <div style={{ fontSize: 14, color: "#555" }}>{t.country}</div>
+                  <div style={{ fontSize: 14, color: "#e2e8f0" }}>{t.country}</div>
                 </div>
               </div>
             ))}
@@ -824,7 +824,7 @@ function TeamStatsGraphic() {
                 {data.logo && <img src={data.logo} alt="" crossOrigin="anonymous" style={{ width: 40, height: 40, objectFit: "contain" }} />}
                 <div>
                   <div style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>{data.team}</div>
-                  <div style={{ fontSize: 13, color: "#94A3B8" }}>
+                  <div style={{ fontSize: 13, color: "#e2e8f0" }}>
                     {LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label} {data.seasonUsed}/{parseInt(data.seasonUsed) + 1} · Final Stats
                   </div>
                 </div>
@@ -844,7 +844,7 @@ function TeamStatsGraphic() {
                   GD: <span style={{ color: (data.goalsFor - data.goalsAgainst) >= 0 ? "#4ade80" : "#f87171" }}>{(data.goalsFor - data.goalsAgainst) >= 0 ? "+" : ""}{data.goalsFor - data.goalsAgainst}</span>
                 </div>
                 <div style={{ background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 6, padding: "5px 10px", fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>
-                  RECORD: <span style={{ color: "#94A3B8" }}>{data.wins}W - {data.draws}D - {data.losses}L</span>
+                  RECORD: <span style={{ color: "#e2e8f0" }}>{data.wins}W - {data.draws}D - {data.losses}L</span>
                 </div>
               </div>
 
@@ -873,7 +873,7 @@ function TeamStatsGraphic() {
                 ].map(s => (
                   <div key={s.label} style={{ background: "#13131f", borderRadius: 8, padding: "10px 8px", textAlign: "center" }}>
                     <div style={{ fontSize: 24, fontWeight: 900, color: s.color }}>{s.value ?? "—"}</div>
-                    <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{s.label}</div>
+                    <div style={{ fontSize: 12, color: "#e2e8f0", marginTop: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{s.label}</div>
                   </div>
                 ))}
               </div>
@@ -1051,13 +1051,13 @@ function RecapGraphic({ history = [] }) {
           <div style={{ width: "50%", padding: "36px 20px 20px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", borderRight: "1px solid #1a1a2a", position: "relative", zIndex: 1 }}>
             {/* Enhanced header */}
             <div style={{ textAlign: "center", marginBottom: 12 }}>
-              <div style={{ fontSize: 14, color: "#999", letterSpacing: 2, textTransform: "uppercase" }}>{matchData?.competition}</div>
+              <div style={{ fontSize: 14, color: "#e2e8f0", letterSpacing: 2, textTransform: "uppercase" }}>{matchData?.competition}</div>
               <div style={{ fontSize: 16, color: "#f0f0f0", letterSpacing: 2, textTransform: "uppercase", fontWeight: 900 }}>{selectedFixture?.round}</div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 8 }}>
               {selectedFixture?.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 44, height: 44, objectFit: "contain" }} />}
               <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 14, color: "#999", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Full Time{wentToExtraTime ? " (AET)" : ""}</div>
+                <div style={{ fontSize: 14, color: "#e2e8f0", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Full Time{wentToExtraTime ? " (AET)" : ""}</div>
                 <div style={{ fontSize: 56, fontWeight: 900, color: "#f0f0f0", lineHeight: 1, letterSpacing: -1 }}>{fs0}-{fs1}</div>
               </div>
               {selectedFixture?.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 44, height: 44, objectFit: "contain" }} />}
@@ -1070,17 +1070,17 @@ function RecapGraphic({ history = [] }) {
               </div>
               <div style={{ textAlign: "left", flex: 1, position: "relative", zIndex: 1 }}>
                 <div style={{ fontSize: 16, fontWeight: 700, color: "#4ade80" }}>{selectedFixture?.home}</div>
-                {matchData?.homeGoals?.map((g, i) => <div key={i} style={{ fontSize: 15, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
+                {matchData?.homeGoals?.map((g, i) => <div key={i} style={{ fontSize: 15, color: "#e2e8f0", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
               </div>
               <div style={{ textAlign: "right", flex: 1, position: "relative", zIndex: 1 }}>
                 <div style={{ fontSize: 16, fontWeight: 700, color: "#f59e0b" }}>{selectedFixture?.away}</div>
-                {matchData?.awayGoals?.map((g, i) => <div key={i} style={{ fontSize: 15, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
+                {matchData?.awayGoals?.map((g, i) => <div key={i} style={{ fontSize: 15, color: "#e2e8f0", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
               </div>
             </div>
           </div>
           {/* Right: predictions */}
           <div style={{ flex: 1, padding: "36px 20px 12px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 12, position: "relative", zIndex: 1 }}>
-            <div style={{ fontSize: 15, color: "#999", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Predictions</div>
+            <div style={{ fontSize: 15, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Predictions</div>
             {[{ label: "👤 Your Call", pred: yourPrediction, result: yourResult, color: "#4ade80" }, { label: "🤖 AI Predicted", pred: aiPrediction, result: aiResult, color: "#f59e0b" }].map(p => (
               <div key={p.label} style={{ background: "#13131f", borderRadius: 10, padding: "12px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
@@ -1112,12 +1112,12 @@ function RecapGraphic({ history = [] }) {
         <div style={{ flex: 1, padding: "20px", display: "flex", flexDirection: "column", gap: 12, paddingTop: 32, position: "relative", zIndex: 1 }}>
           {/* Enhanced header + final score */}
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 14, color: "#999", letterSpacing: 2, textTransform: "uppercase", marginBottom: 2 }}>{matchData?.competition}</div>
+            <div style={{ fontSize: 14, color: "#e2e8f0", letterSpacing: 2, textTransform: "uppercase", marginBottom: 2 }}>{matchData?.competition}</div>
             <div style={{ fontSize: 15, color: "#f0f0f0", letterSpacing: 2, textTransform: "uppercase", marginBottom: 8, fontWeight: 900 }}>{selectedFixture?.round}</div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 6 }}>
               {selectedFixture?.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 40, height: 40, objectFit: "contain" }} />}
               <div>
-                <div style={{ fontSize: 14, color: "#999", textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }}>Full Time{wentToExtraTime ? " (AET)" : ""}</div>
+                <div style={{ fontSize: 14, color: "#e2e8f0", textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }}>Full Time{wentToExtraTime ? " (AET)" : ""}</div>
                 <div style={{ fontSize: 56, fontWeight: 900, color: "#f0f0f0", lineHeight: 1, letterSpacing: -1 }}>{fs0}-{fs1}</div>
               </div>
               {selectedFixture?.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 40, height: 40, objectFit: "contain" }} />}
@@ -1129,11 +1129,11 @@ function RecapGraphic({ history = [] }) {
               </div>
               <div style={{ textAlign: "left", flex: 1, position: "relative", zIndex: 1 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: "#4ade80" }}>{selectedFixture?.home}</div>
-                {matchData?.homeGoals?.map((g, i) => <div key={i} style={{ fontSize: 15, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
+                {matchData?.homeGoals?.map((g, i) => <div key={i} style={{ fontSize: 15, color: "#e2e8f0", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
               </div>
               <div style={{ textAlign: "right", flex: 1, position: "relative", zIndex: 1 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: "#f59e0b" }}>{selectedFixture?.away}</div>
-                {matchData?.awayGoals?.map((g, i) => <div key={i} style={{ fontSize: 15, color: "#aaa", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
+                {matchData?.awayGoals?.map((g, i) => <div key={i} style={{ fontSize: 15, color: "#e2e8f0", marginTop: 3, fontWeight: 600 }}>{g}</div>)}
               </div>
             </div>
           </div>
@@ -1178,7 +1178,7 @@ function RecapGraphic({ history = [] }) {
         <>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
             <span style={{ fontSize: 18, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
-            <button onClick={() => { setSelectedFixture(null); setMatchData(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#999", cursor: "pointer", fontFamily: "inherit", fontSize: 16, padding: "4px 10px" }}>Change</button>
+            <button onClick={() => { setSelectedFixture(null); setMatchData(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 16, padding: "4px 10px" }}>Change</button>
           </div>
 
           {error && <div style={{ color: "#f87171", fontSize: 18 }}>{error}</div>}
@@ -1193,7 +1193,7 @@ function RecapGraphic({ history = [] }) {
             <>
               <div style={{ display: "flex", gap: 8 }}>
                 {["square", "landscape"].map(v => (
-                  <button key={v} onClick={() => setVariant(v)} style={{ flex: 1, background: variant === v ? "#4ade8022" : "none", border: `1px solid ${variant === v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: variant === v ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 700, padding: "8px" }}>
+                  <button key={v} onClick={() => setVariant(v)} style={{ flex: 1, background: variant === v ? "#4ade8022" : "none", border: `1px solid ${variant === v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: variant === v ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 700, padding: "8px" }}>
                     {v === "square" ? "1:1 Square" : "16:9 Landscape"}
                   </button>
                 ))}
@@ -1309,7 +1309,7 @@ function BracketGraphic({ history = [] }) {
 
     if (!m) return (
       <div style={{ width: w, background: "#161622", border: "1px dashed #2a2a3a", borderRadius: 8, padding: "14px 8px", textAlign: "center" }}>
-        <span style={{ fontSize: 13, color: "#666", fontWeight: 600 }}>Select match</span>
+        <span style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 600 }}>Select match</span>
       </div>
     );
 
@@ -1324,7 +1324,7 @@ function BracketGraphic({ history = [] }) {
           </div>
         ))}
         <div style={{ padding: "3px 8px", background: "#0d0d18", display: "flex", justifyContent: "space-between" }}>
-          <span style={{ fontSize: 11, color: isL ? "#ff6b6b" : "#999", fontWeight: 700 }}>
+          <span style={{ fontSize: 11, color: isL ? "#ff6b6b" : "#e2e8f0", fontWeight: 700 }}>
             {isL ? "🔴 LIVE" : isF ? m.statusRaw : new Date(m.kickoff).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
           </span>
           {pred && <span style={{ fontSize: 11, color: "#4ade80", fontWeight: 700 }}>✓ {pred.user_prediction}</span>}
@@ -1336,13 +1336,13 @@ function BracketGraphic({ history = [] }) {
   const Arr = () => (
     <div style={{ display: "flex", alignItems: "center", padding: "0 4px", flexShrink: 0 }}>
       <div style={{ width: 10, height: 2, background: "#4a4a5a" }} />
-      <span style={{ fontSize: 16, color: "#888", fontWeight: 900 }}>›</span>
+      <span style={{ fontSize: 16, color: "#e2e8f0", fontWeight: 900 }}>›</span>
     </div>
   );
 
   const DropDown = ({ label, skey }) => (
     <div>
-      <div style={{ fontSize: 12, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>{label}</div>
       <select value={sel[skey]} onChange={e => setS(skey)(e.target.value)} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 15, padding: "7px 10px", outline: "none", fontFamily: "inherit" }}>
         <option value="">— Select —</option>
         {rounds.map(r => (
@@ -1364,14 +1364,14 @@ function BracketGraphic({ history = [] }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         {CUP_LEAGUES.map(l => (
-          <button key={l.id} onClick={() => setLeagueId(l.id)} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
+          <button key={l.id} onClick={() => setLeagueId(l.id)} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
             {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
             {l.label}
           </button>
         ))}
       </div>
 
-      {loading && <div style={{ textAlign: "center", color: "#555", fontSize: 16, padding: "20px 0" }}>Loading...</div>}
+      {loading && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 16, padding: "20px 0" }}>Loading...</div>}
 
       {!loading && rounds.length > 0 && (
         <>
@@ -1386,7 +1386,7 @@ function BracketGraphic({ history = [] }) {
               const m = getMatch(sel.sf1);
               return (
                 <div>
-                  <div style={{ fontSize: 12, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Who advances? (SF1)</div>
+                  <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Who advances? (SF1)</div>
                   <select value={finalist1} onChange={e => setFinalist1(e.target.value)} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 15, padding: "7px 10px", outline: "none", fontFamily: "inherit" }}>
                     <option value="">— Select —</option>
                     {m?.home && <option value="home">{m.home}</option>}
@@ -1399,7 +1399,7 @@ function BracketGraphic({ history = [] }) {
               const m = getMatch(sel.sf2);
               return (
                 <div>
-                  <div style={{ fontSize: 12, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Who advances? (SF2)</div>
+                  <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Who advances? (SF2)</div>
                   <select value={finalist2} onChange={e => setFinalist2(e.target.value)} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 15, padding: "7px 10px", outline: "none", fontFamily: "inherit" }}>
                     <option value="">— Select —</option>
                     {m?.home && <option value="home">{m.home}</option>}
@@ -1417,7 +1417,7 @@ function BracketGraphic({ history = [] }) {
             const f2Name = finalist2 === "home" ? m2?.home : finalist2 === "away" ? m2?.away : null;
             return (
               <div>
-                <div style={{ fontSize: 12, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>🏆 Predicted Champion</div>
+                <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>🏆 Predicted Champion</div>
                 <select value={predictedChampion} onChange={e => setPredictedChampion(e.target.value)} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 15, padding: "7px 10px", outline: "none", fontFamily: "inherit" }}>
                   <option value="">— Select —</option>
                   {f1Name && <option value="1">{f1Name}</option>}
@@ -1472,7 +1472,7 @@ function BracketGraphic({ history = [] }) {
                   if (!f1Name || !f2Name) {
                     return (
                       <div style={{ width: 190, background: "#161622", border: "1px dashed #2a2a3a", borderRadius: 8, padding: "14px 8px", textAlign: "center" }}>
-                        <span style={{ fontSize: 13, color: "#666", fontWeight: 600 }}>Pick both finalists above</span>
+                        <span style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 600 }}>Pick both finalists above</span>
                       </div>
                     );
                   }
@@ -1518,7 +1518,7 @@ function BracketGraphic({ history = [] }) {
                       </div>
                     ) : (
                       <div style={{ width: 190, background: "#161622", border: "1px dashed #2a2a3a", borderRadius: 8, padding: "18px 8px", textAlign: "center" }}>
-                        <span style={{ fontSize: 13, color: "#666", fontWeight: 600 }}>Pick your Champion above</span>
+                        <span style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 600 }}>Pick your Champion above</span>
                       </div>
                     )}
                   </div>
@@ -1527,7 +1527,7 @@ function BracketGraphic({ history = [] }) {
             </div>
 
             <div style={{ textAlign: "center", marginTop: 10 }}>
-              <span style={{ fontSize: 12, color: "#999", fontWeight: 600 }}>🟢 Green border = your prediction</span>
+              <span style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 600 }}>🟢 Green border = your prediction</span>
             </div>
           </div>
 
@@ -1587,14 +1587,14 @@ function DeepInsightsGraphic({ history = [] }) {
       <div style={{ marginBottom: 14 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
           <span style={{ fontSize: 22, fontWeight: 900, color: "#4ade80" }}>{a}%</span>
-          <span style={{ fontSize: 13, color: "#aaa", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{label}</span>
+          <span style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{label}</span>
           <span style={{ fontSize: 22, fontWeight: 900, color: "#f59e0b" }}>{b}%</span>
         </div>
         <div style={{ display: "flex", height: 8, borderRadius: 4, overflow: "hidden" }}>
           <div style={{ width: `${a}%`, background: "#4ade80" }} />
           <div style={{ width: `${b}%`, background: "#f59e0b", opacity: 0.6 }} />
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 9, fontSize: 13, color: "#aaa" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 9, fontSize: 13, color: "#e2e8f0" }}>
           <span style={{ color: "#4ade80", fontWeight: 600 }}>{home?.split(" ")[0]}</span><span style={{ color: "#f59e0b", fontWeight: 600 }}>{away?.split(" ")[0]}</span>
         </div>
       </div>
@@ -1610,7 +1610,7 @@ function DeepInsightsGraphic({ history = [] }) {
           {logo && <img src={logo} alt="" crossOrigin="anonymous" style={{ width: 20, height: 20, objectFit: "contain" }} />}
           <span style={{ fontSize: 15, fontWeight: 800, color: "#f0f0f0" }}>{team}</span>
         </div>
-        <span style={{ fontSize: 13, color: "#555" }}>PPG: <span style={{ color: "#f0f0f0", fontWeight: 700 }}>{ppg}</span></span>
+        <span style={{ fontSize: 13, color: "#e2e8f0" }}>PPG: <span style={{ color: "#f0f0f0", fontWeight: 700 }}>{ppg}</span></span>
       </div>
       <div style={{ display: "flex", gap: 5 }}>
         {results.map((r, i) => (
@@ -1654,10 +1654,10 @@ function DeepInsightsGraphic({ history = [] }) {
         <>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
             <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
-            <button onClick={() => { setSelectedFixture(null); setInsights(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
+            <button onClick={() => { setSelectedFixture(null); setInsights(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
           </div>
 
-          {loading && <div style={{ textAlign: "center", color: "#555", fontSize: 16, padding: "20px 0" }}>Loading insights...</div>}
+          {loading && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 16, padding: "20px 0" }}>Loading insights...</div>}
           {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
 
           {insights && (
@@ -1676,8 +1676,8 @@ function DeepInsightsGraphic({ history = [] }) {
                       <span style={{ fontSize: 17, fontWeight: 900, color: "#4ade80" }}>{home}</span>
                     </div>
                     <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: 13, color: "#aaa", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{selectedFixture.round}</div>
-                      <div style={{ fontSize: 14, color: "#555", fontWeight: 700 }}>vs</div>
+                      <div style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{selectedFixture.round}</div>
+                      <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700 }}>vs</div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <span style={{ fontSize: 17, fontWeight: 900, color: "#f59e0b" }}>{away}</span>
@@ -1815,10 +1815,10 @@ function MatchPitchViewGraphic() {
         <>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
             <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
-            <button onClick={() => { setSelectedFixture(null); setLineup(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
+            <button onClick={() => { setSelectedFixture(null); setLineup(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
           </div>
 
-          {loading && <div style={{ textAlign: "center", color: "#555", fontSize: 16, padding: "20px 0" }}>Loading lineup...</div>}
+          {loading && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 16, padding: "20px 0" }}>Loading lineup...</div>}
           {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
 
           {lineup && (
@@ -1893,7 +1893,7 @@ function MatchPitchViewGraphic() {
                   {/* Home team header */}
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4, paddingLeft: 4 }}>
                     <span style={{ fontSize: 13, fontWeight: 800, color: "#4ade80" }}>{selectedFixture.home}</span>
-                    <span style={{ fontSize: 12, color: "#555" }}>{lineup.home?.formation}</span>
+                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>{lineup.home?.formation}</span>
                   </div>
 
                   {/* Home team players */}
@@ -1914,7 +1914,7 @@ function MatchPitchViewGraphic() {
                   {/* Away team header */}
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, paddingLeft: 4 }}>
                     <span style={{ fontSize: 13, fontWeight: 800, color: "#f59e0b" }}>{selectedFixture.away}</span>
-                    <span style={{ fontSize: 12, color: "#555" }}>{lineup.away?.formation}</span>
+                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>{lineup.away?.formation}</span>
                   </div>
                 </div>
               </div>
@@ -1945,7 +1945,7 @@ function MatchPitchViewGraphic() {
         }}
         style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${player ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 16, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
       />
-      {searching && <div style={{ position: "absolute", right: 10, top: 38, fontSize: 13, color: "#555" }}>...</div>}
+      {searching && <div style={{ position: "absolute", right: 10, top: 38, fontSize: 13, color: "#e2e8f0" }}>...</div>}
       {suggestions.length > 0 && !player && (
         <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, zIndex: 20, marginTop: 4, maxHeight: 220, overflowY: "auto" }}>
           {suggestions.map(p => (
@@ -1953,7 +1953,7 @@ function MatchPitchViewGraphic() {
               {p.photo && <img src={p.photo} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover" }} />}
               <div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0" }}>{p.name}</div>
-                <div style={{ fontSize: 13, color: "#555" }}>{p.team}</div>
+                <div style={{ fontSize: 13, color: "#e2e8f0" }}>{p.team}</div>
               </div>
             </div>
           ))}
@@ -2029,7 +2029,7 @@ function PlayerH2HGraphic() {
     return (
       <div style={{ display: "flex", alignItems: "center", padding: "6px 0", borderBottom: "1px solid #0f0f1a" }}>
         <span style={{ flex: 1, textAlign: "right", fontSize: 20, fontWeight: p1Better ? 900 : 700, color: "#4ade80", opacity: p1Better ? 1 : 0.65, paddingRight: 12 }}>{val1 ?? "—"}</span>
-        <span style={{ fontSize: 13, color: "#999", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, width: 90, textAlign: "center" }}>{label}</span>
+        <span style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, width: 90, textAlign: "center" }}>{label}</span>
         <span style={{ flex: 1, textAlign: "left", fontSize: 20, fontWeight: p2Better ? 900 : 700, color: "#f59e0b", opacity: p2Better ? 1 : 0.65, paddingLeft: 12 }}>{val2 ?? "—"}</span>
       </div>
     );
@@ -2040,7 +2040,7 @@ function PlayerH2HGraphic() {
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         {LEAGUE_OPTIONS.slice(0, 7).map(l => (
-          <button key={l.id} onClick={() => { setLeagueId(l.id); setPlayer1(null); setPlayer2(null); setSearch1(""); setSearch2(""); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px" }}>
+          <button key={l.id} onClick={() => { setLeagueId(l.id); setPlayer1(null); setPlayer2(null); setSearch1(""); setSearch2(""); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px" }}>
             {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
             {l.label}
           </button>
@@ -2056,7 +2056,7 @@ function PlayerH2HGraphic() {
         <>
           <div style={{ display: "flex", gap: 8 }}>
             {["competition", "season"].map(m => (
-              <button key={m} onClick={() => toggleStatsMode(m)} disabled={seasonLoading} style={{ flex: 1, background: statsMode === m ? "#4ade8022" : "none", border: `1px solid ${statsMode === m ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: statsMode === m ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "8px", textTransform: "capitalize" }}>
+              <button key={m} onClick={() => toggleStatsMode(m)} disabled={seasonLoading} style={{ flex: 1, background: statsMode === m ? "#4ade8022" : "none", border: `1px solid ${statsMode === m ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: statsMode === m ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "8px", textTransform: "capitalize" }}>
                 {seasonLoading && m === "season" ? "Loading..." : m === "competition" ? "🏆 This Competition" : "📅 Full Season"}
               </button>
             ))}
@@ -2074,7 +2074,7 @@ function PlayerH2HGraphic() {
                 <div style={{ textAlign: "center" }}>
                   {player1.photo && <img src={player1.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 8px" }} />}
                   <div style={{ fontSize: 17, fontWeight: 900, color: "#4ade80" }}>{player1.name}</div>
-                  <div style={{ fontSize: 12, color: "#555", marginTop: 2 }}>{player1.team}</div>
+                  <div style={{ fontSize: 12, color: "#e2e8f0", marginTop: 2 }}>{player1.team}</div>
                 </div>
                 <div style={{ textAlign: "center", padding: "0 8px" }}>
                   <div style={{ fontSize: 18, fontWeight: 900, color: "#333" }}>VS</div>
@@ -2082,7 +2082,7 @@ function PlayerH2HGraphic() {
                 <div style={{ textAlign: "center" }}>
                   {player2.photo && <img src={player2.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #f59e0b", margin: "0 auto 8px" }} />}
                   <div style={{ fontSize: 17, fontWeight: 900, color: "#f59e0b" }}>{player2.name}</div>
-                  <div style={{ fontSize: 12, color: "#555", marginTop: 2 }}>{player2.team}</div>
+                  <div style={{ fontSize: 12, color: "#e2e8f0", marginTop: 2 }}>{player2.team}</div>
                 </div>
               </div>
 
@@ -2213,7 +2213,7 @@ function GoldenGloveGraphic() {
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         {LEAGUE_OPTIONS.map(l => (
-          <button key={l.id} onClick={() => { setLeagueId(l.id); setStandings(null); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
+          <button key={l.id} onClick={() => { setLeagueId(l.id); setStandings(null); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
             {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
             {l.label}
           </button>
@@ -2233,9 +2233,9 @@ function GoldenGloveGraphic() {
                 {LEAGUE_LOGOS[leagueId] && <img src={LEAGUE_LOGOS[leagueId]} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 17, fontWeight: 900, color: "#f0f0f0" }}>Golden Glove Race</div>
-                  <div style={{ fontSize: 13, color: "#555" }}>{LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label}</div>
+                  <div style={{ fontSize: 13, color: "#e2e8f0" }}>{LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label}</div>
                 </div>
-                <div style={{ fontSize: 12, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Clean Sheets</div>
+                <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Clean Sheets</div>
               </div>
 
               {(() => {
@@ -2256,7 +2256,7 @@ function GoldenGloveGraphic() {
                           borderRadius: 4,
                         }} />
                       </div>
-                      <div style={{ fontSize: 13, color: "#999", marginTop: 3, fontWeight: 600 }}>{team.played} played · {team.goalsConceded} conceded</div>
+                      <div style={{ fontSize: 13, color: "#e2e8f0", marginTop: 3, fontWeight: 600 }}>{team.played} played · {team.goalsConceded} conceded</div>
                     </div>
                   );
                 });
@@ -2317,7 +2317,7 @@ function MatchH2HGraphic() {
     return (
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
         <span style={{ fontSize: 20, fontWeight: p1Better ? 900 : 700, color: "#4ade80", opacity: p1Better ? 1 : 0.65 }}>{val1 != null ? val1 + unit : "—"}</span>
-        <span style={{ fontSize: 13, color: "#999", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
+        <span style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
         <span style={{ fontSize: 20, fontWeight: p2Better ? 900 : 700, color: "#f59e0b", opacity: p2Better ? 1 : 0.65 }}>{val2 != null ? val2 + unit : "—"}</span>
       </div>
     );
@@ -2345,10 +2345,10 @@ function MatchH2HGraphic() {
         <>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
             <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
-            <button onClick={() => { setSelectedFixture(null); setMatchPlayers(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#555", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
+            <button onClick={() => { setSelectedFixture(null); setMatchPlayers(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
           </div>
 
-          {loading && <div style={{ textAlign: "center", color: "#555", fontSize: 16, padding: "20px 0" }}>Loading player stats...</div>}
+          {loading && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 16, padding: "20px 0" }}>Loading player stats...</div>}
           {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
 
           {matchPlayers && (
@@ -2377,7 +2377,7 @@ function MatchH2HGraphic() {
                 <div style={{ textAlign: "center" }}>
                   {player1.photo && <img src={player1.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 8px" }} />}
                   <div style={{ fontSize: 17, fontWeight: 900, color: "#4ade80" }}>{player1.name}</div>
-                  <div style={{ fontSize: 12, color: "#555", marginTop: 2 }}>{matchPlayers.home.team}</div>
+                  <div style={{ fontSize: 12, color: "#e2e8f0", marginTop: 2 }}>{matchPlayers.home.team}</div>
                 </div>
                 <div style={{ textAlign: "center", padding: "0 8px" }}>
                   <div style={{ fontSize: 18, fontWeight: 900, color: "#333" }}>VS</div>
@@ -2385,7 +2385,7 @@ function MatchH2HGraphic() {
                 <div style={{ textAlign: "center" }}>
                   {player2.photo && <img src={player2.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #f59e0b", margin: "0 auto 8px" }} />}
                   <div style={{ fontSize: 17, fontWeight: 900, color: "#f59e0b" }}>{player2.name}</div>
-                  <div style={{ fontSize: 12, color: "#555", marginTop: 2 }}>{matchPlayers.away.team}</div>
+                  <div style={{ fontSize: 12, color: "#e2e8f0", marginTop: 2 }}>{matchPlayers.away.team}</div>
                 </div>
               </div>
 
@@ -2453,7 +2453,7 @@ function MatchH2HGraphic() {
         }}
         style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${player ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
       />
-      {searching && <div style={{ position: "absolute", right: 10, top: 38, fontSize: 10, color: "#555" }}>...</div>}
+      {searching && <div style={{ position: "absolute", right: 10, top: 38, fontSize: 10, color: "#e2e8f0" }}>...</div>}
       {suggestions.length > 0 && !player && (
         <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, zIndex: 20, marginTop: 4, maxHeight: 220, overflowY: "auto" }}>
           {suggestions.map(p => (
@@ -2461,7 +2461,7 @@ function MatchH2HGraphic() {
               {p.photo && <img src={p.photo} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover" }} />}
               <div>
                 <div style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>{p.name}</div>
-                <div style={{ fontSize: 10, color: "#555" }}>{p.team}</div>
+                <div style={{ fontSize: 10, color: "#e2e8f0" }}>{p.team}</div>
               </div>
             </div>
           ))}
@@ -2476,7 +2476,7 @@ function MatchH2HGraphic() {
 function SoloStatRow({ label, val }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-      <span style={{ fontSize: 11, color: "#999", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
+      <span style={{ fontSize: 11, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
       <span style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>{val ?? "—"}</span>
     </div>
   );
@@ -2497,14 +2497,14 @@ function TeamThenPlayerPicker({ label, search, setSearch, suggestions, team, sea
           }}
           style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${team ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
         />
-        {searching && <div style={{ position: "absolute", right: 10, top: 38, fontSize: 10, color: "#555" }}>...</div>}
+        {searching && <div style={{ position: "absolute", right: 10, top: 38, fontSize: 10, color: "#e2e8f0" }}>...</div>}
         {suggestions.length > 0 && !team && (
           <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, zIndex: 20, marginTop: 4, maxHeight: 220, overflowY: "auto" }}>
             {suggestions.map(t => (
               <div key={t.id} onClick={() => onSelectTeam(t, slot)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", cursor: "pointer", borderBottom: "1px solid #1a1a2a" }}>
                 {t.logo && <img src={t.logo} alt="" style={{ width: 22, height: 22, objectFit: "contain" }} />}
                 <span style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>{t.name}</span>
-                <span style={{ fontSize: 10, color: "#555" }}>{t.country}</span>
+                <span style={{ fontSize: 10, color: "#e2e8f0" }}>{t.country}</span>
               </div>
             ))}
           </div>
@@ -2642,7 +2642,7 @@ function TransferFitGraphic() {
     return (
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
         <span style={{ fontSize: 20, fontWeight: p1Better ? 900 : 700, color: light ? "#9333ea" : "#a855f7" }}>{val1 ?? "—"}</span>
-        <span style={{ fontSize: 13, color: light ? "#64748b" : "#94a3b8", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, opacity: light ? 0.85 : 0.7 }}>{label}</span>
+        <span style={{ fontSize: 13, color: light ? "#e2e8f0" : "#e2e8f0", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, opacity: light ? 0.85 : 0.7 }}>{label}</span>
         <span style={{ fontSize: 20, fontWeight: p2Better ? 900 : 700, color: light ? "#16a34a" : "#4ade80" }}>{val2 ?? "—"}</span>
       </div>
     );
@@ -2650,13 +2650,13 @@ function TransferFitGraphic() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 14, color: "#aaa" }}>Compare any two players — same club, rival clubs, or a missed target vs the player actually signed. Search any team, any league worldwide.</div>
+      <div style={{ fontSize: 14, color: "#e2e8f0" }}>Compare any two players — same club, rival clubs, or a missed target vs the player actually signed. Search any team, any league worldwide.</div>
 
       <div>
         <div style={{ fontSize: 13, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Season</div>
         <div style={{ display: "flex", gap: 6 }}>
           {[{ v: 2025, label: "2025-26 Season" }, { v: 2026, label: "2026 (World Cup)" }].map(s => (
-            <button key={s.v} onClick={() => setSeason(s.v)} style={{ background: season === s.v ? "#4ade8022" : "none", border: `1px solid ${season === s.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: season === s.v ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "6px 12px" }}>
+            <button key={s.v} onClick={() => setSeason(s.v)} style={{ background: season === s.v ? "#4ade8022" : "none", border: `1px solid ${season === s.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: season === s.v ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "6px 12px" }}>
               {s.label}
             </button>
           ))}
@@ -2691,7 +2691,7 @@ function TransferFitGraphic() {
         </div>
       )}
 
-      {(loadingSquad || loadingStats) && <div style={{ textAlign: "center", color: "#999", fontSize: 15 }}>Loading...</div>}
+      {(loadingSquad || loadingStats) && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 15 }}>Loading...</div>}
 
       {target && incumbent && (
         <>
@@ -2706,7 +2706,7 @@ function TransferFitGraphic() {
                 <div style={{ textAlign: "center" }}>
                   {target.photo && <img src={target.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #a855f7", margin: "0 auto 8px" }} />}
                   <div style={{ fontSize: 17, fontWeight: 900, color: "#a855f7" }}>{target.name}</div>
-                  <div style={{ fontSize: 13, color: "#aaa", marginTop: 2 }}>{target.team}{target.age ? ` · ${target.age}y` : ""}</div>
+                  <div style={{ fontSize: 13, color: "#e2e8f0", marginTop: 2 }}>{target.team}{target.age ? ` · ${target.age}y` : ""}</div>
                   {targetPrice && <div style={{ fontSize: 13, color: "#a855f7", fontWeight: 700, marginTop: 3 }}>{targetPrice}</div>}
                 </div>
                 <div style={{ textAlign: "center", padding: "0 8px" }}>
@@ -2715,7 +2715,7 @@ function TransferFitGraphic() {
                 <div style={{ textAlign: "center" }}>
                   {incumbent.photo && <img src={incumbent.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 8px" }} />}
                   <div style={{ fontSize: 17, fontWeight: 900, color: "#4ade80" }}>{incumbent.name}</div>
-                  <div style={{ fontSize: 13, color: "#aaa", marginTop: 2 }}>{incumbent.team}{incumbent.age ? ` · ${incumbent.age}y` : ""}</div>
+                  <div style={{ fontSize: 13, color: "#e2e8f0", marginTop: 2 }}>{incumbent.team}{incumbent.age ? ` · ${incumbent.age}y` : ""}</div>
                   {incumbentPrice && <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 700, marginTop: 3 }}>{incumbentPrice}</div>}
                 </div>
               </div>
@@ -2748,7 +2748,7 @@ function TransferFitGraphic() {
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#a855f7,#818cf8)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 19, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
           </button>
-          <button onClick={fetchDebug} disabled={debugLoading} style={{ background: "none", border: "1px dashed #444", borderRadius: 8, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 16, fontWeight: 600, padding: "8px", width: "100%" }}>
+          <button onClick={fetchDebug} disabled={debugLoading} style={{ background: "none", border: "1px dashed #444", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 16, fontWeight: 600, padding: "8px", width: "100%" }}>
             {debugLoading ? "Loading raw data..." : "🐛 Show Raw Data (Target)"}
           </button>
           {debugData && (
@@ -2772,7 +2772,7 @@ function TransferFitGraphic() {
               <div style={{ textAlign: "center", marginBottom: 18 }}>
                 {target.photo && <img src={target.photo} alt="" crossOrigin="anonymous" style={{ width: 72, height: 72, borderRadius: "50%", objectFit: "cover", border: "2px solid #a855f7", margin: "0 auto 10px" }} />}
                 <div style={{ fontSize: 20, fontWeight: 900, color: "#a855f7" }}>{target.name}</div>
-                <div style={{ fontSize: 13, color: "#aaa", marginTop: 3 }}>{target.team}{target.age ? ` · ${target.age}y` : ""}</div>
+                <div style={{ fontSize: 13, color: "#e2e8f0", marginTop: 3 }}>{target.team}{target.age ? ` · ${target.age}y` : ""}</div>
                 {targetPrice && <div style={{ fontSize: 14, color: "#a855f7", fontWeight: 700, marginTop: 4 }}>{targetPrice}</div>}
               </div>
 
@@ -2822,7 +2822,7 @@ function LeagueSearchSlot({ search, setSearch, suggestions, league, searching, o
         }}
         style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${league ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
       />
-      {searching && <div style={{ position: "absolute", right: 10, top: 10, fontSize: 10, color: "#555" }}>...</div>}
+      {searching && <div style={{ position: "absolute", right: 10, top: 10, fontSize: 10, color: "#e2e8f0" }}>...</div>}
       {suggestions.length > 0 && !league && (
         <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, zIndex: 20, marginTop: 4, maxHeight: 260, overflowY: "auto" }}>
           {suggestions.map((l, i) => (
@@ -2830,7 +2830,7 @@ function LeagueSearchSlot({ search, setSearch, suggestions, league, searching, o
               {l.logo && <img src={l.logo} alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />}
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>{l.name}</div>
-                <div style={{ fontSize: 10, color: "#555" }}>{l.country} · {l.type}{l.currentSeason ? ` · ${l.currentSeason}` : ""}</div>
+                <div style={{ fontSize: 10, color: "#e2e8f0" }}>{l.country} · {l.type}{l.currentSeason ? ` · ${l.currentSeason}` : ""}</div>
               </div>
             </div>
           ))}
@@ -2854,7 +2854,7 @@ function TeamSearchSlot({ label, search, setSearch, suggestions, team, searching
         }}
         style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${team ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
       />
-      {searching && <div style={{ position: "absolute", right: 10, top: 38, fontSize: 10, color: "#555" }}>...</div>}
+      {searching && <div style={{ position: "absolute", right: 10, top: 38, fontSize: 10, color: "#e2e8f0" }}>...</div>}
       {suggestions.length > 0 && !team && (
         <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, zIndex: 20, marginTop: 4, maxHeight: 220, overflowY: "auto" }}>
           {suggestions.map(t => (
@@ -2955,7 +2955,7 @@ function GoalTimingGraphic() {
     <div style={{ marginBottom: 10 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
         <span style={{ fontSize: 13, fontWeight: 900, color: color1 }}>{val1}</span>
-        <span style={{ fontSize: 10, color: "#999", fontWeight: 700 }}>{label}'</span>
+        <span style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700 }}>{label}'</span>
         <span style={{ fontSize: 13, fontWeight: 900, color: color2 }}>{val2}</span>
       </div>
       <div style={{ display: "flex", gap: 4 }}>
@@ -2981,7 +2981,7 @@ function GoalTimingGraphic() {
         <TeamSearchSlot label="Team 2" search={search2} setSearch={setSearch2} suggestions={suggest2} team={team2} searching={searching2} slot={2} color="#f59e0b" onSelect={selectTeam} onClear={() => setTeam2(null)} onSearch={searchTeam} />
       </div>
 
-      {loading && <div style={{ textAlign: "center", color: "#555", fontSize: 12 }}>Loading...</div>}
+      {loading && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 12 }}>Loading...</div>}
 
       {stats1 && stats2 && (
         <>
@@ -3086,11 +3086,11 @@ function HalftimeRecapGraphic() {
       ) : (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
-          <button onClick={() => { setSelectedFixture(null); setEvents(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#999", cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "4px 10px" }}>Change</button>
+          <button onClick={() => { setSelectedFixture(null); setEvents(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "4px 10px" }}>Change</button>
         </div>
       )}
 
-      {loading && <div style={{ textAlign: "center", color: "#999", fontSize: 13, padding: "20px 0" }}>Loading match events...</div>}
+      {loading && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 13, padding: "20px 0" }}>Loading match events...</div>}
       {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
 
       {events && hasReachedHT && (
@@ -3116,7 +3116,7 @@ function HalftimeRecapGraphic() {
                     <div style={{ fontSize: 15, fontWeight: 800, color: "#4ade80" }}>{selectedFixture.home}</div>
                   </div>
                   <div style={{ textAlign: "center", padding: "0 14px" }}>
-                    <div style={{ fontSize: 11, color: "#999", textTransform: "uppercase", letterSpacing: 1, fontWeight: 700, marginBottom: 4 }}>HT</div>
+                    <div style={{ fontSize: 11, color: "#e2e8f0", textTransform: "uppercase", letterSpacing: 1, fontWeight: 700, marginBottom: 4 }}>HT</div>
                     <div style={{ fontSize: 44, fontWeight: 900, color: "#f0f0f0", letterSpacing: -1.5, lineHeight: 1 }}>{htHomeGoals}-{htAwayGoals}</div>
                   </div>
                   <div style={{ textAlign: "center" }}>
@@ -3128,7 +3128,7 @@ function HalftimeRecapGraphic() {
 
               <BentoBox title="First Half Events" icon="📋" color="#60a5fa">
                 {firstHalfEvents.length === 0 && (
-                  <div style={{ fontSize: 13, color: "#999", textAlign: "center", padding: "10px 0" }}>No goals or cards in the first half</div>
+                  <div style={{ fontSize: 13, color: "#e2e8f0", textAlign: "center", padding: "10px 0" }}>No goals or cards in the first half</div>
                 )}
                 {firstHalfEvents.map((e, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: i < firstHalfEvents.length - 1 ? "1px solid #1a1a2a" : "none" }}>
@@ -3159,7 +3159,7 @@ function HalftimeRecapGraphic() {
       )}
 
       {events && !hasReachedHT && (
-        <div style={{ textAlign: "center", color: "#999", fontSize: 13, padding: "20px 0" }}>This match hasn't reached halftime yet</div>
+        <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 13, padding: "20px 0" }}>This match hasn't reached halftime yet</div>
       )}
     </div>
   );
@@ -3230,7 +3230,7 @@ function TeamStatsCompareGraphic() {
         {data.logo && <img src={data.logo} alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, objectFit: "contain" }} />}
         <div>
           <div style={{ fontSize: 16, fontWeight: 900, color: "#f0f0f0" }}>{data.team}</div>
-          <div style={{ fontSize: 11, color: "#94A3B8" }}>
+          <div style={{ fontSize: 11, color: "#e2e8f0" }}>
             {LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label} {data.seasonUsed}/{parseInt(data.seasonUsed) + 1} · Final Stats
           </div>
         </div>
@@ -3273,7 +3273,7 @@ function TeamStatsCompareGraphic() {
         ].map(s => (
           <div key={s.label} style={{ background: "#13131f", borderRadius: 6, padding: "6px 4px", textAlign: "center" }}>
             <div style={{ fontSize: 16, fontWeight: 900, color: s.color }}>{s.value ?? "—"}</div>
-            <div style={{ fontSize: 9, color: "#94A3B8", marginTop: 1, textTransform: "uppercase", letterSpacing: 0.3 }}>{s.label}</div>
+            <div style={{ fontSize: 9, color: "#e2e8f0", marginTop: 1, textTransform: "uppercase", letterSpacing: 0.3 }}>{s.label}</div>
           </div>
         ))}
       </div>
@@ -3284,7 +3284,7 @@ function TeamStatsCompareGraphic() {
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         {LEAGUE_OPTIONS.slice(1).map(l => (
-          <button key={l.id} onClick={() => { setLeagueId(l.id); setTeam1(null); setTeam2(null); setData1(null); setData2(null); setSearch1(""); setSearch2(""); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
+          <button key={l.id} onClick={() => { setLeagueId(l.id); setTeam1(null); setTeam2(null); setData1(null); setData2(null); setSearch1(""); setSearch2(""); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
             {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
             {l.label}
           </button>
@@ -3296,7 +3296,7 @@ function TeamStatsCompareGraphic() {
         <TeamSearchSlot label="Team 2" search={search2} setSearch={setSearch2} suggestions={suggest2} team={team2} searching={searching2} slot={2} color="#f59e0b" onSelect={selectTeam} onClear={() => setTeam2(null)} onSearch={searchTeam} />
       </div>
 
-      {loading && <div style={{ textAlign: "center", color: "#999", fontSize: 13 }}>Loading...</div>}
+      {loading && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 13 }}>Loading...</div>}
 
       {data1 && data2 && (
         <>
@@ -3357,7 +3357,7 @@ function BestOfEuropeGraphic() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#999" }}>Top 2 finishers from each of the 5 major leagues, last completed season.</div>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Top 2 finishers from each of the 5 major leagues, last completed season.</div>
 
       {!teams && (
         <button onClick={load} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
@@ -3370,7 +3370,7 @@ function BestOfEuropeGraphic() {
         <>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {STAT_OPTIONS.map(s => (
-              <button key={s.key} onClick={() => setStatKey(s.key)} style={{ background: statKey === s.key ? `${s.color}22` : "none", border: `1px solid ${statKey === s.key ? s.color : "#2a2a3a"}`, borderRadius: 16, color: statKey === s.key ? s.color : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px" }}>
+              <button key={s.key} onClick={() => setStatKey(s.key)} style={{ background: statKey === s.key ? `${s.color}22` : "none", border: `1px solid ${statKey === s.key ? s.color : "#2a2a3a"}`, borderRadius: 16, color: statKey === s.key ? s.color : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px" }}>
                 {s.label}
               </button>
             ))}
@@ -3390,7 +3390,7 @@ function BestOfEuropeGraphic() {
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                     {t.logo && <img src={t.logo} alt="" crossOrigin="anonymous" style={{ width: 22, height: 22, objectFit: "contain", flexShrink: 0 }} />}
                     <span style={{ fontSize: 13, fontWeight: 800, color: "#f0f0f0", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.team}</span>
-                    <span style={{ fontSize: 10, color: "#999" }}>{t.leagueLabel}</span>
+                    <span style={{ fontSize: 10, color: "#e2e8f0" }}>{t.leagueLabel}</span>
                     <span style={{ fontSize: 17, fontWeight: 900, color: activeStat.color, minWidth: 26, textAlign: "right" }}>{t[statKey] ?? "—"}</span>
                   </div>
                   <div style={{ height: 7, background: "#1a1a24", borderRadius: 4, overflow: "hidden" }}>
@@ -3444,7 +3444,7 @@ export default function DataGraphics({ history = [], supabase }) {
         {sectionMenuOpen && (
           <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 30, marginTop: 4, background: "#0a0a0f", border: "1px solid #2a2a3a", borderRadius: 10, maxHeight: 400, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4, padding: 6 }}>
             {sections.map(s => (
-              <button key={s.id} onClick={() => { setActiveSection(s.id); setSectionMenuOpen(false); }} style={{ background: activeSection === s.id ? "#a855f722" : "none", border: "none", borderRadius: 8, color: activeSection === s.id ? "#a855f7" : "#999", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "10px 12px", textAlign: "left", width: "100%" }}>
+              <button key={s.id} onClick={() => { setActiveSection(s.id); setSectionMenuOpen(false); }} style={{ background: activeSection === s.id ? "#a855f722" : "none", border: "none", borderRadius: 8, color: activeSection === s.id ? "#a855f7" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "10px 12px", textAlign: "left", width: "100%" }}>
                 {s.label}
               </button>
             ))}
