@@ -2648,7 +2648,7 @@ function TransferFitGraphic() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 14, color: "#aaa" }}>Compare a transfer target against a current squad player — search any team, any league worldwide.</div>
+      <div style={{ fontSize: 14, color: "#aaa" }}>Compare any two players — same club, rival clubs, or a missed target vs the player actually signed. Search any team, any league worldwide.</div>
 
       <div>
         <div style={{ fontSize: 13, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Season</div>
@@ -2662,8 +2662,8 @@ function TransferFitGraphic() {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        <TeamThenPlayerPicker label="🎯 Transfer Target" search={searchTargetTeam} setSearch={setSearchTargetTeam} suggestions={suggestTargetTeam} team={targetTeam} searching={searchingTargetTeam} slot="target" color="#a855f7" squad={targetSquad} playerId={targetPlayerId} onSearchTeam={searchTeam} onSelectTeam={selectTeam} onSelectPlayer={selectPlayerFromSquad} onClearTeam={() => setTargetTeam(null)} />
-        <TeamThenPlayerPicker label="🏠 Current Squad (optional)" search={searchIncumbentTeam} setSearch={setSearchIncumbentTeam} suggestions={suggestIncumbentTeam} team={incumbentTeam} searching={searchingIncumbentTeam} slot="incumbent" color="#4ade80" squad={incumbentSquad} playerId={incumbentPlayerId} onSearchTeam={searchTeam} onSelectTeam={selectTeam} onSelectPlayer={selectPlayerFromSquad} onClearTeam={() => setIncumbentTeam(null)} />
+        <TeamThenPlayerPicker label="🎯 Player 1" search={searchTargetTeam} setSearch={setSearchTargetTeam} suggestions={suggestTargetTeam} team={targetTeam} searching={searchingTargetTeam} slot="target" color="#a855f7" squad={targetSquad} playerId={targetPlayerId} onSearchTeam={searchTeam} onSelectTeam={selectTeam} onSelectPlayer={selectPlayerFromSquad} onClearTeam={() => setTargetTeam(null)} />
+        <TeamThenPlayerPicker label="🎯 Player 2 (optional)" search={searchIncumbentTeam} setSearch={setSearchIncumbentTeam} suggestions={suggestIncumbentTeam} team={incumbentTeam} searching={searchingIncumbentTeam} slot="incumbent" color="#4ade80" squad={incumbentSquad} playerId={incumbentPlayerId} onSearchTeam={searchTeam} onSelectTeam={selectTeam} onSelectPlayer={selectPlayerFromSquad} onClearTeam={() => setIncumbentTeam(null)} />
       </div>
 
       {(loadingSquad || loadingStats) && <div style={{ textAlign: "center", color: "#999", fontSize: 15 }}>Loading...</div>}
@@ -2677,37 +2677,19 @@ function TransferFitGraphic() {
                 <span style={{ fontSize: 14, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>🔄 Transfer Fit · {season === 2026 ? "2026 World Cup" : `${season}/${season + 1}`}</span>
               </div>
 
-              {/* Destination club — prominent banner */}
-              <div style={{
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-                background: "linear-gradient(135deg, #4ade8018, #4ade8005)",
-                border: "1px solid #4ade8033", borderRadius: 10, padding: "10px 16px", marginBottom: 16,
-                boxShadow: "0 0 15px rgba(74,222,128,0.15)",
-              }}>
-                {incumbent.teamLogo && <img src={incumbent.teamLogo} alt="" crossOrigin="anonymous" style={{ width: 28, height: 28, objectFit: "contain" }} />}
-                <div style={{ textAlign: "left" }}>
-                  <div style={{ fontSize: 12, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Destination Club</div>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: "#f0f0f0" }}>{incumbent.team}</div>
-                </div>
-              </div>
-
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16 }}>
                 <div style={{ textAlign: "center" }}>
                   {target.photo && <img src={target.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #a855f7", margin: "0 auto 8px" }} />}
                   <div style={{ fontSize: 17, fontWeight: 900, color: "#a855f7" }}>{target.name}</div>
                   <div style={{ fontSize: 13, color: "#aaa", marginTop: 2 }}>{target.team}{target.age ? ` · ${target.age}y` : ""}</div>
-                  <div style={{ fontSize: 12, color: "#a855f7", fontWeight: 700, marginTop: 2, opacity: 0.7 }}>INCOMING</div>
                 </div>
                 <div style={{ textAlign: "center", padding: "0 8px" }}>
-                  <div style={{ fontSize: 10, fontWeight: 800, color: "#a855f7", textTransform: "uppercase", letterSpacing: 0.5 }}>NEW</div>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: "#555", margin: "2px 0" }}>→</div>
-                  <div style={{ fontSize: 10, fontWeight: 800, color: "#4ade80", textTransform: "uppercase", letterSpacing: 0.5 }}>OLD</div>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: "#333" }}>VS</div>
                 </div>
                 <div style={{ textAlign: "center" }}>
                   {incumbent.photo && <img src={incumbent.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 8px" }} />}
                   <div style={{ fontSize: 17, fontWeight: 900, color: "#4ade80" }}>{incumbent.name}</div>
                   <div style={{ fontSize: 13, color: "#aaa", marginTop: 2 }}>{incumbent.team}{incumbent.age ? ` · ${incumbent.age}y` : ""}</div>
-                  <div style={{ fontSize: 12, color: "#4ade80", fontWeight: 700, marginTop: 2, opacity: 0.7 }}>OUTGOING</div>
                 </div>
               </div>
 
@@ -2756,7 +2738,7 @@ function TransferFitGraphic() {
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "22px 18px 18px" }}>
               <div style={{ textAlign: "center", marginBottom: 14 }}>
-                <div style={{ fontSize: 22, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5, marginBottom: 4 }}>Incoming Signing</div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5, marginBottom: 4 }}>Player Profile</div>
                 <span style={{ fontSize: 14, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>🔄 Transfer Fit · {season === 2026 ? "2026 World Cup" : `${season}/${season + 1}`}</span>
               </div>
 
