@@ -830,17 +830,37 @@ function TeamStatsGraphic() {
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "22px 18px 18px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, marginTop: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14, marginTop: 8 }}>
                 {data.logo && <img src={data.logo} alt="" crossOrigin="anonymous" style={{ width: 40, height: 40, objectFit: "contain" }} />}
                 <div>
                   <div style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>{data.team}</div>
-                  <div style={{ fontSize: 13, color: "#555" }}>{LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label} · Season Stats</div>
+                  <div style={{ fontSize: 13, color: "#94A3B8" }}>
+                    {LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label} {data.seasonUsed}/{parseInt(data.seasonUsed) + 1} · Final Stats
+                  </div>
+                </div>
+              </div>
+
+              {/* Mini league table row */}
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
+                {data.position && (
+                  <div style={{ background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 6, padding: "5px 10px", fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>
+                    POS: <span style={{ color: "#4ade80" }}>{data.position}{data.position === 1 ? "st" : data.position === 2 ? "nd" : data.position === 3 ? "rd" : "th"}</span>
+                  </div>
+                )}
+                <div style={{ background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 6, padding: "5px 10px", fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>
+                  PTS: <span style={{ color: "#4ade80" }}>{(data.wins || 0) * 3 + (data.draws || 0)}</span>
+                </div>
+                <div style={{ background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 6, padding: "5px 10px", fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>
+                  GD: <span style={{ color: (data.goalsFor - data.goalsAgainst) >= 0 ? "#4ade80" : "#f87171" }}>{(data.goalsFor - data.goalsAgainst) >= 0 ? "+" : ""}{data.goalsFor - data.goalsAgainst}</span>
+                </div>
+                <div style={{ background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 6, padding: "5px 10px", fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>
+                  RECORD: <span style={{ color: "#94A3B8" }}>{data.wins}W - {data.draws}D - {data.losses}L</span>
                 </div>
               </div>
 
               {data.form && (
                 <div style={{ marginBottom: 14 }}>
-                  <div style={{ fontSize: 12, color: "#555", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Recent Form</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: 2, marginBottom: 8 }}>Final 10 Match Form</div>
                   <div style={{ display: "flex", gap: 4 }}>
                     {data.form.slice(-10).split("").map((r, i) => <div key={i}>{formDot(r)}</div>)}
                   </div>
@@ -863,7 +883,7 @@ function TeamStatsGraphic() {
                 ].map(s => (
                   <div key={s.label} style={{ background: "#13131f", borderRadius: 8, padding: "10px 8px", textAlign: "center" }}>
                     <div style={{ fontSize: 24, fontWeight: 900, color: s.color }}>{s.value ?? "—"}</div>
-                    <div style={{ fontSize: 12, color: "#555", marginTop: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{s.label}</div>
+                    <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{s.label}</div>
                   </div>
                 ))}
               </div>
