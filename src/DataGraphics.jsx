@@ -3420,6 +3420,7 @@ function BestOfEuropeGraphic() {
 
 export default function DataGraphics({ history = [], supabase }) {
   const [activeSection, setActiveSection] = useState("match");
+  const [sectionMenuOpen, setSectionMenuOpen] = useState(false);
 
   const sections = [
     { id: "insights", label: "📊 Brief Insights" },
@@ -3444,12 +3445,20 @@ export default function DataGraphics({ history = [], supabase }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');`}</style>
 
-      <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
-        {sections.map(s => (
-          <button key={s.id} onClick={() => setActiveSection(s.id)} style={{ background: activeSection === s.id ? "#a855f722" : "none", border: `1px solid ${activeSection === s.id ? "#a855f7" : "#2a2a3a"}`, borderRadius: 20, color: activeSection === s.id ? "#a855f7" : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "7px 14px", whiteSpace: "nowrap", flexShrink: 0 }}>
-            {s.label}
-          </button>
-        ))}
+      <div style={{ position: "relative" }}>
+        <button onClick={() => setSectionMenuOpen(o => !o)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", background: "#13131f", border: "1px solid #a855f7", borderRadius: 10, color: "#a855f7", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "12px 16px" }}>
+          <span>{sections.find(s => s.id === activeSection)?.label}</span>
+          <span style={{ fontSize: 12 }}>{sectionMenuOpen ? "▲" : "▼"}</span>
+        </button>
+        {sectionMenuOpen && (
+          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 30, marginTop: 4, background: "#0a0a0f", border: "1px solid #2a2a3a", borderRadius: 10, maxHeight: 400, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4, padding: 6 }}>
+            {sections.map(s => (
+              <button key={s.id} onClick={() => { setActiveSection(s.id); setSectionMenuOpen(false); }} style={{ background: activeSection === s.id ? "#a855f722" : "none", border: "none", borderRadius: 8, color: activeSection === s.id ? "#a855f7" : "#999", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "10px 12px", textAlign: "left", width: "100%" }}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {activeSection === "insights" && <DeepInsightsGraphic history={history} />}
