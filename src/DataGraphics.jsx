@@ -2713,17 +2713,6 @@ function TransferFitGraphic() {
 
               <div style={{ height: 1, background: "#1a1a2a", marginBottom: 10 }} />
 
-              <div style={{
-                background: "linear-gradient(135deg, #a855f714, #4ade800e)",
-                border: "1px solid #a855f733",
-                borderRadius: 12, padding: "14px 16px", marginBottom: 10,
-              }}>
-                <div style={{ fontSize: 15, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8, textAlign: "center" }}>⭐ Season Rating</div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: 34, fontWeight: 900, color: "#a855f7", letterSpacing: -1 }}>{target.rating ? parseFloat(target.rating).toFixed(1) : "—"}</span>
-                  <span style={{ fontSize: 34, fontWeight: 900, color: "#4ade80", letterSpacing: -1 }}>{incumbent.rating ? parseFloat(incumbent.rating).toFixed(1) : "—"}</span>
-                </div>
-              </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 10 }}>
                 <BentoBox title="Output" icon="⚽" color="#a855f7">
@@ -2777,14 +2766,6 @@ function TransferFitGraphic() {
                 <div style={{ fontSize: 13, color: "#aaa", marginTop: 3 }}>{target.team}</div>
               </div>
 
-              <div style={{
-                background: "linear-gradient(135deg, #a855f714, #4ade800e)",
-                border: "1px solid #a855f733",
-                borderRadius: 12, padding: "16px", marginBottom: 10, textAlign: "center",
-              }}>
-                <div style={{ fontSize: 15, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>⭐ Season Rating</div>
-                <div style={{ fontSize: 44, fontWeight: 900, color: "#a855f7", letterSpacing: -1.5 }}>{target.rating ? parseFloat(target.rating).toFixed(1) : "—"}</div>
-              </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
                 <BentoBox title="Output" icon="⚽" color="#a855f7">
