@@ -2601,7 +2601,7 @@ function TransferFitGraphic() {
       const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${playerId}&season=${season}&teamId=${teamInfo?.id}`);
       const d = await r.json();
       const enriched = d.available
-        ? { ...d, photo: basePlayer.photo, team: teamInfo?.name, teamLogo: teamInfo?.logo }
+        ? { ...d, photo: basePlayer.photo, age: basePlayer.age, team: teamInfo?.name, teamLogo: teamInfo?.logo }
         : { ...basePlayer, team: teamInfo?.name, teamLogo: teamInfo?.logo };
       if (slot === "target") setTarget(enriched); else setIncumbent(enriched);
     } catch {
@@ -2695,7 +2695,7 @@ function TransferFitGraphic() {
                 <div style={{ textAlign: "center" }}>
                   {target.photo && <img src={target.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #a855f7", margin: "0 auto 8px" }} />}
                   <div style={{ fontSize: 17, fontWeight: 900, color: "#a855f7" }}>{target.name}</div>
-                  <div style={{ fontSize: 13, color: "#aaa", marginTop: 2 }}>{target.team}</div>
+                  <div style={{ fontSize: 13, color: "#aaa", marginTop: 2 }}>{target.team}{target.age ? ` · ${target.age}y` : ""}</div>
                   <div style={{ fontSize: 12, color: "#a855f7", fontWeight: 700, marginTop: 2, opacity: 0.7 }}>INCOMING</div>
                 </div>
                 <div style={{ textAlign: "center", padding: "0 8px" }}>
@@ -2706,7 +2706,7 @@ function TransferFitGraphic() {
                 <div style={{ textAlign: "center" }}>
                   {incumbent.photo && <img src={incumbent.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 8px" }} />}
                   <div style={{ fontSize: 17, fontWeight: 900, color: "#4ade80" }}>{incumbent.name}</div>
-                  <div style={{ fontSize: 13, color: "#aaa", marginTop: 2 }}>{incumbent.team}</div>
+                  <div style={{ fontSize: 13, color: "#aaa", marginTop: 2 }}>{incumbent.team}{incumbent.age ? ` · ${incumbent.age}y` : ""}</div>
                   <div style={{ fontSize: 12, color: "#4ade80", fontWeight: 700, marginTop: 2, opacity: 0.7 }}>OUTGOING</div>
                 </div>
               </div>
@@ -2763,7 +2763,7 @@ function TransferFitGraphic() {
               <div style={{ textAlign: "center", marginBottom: 18 }}>
                 {target.photo && <img src={target.photo} alt="" crossOrigin="anonymous" style={{ width: 72, height: 72, borderRadius: "50%", objectFit: "cover", border: "2px solid #a855f7", margin: "0 auto 10px" }} />}
                 <div style={{ fontSize: 20, fontWeight: 900, color: "#a855f7" }}>{target.name}</div>
-                <div style={{ fontSize: 13, color: "#aaa", marginTop: 3 }}>{target.team}</div>
+                <div style={{ fontSize: 13, color: "#aaa", marginTop: 3 }}>{target.team}{target.age ? ` · ${target.age}y` : ""}</div>
               </div>
 
 
@@ -3249,7 +3249,7 @@ function TeamStatsCompareGraphic() {
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
         {[
           { label: "Played",  value: data.played,       color: "#f0f0f0" },
           { label: "Wins",    value: data.wins,         color: "#4ade80" },
@@ -3261,9 +3261,9 @@ function TeamStatsCompareGraphic() {
           { label: "Avg Scored",   value: data.avgGoalsFor,     color: "#4ade80" },
           { label: "Avg Conceded", value: data.avgGoalsAgainst, color: "#f87171" },
         ].map(s => (
-          <div key={s.label} style={{ background: "#13131f", borderRadius: 5, padding: "4px 4px", textAlign: "center" }}>
-            <div style={{ fontSize: 15, fontWeight: 900, color: s.color }}>{s.value ?? "—"}</div>
-            <div style={{ fontSize: 8, color: "#94A3B8", marginTop: 1, textTransform: "uppercase", letterSpacing: 0.3 }}>{s.label}</div>
+          <div key={s.label} style={{ background: "#13131f", borderRadius: 6, padding: "6px 4px", textAlign: "center" }}>
+            <div style={{ fontSize: 16, fontWeight: 900, color: s.color }}>{s.value ?? "—"}</div>
+            <div style={{ fontSize: 9, color: "#94A3B8", marginTop: 1, textTransform: "uppercase", letterSpacing: 0.3 }}>{s.label}</div>
           </div>
         ))}
       </div>
