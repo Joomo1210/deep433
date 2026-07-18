@@ -2806,7 +2806,7 @@ function TransferFitGraphic() {
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 10 }}>
                 <BentoBox title="Output" icon="⚽" color="#a855f7">
                   <FitRow label="Goals" val1={target.goals} val2={incumbent.goals} />
                   <FitRow label="Assists" val1={target.assists} val2={incumbent.assists} />
