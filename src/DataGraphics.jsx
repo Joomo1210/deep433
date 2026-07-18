@@ -3325,6 +3325,99 @@ function TeamStatsCompareGraphic() {
   );
 }
 
+// ─── BEST OF EUROPE (Top 2 from each major league, last season) ─────────────
+function BestOfEuropeGraphic() {
+  const cardRef = useRef(null);
+  const [teams, setTeams] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState("");
+  const [statKey, setStatKey] = useState("cleanSheets");
+
+  const STAT_OPTIONS = [
+    { key: "cleanSheets", label: "Clean Sheets", color: "#60a5fa" },
+    { key: "goalsFor", label: "Goals Scored", color: "#4ade80" },
+    { key: "goalsAgainst", label: "Goals Conceded", color: "#f87171" },
+    { key: "wins", label: "Wins", color: "#fbbf24" },
+  ];
+
+  const load = async () => {
+    setLoading(true); setError(""); setTeams(null);
+    try {
+      const r = await fetch(`/api/team-stats?mode=eurotop10`);
+      const d = await r.json();
+      if (!d.teams?.length) throw new Error("Could not load data");
+      setTeams(d.teams);
+    } catch (e) { setError(e.message); }
+    setLoading(false);
+  };
+
+  const download = async () => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, `deep433-best-of-europe-${statKey}.png`);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const activeStat = STAT_OPTIONS.find(s => s.key === statKey);
+  const sorted = teams ? [...teams].sort((a, b) => (b[statKey] || 0) - (a[statKey] || 0)) : [];
+  const maxVal = sorted.length ? Math.max(...sorted.map(t => t[statKey] || 0), 1) : 1;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#999" }}>Top 2 finishers from each of the 5 major leagues, last completed season.</div>
+
+      {!teams && (
+        <button onClick={load} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
+          {loading ? "Loading all 10 teams..." : "Load Best of Europe"}
+        </button>
+      )}
+      {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
+
+      {teams && (
+        <>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {STAT_OPTIONS.map(s => (
+              <button key={s.key} onClick={() => setStatKey(s.key)} style={{ background: statKey === s.key ? `${s.color}22` : "none", border: `1px solid ${statKey === s.key ? s.color : "#2a2a3a"}`, borderRadius: 16, color: statKey === s.key ? s.color : "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px" }}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "22px 18px 18px" }}>
+              <div style={{ textAlign: "center", marginBottom: 4 }}>
+                <span style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>Best of Europe</span>
+              </div>
+              <div style={{ textAlign: "center", marginBottom: 18 }}>
+                <span style={{ fontSize: 11, color: activeStat.color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>Ranked by {activeStat.label}</span>
+              </div>
+
+              {sorted.map((t, i) => (
+                <div key={i} style={{ marginBottom: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                    {t.logo && <img src={t.logo} alt="" crossOrigin="anonymous" style={{ width: 22, height: 22, objectFit: "contain", flexShrink: 0 }} />}
+                    <span style={{ fontSize: 13, fontWeight: 800, color: "#f0f0f0", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.team}</span>
+                    <span style={{ fontSize: 10, color: "#999" }}>{t.leagueLabel}</span>
+                    <span style={{ fontSize: 17, fontWeight: 900, color: activeStat.color, minWidth: 26, textAlign: "right" }}>{t[statKey] ?? "—"}</span>
+                  </div>
+                  <div style={{ height: 7, background: "#1a1a24", borderRadius: 4, overflow: "hidden" }}>
+                    <div style={{ width: `${Math.max(((t[statKey] || 0) / maxVal) * 100, 4)}%`, height: "100%", background: activeStat.color, borderRadius: 4 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </GraphicCard>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function DataGraphics({ history = [], supabase }) {
   const [activeSection, setActiveSection] = useState("match");
 
@@ -3342,6 +3435,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "top",      label: "🥇 Leaderboard" },
     { id: "team",     label: "🛡 Team Stats" },
     { id: "teamcompare", label: "⚔️ Team Compare" },
+    { id: "bestofeurope", label: "🏆 Best of Europe" },
     { id: "recap",    label: "📋 Recap" },
     { id: "bracket",  label: "🏆 Bracket" },
   ];
@@ -3371,6 +3465,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "top"      && <TopScorersGraphic />}
       {activeSection === "team"     && <TeamStatsGraphic />}
       {activeSection === "teamcompare" && <TeamStatsCompareGraphic />}
+      {activeSection === "bestofeurope" && <BestOfEuropeGraphic />}
       {activeSection === "recap"    && <RecapGraphic history={history} />}
       {activeSection === "bracket"  && <BracketGraphic history={history} />}
     </div>
