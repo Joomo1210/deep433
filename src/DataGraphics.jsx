@@ -1,6 +1,40 @@
 import { useState, useRef, useEffect } from "react";
 import DeepInsightsPanel from "./DeepInsightsPanel";
 
+// ─── Shared mobile-safe download function ────────────────────────────────────
+// Uses the Web Share API on devices that support it (iOS Safari/Chrome) since
+// the standard `download` attribute doesn't reliably work on iOS — it just
+// opens the image instead of saving it. Falls back to standard download link
+// for desktop and any browser without Web Share file support.
+async function downloadCardImage(cardElement, filename, bgColor = "#0a0a0f") {
+  if (!cardElement) return;
+  if (!window.html2canvas) {
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+    document.head.appendChild(s);
+    await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
+  }
+  const canvas = await window.html2canvas(cardElement, { backgroundColor: bgColor, scale: 2, useCORS: true, logging: false });
+
+  if (navigator.canShare && navigator.share) {
+    try {
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+      const file = new File([blob], filename, { type: "image/png" });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file] });
+        return;
+      }
+    } catch {
+      // User cancelled share sheet, or share failed — fall through to standard download
+    }
+  }
+
+  const link = document.createElement("a");
+  link.download = filename;
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+}
+
 const LEAGUE_OPTIONS = [
   { id: "wc2026", label: "FIFA World Cup 2026" },
   { id: "pl",     label: "Premier League" },
@@ -296,23 +330,12 @@ function MatchStatsGraphic() {
   };
 
   const download = async () => {
-    if (!cardRef.current) return;
     setDownloading(true);
     // Ensure bars/numbers are in their settled state before capturing
     setAnimate(false);
     await new Promise(res => setTimeout(res, 120));
     try {
-      if (!window.html2canvas) {
-        const s = document.createElement("script");
-        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
-        document.head.appendChild(s);
-        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
-      }
-      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
-      const link = document.createElement("a");
-      link.download = `deep433-match-stats-${fixtureId}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      await downloadCardImage(cardRef.current, `deep433-match-stats-${fixtureId}.png`);
     } catch { alert("Download failed — try screenshotting manually"); }
     setDownloading(false);
   };
@@ -455,20 +478,9 @@ function PlayerRatingsGraphic() {
   };
 
   const download = async () => {
-    if (!cardRef.current) return;
     setDownloading(true);
     try {
-      if (!window.html2canvas) {
-        const s = document.createElement("script");
-        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
-        document.head.appendChild(s);
-        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
-      }
-      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
-      const link = document.createElement("a");
-      link.download = `deep433-player-ratings-${fixtureId}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      await downloadCardImage(cardRef.current, `deep433-player-ratings-${fixtureId}.png`);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
@@ -567,20 +579,9 @@ function TopScorersGraphic() {
   };
 
   const download = async () => {
-    if (!cardRef.current) return;
     setDownloading(true);
     try {
-      if (!window.html2canvas) {
-        const s = document.createElement("script");
-        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
-        document.head.appendChild(s);
-        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
-      }
-      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
-      const link = document.createElement("a");
-      link.download = `deep433-${type}-${leagueId}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      await downloadCardImage(cardRef.current, `deep433-${type}-${leagueId}.png`);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
@@ -756,20 +757,9 @@ function TeamStatsGraphic() {
   };
 
   const download = async () => {
-    if (!cardRef.current) return;
     setDownloading(true);
     try {
-      if (!window.html2canvas) {
-        const s = document.createElement("script");
-        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
-        document.head.appendChild(s);
-        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
-      }
-      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
-      const link = document.createElement("a");
-      link.download = `deep433-team-stats-${data?.team}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      await downloadCardImage(cardRef.current, `deep433-team-stats-${data?.team}.png`);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
@@ -1008,20 +998,9 @@ function RecapGraphic({ history = [] }) {
   };
 
   const download = async () => {
-    if (!cardRef.current) return;
     setDownloading(true);
     try {
-      if (!window.html2canvas) {
-        const s = document.createElement("script");
-        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
-        document.head.appendChild(s);
-        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
-      }
-      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
-      const link = document.createElement("a");
-      link.download = `deep433-recap-${selectedFixture?.home}-vs-${selectedFixture?.away}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      await downloadCardImage(cardRef.current, `deep433-recap-${selectedFixture?.home}-vs-${selectedFixture?.away}.png`);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
@@ -1286,20 +1265,9 @@ function BracketGraphic({ history = [] }) {
   };
 
   const download = async () => {
-    if (!cardRef.current) return;
     setDownloading(true);
     try {
-      if (!window.html2canvas) {
-        const s = document.createElement("script");
-        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
-        document.head.appendChild(s);
-        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
-      }
-      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
-      const link = document.createElement("a");
-      link.download = `deep433-bracket-${leagueId}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      await downloadCardImage(cardRef.current, `deep433-bracket-${leagueId}.png`);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
@@ -1599,20 +1567,9 @@ function DeepInsightsGraphic({ history = [] }) {
   };
 
   const download = async () => {
-    if (!cardRef.current) return;
     setDownloading(true);
     try {
-      if (!window.html2canvas) {
-        const s = document.createElement("script");
-        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
-        document.head.appendChild(s);
-        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
-      }
-      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
-      const link = document.createElement("a");
-      link.download = `deep433-insights-${selectedFixture?.home}-vs-${selectedFixture?.away}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      await downloadCardImage(cardRef.current, `deep433-insights-${selectedFixture?.home}-vs-${selectedFixture?.away}.png`);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
@@ -1786,23 +1743,9 @@ function MatchPitchViewGraphic() {
   };
 
   const download = async () => {
-    if (!cardRef.current) return;
     setDownloading(true);
     try {
-      if (!window.html2canvas) {
-        const s = document.createElement("script");
-        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
-        document.head.appendChild(s);
-        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
-      }
-      const canvas = await window.html2canvas(cardRef.current, {
-        backgroundColor: "#0a3d1f", scale: 2, useCORS: true, logging: false,
-        allowTaint: false,
-      });
-      const link = document.createElement("a");
-      link.download = `deep433-lineup-${selectedFixture?.home}-vs-${selectedFixture?.away}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      await downloadCardImage(cardRef.current, `deep433-lineup-${selectedFixture?.home}-vs-${selectedFixture?.away}.png`, "#0a3d1f");
     } catch { alert("Download failed — try screenshotting manually"); }
     setDownloading(false);
   };
@@ -2071,20 +2014,9 @@ function PlayerH2HGraphic() {
   };
 
   const download = async () => {
-    if (!cardRef.current) return;
     setDownloading(true);
     try {
-      if (!window.html2canvas) {
-        const s = document.createElement("script");
-        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
-        document.head.appendChild(s);
-        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
-      }
-      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
-      const link = document.createElement("a");
-      link.download = `deep433-h2h-${player1?.name}-vs-${player2?.name}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      await downloadCardImage(cardRef.current, `deep433-h2h-${player1?.name}-vs-${player2?.name}.png`);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
@@ -2270,20 +2202,9 @@ function GoldenGloveGraphic() {
   };
 
   const download = async () => {
-    if (!cardRef.current) return;
     setDownloading(true);
     try {
-      if (!window.html2canvas) {
-        const s = document.createElement("script");
-        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
-        document.head.appendChild(s);
-        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
-      }
-      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
-      const link = document.createElement("a");
-      link.download = `deep433-golden-glove-${leagueId}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      await downloadCardImage(cardRef.current, `deep433-golden-glove-${leagueId}.png`);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
@@ -2381,20 +2302,9 @@ function MatchH2HGraphic() {
   };
 
   const download = async () => {
-    if (!cardRef.current) return;
     setDownloading(true);
     try {
-      if (!window.html2canvas) {
-        const s = document.createElement("script");
-        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
-        document.head.appendChild(s);
-        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
-      }
-      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
-      const link = document.createElement("a");
-      link.download = `deep433-matchh2h-${player1?.name}-vs-${player2?.name}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      await downloadCardImage(cardRef.current, `deep433-matchh2h-${player1?.name}-vs-${player2?.name}.png`);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
@@ -2715,20 +2625,9 @@ function TransferFitGraphic() {
   };
 
   const download = async () => {
-    if (!cardRef.current) return;
     setDownloading(true);
     try {
-      if (!window.html2canvas) {
-        const s = document.createElement("script");
-        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
-        document.head.appendChild(s);
-        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
-      }
-      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
-      const link = document.createElement("a");
-      link.download = `deep433-transfer-fit-${target?.name}-vs-${incumbent?.name}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      await downloadCardImage(cardRef.current, `deep433-transfer-fit-${target?.name}-vs-${incumbent?.name}.png`);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
@@ -3049,20 +2948,9 @@ function GoalTimingGraphic() {
   };
 
   const download = async () => {
-    if (!cardRef.current) return;
     setDownloading(true);
     try {
-      if (!window.html2canvas) {
-        const s = document.createElement("script");
-        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
-        document.head.appendChild(s);
-        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
-      }
-      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
-      const link = document.createElement("a");
-      link.download = `deep433-goal-timing-${team1?.name}-vs-${team2?.name}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      await downloadCardImage(cardRef.current, `deep433-goal-timing-${team1?.name}-vs-${team2?.name}.png`);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
@@ -3180,20 +3068,9 @@ function HalftimeRecapGraphic() {
   };
 
   const download = async () => {
-    if (!cardRef.current) return;
     setDownloading(true);
     try {
-      if (!window.html2canvas) {
-        const s = document.createElement("script");
-        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
-        document.head.appendChild(s);
-        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
-      }
-      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
-      const link = document.createElement("a");
-      link.download = `deep433-ht-recap-${selectedFixture?.home}-vs-${selectedFixture?.away}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      await downloadCardImage(cardRef.current, `deep433-ht-recap-${selectedFixture?.home}-vs-${selectedFixture?.away}.png`);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
@@ -3345,20 +3222,9 @@ function TeamStatsCompareGraphic() {
   };
 
   const download = async () => {
-    if (!cardRef.current) return;
     setDownloading(true);
     try {
-      if (!window.html2canvas) {
-        const s = document.createElement("script");
-        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
-        document.head.appendChild(s);
-        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
-      }
-      const canvas = await window.html2canvas(cardRef.current, { backgroundColor: "#0a0a0f", scale: 2, useCORS: true, logging: false });
-      const link = document.createElement("a");
-      link.download = `deep433-team-compare-${data1?.team}-vs-${data2?.team}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      await downloadCardImage(cardRef.current, `deep433-team-compare-${data1?.team}-vs-${data2?.team}.png`);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
