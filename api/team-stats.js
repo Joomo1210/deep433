@@ -282,11 +282,24 @@ export default async function handler(req, res) {
 
     if (!s) return res.status(200).json({ available: false });
 
+    // Fetch standings to get the team's actual league table position
+    let position = null;
+    try {
+      const standingsR = await fetch(`https://v3.football.api-sports.io/standings?league=${leagueApiId}&season=${seasonUsed}`, {
+        headers: { "x-apisports-key": apiKey }
+      });
+      const standingsData = await standingsR.json();
+      const table = standingsData.response?.[0]?.league?.standings?.[0] || [];
+      const teamRow = table.find(row => String(row.team?.id) === String(teamId));
+      position = teamRow?.rank || null;
+    } catch {}
+
     res.status(200).json({
       available: true,
       team: s.team?.name,
       logo: s.team?.logo,
       seasonUsed,
+      position,
       form: s.form,
       played: s.fixtures?.played?.total,
       wins: s.fixtures?.wins?.total,
