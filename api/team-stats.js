@@ -23,6 +23,7 @@ export default async function handler(req, res) {
   // ── Best of Europe: top 2 teams from each of the 5 major leagues, last completed season ──
   if (mode === "eurotop10") {
     const BIG5 = ["pl", "laliga", "seriea", "bundesliga", "ligue1"];
+    const debugInfo = [];
     try {
       const teams = [];
 
@@ -37,6 +38,8 @@ export default async function handler(req, res) {
         const standingsData = await standingsR.json();
         const table = standingsData.response?.[0]?.league?.standings?.[0] || [];
         const top2 = table.slice(0, 2);
+
+        let addedForThisLeague = 0;
 
         for (const row of top2) {
           const teamId = row.team?.id;
@@ -60,7 +63,21 @@ export default async function handler(req, res) {
             goalsAgainst: s.goals?.against?.total?.total,
             cleanSheets: s.clean_sheet?.total,
           });
+          addedForThisLeague++;
         }
+
+        debugInfo.push({
+          leagueKey,
+          lastSeasonQueried: lastSeason,
+          standingsGroupsFound: standingsData.response?.[0]?.league?.standings?.length || 0,
+          tableRowsFound: table.length,
+          teamsAdded: addedForThisLeague,
+          standingsApiError: standingsData.errors && Object.keys(standingsData.errors).length ? standingsData.errors : null,
+        });
+      }
+
+      if (req.query.debug === "true") {
+        return res.status(200).json({ debug: true, debugInfo, teamCount: teams.length });
       }
 
       return res.status(200).json({ teams });
