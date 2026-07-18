@@ -3402,7 +3402,7 @@ function TeamStatsCompareGraphic() {
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3 }}>
         {[
           { label: "Played",  value: data.played,       color: "#f0f0f0" },
           { label: "Wins",    value: data.wins,         color: "#4ade80" },
@@ -3414,9 +3414,9 @@ function TeamStatsCompareGraphic() {
           { label: "Avg Scored",   value: data.avgGoalsFor,     color: "#4ade80" },
           { label: "Avg Conceded", value: data.avgGoalsAgainst, color: "#f87171" },
         ].map(s => (
-          <div key={s.label} style={{ background: "#13131f", borderRadius: 6, padding: "7px 6px", textAlign: "center" }}>
-            <div style={{ fontSize: 19, fontWeight: 900, color: s.color }}>{s.value ?? "—"}</div>
-            <div style={{ fontSize: 10, color: "#94A3B8", marginTop: 2, textTransform: "uppercase", letterSpacing: 0.4 }}>{s.label}</div>
+          <div key={s.label} style={{ background: "#13131f", borderRadius: 5, padding: "4px 4px", textAlign: "center" }}>
+            <div style={{ fontSize: 15, fontWeight: 900, color: s.color }}>{s.value ?? "—"}</div>
+            <div style={{ fontSize: 8, color: "#94A3B8", marginTop: 1, textTransform: "uppercase", letterSpacing: 0.3 }}>{s.label}</div>
           </div>
         ))}
       </div>
