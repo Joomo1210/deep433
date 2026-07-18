@@ -82,6 +82,7 @@ export default async function handler(req, res) {
         photo: p.photo,
         position: p.position,
         number: p.number,
+        age: p.age,
       }));
       return res.status(200).json({ players, team: squad.team });
     } catch (err) {
@@ -256,17 +257,36 @@ export default async function handler(req, res) {
   }
 
   try {
-    const r = await fetch(`https://v3.football.api-sports.io/teams/statistics?league=${leagueApiId}&season=${leagueSeason}&team=${teamId}`, {
+    let r = await fetch(`https://v3.football.api-sports.io/teams/statistics?league=${leagueApiId}&season=${leagueSeason}&team=${teamId}`, {
       headers: { "x-apisports-key": apiKey }
     });
-    const data = await r.json();
-    const s = data.response;
+    let data = await r.json();
+    let s = data.response;
+    let seasonUsed = leagueSeason;
+
+    // If the current season has zero matches played, it likely hasn't kicked off yet —
+    // automatically fall back to the previous season's completed stats instead.
+    // Once real matches start being recorded, this will naturally switch back on its own.
+    const playedCount = s?.fixtures?.played?.total || 0;
+    if (playedCount === 0 && !apiLeagueId) {
+      const prevSeason = parseInt(leagueSeason) - 1;
+      const fallbackR = await fetch(`https://v3.football.api-sports.io/teams/statistics?league=${leagueApiId}&season=${prevSeason}&team=${teamId}`, {
+        headers: { "x-apisports-key": apiKey }
+      });
+      const fallbackData = await fallbackR.json();
+      if (fallbackData.response?.fixtures?.played?.total > 0) {
+        s = fallbackData.response;
+        seasonUsed = prevSeason;
+      }
+    }
+
     if (!s) return res.status(200).json({ available: false });
 
     res.status(200).json({
       available: true,
       team: s.team?.name,
       logo: s.team?.logo,
+      seasonUsed,
       form: s.form,
       played: s.fixtures?.played?.total,
       wins: s.fixtures?.wins?.total,
