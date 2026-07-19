@@ -3716,6 +3716,7 @@ function QuickVSGraphic() {
               {[
                 { label: "Tackles", val1: target.tackles, val2: incumbent.tackles },
                 { label: "Dribbles", val1: target.dribbles, val2: incumbent.dribbles },
+                { label: "Interceptions", val1: target.interceptions, val2: incumbent.interceptions },
               ].map((row, i) => {
                 const v1 = parseFloat(row.val1) || 0;
                 const v2 = parseFloat(row.val2) || 0;
