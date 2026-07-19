@@ -244,6 +244,7 @@ export default async function handler(req, res) {
         keyPasses: sum("passes.key"),
         dribbles: sum("dribbles.success"),
         tackles: sum("tackles.total"),
+        interceptions: sum("tackles.interceptions"),
         yellowCards: sum("cards.yellow"),
         redCards: sum("cards.red"),
         competitions: statsArr.length,
