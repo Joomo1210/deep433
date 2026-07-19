@@ -3580,6 +3580,168 @@ function ZoneOfInfluenceGraphic() {
   );
 }
 
+// ─── QUICK VS (Tackles + Dribbles only, fast narrative card) ────────────────
+function QuickVSGraphic() {
+  const cardRef = useRef(null);
+  const [season, setSeason] = useState(2025);
+
+  const [searchTargetTeam, setSearchTargetTeam] = useState("");
+  const [suggestTargetTeam, setSuggestTargetTeam] = useState([]);
+  const [targetTeam, setTargetTeam] = useState(null);
+  const [searchingTargetTeam, setSearchingTargetTeam] = useState(false);
+  const [targetSquad, setTargetSquad] = useState([]);
+  const [targetPlayerId, setTargetPlayerId] = useState("");
+  const [target, setTarget] = useState(null);
+
+  const [searchIncumbentTeam, setSearchIncumbentTeam] = useState("");
+  const [suggestIncumbentTeam, setSuggestIncumbentTeam] = useState([]);
+  const [incumbentTeam, setIncumbentTeam] = useState(null);
+  const [searchingIncumbentTeam, setSearchingIncumbentTeam] = useState(false);
+  const [incumbentSquad, setIncumbentSquad] = useState([]);
+  const [incumbentPlayerId, setIncumbentPlayerId] = useState("");
+  const [incumbent, setIncumbent] = useState(null);
+
+  const [loadingSquad, setLoadingSquad] = useState(false);
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const searchTeam = async (query, slot) => {
+    if (query.length < 3) {
+      slot === "target" ? setSuggestTargetTeam([]) : setSuggestIncumbentTeam([]);
+      return;
+    }
+    slot === "target" ? setSearchingTargetTeam(true) : setSearchingIncumbentTeam(true);
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
+      const d = await r.json();
+      slot === "target" ? setSuggestTargetTeam(d.teams || []) : setSuggestIncumbentTeam(d.teams || []);
+    } catch {}
+    slot === "target" ? setSearchingTargetTeam(false) : setSearchingIncumbentTeam(false);
+  };
+
+  const selectTeam = async (t, slot) => {
+    setLoadingSquad(true);
+    if (slot === "target") {
+      setTargetTeam(t); setSuggestTargetTeam([]); setSearchTargetTeam(t.name);
+      setTargetPlayerId(""); setTarget(null); setTargetSquad([]);
+    } else {
+      setIncumbentTeam(t); setSuggestIncumbentTeam([]); setSearchIncumbentTeam(t.name);
+      setIncumbentPlayerId(""); setIncumbent(null); setIncumbentSquad([]);
+    }
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsquad&teamId=${t.id}`);
+      const d = await r.json();
+      if (slot === "target") setTargetSquad(d.players || []);
+      else setIncumbentSquad(d.players || []);
+    } catch {}
+    setLoadingSquad(false);
+  };
+
+  const selectPlayerFromSquad = async (playerId, slot) => {
+    if (slot === "target") setTargetPlayerId(playerId); else setIncumbentPlayerId(playerId);
+    const squad = slot === "target" ? targetSquad : incumbentSquad;
+    const basePlayer = squad.find(p => String(p.id) === String(playerId));
+    if (!basePlayer) return;
+
+    const teamInfo = slot === "target" ? targetTeam : incumbentTeam;
+
+    setLoadingStats(true);
+    try {
+      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${playerId}&season=${season}&teamId=${teamInfo?.id}`);
+      const d = await r.json();
+      const enriched = d.available
+        ? { ...d, photo: basePlayer.photo, age: basePlayer.age, team: teamInfo?.name, teamLogo: teamInfo?.logo }
+        : { ...basePlayer, team: teamInfo?.name, teamLogo: teamInfo?.logo };
+      if (slot === "target") setTarget(enriched); else setIncumbent(enriched);
+    } catch {
+      if (slot === "target") setTarget(basePlayer); else setIncumbent(basePlayer);
+    }
+    setLoadingStats(false);
+  };
+
+  const download = async () => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, `deep433-quickvs-${target?.name}-vs-${incumbent?.name}.png`);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Fast attacker-vs-defender narrative — Tackles & Dribbles only. Search any team worldwide.</div>
+
+      <div>
+        <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Season</div>
+        <div style={{ display: "flex", gap: 6 }}>
+          {[{ v: 2025, label: "2025-26 Season" }, { v: 2026, label: "2026 (World Cup)" }].map(s => (
+            <button key={s.v} onClick={() => setSeason(s.v)} style={{ background: season === s.v ? "#4ade8022" : "none", border: `1px solid ${season === s.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: season === s.v ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px" }}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <TeamThenPlayerPicker label="⚡ Player 1" search={searchTargetTeam} setSearch={setSearchTargetTeam} suggestions={suggestTargetTeam} team={targetTeam} searching={searchingTargetTeam} slot="target" color="#a855f7" squad={targetSquad} playerId={targetPlayerId} onSearchTeam={searchTeam} onSelectTeam={selectTeam} onSelectPlayer={selectPlayerFromSquad} onClearTeam={() => setTargetTeam(null)} />
+        <TeamThenPlayerPicker label="⚡ Player 2" search={searchIncumbentTeam} setSearch={setSearchIncumbentTeam} suggestions={suggestIncumbentTeam} team={incumbentTeam} searching={searchingIncumbentTeam} slot="incumbent" color="#4ade80" squad={incumbentSquad} playerId={incumbentPlayerId} onSearchTeam={searchTeam} onSelectTeam={selectTeam} onSelectPlayer={selectPlayerFromSquad} onClearTeam={() => setIncumbentTeam(null)} />
+      </div>
+
+      {(loadingSquad || loadingStats) && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 12 }}>Loading...</div>}
+
+      {target && incumbent && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "22px 18px 18px" }}>
+              <div style={{ textAlign: "center", marginBottom: 18 }}>
+                <span style={{ fontSize: 22, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5 }}>Quick VS</span>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 22 }}>
+                <div style={{ textAlign: "center" }}>
+                  {target.photo && <img src={target.photo} alt="" crossOrigin="anonymous" style={{ width: 64, height: 64, borderRadius: "50%", objectFit: "cover", border: "2px solid #a855f7", margin: "0 auto 8px" }} />}
+                  <div style={{ fontSize: 18, fontWeight: 900, color: "#a855f7" }}>{target.name}</div>
+                  <div style={{ fontSize: 12, color: "#e2e8f0", marginTop: 2 }}>{target.team}</div>
+                </div>
+                <div style={{ textAlign: "center", padding: "0 10px" }}>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: "#e2e8f0" }}>VS</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  {incumbent.photo && <img src={incumbent.photo} alt="" crossOrigin="anonymous" style={{ width: 64, height: 64, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 8px" }} />}
+                  <div style={{ fontSize: 18, fontWeight: 900, color: "#4ade80" }}>{incumbent.name}</div>
+                  <div style={{ fontSize: 12, color: "#e2e8f0", marginTop: 2 }}>{incumbent.team}</div>
+                </div>
+              </div>
+
+              {[
+                { label: "Tackles", val1: target.tackles, val2: incumbent.tackles },
+                { label: "Dribbles", val1: target.dribbles, val2: incumbent.dribbles },
+              ].map((row, i) => {
+                const v1 = parseFloat(row.val1) || 0;
+                const v2 = parseFloat(row.val2) || 0;
+                const p1Better = v1 > v2;
+                const p2Better = v2 > v1;
+                return (
+                  <div key={i} style={{ background: "#13131f", borderRadius: 12, padding: "16px", marginBottom: 10, textAlign: "center" }}>
+                    <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 10 }}>{row.label}</div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 42, fontWeight: 900, color: "#a855f7", opacity: p1Better ? 1 : 0.55, letterSpacing: -1.5 }}>{row.val1 ?? "—"}</span>
+                      <span style={{ fontSize: 42, fontWeight: 900, color: "#4ade80", opacity: p2Better ? 1 : 0.55, letterSpacing: -1.5 }}>{row.val2 ?? "—"}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </GraphicCard>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#a855f7,#4ade80)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function DataGraphics({ history = [], supabase }) {
   const [activeSection, setActiveSection] = useState("match");
   const [sectionMenuOpen, setSectionMenuOpen] = useState(false);
@@ -3600,6 +3762,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "teamcompare", label: "⚔️ Team Compare" },
     { id: "bestofeurope", label: "🏆 Best of Europe" },
     { id: "zoneofinfluence", label: "⚔️ Zone of Influence" },
+    { id: "quickvs", label: "⚡ Quick VS" },
     { id: "recap",    label: "📋 Recap" },
     { id: "bracket",  label: "🏆 Bracket" },
   ];
@@ -3639,6 +3802,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "teamcompare" && <TeamStatsCompareGraphic />}
       {activeSection === "bestofeurope" && <BestOfEuropeGraphic />}
       {activeSection === "zoneofinfluence" && <ZoneOfInfluenceGraphic />}
+      {activeSection === "quickvs" && <QuickVSGraphic />}
       {activeSection === "recap"    && <RecapGraphic history={history} />}
       {activeSection === "bracket"  && <BracketGraphic history={history} />}
     </div>
