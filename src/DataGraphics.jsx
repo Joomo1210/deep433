@@ -3409,6 +3409,177 @@ function BestOfEuropeGraphic() {
   );
 }
 
+// ─── ZONE OF INFLUENCE (manual pitch analysis, your own read of the match) ──
+const ZONE_PRESETS = [
+  { key: "rightAttack",   label: "Right Attacking Half-Space", x: 300, y: 130 },
+  { key: "centralBox",    label: "Central Edge of the Box",     x: 210, y: 160 },
+  { key: "leftAttack",    label: "Left Attacking Half-Space",   x: 120, y: 140 },
+  { key: "rightMid",      label: "Right Central Midfield",      x: 300, y: 330 },
+  { key: "centerCircle",  label: "Center Circle / Central Mid", x: 210, y: 340 },
+  { key: "leftMid",       label: "Left Flank (Midfield)",       x: 120, y: 300 },
+  { key: "defensive",     label: "Defensive Half",               x: 210, y: 540 },
+];
+
+function intensityFor(pct) {
+  const p = parseFloat(pct) || 0;
+  if (p >= 35) return { color: "#ef4444", label: "High" };
+  if (p >= 18) return { color: "#f59e0b", label: "Medium-High" };
+  if (p >= 10) return { color: "#eab308", label: "Medium" };
+  if (p > 0) return { color: "#4ade80", label: "Low" };
+  return { color: "#4ade80", label: "" };
+}
+
+function ZoneOfInfluenceGraphic() {
+  const cardRef = useRef(null);
+  const [playerName, setPlayerName] = useState("");
+  const [matchContext, setMatchContext] = useState("");
+  const [zones, setZones] = useState([{ zoneKey: "", pct: "", note: "" }]);
+  const [downloading, setDownloading] = useState(false);
+
+  const updateZone = (i, field, value) => {
+    setZones(prev => prev.map((z, idx) => idx === i ? { ...z, [field]: value } : z));
+  };
+
+  const addZone = () => {
+    if (zones.length >= 6) return;
+    setZones(prev => [...prev, { zoneKey: "", pct: "", note: "" }]);
+  };
+
+  const removeZone = (i) => {
+    setZones(prev => prev.filter((_, idx) => idx !== i));
+  };
+
+  const download = async () => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, `deep433-zone-of-influence-${playerName || "player"}.png`);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const activeZones = zones.filter(z => z.zoneKey && z.pct);
+  const hasContent = playerName && activeZones.length > 0;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Your own read of a player's zone of influence — pick zones, set intensity %, add notes. Not real tracking data, clearly your own analysis.</div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <div>
+          <div style={{ fontSize: 10, color: "#a855f7", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Player Name</div>
+          <input value={playerName} onChange={e => setPlayerName(e.target.value)} placeholder="e.g. Lionel Messi" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+        </div>
+        <div>
+          <div style={{ fontSize: 10, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Match Context</div>
+          <input value={matchContext} onChange={e => setMatchContext(e.target.value)} placeholder="e.g. vs England" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+        </div>
+      </div>
+
+      <div style={{ fontSize: 11, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>Zones (up to 6)</div>
+      {zones.map((z, i) => (
+        <div key={i} style={{ background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, padding: 10 }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+            <select value={z.zoneKey} onChange={e => updateZone(i, "zoneKey", e.target.value)} style={{ flex: 1, background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "7px 8px", outline: "none", fontFamily: "inherit" }}>
+              <option value="">— Select zone —</option>
+              {ZONE_PRESETS.map(zp => <option key={zp.key} value={zp.key}>{zp.label}</option>)}
+            </select>
+            <input value={z.pct} onChange={e => updateZone(i, "pct", e.target.value)} placeholder="%" style={{ width: 60, background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "7px 8px", outline: "none", fontFamily: "inherit", textAlign: "center" }} />
+            {zones.length > 1 && <button onClick={() => removeZone(i)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#f87171", cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "0 10px" }}>✕</button>}
+          </div>
+          <input value={z.note} onChange={e => updateZone(i, "note", e.target.value)} placeholder="Optional note (e.g. Primary hotspot, driving into the box)" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "7px 8px", outline: "none", fontFamily: "inherit" }} />
+        </div>
+      ))}
+      {zones.length < 6 && (
+        <button onClick={addZone} style={{ background: "none", border: "1px dashed #4ade80", borderRadius: 8, color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "8px" }}>+ Add Zone</button>
+      )}
+
+      {hasContent && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "20px 18px" }}>
+              <div style={{ textAlign: "center", marginBottom: 4 }}>
+                <span style={{ fontSize: 11, color: "#a855f7", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>⚔️ Zone of Influence</span>
+              </div>
+              <div style={{ textAlign: "center", marginBottom: 14 }}>
+                <span style={{ fontSize: 18, fontWeight: 900, color: "#f0f0f0" }}>{playerName}</span>
+                {matchContext && <span style={{ fontSize: 13, color: "#e2e8f0" }}> — {matchContext}</span>}
+              </div>
+
+              <div style={{ position: "relative", maxWidth: 320, margin: "0 auto" }}>
+                <svg viewBox="0 0 420 680" xmlns="http://www.w3.org/2000/svg" style={{ display: "block", width: "100%" }}>
+                  <defs>
+                    {activeZones.map((z, i) => {
+                      const intensity = intensityFor(z.pct);
+                      return (
+                        <radialGradient key={i} id={`heat${i}`} cx="50%" cy="50%" r="50%">
+                          <stop offset="0%" stopColor={intensity.color} stopOpacity="0.6" />
+                          <stop offset="60%" stopColor={intensity.color} stopOpacity="0.25" />
+                          <stop offset="100%" stopColor={intensity.color} stopOpacity="0" />
+                        </radialGradient>
+                      );
+                    })}
+                  </defs>
+                  <rect x="2" y="2" width="416" height="676" fill="#0d2818" stroke="#2a4a3a" strokeWidth="2" rx="4" />
+                  <line x1="2" y1="340" x2="418" y2="340" stroke="#2a4a3a" strokeWidth="2" />
+                  <circle cx="210" cy="340" r="60" fill="none" stroke="#2a4a3a" strokeWidth="2" />
+                  <rect x="110" y="20" width="200" height="90" fill="none" stroke="#2a4a3a" strokeWidth="2" />
+                  <rect x="110" y="570" width="200" height="90" fill="none" stroke="#2a4a3a" strokeWidth="2" />
+                  {activeZones.map((z, i) => {
+                    const preset = ZONE_PRESETS.find(zp => zp.key === z.zoneKey);
+                    if (!preset) return null;
+                    const pct = parseFloat(z.pct) || 0;
+                    const radius = 40 + pct * 2.2;
+                    return <ellipse key={i} cx={preset.x} cy={preset.y} rx={radius} ry={radius * 0.75} fill={`url(#heat${i})`} />;
+                  })}
+                </svg>
+
+                {activeZones.map((z, i) => {
+                  const preset = ZONE_PRESETS.find(zp => zp.key === z.zoneKey);
+                  if (!preset || !z.note) return null;
+                  const intensity = intensityFor(z.pct);
+                  const leftPct = (preset.x / 420) * 100;
+                  const topPct = (preset.y / 680) * 100;
+                  const alignLeft = leftPct < 50;
+                  return (
+                    <div key={i} style={{
+                      position: "absolute", top: `${topPct}%`, [alignLeft ? "left" : "right"]: "4%",
+                      transform: "translateY(-50%)", background: "#13131fee", border: "1px solid #2a2a3a", borderRadius: 8,
+                      padding: "5px 9px", fontSize: 10, fontWeight: 700, color: "#f0f0f0", maxWidth: 120,
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+                    }}>
+                      <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: intensity.color, marginRight: 4 }} />
+                      {z.note}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", marginTop: 14 }}>
+                {activeZones.map((z, i) => {
+                  const preset = ZONE_PRESETS.find(zp => zp.key === z.zoneKey);
+                  const intensity = intensityFor(z.pct);
+                  return (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, background: "#13131f", borderRadius: 6, padding: "4px 8px" }}>
+                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: intensity.color }} />
+                      <span style={{ fontSize: 10, color: "#e2e8f0" }}>{preset?.label}</span>
+                      <span style={{ fontSize: 11, fontWeight: 900, color: intensity.color }}>{z.pct}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div style={{ fontSize: 9, color: "#e2e8f0", textAlign: "center", marginTop: 12 }}>Deep433's own analysis — not tracking data</div>
+            </div>
+          </GraphicCard>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function DataGraphics({ history = [], supabase }) {
   const [activeSection, setActiveSection] = useState("match");
   const [sectionMenuOpen, setSectionMenuOpen] = useState(false);
@@ -3428,6 +3599,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "team",     label: "🛡 Team Stats" },
     { id: "teamcompare", label: "⚔️ Team Compare" },
     { id: "bestofeurope", label: "🏆 Best of Europe" },
+    { id: "zoneofinfluence", label: "⚔️ Zone of Influence" },
     { id: "recap",    label: "📋 Recap" },
     { id: "bracket",  label: "🏆 Bracket" },
   ];
@@ -3466,6 +3638,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "team"     && <TeamStatsGraphic />}
       {activeSection === "teamcompare" && <TeamStatsCompareGraphic />}
       {activeSection === "bestofeurope" && <BestOfEuropeGraphic />}
+      {activeSection === "zoneofinfluence" && <ZoneOfInfluenceGraphic />}
       {activeSection === "recap"    && <RecapGraphic history={history} />}
       {activeSection === "bracket"  && <BracketGraphic history={history} />}
     </div>
