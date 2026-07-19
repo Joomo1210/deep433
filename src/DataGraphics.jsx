@@ -3694,7 +3694,7 @@ function QuickVSGraphic() {
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "22px 18px 18px" }}>
               <div style={{ textAlign: "center", marginBottom: 18 }}>
-                <span style={{ fontSize: 22, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5 }}>Quick VS</span>
+                <span style={{ fontSize: 22, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5 }}>THE BATTLE</span>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 22 }}>
