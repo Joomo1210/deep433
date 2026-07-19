@@ -1,12 +1,28 @@
 import { useState, useRef, useEffect } from "react";
 import DeepInsightsPanel from "./DeepInsightsPanel";
 
+// Country name -> ISO code, for flag images (flagcdn.com) — covers national teams
+const TEAM_FLAG_CODES = {
+  "Mexico": "mx", "South Africa": "za", "Korea Republic": "kr", "Czechia": "cz",
+  "Canada": "ca", "Bosnia and Herzegovina": "ba", "USA": "us", "Paraguay": "py",
+  "Qatar": "qa", "Switzerland": "ch", "Brazil": "br", "Morocco": "ma",
+  "Haiti": "ht", "Scotland": "gb-sct", "Australia": "au", "Türkiye": "tr",
+  "Germany": "de", "Curaçao": "cw", "Netherlands": "nl", "Japan": "jp",
+  "Côte d'Ivoire": "ci", "Ecuador": "ec", "Sweden": "se", "Tunisia": "tn",
+  "Spain": "es", "Cabo Verde": "cv", "Belgium": "be", "Egypt": "eg",
+  "Saudi Arabia": "sa", "Uruguay": "uy", "IR Iran": "ir", "New Zealand": "nz",
+  "France": "fr", "Senegal": "sn", "Iraq": "iq", "Norway": "no",
+  "Argentina": "ar", "Algeria": "dz", "Austria": "at", "Jordan": "jo",
+  "Portugal": "pt", "Congo DR": "cd", "England": "gb-eng", "Croatia": "hr",
+  "Ghana": "gh", "Panama": "pa", "Uzbekistan": "uz", "Colombia": "co",
+};
+
 // ─── Shared mobile-safe download function ────────────────────────────────────
 // Uses the Web Share API on devices that support it (iOS Safari/Chrome) since
 // the standard `download` attribute doesn't reliably work on iOS — it just
 // opens the image instead of saving it. Falls back to standard download link
 // for desktop and any browser without Web Share file support.
-async function downloadCardImage(cardElement, filename, bgColor = "#0a0a0f") {
+async function downloadCardImage(cardElement, filename, bgColor = "#0a0a0f", transparent = false) {
   if (!cardElement) return;
   if (!window.html2canvas) {
     const s = document.createElement("script");
@@ -14,7 +30,7 @@ async function downloadCardImage(cardElement, filename, bgColor = "#0a0a0f") {
     document.head.appendChild(s);
     await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
   }
-  const canvas = await window.html2canvas(cardElement, { backgroundColor: bgColor, scale: 2, useCORS: true, logging: false });
+  const canvas = await window.html2canvas(cardElement, { backgroundColor: transparent ? null : bgColor, scale: 2, useCORS: true, logging: false });
 
   if (navigator.canShare && navigator.share) {
     try {
@@ -329,13 +345,13 @@ function MatchStatsGraphic() {
     setLoading(false);
   };
 
-  const download = async () => {
+  const download = async (transparent = false) => {
     setDownloading(true);
     // Ensure bars/numbers are in their settled state before capturing
     setAnimate(false);
     await new Promise(res => setTimeout(res, 120));
     try {
-      await downloadCardImage(cardRef.current, `deep433-match-stats-${fixtureId}.png`);
+      await downloadCardImage(cardRef.current, `deep433-match-stats-${fixtureId}.png`, undefined, transparent);
     } catch { alert("Download failed — try screenshotting manually"); }
     setDownloading(false);
   };
@@ -416,6 +432,9 @@ function MatchStatsGraphic() {
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
           </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
         </>
       )}
     </div>
@@ -477,10 +496,10 @@ function PlayerRatingsGraphic() {
     setLoading(false);
   };
 
-  const download = async () => {
+  const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-player-ratings-${fixtureId}.png`);
+      await downloadCardImage(cardRef.current, `deep433-player-ratings-${fixtureId}.png`, undefined, transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
@@ -551,6 +570,9 @@ function PlayerRatingsGraphic() {
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
           </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
         </>
       )}
     </div>
@@ -578,10 +600,10 @@ function TopScorersGraphic() {
     setLoading(false);
   };
 
-  const download = async () => {
+  const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-${type}-${leagueId}.png`);
+      await downloadCardImage(cardRef.current, `deep433-${type}-${leagueId}.png`, undefined, transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
@@ -714,6 +736,9 @@ function TopScorersGraphic() {
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
           </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
         </>
       )}
     </div>
@@ -756,10 +781,10 @@ function TeamStatsGraphic() {
     setLoading(false);
   };
 
-  const download = async () => {
+  const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-team-stats-${data?.team}.png`);
+      await downloadCardImage(cardRef.current, `deep433-team-stats-${data?.team}.png`, undefined, transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
@@ -895,6 +920,9 @@ function TeamStatsGraphic() {
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
           </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
         </>
       )}
     </div>
@@ -997,10 +1025,10 @@ function RecapGraphic({ history = [] }) {
     });
   };
 
-  const download = async () => {
+  const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-recap-${selectedFixture?.home}-vs-${selectedFixture?.away}.png`);
+      await downloadCardImage(cardRef.current, `deep433-recap-${selectedFixture?.home}-vs-${selectedFixture?.away}.png`, undefined, transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
@@ -1206,6 +1234,9 @@ function RecapGraphic({ history = [] }) {
               <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 19, fontWeight: 800, padding: "12px", width: "100%" }}>
                 {downloading ? "Generating..." : "⬇ Download Recap Card"}
               </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
             </>
           )}
         </>
@@ -1264,10 +1295,10 @@ function BracketGraphic({ history = [] }) {
     return r?.matches[parseInt(mi)] || null;
   };
 
-  const download = async () => {
+  const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-bracket-${leagueId}.png`);
+      await downloadCardImage(cardRef.current, `deep433-bracket-${leagueId}.png`, undefined, transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
@@ -1566,10 +1597,10 @@ function DeepInsightsGraphic({ history = [] }) {
     setLoading(false);
   };
 
-  const download = async () => {
+  const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-insights-${selectedFixture?.home}-vs-${selectedFixture?.away}.png`);
+      await downloadCardImage(cardRef.current, `deep433-insights-${selectedFixture?.home}-vs-${selectedFixture?.away}.png`, undefined, transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
@@ -1709,6 +1740,9 @@ function DeepInsightsGraphic({ history = [] }) {
               <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
                 {downloading ? "Generating..." : "⬇ Download PNG"}
               </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
             </>
           )}
         </>
@@ -1742,10 +1776,10 @@ function MatchPitchViewGraphic() {
     setLoading(false);
   };
 
-  const download = async () => {
+  const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-lineup-${selectedFixture?.home}-vs-${selectedFixture?.away}.png`, "#0a3d1f");
+      await downloadCardImage(cardRef.current, `deep433-lineup-${selectedFixture?.home}-vs-${selectedFixture?.away}.png`, "#0a3d1f", transparent);
     } catch { alert("Download failed — try screenshotting manually"); }
     setDownloading(false);
   };
@@ -1922,6 +1956,9 @@ function MatchPitchViewGraphic() {
               <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
                 {downloading ? "Generating..." : "⬇ Download Pitch View PNG"}
               </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
             </>
           )}
         </>
@@ -2013,10 +2050,10 @@ function PlayerH2HGraphic() {
     }
   };
 
-  const download = async () => {
+  const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-h2h-${player1?.name}-vs-${player2?.name}.png`);
+      await downloadCardImage(cardRef.current, `deep433-h2h-${player1?.name}-vs-${player2?.name}.png`, undefined, transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
@@ -2128,6 +2165,9 @@ function PlayerH2HGraphic() {
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
           </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
         </>
       )}
     </div>
@@ -2201,10 +2241,10 @@ function GoldenGloveGraphic() {
     setLoading(false);
   };
 
-  const download = async () => {
+  const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-golden-glove-${leagueId}.png`);
+      await downloadCardImage(cardRef.current, `deep433-golden-glove-${leagueId}.png`, undefined, transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
@@ -2266,6 +2306,9 @@ function GoldenGloveGraphic() {
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
           </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
         </>
       )}
     </div>
@@ -2301,10 +2344,10 @@ function MatchH2HGraphic() {
     setLoading(false);
   };
 
-  const download = async () => {
+  const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-matchh2h-${player1?.name}-vs-${player2?.name}.png`);
+      await downloadCardImage(cardRef.current, `deep433-matchh2h-${player1?.name}-vs-${player2?.name}.png`, undefined, transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
@@ -2431,6 +2474,9 @@ function MatchH2HGraphic() {
           </GraphicCard>
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
           </button>
         </>
       )}
@@ -2626,10 +2672,10 @@ function TransferFitGraphic() {
     setDebugLoading(false);
   };
 
-  const download = async () => {
+  const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-transfer-fit-${target?.name}-vs-${incumbent?.name}.png`);
+      await downloadCardImage(cardRef.current, `deep433-transfer-fit-${target?.name}-vs-${incumbent?.name}.png`, undefined, transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
@@ -2748,6 +2794,9 @@ function TransferFitGraphic() {
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#a855f7,#818cf8)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 19, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
           </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
           <button onClick={fetchDebug} disabled={debugLoading} style={{ background: "none", border: "1px dashed #444", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 16, fontWeight: 600, padding: "8px", width: "100%" }}>
             {debugLoading ? "Loading raw data..." : "🐛 Show Raw Data (Target)"}
           </button>
@@ -2800,6 +2849,9 @@ function TransferFitGraphic() {
           </GraphicCard>
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#a855f7,#818cf8)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
           </button>
         </>
       )}
@@ -2938,10 +2990,10 @@ function GoalTimingGraphic() {
     setLoading(false);
   };
 
-  const download = async () => {
+  const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-goal-timing-${team1?.name}-vs-${team2?.name}.png`);
+      await downloadCardImage(cardRef.current, `deep433-goal-timing-${team1?.name}-vs-${team2?.name}.png`, undefined, transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
@@ -3029,6 +3081,9 @@ function GoalTimingGraphic() {
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
           </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
         </>
       )}
     </div>
@@ -3058,10 +3113,10 @@ function HalftimeRecapGraphic() {
     setLoading(false);
   };
 
-  const download = async () => {
+  const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-ht-recap-${selectedFixture?.home}-vs-${selectedFixture?.away}.png`);
+      await downloadCardImage(cardRef.current, `deep433-ht-recap-${selectedFixture?.home}-vs-${selectedFixture?.away}.png`, undefined, transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
@@ -3155,6 +3210,9 @@ function HalftimeRecapGraphic() {
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
           </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
         </>
       )}
 
@@ -3212,10 +3270,10 @@ function TeamStatsCompareGraphic() {
     setLoading(false);
   };
 
-  const download = async () => {
+  const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-team-compare-${data1?.team}-vs-${data2?.team}.png`);
+      await downloadCardImage(cardRef.current, `deep433-team-compare-${data1?.team}-vs-${data2?.team}.png`, undefined, transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
@@ -3310,6 +3368,9 @@ function TeamStatsCompareGraphic() {
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
           </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
         </>
       )}
     </div>
@@ -3343,10 +3404,10 @@ function BestOfEuropeGraphic() {
     setLoading(false);
   };
 
-  const download = async () => {
+  const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-best-of-europe-${statKey}.png`);
+      await downloadCardImage(cardRef.current, `deep433-best-of-europe-${statKey}.png`, undefined, transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
@@ -3403,6 +3464,9 @@ function BestOfEuropeGraphic() {
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
           </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
         </>
       )}
     </div>
@@ -3449,10 +3513,10 @@ function ZoneOfInfluenceGraphic() {
     setZones(prev => prev.filter((_, idx) => idx !== i));
   };
 
-  const download = async () => {
+  const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-zone-of-influence-${playerName || "player"}.png`);
+      await downloadCardImage(cardRef.current, `deep433-zone-of-influence-${playerName || "player"}.png`, undefined, transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
@@ -3574,6 +3638,9 @@ function ZoneOfInfluenceGraphic() {
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
           </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
         </>
       )}
     </div>
@@ -3659,10 +3726,10 @@ function QuickVSGraphic() {
     setLoadingStats(false);
   };
 
-  const download = async () => {
+  const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-quickvs-${target?.name}-vs-${incumbent?.name}.png`);
+      await downloadCardImage(cardRef.current, `deep433-quickvs-${target?.name}-vs-${incumbent?.name}.png`, undefined, transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
@@ -3692,50 +3759,39 @@ function QuickVSGraphic() {
       {target && incumbent && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "22px 18px 18px" }}>
-              <div style={{ textAlign: "center", marginBottom: 18 }}>
-                <span style={{ fontSize: 22, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5 }}>THE BATTLE</span>
+            <div style={{ padding: "26px 18px" }}>
+              <div style={{ textAlign: "center", marginBottom: 22 }}>
+                <span style={{ fontSize: 24, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5 }}>THE BATTLE</span>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 22 }}>
-                <div style={{ textAlign: "center" }}>
-                  {target.photo && <img src={target.photo} alt="" crossOrigin="anonymous" style={{ width: 64, height: 64, borderRadius: "50%", objectFit: "cover", border: "2px solid #a855f7", margin: "0 auto 8px" }} />}
-                  <div style={{ fontSize: 18, fontWeight: 900, color: "#a855f7" }}>{target.name}</div>
-                  <div style={{ fontSize: 12, color: "#e2e8f0", marginTop: 2 }}>{target.team}</div>
-                </div>
-                <div style={{ textAlign: "center", padding: "0 10px" }}>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: "#e2e8f0" }}>VS</div>
-                </div>
-                <div style={{ textAlign: "center" }}>
-                  {incumbent.photo && <img src={incumbent.photo} alt="" crossOrigin="anonymous" style={{ width: 64, height: 64, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 8px" }} />}
-                  <div style={{ fontSize: 18, fontWeight: 900, color: "#4ade80" }}>{incumbent.name}</div>
-                  <div style={{ fontSize: 12, color: "#e2e8f0", marginTop: 2 }}>{incumbent.team}</div>
-                </div>
-              </div>
-
-              {[
-                { label: "Tackles", val1: target.tackles, val2: incumbent.tackles },
-                { label: "Dribbles", val1: target.dribbles, val2: incumbent.dribbles },
-                { label: "Interceptions", val1: target.interceptions, val2: incumbent.interceptions },
-              ].map((row, i) => {
-                const v1 = parseFloat(row.val1) || 0;
-                const v2 = parseFloat(row.val2) || 0;
-                const p1Better = v1 > v2;
-                const p2Better = v2 > v1;
-                return (
-                  <div key={i} style={{ background: "#13131f", borderRadius: 12, padding: "16px", marginBottom: 10, textAlign: "center" }}>
-                    <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 10 }}>{row.label}</div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 42, fontWeight: 900, color: "#a855f7", opacity: p1Better ? 1 : 0.55, letterSpacing: -1.5 }}>{row.val1 ?? "—"}</span>
-                      <span style={{ fontSize: 42, fontWeight: 900, color: "#4ade80", opacity: p2Better ? 1 : 0.55, letterSpacing: -1.5 }}>{row.val2 ?? "—"}</span>
-                    </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                <div style={{ textAlign: "center", flex: 1 }}>
+                  {target.photo && <img src={target.photo} alt="" crossOrigin="anonymous" style={{ width: 92, height: 92, borderRadius: "50%", objectFit: "cover", border: "3px solid #a855f7", margin: "0 auto 10px" }} />}
+                  <div style={{ fontSize: 19, fontWeight: 900, color: "#a855f7" }}>{target.name}</div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 4 }}>
+                    {TEAM_FLAG_CODES[target.team] && <img src={`https://flagcdn.com/w40/${TEAM_FLAG_CODES[target.team]}.png`} alt="" style={{ width: 18, height: 13, objectFit: "cover", borderRadius: 2 }} />}
+                    <span style={{ fontSize: 13, color: "#e2e8f0" }}>{target.team}</span>
                   </div>
-                );
-              })}
+                </div>
+                <div style={{ textAlign: "center", padding: "0 4px" }}>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: "#e2e8f0" }}>VS</div>
+                </div>
+                <div style={{ textAlign: "center", flex: 1 }}>
+                  {incumbent.photo && <img src={incumbent.photo} alt="" crossOrigin="anonymous" style={{ width: 92, height: 92, borderRadius: "50%", objectFit: "cover", border: "3px solid #4ade80", margin: "0 auto 10px" }} />}
+                  <div style={{ fontSize: 19, fontWeight: 900, color: "#4ade80" }}>{incumbent.name}</div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 4 }}>
+                    {TEAM_FLAG_CODES[incumbent.team] && <img src={`https://flagcdn.com/w40/${TEAM_FLAG_CODES[incumbent.team]}.png`} alt="" style={{ width: 18, height: 13, objectFit: "cover", borderRadius: 2 }} />}
+                    <span style={{ fontSize: 13, color: "#e2e8f0" }}>{incumbent.team}</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </GraphicCard>
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#a855f7,#4ade80)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
           </button>
         </>
       )}
