@@ -3799,6 +3799,148 @@ function QuickVSGraphic() {
   );
 }
 
+// ─── BEYOND THE SCORESHEET (single player praise, non-scoresheet stats) ─────
+function BeyondScoresheetGraphic() {
+  const cardRef = useRef(null);
+  const [season, setSeason] = useState(2025);
+
+  const [searchTeam, setSearchTeamText] = useState("");
+  const [suggestTeam, setSuggestTeam] = useState([]);
+  const [team, setTeam] = useState(null);
+  const [searchingTeam, setSearchingTeam] = useState(false);
+  const [squad, setSquad] = useState([]);
+  const [playerId, setPlayerId] = useState("");
+  const [player, setPlayer] = useState(null);
+  const [note, setNote] = useState("");
+
+  const [loadingSquad, setLoadingSquad] = useState(false);
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const doSearchTeam = async (query) => {
+    if (query.length < 3) { setSuggestTeam([]); return; }
+    setSearchingTeam(true);
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
+      const d = await r.json();
+      setSuggestTeam(d.teams || []);
+    } catch {}
+    setSearchingTeam(false);
+  };
+
+  const selectTeamFn = async (t) => {
+    setLoadingSquad(true);
+    setTeam(t); setSuggestTeam([]); setSearchTeamText(t.name);
+    setPlayerId(""); setPlayer(null); setSquad([]);
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsquad&teamId=${t.id}`);
+      const d = await r.json();
+      setSquad(d.players || []);
+    } catch {}
+    setLoadingSquad(false);
+  };
+
+  const selectPlayerFn = async (pid) => {
+    setPlayerId(pid);
+    const basePlayer = squad.find(p => String(p.id) === String(pid));
+    if (!basePlayer) return;
+    setLoadingStats(true);
+    try {
+      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${pid}&season=${season}&teamId=${team?.id}`);
+      const d = await r.json();
+      const enriched = d.available
+        ? { ...d, photo: basePlayer.photo, age: basePlayer.age, team: team?.name, teamLogo: team?.logo }
+        : { ...basePlayer, team: team?.name, teamLogo: team?.logo };
+      setPlayer(enriched);
+    } catch {
+      setPlayer(basePlayer);
+    }
+    setLoadingStats(false);
+  };
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, `deep433-beyond-scoresheet-${player?.name}.png`, undefined, transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Praise for the players whose value doesn't show up in goals and assists. Search any team worldwide.</div>
+
+      <div>
+        <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Season</div>
+        <div style={{ display: "flex", gap: 6 }}>
+          {[{ v: 2025, label: "2025-26 Season" }, { v: 2026, label: "2026 (World Cup)" }].map(s => (
+            <button key={s.v} onClick={() => setSeason(s.v)} style={{ background: season === s.v ? "#4ade8022" : "none", border: `1px solid ${season === s.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: season === s.v ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px" }}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <TeamThenPlayerPicker label="🎯 Player" search={searchTeam} setSearch={setSearchTeamText} suggestions={suggestTeam} team={team} searching={searchingTeam} slot="target" color="#4ade80" squad={squad} playerId={playerId} onSearchTeam={doSearchTeam} onSelectTeam={selectTeamFn} onSelectPlayer={selectPlayerFn} onClearTeam={() => setTeam(null)} />
+
+      {(loadingSquad || loadingStats) && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 12 }}>Loading...</div>}
+
+      {player && (
+        <>
+          <div>
+            <div style={{ fontSize: 10, color: "#a855f7", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Why he stands out (optional note)</div>
+            <input value={note} onChange={e => setNote(e.target.value)} placeholder="e.g. Anchors the midfield without ever making a headline" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+          </div>
+
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "24px 18px" }}>
+              <div style={{ textAlign: "center", marginBottom: 4 }}>
+                <span style={{ fontSize: 11, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>👁️ Beyond The Scoresheet</span>
+              </div>
+
+              <div style={{ textAlign: "center", marginBottom: 18 }}>
+                {player.photo && <img src={player.photo} alt="" crossOrigin="anonymous" style={{ width: 88, height: 88, borderRadius: "50%", objectFit: "cover", border: "3px solid #4ade80", margin: "0 auto 10px" }} />}
+                <div style={{ fontSize: 22, fontWeight: 900, color: "#f0f0f0" }}>{player.name}</div>
+                <div style={{ fontSize: 13, color: "#e2e8f0", marginTop: 2 }}>{player.team}</div>
+              </div>
+
+              {note && (
+                <div style={{ background: "#13131f", border: "1px solid #4ade8033", borderRadius: 10, padding: "12px 16px", marginBottom: 16, textAlign: "center" }}>
+                  <span style={{ fontSize: 13, color: "#f0f0f0", fontStyle: "italic" }}>"{note}"</span>
+                </div>
+              )}
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                {[
+                  { label: "Tackles", value: player.tackles, color: "#4ade80" },
+                  { label: "Interceptions", value: player.interceptions, color: "#60a5fa" },
+                  { label: "Duels Won", value: player.duelsWon, color: "#f59e0b" },
+                  { label: "Key Passes", value: player.keyPasses, color: "#a855f7" },
+                  { label: "Pass Accuracy", value: player.passAccuracy ? `${player.passAccuracy}%` : null, color: "#4ade80" },
+                  { label: "Apps", value: player.appearances, color: "#e2e8f0" },
+                ].map(s => (
+                  <div key={s.label} style={{ background: "#13131f", borderRadius: 10, padding: "14px 10px", textAlign: "center" }}>
+                    <div style={{ fontSize: 26, fontWeight: 900, color: s.color }}>{s.value ?? "—"}</div>
+                    <div style={{ fontSize: 11, color: "#e2e8f0", marginTop: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ fontSize: 10, color: "#e2e8f0", textAlign: "center", marginTop: 14 }}>Not on the scoresheet. Still doing the work.</div>
+            </div>
+          </GraphicCard>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function DataGraphics({ history = [], supabase }) {
   const [activeSection, setActiveSection] = useState("match");
   const [sectionMenuOpen, setSectionMenuOpen] = useState(false);
@@ -3820,6 +3962,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "bestofeurope", label: "🏆 Best of Europe" },
     { id: "zoneofinfluence", label: "⚔️ Zone of Influence" },
     { id: "quickvs", label: "⚡ Quick VS" },
+    { id: "beyondscoresheet", label: "👁️ Beyond The Scoresheet" },
     { id: "recap",    label: "📋 Recap" },
     { id: "bracket",  label: "🏆 Bracket" },
   ];
@@ -3860,6 +4003,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "bestofeurope" && <BestOfEuropeGraphic />}
       {activeSection === "zoneofinfluence" && <ZoneOfInfluenceGraphic />}
       {activeSection === "quickvs" && <QuickVSGraphic />}
+      {activeSection === "beyondscoresheet" && <BeyondScoresheetGraphic />}
       {activeSection === "recap"    && <RecapGraphic history={history} />}
       {activeSection === "bracket"  && <BracketGraphic history={history} />}
     </div>
