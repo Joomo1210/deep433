@@ -224,6 +224,10 @@ export default async function handler(req, res) {
         const ratings = statsArr.map(s => parseFloat(s.games?.rating)).filter(r => !isNaN(r));
         return ratings.length ? (ratings.reduce((a, b) => a + b, 0) / ratings.length) : null;
       };
+      const passAccuracyAvg = () => {
+        const accs = statsArr.map(s => parseFloat(s.passes?.accuracy)).filter(a => !isNaN(a));
+        return accs.length ? Math.round(accs.reduce((a, b) => a + b, 0) / accs.length) : null;
+      };
 
       return res.status(200).json({
         available: true,
@@ -242,9 +246,11 @@ export default async function handler(req, res) {
         shots: sum("shots.total"),
         shotsOnTarget: sum("shots.on"),
         keyPasses: sum("passes.key"),
+        passAccuracy: passAccuracyAvg(),
         dribbles: sum("dribbles.success"),
         tackles: sum("tackles.total"),
         interceptions: sum("tackles.interceptions"),
+        duelsWon: sum("duels.won"),
         yellowCards: sum("cards.yellow"),
         redCards: sum("cards.red"),
         competitions: statsArr.length,
