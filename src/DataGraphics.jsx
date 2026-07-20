@@ -221,8 +221,8 @@ function GraphicCard({ children, cardRef, label, light = false }) {
         }}
       >
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
-        <div style={{ position: "absolute", top: 12, right: 14, zIndex: 2 }}>
-          <span style={{ fontSize: 13, fontWeight: 900, color: light ? "#16a34a" : "#4ade80", letterSpacing: 1 }}>DEEP433</span>
+        <div style={{ position: "absolute", top: 10, right: 12, zIndex: 2 }}>
+          <img src="/deep433.jpg" alt="Deep433" crossOrigin="anonymous" style={{ width: 30, height: 30, borderRadius: "50%", objectFit: "cover" }} />
         </div>
         {/* Centre background watermark */}
         <div style={{
@@ -1070,7 +1070,7 @@ function RecapGraphic({ history = [] }) {
       {/* Brand bar */}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
       <div style={{ position: "absolute", top: 12, right: 14, zIndex: 2, display: "flex", alignItems: "center", gap: 6 }}>
-        <span style={{ fontSize: 16, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
+        <img src="/deep433.jpg" alt="Deep433" crossOrigin="anonymous" style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover" }} />
       </div>
 
       {isLandscape ? (
@@ -1461,7 +1461,7 @@ function BracketGraphic({ history = [] }) {
           <div ref={cardRef} style={{ background: "linear-gradient(145deg, #0a0a0f 0%, #0d0d1a 60%, #0a0f0a 100%)", border: "1px solid #1e1e30", borderRadius: 14, overflow: "hidden", position: "relative", padding: "28px 16px 16px", fontFamily: "'Inter',sans-serif" }}>
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
             <div style={{ position: "absolute", top: 10, right: 12, display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ fontSize: 12, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
+              <img src="/deep433.jpg" alt="Deep433" crossOrigin="anonymous" style={{ width: 26, height: 26, borderRadius: "50%", objectFit: "cover" }} />
               
             </div>
             <div style={{ textAlign: "center", marginBottom: 14 }}>
@@ -1903,7 +1903,7 @@ function MatchPitchViewGraphic() {
                   {/* Brand */}
                   <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
                   <div style={{ position: "absolute", top: 8, right: 10, display: "flex", alignItems: "center", gap: 4 }}>
-                    <span style={{ fontSize: 11, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
+                    <img src="/deep433.jpg" alt="Deep433" crossOrigin="anonymous" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover" }} />
                   </div>
 
                   {/* Home team flag — positioned beside keeper, right side of box (top) */}
