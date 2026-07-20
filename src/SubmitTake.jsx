@@ -9,7 +9,7 @@ const supabase = createClient(
 export default function SubmitTake() {
   const [form, setForm] = useState({
     name: '', x_handle: '', match_covered: '', take: '', stats_backup: '',
-    follows_deep433: false, submitted_before: '',
+    follows_deep433: false, submitted_before: '', email: '', wants_updates: false,
   });
   const [status, setStatus] = useState(null); // null | submitting | success | error
   const [errorMsg, setErrorMsg] = useState('');
@@ -52,6 +52,8 @@ export default function SubmitTake() {
       stats_backup: form.stats_backup.trim() || null,
       follows_deep433: form.follows_deep433,
       submitted_before: form.submitted_before,
+      email: form.email.trim() || null,
+      wants_updates: form.wants_updates,
     });
 
     if (error) {
@@ -142,6 +144,20 @@ export default function SubmitTake() {
                 </label>
               ))}
             </div>
+          </div>
+
+          <Field label="Email (optional)" value={form.email} onChange={v => update('email', v)} placeholder="Only needed if you'd like updates or if you're selected" required={false} />
+
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 14, color: '#D6DED2', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={form.wants_updates}
+                onChange={e => update('wants_updates', e.target.checked)}
+                style={{ marginTop: 3 }}
+              />
+              Yes, also send me occasional Deep433 email updates
+            </label>
           </div>
 
           {errorMsg && <p style={{ color: '#FF5A2D', fontSize: 14, marginBottom: 16 }}>{errorMsg}</p>}
