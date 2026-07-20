@@ -3816,6 +3816,8 @@ function BeyondScoresheetGraphic() {
   const [loadingSquad, setLoadingSquad] = useState(false);
   const [loadingStats, setLoadingStats] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [debugData, setDebugData] = useState(null);
+  const [debugLoading, setDebugLoading] = useState(false);
 
   const doSearchTeam = async (query) => {
     if (query.length < 3) { setSuggestTeam([]); return; }
@@ -3856,6 +3858,20 @@ function BeyondScoresheetGraphic() {
       setPlayer(basePlayer);
     }
     setLoadingStats(false);
+  };
+
+  const fetchDebug = async () => {
+    if (!player || !team) return;
+    setDebugLoading(true);
+    setDebugData(null);
+    try {
+      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${player.id}&season=${season}&teamId=${team.id}&debug=true`);
+      const d = await r.json();
+      setDebugData(d);
+    } catch (e) {
+      setDebugData({ error: e.message });
+    }
+    setDebugLoading(false);
   };
 
   const download = async (transparent = false) => {
@@ -3935,6 +3951,14 @@ function BeyondScoresheetGraphic() {
           <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
             {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
           </button>
+          <button onClick={fetchDebug} disabled={debugLoading} style={{ background: "none", border: "1px dashed #444", borderRadius: 8, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: "8px", width: "100%", marginTop: 6 }}>
+            {debugLoading ? "Loading raw data..." : "🐛 Show Raw Data"}
+          </button>
+          {debugData && (
+            <pre style={{ background: "#0a0a0f", border: "1px solid #2a2a3a", borderRadius: 8, padding: 12, fontSize: 11, color: "#8f8", overflowX: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+              {JSON.stringify(debugData, null, 2)}
+            </pre>
+          )}
         </>
       )}
     </div>
