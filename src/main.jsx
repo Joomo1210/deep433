@@ -6,6 +6,7 @@ import BlogPost from './BlogPost.jsx'
 import AdminNewPost from './AdminNewPost.jsx'
 import AdminEditPost from './AdminEditPost.jsx'
 import AdminReviewSubmissions from './AdminReviewSubmissions.jsx'
+import AdminReviewResults from './AdminReviewResults.jsx'
 import SubmitTake from './SubmitTake.jsx'
 import AdminGate from './AdminGate.jsx'
 
@@ -28,6 +29,9 @@ function Router() {
   }
   if (path === '/admin/review-submissions') {
     return <AdminGate><AdminReviewSubmissions /></AdminGate>;
+  }
+  if (path === '/admin/review-results') {
+    return <AdminGate><AdminReviewResults /></AdminGate>;
   }
   return <App />;
 }
