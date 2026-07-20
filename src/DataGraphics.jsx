@@ -2035,7 +2035,7 @@ function PlayerH2HGraphic() {
     setSeasonLoading(true);
     try {
       const season = leagueId === "wc2026" ? 2026 : 2025;
-      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${player.id}&season=${season}`);
+      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${player.id}&season=${season}${season === 2026 ? '&onlyLeagueId=1' : ''}`);
       const d = await r.json();
       if (d.available) setPlayer(prev => ({ ...prev, ...d, _seasonData: d }));
     } catch {}
@@ -2646,7 +2646,7 @@ function TransferFitGraphic() {
 
     setLoadingStats(true);
     try {
-      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${playerId}&season=${season}&teamId=${teamInfo?.id}`);
+      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${playerId}&season=${season}&teamId=${teamInfo?.id}${season === 2026 ? '&onlyLeagueId=1' : ''}`);
       const d = await r.json();
       const enriched = d.available
         ? { ...d, photo: basePlayer.photo, age: basePlayer.age, team: teamInfo?.name, teamLogo: teamInfo?.logo }
@@ -2663,7 +2663,7 @@ function TransferFitGraphic() {
     setDebugLoading(true);
     setDebugData(null);
     try {
-      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${target.id}&season=${season}&teamId=${targetTeam.id}&debug=true`);
+      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${target.id}&season=${season}&teamId=${targetTeam.id}${season === 2026 ? '&onlyLeagueId=1' : ''}&debug=true`);
       const d = await r.json();
       setDebugData(d);
     } catch (e) {
@@ -3714,7 +3714,7 @@ function QuickVSGraphic() {
 
     setLoadingStats(true);
     try {
-      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${playerId}&season=${season}&teamId=${teamInfo?.id}`);
+      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${playerId}&season=${season}&teamId=${teamInfo?.id}${season === 2026 ? '&onlyLeagueId=1' : ''}`);
       const d = await r.json();
       const enriched = d.available
         ? { ...d, photo: basePlayer.photo, age: basePlayer.age, team: teamInfo?.name, teamLogo: teamInfo?.logo }
@@ -3848,7 +3848,7 @@ function BeyondScoresheetGraphic() {
     if (!basePlayer) return;
     setLoadingStats(true);
     try {
-      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${pid}&season=${season}&teamId=${team?.id}`);
+      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${pid}&season=${season}&teamId=${team?.id}${season === 2026 ? '&onlyLeagueId=1' : ''}`);
       const d = await r.json();
       const enriched = d.available
         ? { ...d, photo: basePlayer.photo, age: basePlayer.age, team: team?.name, teamLogo: team?.logo }
@@ -3865,7 +3865,7 @@ function BeyondScoresheetGraphic() {
     setDebugLoading(true);
     setDebugData(null);
     try {
-      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${player.id}&season=${season}&teamId=${team.id}&debug=true`);
+      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${player.id}&season=${season}&teamId=${team.id}${season === 2026 ? '&onlyLeagueId=1' : ''}&debug=true`);
       const d = await r.json();
       setDebugData(d);
     } catch (e) {
