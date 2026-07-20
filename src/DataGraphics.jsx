@@ -3928,6 +3928,8 @@ function BeyondScoresheetGraphic() {
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 {[
+                  { label: "Goals", value: player.goals, color: "#e2e8f0" },
+                  { label: "Assists", value: player.assists, color: "#e2e8f0" },
                   { label: "Tackles", value: player.tackles, color: "#4ade80" },
                   { label: "Interceptions", value: player.interceptions, color: "#60a5fa" },
                   { label: "Duels Won", value: player.duelsWon, color: "#f59e0b" },
