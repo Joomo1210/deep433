@@ -192,6 +192,13 @@ export default async function handler(req, res) {
         statsArr = statsArr.filter(s => String(s.team?.id) === String(teamId));
       }
 
+      // If a specific competition is requested (e.g. World Cup only), restrict further —
+      // excludes friendlies/other competitions the team played in the same calendar year
+      const { onlyLeagueId } = req.query;
+      if (onlyLeagueId) {
+        statsArr = statsArr.filter(s => String(s.league?.id) === String(onlyLeagueId));
+      }
+
       // Debug mode — see exactly what's being summed, per competition
       if (req.query.debug === "true") {
         return res.status(200).json({
