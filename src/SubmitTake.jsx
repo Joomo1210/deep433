@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -6,19 +6,58 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY
 );
 
+// Storage bucket for images fans attach to their takes.
+// Create once in Supabase (Dashboard > Storage, or the SQL at the bottom
+// of this file). Must be public so <img> tags can load directly.
+const IMAGE_BUCKET = 'community-takes-images';
+
 export default function SubmitTake() {
   const [form, setForm] = useState({
     name: '', x_handle: '', match_covered: '', take: '', stats_backup: '',
     follows_deep433: false, submitted_before: '', email: '', wants_updates: false,
+    image_url: '',
   });
   const [status, setStatus] = useState(null); // null | submitting | success | error
   const [errorMsg, setErrorMsg] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const imageFileInputRef = useRef(null);
 
   const wordCount = form.take.trim() ? form.take.trim().split(/\s+/).length : 0;
   const wordCountValid = wordCount >= 200 && wordCount <= 300;
 
   function update(field, value) {
     setForm(prev => ({ ...prev, [field]: value }));
+  }
+
+  async function handleImagePick(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    setErrorMsg('');
+    try {
+      const ext = file.name.split('.').pop();
+      const path = `${crypto.randomUUID()}.${ext}`;
+
+      const { error } = await supabase.storage.from(IMAGE_BUCKET).upload(path, file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+      if (error) throw error;
+
+      const { data } = supabase.storage.from(IMAGE_BUCKET).getPublicUrl(path);
+      update('image_url', data.publicUrl);
+    } catch (err) {
+      setErrorMsg(`Image upload failed: ${err.message}`);
+    } finally {
+      setUploadingImage(false);
+      e.target.value = '';
+    }
+  }
+
+  function removeImage() {
+    update('image_url', '');
   }
 
   async function handleSubmit(e) {
@@ -54,6 +93,7 @@ export default function SubmitTake() {
       submitted_before: form.submitted_before,
       email: form.email.trim() || null,
       wants_updates: form.wants_updates,
+      image_url: form.image_url || null,
     });
 
     if (error) {
@@ -117,6 +157,41 @@ export default function SubmitTake() {
             required={false}
           />
 
+          {/* Optional image attachment */}
+          <div style={{ marginBottom: 16 }}>
+            <label style={labelStyle}>Attach an image (optional)</label>
+            {form.image_url ? (
+              <div>
+                <img
+                  src={form.image_url}
+                  alt="Attached"
+                  style={{ width: '100%', maxHeight: 220, objectFit: 'cover', borderRadius: 6, marginBottom: 8 }}
+                />
+                <button type="button" onClick={removeImage} style={secondaryBtn}>
+                  Remove Image
+                </button>
+              </div>
+            ) : (
+              <>
+                <input
+                  ref={imageFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImagePick}
+                  style={{ display: 'none' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => imageFileInputRef.current?.click()}
+                  disabled={uploadingImage}
+                  style={secondaryBtn}
+                >
+                  {uploadingImage ? 'Uploading…' : '🖼 Upload Image'}
+                </button>
+              </>
+            )}
+          </div>
+
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 14, color: '#D6DED2', cursor: 'pointer' }}>
               <input
@@ -162,7 +237,7 @@ export default function SubmitTake() {
 
           {errorMsg && <p style={{ color: '#FF5A2D', fontSize: 14, marginBottom: 16 }}>{errorMsg}</p>}
 
-          <button type="submit" disabled={status === 'submitting'} style={submitBtn}>
+          <button type="submit" disabled={status === 'submitting' || uploadingImage} style={submitBtn}>
             {status === 'submitting' ? 'Submitting…' : 'Submit Your Take'}
           </button>
         </form>
@@ -188,3 +263,32 @@ const page = { background: '#0B1F17', color: '#F1F4EC', minHeight: '100vh', font
 const labelStyle = { display: 'block', fontSize: 13, color: '#9CA89C', marginBottom: 8, textTransform: 'uppercase', fontWeight: 600, letterSpacing: 0.5 };
 const inputStyle = { width: '100%', padding: 12, background: '#0E2419', color: '#F1F4EC', border: '1px solid #2A4A3A', borderRadius: 4, fontSize: 15, fontFamily: 'inherit' };
 const submitBtn = { width: '100%', background: '#C8FF4D', color: '#0B1F17', border: 'none', borderRadius: 4, padding: '14px 24px', fontSize: 16, fontWeight: 700, cursor: 'pointer' };
+const secondaryBtn = { background: 'transparent', color: '#4ade80', border: '1px solid #2A4A3A', borderRadius: 4, padding: '10px 16px', fontSize: 14, fontWeight: 600, cursor: 'pointer' };
+
+/*
+=====================================================================
+SUPABASE SETUP (run once in the SQL editor) — only what's new for images
+=====================================================================
+
+-- 1. Storage bucket for fan-submitted take images
+insert into storage.buckets (id, name, public)
+values ('community-takes-images', 'community-takes-images', true)
+on conflict (id) do nothing;
+
+-- 2. Allow anyone (fans aren't authenticated here) to upload
+create policy "Public can upload community take images"
+on storage.objects for insert
+to public
+with check (bucket_id = 'community-takes-images');
+
+-- 3. Allow public read
+create policy "Public can view community take images"
+on storage.objects for select
+to public
+using (bucket_id = 'community-takes-images');
+
+-- 4. New column on the existing submissions table
+alter table community_takes_submissions
+  add column if not exists image_url text;
+=====================================================================
+*/
