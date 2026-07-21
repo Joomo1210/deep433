@@ -18,10 +18,6 @@ const TEAM_FLAG_CODES = {
 };
 
 // ─── Shared mobile-safe download function ────────────────────────────────────
-// Uses the Web Share API on devices that support it (iOS Safari/Chrome) since
-// the standard `download` attribute doesn't reliably work on iOS — it just
-// opens the image instead of saving it. Falls back to standard download link
-// for desktop and any browser without Web Share file support.
 async function downloadCardImage(cardElement, filename, bgColor = "#0a0a0f", transparent = false) {
   if (!cardElement) return;
   if (!window.html2canvas) {
@@ -59,7 +55,7 @@ const LEAGUE_OPTIONS = [
   { id: "bundesliga", label: "Bundesliga" },
   { id: "ligue1", label: "Ligue 1" },
   { id: "ucl",    label: "Champions League" },
-  { id: "friendlies", label: "Club Friendlies" },  // ← add this line
+  { id: "friendlies", label: "Club Friendlies" },
 ];
 
 // ─── FIXTURE PICKER ──────────────────────────────────────────────────────────
@@ -109,7 +105,6 @@ function FixturePicker({ onSelect }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      {/* League selector */}
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         {LEAGUE_OPTIONS.map(l => (
           <button key={l.id} onClick={() => setLeagueId(l.id)} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px" }}>
@@ -118,7 +113,6 @@ function FixturePicker({ onSelect }) {
         ))}
       </div>
 
-      {/* Search */}
       <input
         placeholder="🔍 Search team..."
         value={search}
@@ -128,7 +122,6 @@ function FixturePicker({ onSelect }) {
 
       {loading && <div style={{ fontSize: 15, color: "#e2e8f0", textAlign: "center" }}>Loading fixtures...</div>}
 
-      {/* Fixture list */}
       <div style={{ maxHeight: 260, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
         {Object.entries(byDate).map(([date, dateFixtures]) => (
           <div key={date}>
@@ -225,7 +218,6 @@ function GraphicCard({ children, cardRef, label, light = false }) {
         <div style={{ position: "absolute", top: 10, right: 12, zIndex: 2 }}>
           <img src="/deep433.jpg" alt="Deep433" crossOrigin="anonymous" style={{ width: 30, height: 30, borderRadius: "50%", objectFit: "cover" }} />
         </div>
-        {/* Centre background watermark */}
         <div style={{
           position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
           pointerEvents: "none", zIndex: 0,
@@ -248,7 +240,6 @@ function GraphicCard({ children, cardRef, label, light = false }) {
 }
 
 // ─── MATCH STATS GRAPHIC ────────────────────────────────────────────────────
-// ─── Animated count-up hook ──────────────────────────────────────────────────
 function useCountUp(target, duration = 900, trigger = true) {
   const [value, setValue] = useState(0);
   useEffect(() => {
@@ -259,7 +250,7 @@ function useCountUp(target, duration = 900, trigger = true) {
     const to = parseFloat(target) || 0;
     const tick = (now) => {
       const progress = Math.min((now - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
       setValue(from + (to - from) * eased);
       if (progress < 1) raf = requestAnimationFrame(tick);
     };
@@ -269,7 +260,6 @@ function useCountUp(target, duration = 900, trigger = true) {
   return value;
 }
 
-// ─── Animated comparison bar (home vs away) ──────────────────────────────────
 function AnimatedStatBar({ label, homeVal, awayVal, unit = "", animate }) {
   const hv = parseFloat(homeVal) || 0;
   const av = parseFloat(awayVal) || 0;
@@ -296,7 +286,6 @@ function AnimatedStatBar({ label, homeVal, awayVal, unit = "", animate }) {
   );
 }
 
-// ─── Bento box wrapper ────────────────────────────────────────────────────────
 function BentoBox({ title, icon, color, children, span, light = false }) {
   return (
     <div style={{
@@ -348,7 +337,6 @@ function MatchStatsGraphic() {
 
   const download = async (transparent = false) => {
     setDownloading(true);
-    // Ensure bars/numbers are in their settled state before capturing
     setAnimate(false);
     await new Promise(res => setTimeout(res, 120));
     try {
@@ -382,7 +370,6 @@ function MatchStatsGraphic() {
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "22px 18px 18px" }}>
-              {/* Team header */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16, marginTop: 8 }}>
                 <div style={{ textAlign: "center" }}>
                   {s.home.logo && <img src={s.home.logo} alt="" crossOrigin="anonymous" style={{ width: 34, height: 34, objectFit: "contain", marginBottom: 4, display: "block", margin: "0 auto 6px" }} />}
@@ -397,7 +384,6 @@ function MatchStatsGraphic() {
                 </div>
               </div>
 
-              {/* HERO: Possession — large signature card */}
               <div style={{
                 background: "linear-gradient(135deg, #4ade8014, #f59e0b0e)",
                 border: "1px solid #4ade8033",
@@ -407,7 +393,6 @@ function MatchStatsGraphic() {
                 <PossessionHero home={s.home.stats.possession} awayVal={s.away.stats.possession} animate={animate} />
               </div>
 
-              {/* Bento grid — 2x2 */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
                 <BentoBox title="Attack" icon="🎯" color="#4ade80">
                   <AnimatedStatBar label="Total Shots" homeVal={s.home.stats.shotsTotal} awayVal={s.away.stats.shotsTotal} animate={animate} />
@@ -442,7 +427,6 @@ function MatchStatsGraphic() {
   );
 }
 
-// ─── Possession hero — large animated numbers + bar ──────────────────────────
 function PossessionHero({ home, awayVal, animate }) {
   const hv = parseFloat(home) || 50;
   const av = parseFloat(awayVal) || (100 - hv);
@@ -626,9 +610,9 @@ function TopScorersGraphic() {
   };
 
   const rankColor = (i) => {
-    if (i === 0) return "#FFD700"; // Gold
-    if (i === 1) return "#C0C0C0"; // Silver
-    if (i === 2) return "#CD7F32"; // Bronze
+    if (i === 0) return "#FFD700";
+    if (i === 1) return "#C0C0C0";
+    if (i === 2) return "#CD7F32";
     return "#e2e8f0";
   };
 
@@ -665,7 +649,6 @@ function TopScorersGraphic() {
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "22px 18px 18px" }}>
-              {/* Header */}
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, marginTop: 8 }}>
                 {LEAGUE_LOGOS[leagueId] && <img src={LEAGUE_LOGOS[leagueId]} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
                 <div style={{ flex: 1 }}>
@@ -689,21 +672,17 @@ function TopScorersGraphic() {
                     marginBottom: isTop3 ? 4 : 0,
                     border: i === 0 ? "1px solid rgba(255,215,0,0.15)" : i === 1 ? "1px solid rgba(192,192,192,0.1)" : i === 2 ? "1px solid rgba(205,127,50,0.1)" : "none",
                   }}>
-                    {/* Rank — golden boot for scorers, medals for others */}
                     <div style={{ width: 28, textAlign: "center", flexShrink: 0 }}>
                       {i < 3 && type === "scorers" ? (
                         <svg width="26" height="26" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                          {/* Boot shape */}
                           <path d="M20 70 L20 30 Q20 20 30 20 L55 20 Q65 20 65 30 L65 50 L80 50 Q90 50 90 60 L90 75 Q90 85 80 85 L25 85 Q15 85 15 75 L15 70 Z"
                             fill={i === 0 ? "#FFD700" : i === 1 ? "#C0C0C0" : "#CD7F32"}
                             stroke={i === 0 ? "#B8860B" : i === 1 ? "#A0A0A0" : "#8B4513"}
                             strokeWidth="3"
                           />
-                          {/* Sole */}
                           <path d="M15 78 Q15 88 25 88 L80 88 Q90 88 90 78 L90 82 Q90 90 80 90 L25 90 Q15 90 15 82 Z"
                             fill={i === 0 ? "#B8860B" : i === 1 ? "#909090" : "#8B4513"}
                           />
-                          {/* Laces */}
                           <line x1="30" y1="35" x2="55" y2="35" stroke={i === 0 ? "#B8860B" : i === 1 ? "#909090" : "#8B4513"} strokeWidth="2.5" strokeLinecap="round"/>
                           <line x1="30" y1="42" x2="55" y2="42" stroke={i === 0 ? "#B8860B" : i === 1 ? "#909090" : "#8B4513"} strokeWidth="2.5" strokeLinecap="round"/>
                           <line x1="30" y1="49" x2="55" y2="49" stroke={i === 0 ? "#B8860B" : i === 1 ? "#909090" : "#8B4513"} strokeWidth="2.5" strokeLinecap="round"/>
@@ -714,9 +693,7 @@ function TopScorersGraphic() {
                         </span>
                       )}
                     </div>
-                    {/* Photo */}
                     {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: isTop3 ? 36 : 28, height: isTop3 ? 36 : 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: isTop3 ? `1.5px solid ${rankColor(i)}44` : "none" }} />}
-                    {/* Name + team */}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: isTop3 ? 14 : 12, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
                       <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
@@ -725,7 +702,6 @@ function TopScorersGraphic() {
                         {secondary && <span style={{ fontSize: 12, color: "#444", marginLeft: 4 }}>· {secondary}</span>}
                       </div>
                     </div>
-                    {/* Stat value */}
                     <div style={{ fontSize: isTop3 ? 28 : 20, fontWeight: 900, color: "#4ade80", minWidth: 36, textAlign: "right", flexShrink: 0 }}>
                       {getStatValue(p)}
                     </div>
@@ -752,7 +728,7 @@ function TeamStatsGraphic() {
   const [leagueId, setLeagueId] = useState("pl");
   const [teamSearch, setTeamSearch] = useState("");
   const [teamSuggestions, setTeamSuggestions] = useState([]);
-  const [selectedTeam, setSelectedTeam] = useState(null); // { id, name, logo }
+  const [selectedTeam, setSelectedTeam] = useState(null);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
@@ -805,7 +781,6 @@ function TeamStatsGraphic() {
         ))}
       </div>
 
-      {/* Team search */}
       <div style={{ position: "relative" }}>
         <input
           placeholder="Search team name e.g. Arsenal, Barcelona..."
@@ -856,7 +831,6 @@ function TeamStatsGraphic() {
                 </div>
               </div>
 
-              {/* Mini league table row */}
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
                 {data.position && (
                   <div style={{ background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 6, padding: "5px 10px", fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>
@@ -930,6 +904,219 @@ function TeamStatsGraphic() {
   );
 }
 
+// ─── PASSING BREAKDOWN GRAPHIC ───────────────────────────────────────────────
+function PassingBreakdownGraphic() {
+  const cardRef = useRef(null);
+  const [fixtureId, setFixtureId] = useState("");
+  const [selectedFixture, setSelectedFixture] = useState(null);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState("");
+  const [animate, setAnimate] = useState(true);
+
+  const handleSelect = (f) => {
+    setSelectedFixture(f);
+    setFixtureId(f.fixtureId);
+    setData(null);
+    setError("");
+  };
+
+  const fetch_ = async () => {
+    if (!fixtureId) return;
+    setLoading(true); setError(""); setData(null);
+    try {
+      const r = await fetch(`/api/fixture-data?type=stats&fixtureId=${fixtureId}`);
+      const d = await r.json();
+      if (!d.available) throw new Error("No stats available for this fixture yet — try after kickoff");
+      setData(d);
+      setAnimate(true);
+    } catch (e) { setError(e.message); }
+    setLoading(false);
+  };
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    setAnimate(false);
+    await new Promise(res => setTimeout(res, 120));
+    try {
+      await downloadCardImage(cardRef.current, `deep433-passing-${fixtureId}.png`, undefined, transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const s = data;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {!selectedFixture ? (
+        <FixturePicker onSelect={handleSelect} />
+      ) : (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
+            <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
+            <button onClick={() => { setSelectedFixture(null); setData(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
+          </div>
+          {!data && (
+            <button onClick={fetch_} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "10px" }}>
+              {loading ? "Loading stats..." : "Load Passing Breakdown"}
+            </button>
+          )}
+        </>
+      )}
+      {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
+      {s && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "22px 18px 18px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16, marginTop: 8 }}>
+                <div style={{ textAlign: "center" }}>
+                  {s.home.logo && <img src={s.home.logo} alt="" crossOrigin="anonymous" style={{ width: 34, height: 34, objectFit: "contain", marginBottom: 4, display: "block", margin: "0 auto 6px" }} />}
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "#4ade80" }}>{s.home.team}</div>
+                </div>
+                <div style={{ textAlign: "center", padding: "0 12px" }}>
+                  <div style={{ fontSize: 12, color: "#e2e8f0", textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Passing Breakdown</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  {s.away.logo && <img src={s.away.logo} alt="" crossOrigin="anonymous" style={{ width: 34, height: 34, objectFit: "contain", marginBottom: 4, display: "block", margin: "0 auto 6px" }} />}
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "#f59e0b" }}>{s.away.team}</div>
+                </div>
+              </div>
+              <div style={{
+                background: "linear-gradient(135deg, #4ade8014, #f59e0b0e)",
+                border: "1px solid #4ade8033",
+                borderRadius: 12, padding: "16px 18px", marginBottom: 10,
+              }}>
+                <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 10, textAlign: "center" }}>🎯 Pass Accuracy</div>
+                <AnimatedStatBar label="Accuracy" homeVal={s.home.stats.passAccuracy} awayVal={s.away.stats.passAccuracy} unit="%" animate={animate} />
+              </div>
+              <BentoBox title="Passing Volume" icon="🔁" color="#60a5fa">
+                <AnimatedStatBar label="Total Passes" homeVal={s.home.stats.passesTotal} awayVal={s.away.stats.passesTotal} animate={animate} />
+                <AnimatedStatBar label="Accurate Passes" homeVal={s.home.stats.passesAccurate} awayVal={s.away.stats.passesAccurate} animate={animate} />
+              </BentoBox>
+            </div>
+          </GraphicCard>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── SHOT PLACEMENT GRAPHIC ──────────────────────────────────────────────────
+function ShotPlacementGraphic() {
+  const cardRef = useRef(null);
+  const [fixtureId, setFixtureId] = useState("");
+  const [selectedFixture, setSelectedFixture] = useState(null);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState("");
+  const [animate, setAnimate] = useState(true);
+
+  const handleSelect = (f) => {
+    setSelectedFixture(f);
+    setFixtureId(f.fixtureId);
+    setData(null);
+    setError("");
+  };
+
+  const fetch_ = async () => {
+    if (!fixtureId) return;
+    setLoading(true); setError(""); setData(null);
+    try {
+      const r = await fetch(`/api/fixture-data?type=stats&fixtureId=${fixtureId}`);
+      const d = await r.json();
+      if (!d.available) throw new Error("No stats available for this fixture yet — try after kickoff");
+      setData(d);
+      setAnimate(true);
+    } catch (e) { setError(e.message); }
+    setLoading(false);
+  };
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    setAnimate(false);
+    await new Promise(res => setTimeout(res, 120));
+    try {
+      await downloadCardImage(cardRef.current, `deep433-shot-placement-${fixtureId}.png`, undefined, transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const s = data;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {!selectedFixture ? (
+        <FixturePicker onSelect={handleSelect} />
+      ) : (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
+            <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
+            <button onClick={() => { setSelectedFixture(null); setData(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
+          </div>
+          {!data && (
+            <button onClick={fetch_} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "10px" }}>
+              {loading ? "Loading stats..." : "Load Shot Placement"}
+            </button>
+          )}
+        </>
+      )}
+      {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
+      {s && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "22px 18px 18px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16, marginTop: 8 }}>
+                <div style={{ textAlign: "center" }}>
+                  {s.home.logo && <img src={s.home.logo} alt="" crossOrigin="anonymous" style={{ width: 34, height: 34, objectFit: "contain", marginBottom: 4, display: "block", margin: "0 auto 6px" }} />}
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "#4ade80" }}>{s.home.team}</div>
+                </div>
+                <div style={{ textAlign: "center", padding: "0 12px" }}>
+                  <div style={{ fontSize: 12, color: "#e2e8f0", textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Shot Placement</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  {s.away.logo && <img src={s.away.logo} alt="" crossOrigin="anonymous" style={{ width: 34, height: 34, objectFit: "contain", marginBottom: 4, display: "block", margin: "0 auto 6px" }} />}
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "#f59e0b" }}>{s.away.team}</div>
+                </div>
+              </div>
+              <div style={{
+                background: "linear-gradient(135deg, #4ade8014, #f59e0b0e)",
+                border: "1px solid #4ade8033",
+                borderRadius: 12, padding: "16px 18px", marginBottom: 10,
+              }}>
+                <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 10, textAlign: "center" }}>🎯 Total Shots</div>
+                <AnimatedStatBar label="Shots" homeVal={s.home.stats.shotsTotal} awayVal={s.away.stats.shotsTotal} animate={animate} />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                <BentoBox title="On Target" icon="🥅" color="#4ade80">
+                  <AnimatedStatBar label="On Target" homeVal={s.home.stats.shotsOnGoal} awayVal={s.away.stats.shotsOnGoal} animate={animate} />
+                  <AnimatedStatBar label="Off Target" homeVal={s.home.stats.shotsOffGoal} awayVal={s.away.stats.shotsOffGoal} animate={animate} />
+                  <AnimatedStatBar label="Blocked" homeVal={s.home.stats.shotsBlocked} awayVal={s.away.stats.shotsBlocked} animate={animate} />
+                </BentoBox>
+                <BentoBox title="Zones" icon="📍" color="#a855f7">
+                  <AnimatedStatBar label="Inside Box" homeVal={s.home.stats.shotsInsideBox} awayVal={s.away.stats.shotsInsideBox} animate={animate} />
+                  <AnimatedStatBar label="Outside Box" homeVal={s.home.stats.shotsOutsideBox} awayVal={s.away.stats.shotsOutsideBox} animate={animate} />
+                </BentoBox>
+              </div>
+            </div>
+          </GraphicCard>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── RECAP CARD ──────────────────────────────────────────────────────────────
 function RecapGraphic({ history = [] }) {
   const cardRef = useRef(null);
@@ -954,14 +1141,12 @@ function RecapGraphic({ history = [] }) {
       (norm(h.home_team) === norm(f.away) && norm(h.away_team) === norm(f.home))
     );
 
-    // Fetch goalscorers from match stats
     let homeGoals = [];
     let awayGoals = [];
     let keyStat = null;
 
     if (f.fixtureId) {
       try {
-        // Fetch match stats and events in parallel
         const [statsRes, eventsRes] = await Promise.all([
           fetch(`/api/fixture-data?type=stats&fixtureId=${f.fixtureId}`),
           fetch(`/api/fixture-data?type=events&fixtureId=${f.fixtureId}`),
@@ -969,25 +1154,21 @@ function RecapGraphic({ history = [] }) {
         const statsData = await statsRes.json();
         const eventsData = await eventsRes.json();
 
-        // Extract goals (excluding missed penalties) and cards
         (eventsData.events || [])
           .filter(e => {
             if (e.type === "Goal" && e.detail === "Missed Penalty") return false;
             return e.type === "Goal" || e.type === "Card";
           })
           .forEach(e => {
-            // Scorer is before the bracket e.g. "Kane (Bellingham)" -> "Kane"
             const scorerFull = e.label?.split("(")[0]?.trim() || "";
             const surname = scorerFull.split(" ").slice(-1)[0]?.trim();
             const min = parseInt(e.minute) || 0;
-            // Label extra time clearly — ET starts at 91', second ET half from 106'
             const time = min > 90 ? `ET ${min - 90}'` : `${min}'`;
             const entry = `${e.icon} ${surname} ${time}`;
             if (norm(e.team) === norm(f.home)) homeGoals.push(entry);
             else awayGoals.push(entry);
           });
 
-        // Generate key stat from match stats
         if (statsData.available) {
           const home = statsData.home;
           const away = statsData.away;
@@ -998,7 +1179,6 @@ function RecapGraphic({ history = [] }) {
           const homeSaves = home.stats?.saves || 0;
           const awaySaves = away.stats?.saves || 0;
 
-          // Pick the most interesting stat
           if (homePoss >= 65) keyStat = `${home.team} had ${homePoss}% of the ball`;
           else if (awayPoss >= 65) keyStat = `${away.team} had ${awayPoss}% of the ball`;
           else if (awaySaves >= 5) keyStat = `${away.team} keeper made ${awaySaves} saves`;
@@ -1015,7 +1195,7 @@ function RecapGraphic({ history = [] }) {
       finalScore: fs,
       regulationScore: (f.fulltimeScore?.home != null && f.fulltimeScore?.away != null)
         ? `${f.fulltimeScore.home}-${f.fulltimeScore.away}`
-        : fs, // fall back to aggregate if fulltime data unavailable
+        : fs,
       yourPrediction: pred?.user_prediction || null,
       aiPrediction: pred?.ai_prediction || null,
       homeGoals,
@@ -1046,7 +1226,6 @@ function RecapGraphic({ history = [] }) {
   const getOutcome = (pred) => {
     if (!pred || !matchData?.finalScore) return null;
     const [p0, p1] = pred.split("-").map(n => parseInt(n) || 0);
-    // Grade against the 90-minute regulation score — that's what predictions are actually judged on
     if (p0 === rs0 && p1 === rs1) return { icon: "✅", label: "Exact", color: "#4ade80" };
     const homeWon = rs0 > rs1;
     const awayWon = rs1 > rs0;
@@ -1068,7 +1247,6 @@ function RecapGraphic({ history = [] }) {
       display: "flex", flexDirection: isLandscape ? "row" : "column",
       border: "1px solid #1e1e30", fontFamily: "'Inter',sans-serif",
     }}>
-      {/* Brand bar */}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
       <div style={{ position: "absolute", top: 12, right: 14, zIndex: 2, display: "flex", alignItems: "center", gap: 6 }}>
         <img src="/deep433.jpg" alt="Deep433" crossOrigin="anonymous" style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover" }} />
@@ -1076,9 +1254,7 @@ function RecapGraphic({ history = [] }) {
 
       {isLandscape ? (
         <>
-          {/* Left: final score hero */}
           <div style={{ width: "50%", padding: "36px 20px 20px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", borderRight: "1px solid #1a1a2a", position: "relative", zIndex: 1 }}>
-            {/* Enhanced header */}
             <div style={{ textAlign: "center", marginBottom: 12 }}>
               <div style={{ fontSize: 14, color: "#e2e8f0", letterSpacing: 2, textTransform: "uppercase" }}>{matchData?.competition}</div>
               <div style={{ fontSize: 16, color: "#f0f0f0", letterSpacing: 2, textTransform: "uppercase", fontWeight: 900 }}>{selectedFixture?.round}</div>
@@ -1091,9 +1267,7 @@ function RecapGraphic({ history = [] }) {
               </div>
               {selectedFixture?.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 44, height: 44, objectFit: "contain" }} />}
             </div>
-            {/* Team names + goalscorers */}
             <div style={{ display: "flex", justifyContent: "space-between", width: "100%", gap: 8, position: "relative" }}>
-              {/* Watermark centered between the two team columns */}
               <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", pointerEvents: "none", zIndex: 0 }}>
                 <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 34, height: 34, opacity: 0.3, objectFit: "contain", borderRadius: "50%", userSelect: "none" }} />
               </div>
@@ -1107,7 +1281,6 @@ function RecapGraphic({ history = [] }) {
               </div>
             </div>
           </div>
-          {/* Right: predictions */}
           <div style={{ flex: 1, padding: "36px 20px 12px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 12, position: "relative", zIndex: 1 }}>
             <div style={{ fontSize: 15, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Predictions</div>
             {[{ label: "👤 Your Call", pred: yourPrediction, result: yourResult, color: "#4ade80" }, { label: "🤖 AI Predicted", pred: aiPrediction, result: aiResult, color: "#f59e0b" }].map(p => (
@@ -1139,7 +1312,6 @@ function RecapGraphic({ history = [] }) {
         </>
       ) : (
         <div style={{ flex: 1, padding: "20px", display: "flex", flexDirection: "column", gap: 12, paddingTop: 32, position: "relative", zIndex: 1 }}>
-          {/* Enhanced header + final score */}
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 14, color: "#e2e8f0", letterSpacing: 2, textTransform: "uppercase", marginBottom: 2 }}>{matchData?.competition}</div>
             <div style={{ fontSize: 15, color: "#f0f0f0", letterSpacing: 2, textTransform: "uppercase", marginBottom: 8, fontWeight: 900 }}>{selectedFixture?.round}</div>
@@ -1151,7 +1323,6 @@ function RecapGraphic({ history = [] }) {
               </div>
               {selectedFixture?.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 40, height: 40, objectFit: "contain" }} />}
             </div>
-            {/* Team names + goalscorers */}
             <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginTop: 4, position: "relative" }}>
               <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", pointerEvents: "none", zIndex: 0 }}>
                 <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, opacity: 0.28, objectFit: "contain", borderRadius: "50%", userSelect: "none" }} />
@@ -1167,7 +1338,6 @@ function RecapGraphic({ history = [] }) {
             </div>
           </div>
           <div style={{ height: 1, background: "#1a1a2a" }} />
-          {/* Predictions */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             {[{ label: "👤 Your Call", pred: yourPrediction, result: yourResult, color: "#4ade80" }, { label: "🤖 AI Predicted", pred: aiPrediction, result: aiResult, color: "#818cf8" }].map(p => (
               <div key={p.label} style={{ background: "#13131f", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
@@ -1182,7 +1352,6 @@ function RecapGraphic({ history = [] }) {
               </div>
             ))}
           </div>
-          {/* Key stat + venue banner */}
           <div style={{ background: "#0d0d18", borderRadius: 8, padding: "8px 12px", textAlign: "center" }}>
             {matchData?.keyStat && (
               <div style={{ marginBottom: selectedFixture?.venue ? 4 : 0 }}>
@@ -1254,12 +1423,10 @@ function BracketGraphic({ history = [] }) {
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
-  // 3 manual selectors: 2 SF + 1 Final (down to the Final Four)
   const [sel, setSel] = useState({ sf1:"", sf2:"", fin:"" });
-  // Since SF winners aren't confirmed yet, let Joseph manually pick who advances
-  const [finalist1, setFinalist1] = useState(""); // "home" or "away" of sf1 match
-  const [finalist2, setFinalist2] = useState(""); // "home" or "away" of sf2 match
-  const [predictedChampion, setPredictedChampion] = useState(""); // "1" or "2"
+  const [finalist1, setFinalist1] = useState("");
+  const [finalist2, setFinalist2] = useState("");
+  const [predictedChampion, setPredictedChampion] = useState("");
   const setS = (key) => (val) => setSel(prev => ({ ...prev, [key]: val }));
 
   const CUP_LEAGUES = [
@@ -1306,27 +1473,21 @@ function BracketGraphic({ history = [] }) {
 
   const TrophyIcon = ({ size = 24 }) => (
     <svg width={size} height={size} viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
-      {/* Globe/top of trophy */}
       <circle cx="50" cy="22" r="11" fill="#FFD700" stroke="#B8860B" strokeWidth="1.5" />
       <circle cx="50" cy="19" r="4" fill="#FFF3B0" opacity="0.7" />
-      {/* Spiral bands rising from base to globe — FIFA trophy's signature look */}
       <path d="M38 78 C 30 68, 30 58, 40 50 C 50 42, 50 34, 44 28"
             fill="none" stroke="#FFD700" strokeWidth="6" strokeLinecap="round" />
       <path d="M62 78 C 70 68, 70 58, 60 50 C 50 42, 50 34, 56 28"
             fill="none" stroke="#FFD700" strokeWidth="6" strokeLinecap="round" />
       <path d="M50 80 C 50 68, 50 58, 50 50 C 50 42, 50 36, 50 30"
             fill="none" stroke="#FFD700" strokeWidth="6" strokeLinecap="round" />
-      {/* Outline strokes for depth */}
       <path d="M38 78 C 30 68, 30 58, 40 50 C 50 42, 50 34, 44 28"
             fill="none" stroke="#B8860B" strokeWidth="1.2" strokeLinecap="round" />
       <path d="M62 78 C 70 68, 70 58, 60 50 C 50 42, 50 34, 56 28"
             fill="none" stroke="#B8860B" strokeWidth="1.2" strokeLinecap="round" />
-      {/* Base cone widening down */}
       <path d="M35 80 L65 80 L58 96 L42 96 Z" fill="#FFD700" stroke="#B8860B" strokeWidth="1.5" />
-      {/* Pedestal */}
       <rect x="38" y="96" width="24" height="6" fill="#2a2a3a" />
       <rect x="32" y="102" width="36" height="8" rx="2" fill="#1a1a2a" stroke="#333" strokeWidth="1" />
-      {/* Shine accents */}
       <path d="M46 32 C 44 40, 44 48, 48 54" fill="none" stroke="#FFF3B0" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
     </svg>
   );
@@ -1364,13 +1525,6 @@ function BracketGraphic({ history = [] }) {
       </div>
     );
   };
-
-  const Arr = () => (
-    <div style={{ display: "flex", alignItems: "center", padding: "0 4px", flexShrink: 0 }}>
-      <div style={{ width: 10, height: 2, background: "#4a4a5a" }} />
-      <span style={{ fontSize: 16, color: "#e2e8f0", fontWeight: 900 }}>›</span>
-    </div>
-  );
 
   const DropDown = ({ label, skey }) => (
     <div>
@@ -1412,7 +1566,6 @@ function BracketGraphic({ history = [] }) {
             <DropDown label="Semi-Final 2" skey="sf2" />
           </div>
 
-          {/* All finalist/champion pickers always visible — no gating */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             {(() => {
               const m = getMatch(sel.sf1);
@@ -1463,7 +1616,6 @@ function BracketGraphic({ history = [] }) {
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
             <div style={{ position: "absolute", top: 10, right: 12, display: "flex", alignItems: "center", gap: 6 }}>
               <img src="/deep433.jpg" alt="Deep433" crossOrigin="anonymous" style={{ width: 26, height: 26, borderRadius: "50%", objectFit: "cover" }} />
-              
             </div>
             <div style={{ textAlign: "center", marginBottom: 14 }}>
               <div style={{ fontSize: 16, color: "#f0f0f0", fontWeight: 900, textTransform: "uppercase", letterSpacing: 2 }}>
@@ -1473,7 +1625,6 @@ function BracketGraphic({ history = [] }) {
 
             <div style={{ position: "relative", width: "100%", maxWidth: 420, margin: "0 auto", padding: "10px 0" }}>
 
-              {/* Semi-Finals side by side */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                   <div style={{ fontSize: 12, color: "#c084fc", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Semi-Final</div>
@@ -1485,12 +1636,10 @@ function BracketGraphic({ history = [] }) {
                 </div>
               </div>
 
-              {/* Down arrows into Final */}
               <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}>
                 <span style={{ fontSize: 20, color: "#4a4a5a", fontWeight: 900 }}>▼</span>
               </div>
 
-              {/* Final — built from manual finalist picks */}
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 20 }}>
                 <div style={{ fontSize: 13, color: "#fbbf24", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>Final</div>
                 {(() => {
@@ -1521,7 +1670,6 @@ function BracketGraphic({ history = [] }) {
                 })()}
               </div>
 
-              {/* Champion reveal — from predicted champion pick */}
               {(() => {
                 const m1 = getMatch(sel.sf1);
                 const m2 = getMatch(sel.sf2);
@@ -1572,8 +1720,6 @@ function BracketGraphic({ history = [] }) {
   );
 }
 
-
-
 // ─── DEEP INSIGHTS GRAPHIC ───────────────────────────────────────────────────
 function DeepInsightsGraphic({ history = [] }) {
   const cardRef = useRef(null);
@@ -1606,77 +1752,8 @@ function DeepInsightsGraphic({ history = [] }) {
     setDownloading(false);
   };
 
-  const norm100 = (a, b) => {
-    const av = parseFloat(a) || 0;
-    const bv = parseFloat(b) || 0;
-    const total = av + bv || 1;
-    return { a: Math.round((av / total) * 100), b: Math.round((bv / total) * 100) };
-  };
-
-  const StatBar = ({ label, homeVal, awayVal, home, away }) => {
-    const { a, b } = norm100(homeVal, awayVal);
-    return (
-      <div style={{ marginBottom: 14 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
-          <span style={{ fontSize: 22, fontWeight: 900, color: "#4ade80" }}>{a}%</span>
-          <span style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{label}</span>
-          <span style={{ fontSize: 22, fontWeight: 900, color: "#f59e0b" }}>{b}%</span>
-        </div>
-        <div style={{ display: "flex", height: 8, borderRadius: 4, overflow: "hidden" }}>
-          <div style={{ width: `${a}%`, background: "#4ade80" }} />
-          <div style={{ width: `${b}%`, background: "#f59e0b", opacity: 0.6 }} />
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 9, fontSize: 13, color: "#e2e8f0" }}>
-          <span style={{ color: "#4ade80", fontWeight: 600 }}>{home?.split(" ")[0]}</span><span style={{ color: "#f59e0b", fontWeight: 600 }}>{away?.split(" ")[0]}</span>
-        </div>
-      </div>
-    );
-  };
-
-  const dotColor = (r) => r === "W" ? "#4ade80" : r === "D" ? "#60a5fa" : "#f87171";
-
-  const H2HRow = ({ team, results, ppg, logo }) => (
-    <div style={{ background: "#0d0d18", borderRadius: 8, padding: "10px 12px", marginBottom: 8 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {logo && <img src={logo} alt="" crossOrigin="anonymous" style={{ width: 20, height: 20, objectFit: "contain" }} />}
-          <span style={{ fontSize: 15, fontWeight: 800, color: "#f0f0f0" }}>{team}</span>
-        </div>
-        <span style={{ fontSize: 13, color: "#e2e8f0" }}>PPG: <span style={{ color: "#f0f0f0", fontWeight: 700 }}>{ppg}</span></span>
-      </div>
-      <div style={{ display: "flex", gap: 5 }}>
-        {results.map((r, i) => (
-          <div key={i} style={{ width: 24, height: 24, borderRadius: 4, background: dotColor(r), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900, color: "#0a0a0f" }}>{r}</div>
-        ))}
-        <div style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center" }}>
-          <span style={{ fontSize: 13, color: "#4ade80" }}>W {results.filter(r => r === "W").length}</span>
-          <span style={{ fontSize: 13, color: "#60a5fa" }}>D {results.filter(r => r === "D").length}</span>
-          <span style={{ fontSize: 13, color: "#f87171" }}>L {results.filter(r => r === "L").length}</span>
-        </div>
-      </div>
-    </div>
-  );
-
-  const parseH2H = (h2h, homeTeam, awayTeam) => {
-    const norm = s => (s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
-    return h2h.map(r => {
-      const parts = r.match(/^(.+?)\s+(\d+)-(\d+)\s+(.+)$/);
-      if (!parts) return { result: "D" };
-      const matchHome = parts[1].trim();
-      const hg = parseInt(parts[2]);
-      const ag = parseInt(parts[3]);
-      if (hg === ag) return "D";
-      const homeTeamWon = (norm(matchHome) === norm(homeTeam) && hg > ag) || (norm(matchHome) !== norm(homeTeam) && ag > hg);
-      return homeTeamWon ? "W" : "L";
-    });
-  };
-
   const home = selectedFixture?.home;
   const away = selectedFixture?.away;
-  const h2hResults = insights?.h2h?.length ? parseH2H(insights.h2h, home, away) : [];
-  const awayResults = h2hResults.map(r => r === "W" ? "L" : r === "L" ? "W" : "D");
-  const homePPG = h2hResults.length ? (h2hResults.reduce((a, r) => a + (r === "W" ? 3 : r === "D" ? 1 : 0), 0) / h2hResults.length).toFixed(2) : "0.00";
-  const awayPPG = awayResults.length ? (awayResults.reduce((a, r) => a + (r === "W" ? 3 : r === "D" ? 1 : 0), 0) / awayResults.length).toFixed(2) : "0.00";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -1696,12 +1773,10 @@ function DeepInsightsGraphic({ history = [] }) {
             <>
               <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
                 <div style={{ padding: "22px 18px 18px" }}>
-                  {/* Competition label */}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 10 }}>
                     <img src="/fifa.png" alt="" crossOrigin="anonymous" style={{ width: 18, height: 18, objectFit: "contain" }} />
                     <span style={{ fontSize: 12, color: "#ccc", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 }}>FIFA World Cup 2026</span>
                   </div>
-                  {/* Match header */}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, marginTop: 8 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       {selectedFixture.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
@@ -1785,7 +1860,6 @@ function MatchPitchViewGraphic() {
     setDownloading(false);
   };
 
-  // Grid format from API: "row:col" where row=depth, col=horizontal position
   const groupByRow = (players) => {
     const rows = {};
     (players || []).forEach(p => {
@@ -1870,83 +1944,63 @@ function MatchPitchViewGraphic() {
                   fontFamily: "'Inter',sans-serif",
                 }}
               >
-                {/* Pitch background SVG */}
                 <svg viewBox="0 0 420 680" xmlns="http://www.w3.org/2000/svg" style={{ display: "block", width: "100%" }}>
-                  {/* Pitch */}
                   <rect width="420" height="680" fill="#0a3d1f" />
-                  {/* Pitch outline */}
                   <rect x="20" y="20" width="380" height="640" fill="none" stroke="#1a6b3a" strokeWidth="2" rx="2" />
-                  {/* Centre line */}
                   <line x1="20" y1="340" x2="400" y2="340" stroke="#1a6b3a" strokeWidth="2" />
-                  {/* Centre circle */}
                   <circle cx="210" cy="340" r="55" fill="none" stroke="#1a6b3a" strokeWidth="2" />
                   <circle cx="210" cy="340" r="3" fill="#1a6b3a" />
-                  {/* Top penalty area */}
                   <rect x="100" y="20" width="220" height="90" fill="none" stroke="#1a6b3a" strokeWidth="2" />
                   <rect x="155" y="20" width="110" height="40" fill="none" stroke="#1a6b3a" strokeWidth="2" />
                   <circle cx="210" cy="95" r="4" fill="#1a6b3a" />
-                  {/* Top penalty arc */}
                   <path d="M 170 110 A 55 55 0 0 1 250 110" fill="none" stroke="#1a6b3a" strokeWidth="2" />
-                  {/* Bottom penalty area */}
                   <rect x="100" y="570" width="220" height="90" fill="none" stroke="#1a6b3a" strokeWidth="2" />
                   <rect x="155" y="640" width="110" height="40" fill="none" stroke="#1a6b3a" strokeWidth="2" />
                   <circle cx="210" cy="585" r="4" fill="#1a6b3a" />
-                  {/* Bottom penalty arc */}
                   <path d="M 170 570 A 55 55 0 0 0 250 570" fill="none" stroke="#1a6b3a" strokeWidth="2" />
-                  {/* Grass stripes */}
                   {[0,1,2,3,4,5,6].map(i => (
                     <rect key={i} x="20" y={20 + i * 91} width="380" height="45" fill={i % 2 === 0 ? "rgba(255,255,255,0.02)" : "transparent"} />
                   ))}
                 </svg>
 
-                {/* Players overlaid on pitch */}
                 <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", padding: "24px 8px" }}>
-                  {/* Brand */}
                   <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
                   <div style={{ position: "absolute", top: 8, right: 10, display: "flex", alignItems: "center", gap: 4 }}>
                     <img src="/deep433.jpg" alt="Deep433" crossOrigin="anonymous" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover" }} />
                   </div>
 
-                  {/* Home team flag — positioned beside keeper, right side of box (top) */}
                   {selectedFixture.homeLogo && (
                     <div style={{ position: "absolute", top: "9%", right: "18%", zIndex: 0, opacity: 0.6 }}>
                       <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 28, height: 28, objectFit: "contain" }} />
                     </div>
                   )}
-                  {/* Away team flag — positioned beside keeper, right side of box (bottom) */}
                   {selectedFixture.awayLogo && (
                     <div style={{ position: "absolute", bottom: "9%", right: "18%", zIndex: 0, opacity: 0.6 }}>
                       <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 28, height: 28, objectFit: "contain" }} />
                     </div>
                   )}
 
-                  {/* Watermark — corner */}
                   <div style={{ position: "absolute", bottom: 10, left: 10, pointerEvents: "none" }}>
                     <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 26, height: 26, opacity: 0.35, objectFit: "contain", borderRadius: "50%", userSelect: "none" }} />
                   </div>
 
-                  {/* Home team header */}
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4, paddingLeft: 4 }}>
                     <span style={{ fontSize: 13, fontWeight: 800, color: "#4ade80" }}>{selectedFixture.home}</span>
                     <span style={{ fontSize: 12, color: "#e2e8f0" }}>{lineup.home?.formation}</span>
                   </div>
 
-                  {/* Home team players */}
                   <div style={{ flex: 1 }}>
                     <TeamRows players={lineup.home?.players} color="#4ade80" reverse={false} />
                   </div>
 
-                  {/* Centre line label */}
                   <div style={{ textAlign: "center", padding: "4px 0" }}>
                     <span style={{ fontSize: 11, color: "#1a6b3a", fontWeight: 700, letterSpacing: 2 }}>· · · · · · · · · · · · · ·</span>
                   </div>
 
-                  {/* Away team players */}
                   <div style={{ flex: 1 }}>
                     <TeamRows players={lineup.away?.players} color="#f59e0b" reverse={true} />
                   </div>
 
-                  {/* Away team header */}
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, paddingLeft: 4 }}>
                     <span style={{ fontSize: 13, fontWeight: 800, color: "#f59e0b" }}>{selectedFixture.away}</span>
                     <span style={{ fontSize: 12, color: "#e2e8f0" }}>{lineup.away?.formation}</span>
@@ -1969,7 +2023,7 @@ function MatchPitchViewGraphic() {
 }
 
 // ─── PLAYER HEAD-TO-HEAD GRAPHIC ─────────────────────────────────────────────
-  function PlayerSearchBox({ label, search, setSearch, suggestions, setSuggestions, player, setPlayer, searching, slot, color, onSearch }) {
+function PlayerSearchBox({ label, search, setSearch, suggestions, setSuggestions, player, setPlayer, searching, slot, color, onSearch }) {
   return (
     <div style={{ position: "relative" }}>
       <div style={{ fontSize: 13, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{label}</div>
@@ -2013,7 +2067,7 @@ function PlayerH2HGraphic() {
   const [searching1, setSearching1] = useState(false);
   const [searching2, setSearching2] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const [statsMode, setStatsMode] = useState("competition"); // competition | season
+  const [statsMode, setStatsMode] = useState("competition");
   const [seasonLoading, setSeasonLoading] = useState(false);
 
   const searchPlayer = async (query, slot) => {
@@ -2030,7 +2084,6 @@ function PlayerH2HGraphic() {
     slot === 1 ? setSearching1(false) : setSearching2(false);
   };
 
-  // Fetch season-aggregated stats when toggled to Season mode
   const fetchSeasonStats = async (player, setPlayer) => {
     if (!player?.id) return;
     setSeasonLoading(true);
@@ -2073,7 +2126,6 @@ function PlayerH2HGraphic() {
     );
   };
 
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -2107,7 +2159,6 @@ function PlayerH2HGraphic() {
                   {statsMode === "season" ? "📅 Full Season Comparison" : `🏆 ${LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label} Stats`}
                 </span>
               </div>
-              {/* Player headers */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16, marginTop: 8 }}>
                 <div style={{ textAlign: "center" }}>
                   {player1.photo && <img src={player1.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 8px" }} />}
@@ -2126,7 +2177,6 @@ function PlayerH2HGraphic() {
 
               <div style={{ height: 1, background: "#1a1a2a", marginBottom: 10 }} />
 
-              {/* HERO: Rating comparison */}
               <div style={{
                 background: "linear-gradient(135deg, #4ade8014, #f59e0b0e)",
                 border: "1px solid #4ade8033",
@@ -2139,7 +2189,6 @@ function PlayerH2HGraphic() {
                 </div>
               </div>
 
-              {/* Bento grid — 2x2 */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
                 <BentoBox title="Attack" icon="🎯" color="#4ade80">
                   <CompareRow label="Goals" val1={player1.goals} val2={player2.goals} />
@@ -2195,7 +2244,6 @@ function GoldenGloveGraphic() {
 
       if (!fixtures.length) throw new Error("No completed fixtures yet for this competition");
 
-      // Aggregate clean sheets per team
       const teamMap = {};
       fixtures.forEach(f => {
         const homeGoals = f.score?.home ?? 0;
@@ -2213,7 +2261,6 @@ function GoldenGloveGraphic() {
         if (homeGoals === 0) teamMap[f.away].cleanSheets++;
       });
 
-      // For knockout competitions, filter to only currently-active teams
       let activeNames = null;
       if (KNOCKOUT_LEAGUES.includes(leagueId)) {
         try {
@@ -2316,161 +2363,120 @@ function GoldenGloveGraphic() {
   );
 }
 
-// ─── MAIN EXPORT ─────────────────────────────────────────────────────────────
-// ─── MATCH HEAD-TO-HEAD GRAPHIC ──────────────────────────────────────────────
+// ─── MATCH HEAD-TO-HEAD (TWO PLAYERS FROM ONE FIXTURE) ───────────────────────
 function MatchH2HGraphic() {
   const cardRef = useRef(null);
-  const [selectedFixture, setSelectedFixture] = useState(null);
-  const [matchPlayers, setMatchPlayers] = useState(null);
+  const [leagueId, setLeagueId] = useState("wc2026");
+  const [fixture, setFixture] = useState(null);
+  const [lineup, setLineup] = useState(null);
+  const [loadingLineup, setLoadingLineup] = useState(false);
   const [player1, setPlayer1] = useState(null);
   const [player2, setPlayer2] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSelect = async (f) => {
-    setSelectedFixture(f);
-    setMatchPlayers(null);
-    setPlayer1(null);
-    setPlayer2(null);
-    setError("");
-    if (!f.fixtureId) { setError("No fixture ID available"); return; }
-    setLoading(true);
+  const loadLineup = async (f) => {
+    setFixture(f); setLineup(null); setPlayer1(null); setPlayer2(null); setError("");
+    setLoadingLineup(true);
     try {
-      const r = await fetch(`/api/fixture-data?type=ratings&fixtureId=${f.fixtureId}`);
+      const r = await fetch(`/api/match-lineup?fixtureId=${f.fixtureId}`);
       const d = await r.json();
-      if (!d.available) throw new Error("Player stats not available yet — check back after the match");
-      setMatchPlayers(d);
+      if (!d.available) throw new Error("No lineup/ratings available for this fixture yet");
+      setLineup(d);
     } catch (e) { setError(e.message); }
-    setLoading(false);
+    setLoadingLineup(false);
   };
+
+  const allPlayers = lineup ? [
+    ...(lineup.home?.players || []).map(p => ({ ...p, teamName: lineup.home.name, side: "home" })),
+    ...(lineup.away?.players || []).map(p => ({ ...p, teamName: lineup.away.name, side: "away" })),
+  ] : [];
 
   const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-matchh2h-${player1?.name}-vs-${player2?.name}.png`, undefined, transparent);
+      await downloadCardImage(cardRef.current, `deep433-match-h2h-${fixture?.home}-vs-${fixture?.away}.png`, undefined, transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
 
-  const MatchCompareRow = ({ label, val1, val2, higherIsBetter = true, unit = "" }) => {
-    const v1 = parseFloat(val1) || 0;
-    const v2 = parseFloat(val2) || 0;
-    const p1Better = higherIsBetter ? v1 > v2 : v1 < v2;
-    const p2Better = higherIsBetter ? v2 > v1 : v2 < v1;
-    return (
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
-        <span style={{ fontSize: 20, fontWeight: p1Better ? 900 : 700, color: "#4ade80", opacity: p1Better ? 1 : 0.65 }}>{val1 != null ? val1 + unit : "—"}</span>
-        <span style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
-        <span style={{ fontSize: 20, fontWeight: p2Better ? 900 : 700, color: "#f59e0b", opacity: p2Better ? 1 : 0.65 }}>{val2 != null ? val2 + unit : "—"}</span>
-      </div>
-    );
-  };
-
-  const PlayerPicker = ({ team, selected, onSelect, color }) => (
-    <div>
-      <div style={{ fontSize: 13, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{team?.team}</div>
-      <select
-        value={selected?.name || ""}
-        onChange={e => onSelect(team?.players?.find(p => p.name === e.target.value) || null)}
-        style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${selected ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 16, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
-      >
-        <option value="">— Select player —</option>
-        {team?.players?.map(p => <option key={p.name} value={p.name}>{p.name} ({p.rating ? parseFloat(p.rating).toFixed(1) : "—"})</option>)}
-      </select>
-    </div>
-  );
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      {!selectedFixture ? (
-        <FixturePicker onSelect={handleSelect} />
-      ) : (
-        <>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
-            <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
-            <button onClick={() => { setSelectedFixture(null); setMatchPlayers(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
-          </div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {LEAGUE_OPTIONS.slice(0, 7).map(l => (
+          <button key={l.id} onClick={() => { setLeagueId(l.id); setFixture(null); setLineup(null); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px" }}>
+            {l.label}
+          </button>
+        ))}
+      </div>
 
-          {loading && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 16, padding: "20px 0" }}>Loading player stats...</div>}
-          {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
+      <FixturePicker leagueId={leagueId} onSelect={loadLineup} selected={fixture} />
+      {loadingLineup && <div style={{ color: "#e2e8f0", fontSize: 15 }}>Loading lineup...</div>}
+      {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
 
-          {matchPlayers && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <PlayerPicker team={matchPlayers.home} selected={player1} onSelect={setPlayer1} color="#4ade80" />
-              <PlayerPicker team={matchPlayers.away} selected={player2} onSelect={setPlayer2} color="#f59e0b" />
-            </div>
-          )}
-        </>
+      {lineup && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <PlayerSearchBox
+            label="Player 1" color="#4ade80" slot={1}
+            search={player1?.name || ""} setSearch={() => {}}
+            suggestions={allPlayers.filter(p => !player1 || p.name !== player1.name)}
+            setSuggestions={() => {}}
+            player={player1} setPlayer={setPlayer1}
+            searching={false}
+            onSearch={() => {}}
+          />
+          <PlayerSearchBox
+            label="Player 2" color="#f59e0b" slot={2}
+            search={player2?.name || ""} setSearch={() => {}}
+            suggestions={allPlayers.filter(p => !player2 || p.name !== player2.name)}
+            setSuggestions={() => {}}
+            player={player2} setPlayer={setPlayer2}
+            searching={false}
+            onSearch={() => {}}
+          />
+        </div>
       )}
 
       {player1 && player2 && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "22px 18px 18px" }}>
-              <div style={{ textAlign: "center", marginBottom: 12 }}>
-                <div style={{ fontSize: 14, color: "#f0f0f0", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 3 }}>
-                  🏆 FIFA World Cup 2026
-                </div>
-                <span style={{ fontSize: 12, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>
-                  📋 {selectedFixture.home} vs {selectedFixture.away}
-                </span>
+              <div style={{ textAlign: "center", marginBottom: 14 }}>
+                <span style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5 }}>Match Head-to-Head</span>
+                <div style={{ fontSize: 13, color: "#e2e8f0", marginTop: 4 }}>{fixture.home} vs {fixture.away}</div>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16 }}>
                 <div style={{ textAlign: "center" }}>
                   {player1.photo && <img src={player1.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 8px" }} />}
                   <div style={{ fontSize: 17, fontWeight: 900, color: "#4ade80" }}>{player1.name}</div>
-                  <div style={{ fontSize: 12, color: "#e2e8f0", marginTop: 2 }}>{matchPlayers.home.team}</div>
+                  <div style={{ fontSize: 12, color: "#e2e8f0" }}>{player1.teamName}</div>
                 </div>
-                <div style={{ textAlign: "center", padding: "0 8px" }}>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: "#333" }}>VS</div>
-                </div>
+                <div style={{ fontSize: 18, fontWeight: 900, color: "#333" }}>VS</div>
                 <div style={{ textAlign: "center" }}>
                   {player2.photo && <img src={player2.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #f59e0b", margin: "0 auto 8px" }} />}
                   <div style={{ fontSize: 17, fontWeight: 900, color: "#f59e0b" }}>{player2.name}</div>
-                  <div style={{ fontSize: 12, color: "#e2e8f0", marginTop: 2 }}>{matchPlayers.away.team}</div>
+                  <div style={{ fontSize: 12, color: "#e2e8f0" }}>{player2.teamName}</div>
                 </div>
               </div>
 
-              <div style={{ height: 1, background: "#1a1a2a", marginBottom: 10 }} />
-
-              {/* HERO: Rating comparison */}
               <div style={{
                 background: "linear-gradient(135deg, #4ade8014, #f59e0b0e)",
-                border: "1px solid #4ade8033",
-                borderRadius: 12, padding: "14px 16px", marginBottom: 10,
+                border: "1px solid #4ade8033", borderRadius: 12, padding: "14px 16px", marginBottom: 10,
               }}>
-                <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8, textAlign: "center" }}>⭐ Match Rating</div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: 32, fontWeight: 900, color: "#4ade80" }}>{player1.rating ? parseFloat(player1.rating).toFixed(1) : "—"}</span>
-                  <span style={{ fontSize: 32, fontWeight: 900, color: "#f59e0b" }}>{player2.rating ? parseFloat(player2.rating).toFixed(1) : "—"}</span>
+                  <span style={{ fontSize: 32, fontWeight: 900, color: ratingColor(player1.rating) }}>{player1.rating ? parseFloat(player1.rating).toFixed(1) : "—"}</span>
+                  <span style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase" }}>Rating</span>
+                  <span style={{ fontSize: 32, fontWeight: 900, color: ratingColor(player2.rating) }}>{player2.rating ? parseFloat(player2.rating).toFixed(1) : "—"}</span>
                 </div>
               </div>
 
-              {/* Bento grid — 2x2 */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-                <BentoBox title="Attack" icon="🎯" color="#4ade80">
-                  <MatchCompareRow label="Goals" val1={player1.goals} val2={player2.goals} />
-                  <MatchCompareRow label="Assists" val1={player1.assists} val2={player2.assists} />
-                  <MatchCompareRow label="Shots" val1={player1.shots} val2={player2.shots} />
-                  <MatchCompareRow label="On Target" val1={player1.shotsOnGoal} val2={player2.shotsOnGoal} />
-                </BentoBox>
-
-                <BentoBox title="Creativity" icon="🎨" color="#818cf8">
-                  <MatchCompareRow label="Key Passes" val1={player1.keyPasses} val2={player2.keyPasses} />
-                  <MatchCompareRow label="Pass Acc" val1={player1.passAccuracy} val2={player2.passAccuracy} unit="%" />
-                  <MatchCompareRow label="Dribbles" val1={player1.dribbles} val2={player2.dribbles} />
-                </BentoBox>
-              </div>
-
-              <BentoBox title="Workrate & Caution" icon="⚔️" color="#c084fc">
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                  <MatchCompareRow label="Minutes" val1={player1.minutesPlayed} val2={player2.minutesPlayed} />
-                  <MatchCompareRow label="Tackles" val1={player1.tackles} val2={player2.tackles} />
-                </div>
-                <MatchCompareRow label="Cards" val1={player1.yellowCards} val2={player2.yellowCards} higherIsBetter={false} />
-              </BentoBox>
+              <StatRow label="Goals" val1={player1.goals} val2={player2.goals} />
+              <StatRow label="Assists" val1={player1.assists} val2={player2.assists} />
+              <StatRow label="Shots" val1={player1.shots} val2={player2.shots} />
+              <StatRow label="Passes" val1={player1.passes} val2={player2.passes} />
+              <StatRow label="Tackles" val1={player1.tackles} val2={player2.tackles} />
+              <StatRow label="Duels Won" val1={player1.duelsWon} val2={player2.duelsWon} />
             </div>
           </GraphicCard>
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
@@ -2485,370 +2491,118 @@ function MatchH2HGraphic() {
   );
 }
 
-// ─── TRANSFER FIT GRAPHIC ────────────────────────────────────────────────────
-  function PlayerSearchSlot({ label, search, setSearch, suggestions, setSuggestions, player, searching, slot, color, onSelect, onClear, onSearch }) {
+// ─── TRANSFER FIT (COMPARE TRANSFER TARGET VS INCUMBENT) ────────────────────
+function SoloStatRow({ label, val1, val2, higherIsBetter = true }) {
+  const v1 = parseFloat(val1) || 0;
+  const v2 = parseFloat(val2) || 0;
+  const p1Better = higherIsBetter ? v1 > v2 : v1 < v2;
+  const p2Better = higherIsBetter ? v2 > v1 : v2 < v1;
   return (
-    <div style={{ position: "relative" }}>
-      <div style={{ fontSize: 10, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{label}</div>
-      <input
-        placeholder="Search player..."
-        value={player ? player.name : search}
-        onChange={e => {
-          setSearch(e.target.value);
-          onClear();
-          onSearch(e.target.value, slot);
-        }}
-        style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${player ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
-      />
-      {searching && <div style={{ position: "absolute", right: 10, top: 38, fontSize: 10, color: "#e2e8f0" }}>...</div>}
-      {suggestions.length > 0 && !player && (
-        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, zIndex: 20, marginTop: 4, maxHeight: 220, overflowY: "auto" }}>
-          {suggestions.map(p => (
-            <div key={p.id} onClick={() => onSelect(p, slot)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", cursor: "pointer", borderBottom: "1px solid #1a1a2a" }}>
-              {p.photo && <img src={p.photo} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover" }} />}
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>{p.name}</div>
-                <div style={{ fontSize: 10, color: "#e2e8f0" }}>{p.team}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+    <div style={{ display: "flex", alignItems: "center", padding: "6px 0", borderBottom: "1px solid #0f0f1a" }}>
+      <span style={{ flex: 1, textAlign: "right", fontSize: 20, fontWeight: p1Better ? 900 : 700, color: "#4ade80", opacity: p1Better ? 1 : 0.65, paddingRight: 12 }}>{val1 ?? "—"}</span>
+      <span style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, width: 90, textAlign: "center" }}>{label}</span>
+      <span style={{ flex: 1, textAlign: "left", fontSize: 20, fontWeight: p2Better ? 900 : 700, color: "#f59e0b", opacity: p2Better ? 1 : 0.65, paddingLeft: 12 }}>{val2 ?? "—"}</span>
     </div>
   );
 }
 
-// ─── TEAM-THEN-PLAYER PICKER (standalone, avoids re-render focus bug) ───────
-// ─── Solo stat row (no comparison, just one player's number) ────────────────
-function SoloStatRow({ label, val }) {
+function PlayerSearchSlot({ label, color, player, setPlayer, leagueId }) {
+  const [search, setSearch] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [searching, setSearching] = useState(false);
+
+  const doSearch = async (query) => {
+    setSearch(query);
+    setPlayer(null);
+    if (query.length < 3) { setSuggestions([]); return; }
+    setSearching(true);
+    try {
+      const r = await fetch(`/api/team-stats?mode=playersearch&query=${encodeURIComponent(query)}&leagueId=${leagueId}`);
+      const d = await r.json();
+      setSuggestions(d.players || []);
+    } catch {}
+    setSearching(false);
+  };
+
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-      <span style={{ fontSize: 11, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
-      <span style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>{val ?? "—"}</span>
-    </div>
+    <PlayerSearchBox
+      label={label} color={color} slot={label}
+      search={search} setSearch={setSearch}
+      suggestions={suggestions} setSuggestions={setSuggestions}
+      player={player} setPlayer={setPlayer}
+      searching={searching}
+      onSearch={doSearch}
+    />
   );
 }
 
-function TeamThenPlayerPicker({ label, search, setSearch, suggestions, team, searching, slot, color, squad, playerId, onSearchTeam, onSelectTeam, onSelectPlayer, onClearTeam }) {
-  return (
-    <div>
-      <div style={{ position: "relative", marginBottom: 8 }}>
-        <div style={{ fontSize: 10, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{label} — Team</div>
-        <input
-          placeholder="Search any team worldwide..."
-          value={team ? team.name : search}
-          onChange={e => {
-            setSearch(e.target.value);
-            onClearTeam();
-            onSearchTeam(e.target.value, slot);
-          }}
-          style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${team ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
-        />
-        {searching && <div style={{ position: "absolute", right: 10, top: 38, fontSize: 10, color: "#e2e8f0" }}>...</div>}
-        {suggestions.length > 0 && !team && (
-          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, zIndex: 20, marginTop: 4, maxHeight: 220, overflowY: "auto" }}>
-            {suggestions.map(t => (
-              <div key={t.id} onClick={() => onSelectTeam(t, slot)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", cursor: "pointer", borderBottom: "1px solid #1a1a2a" }}>
-                {t.logo && <img src={t.logo} alt="" style={{ width: 22, height: 22, objectFit: "contain" }} />}
-                <span style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>{t.name}</span>
-                <span style={{ fontSize: 10, color: "#e2e8f0" }}>{t.country}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {team && (
-        <div>
-          <div style={{ fontSize: 10, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{label} — Player</div>
-          <select
-            value={playerId}
-            onChange={e => onSelectPlayer(e.target.value, slot)}
-            style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${playerId ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
-          >
-            <option value="">{squad.length ? "— Select player —" : "Loading squad..."}</option>
-            {squad.map(p => <option key={p.id} value={p.id}>{p.name}{p.position ? ` (${p.position})` : ""}</option>)}
-          </select>
-        </div>
-      )}
-    </div>
-  );
+function TeamThenPlayerPicker({ label, color, leagueId, player, setPlayer }) {
+  return <PlayerSearchSlot label={label} color={color} player={player} setPlayer={setPlayer} leagueId={leagueId} />;
 }
 
 function TransferFitGraphic() {
   const cardRef = useRef(null);
-  const [season, setSeason] = useState(2025);
-
-  // Target side
-  const [searchTargetTeam, setSearchTargetTeam] = useState("");
-  const [suggestTargetTeam, setSuggestTargetTeam] = useState([]);
-  const [targetTeam, setTargetTeam] = useState(null);
-  const [searchingTargetTeam, setSearchingTargetTeam] = useState(false);
-  const [targetSquad, setTargetSquad] = useState([]);
-  const [targetPlayerId, setTargetPlayerId] = useState("");
-  const [target, setTarget] = useState(null);
-  const [targetPrice, setTargetPrice] = useState("");
-
-  // Incumbent side
-  const [searchIncumbentTeam, setSearchIncumbentTeam] = useState("");
-  const [suggestIncumbentTeam, setSuggestIncumbentTeam] = useState([]);
-  const [incumbentTeam, setIncumbentTeam] = useState(null);
-  const [searchingIncumbentTeam, setSearchingIncumbentTeam] = useState(false);
-  const [incumbentSquad, setIncumbentSquad] = useState([]);
-  const [incumbentPlayerId, setIncumbentPlayerId] = useState("");
+  const [leagueId, setLeagueId] = useState("pl");
   const [incumbent, setIncumbent] = useState(null);
-  const [incumbentPrice, setIncumbentPrice] = useState("");
-
-  const [loadingSquad, setLoadingSquad] = useState(false);
-  const [loadingStats, setLoadingStats] = useState(false);
+  const [target, setTarget] = useState(null);
   const [downloading, setDownloading] = useState(false);
-  const [debugData, setDebugData] = useState(null);
-  const [debugLoading, setDebugLoading] = useState(false);
-
-  const searchTeam = async (query, slot) => {
-    if (query.length < 3) {
-      slot === "target" ? setSuggestTargetTeam([]) : setSuggestIncumbentTeam([]);
-      return;
-    }
-    slot === "target" ? setSearchingTargetTeam(true) : setSearchingIncumbentTeam(true);
-    try {
-      const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
-      const d = await r.json();
-      slot === "target" ? setSuggestTargetTeam(d.teams || []) : setSuggestIncumbentTeam(d.teams || []);
-    } catch {}
-    slot === "target" ? setSearchingTargetTeam(false) : setSearchingIncumbentTeam(false);
-  };
-
-  const selectTeam = async (t, slot) => {
-    setLoadingSquad(true);
-    if (slot === "target") {
-      setTargetTeam(t); setSuggestTargetTeam([]); setSearchTargetTeam(t.name);
-      setTargetPlayerId(""); setTarget(null); setTargetSquad([]);
-    } else {
-      setIncumbentTeam(t); setSuggestIncumbentTeam([]); setSearchIncumbentTeam(t.name);
-      setIncumbentPlayerId(""); setIncumbent(null); setIncumbentSquad([]);
-    }
-    try {
-      const r = await fetch(`/api/team-stats?mode=teamsquad&teamId=${t.id}`);
-      const d = await r.json();
-      if (slot === "target") setTargetSquad(d.players || []);
-      else setIncumbentSquad(d.players || []);
-    } catch {}
-    setLoadingSquad(false);
-  };
-
-  const selectPlayerFromSquad = async (playerId, slot) => {
-    if (slot === "target") setTargetPlayerId(playerId); else setIncumbentPlayerId(playerId);
-    const squad = slot === "target" ? targetSquad : incumbentSquad;
-    const basePlayer = squad.find(p => String(p.id) === String(playerId));
-    if (!basePlayer) return;
-
-    const teamInfo = slot === "target" ? targetTeam : incumbentTeam;
-
-    setLoadingStats(true);
-    try {
-      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${playerId}&season=${season}&teamId=${teamInfo?.id}${season === 2026 ? '&onlyLeagueId=1' : ''}`);
-      const d = await r.json();
-      const enriched = d.available
-        ? { ...d, photo: basePlayer.photo, age: basePlayer.age, team: teamInfo?.name, teamLogo: teamInfo?.logo }
-        : { ...basePlayer, team: teamInfo?.name, teamLogo: teamInfo?.logo };
-      if (slot === "target") setTarget(enriched); else setIncumbent(enriched);
-    } catch {
-      if (slot === "target") setTarget(basePlayer); else setIncumbent(basePlayer);
-    }
-    setLoadingStats(false);
-  };
-
-  const fetchDebug = async () => {
-    if (!target || !targetTeam) return;
-    setDebugLoading(true);
-    setDebugData(null);
-    try {
-      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${target.id}&season=${season}&teamId=${targetTeam.id}${season === 2026 ? '&onlyLeagueId=1' : ''}&debug=true`);
-      const d = await r.json();
-      setDebugData(d);
-    } catch (e) {
-      setDebugData({ error: e.message });
-    }
-    setDebugLoading(false);
-  };
 
   const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-transfer-fit-${target?.name}-vs-${incumbent?.name}.png`, undefined, transparent);
+      await downloadCardImage(cardRef.current, `deep433-transfer-fit-${target?.name}.png`, undefined, transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
 
-  const FitRow = ({ label, val1, val2, higherIsBetter = true, light = false }) => {
-    const v1 = parseFloat(val1) || 0;
-    const v2 = parseFloat(val2) || 0;
-    const p1Better = higherIsBetter ? v1 > v2 : v1 < v2;
-    const p2Better = higherIsBetter ? v2 > v1 : v2 < v1;
-    return (
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
-        <span style={{ fontSize: 20, fontWeight: p1Better ? 900 : 700, color: light ? "#9333ea" : "#a855f7" }}>{val1 ?? "—"}</span>
-        <span style={{ fontSize: 13, color: light ? "#e2e8f0" : "#e2e8f0", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, opacity: light ? 0.85 : 0.7 }}>{label}</span>
-        <span style={{ fontSize: 20, fontWeight: p2Better ? 900 : 700, color: light ? "#16a34a" : "#4ade80" }}>{val2 ?? "—"}</span>
-      </div>
-    );
-  };
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 14, color: "#e2e8f0" }}>Compare any two players — same club, rival clubs, or a missed target vs the player actually signed. Search any team, any league worldwide.</div>
-
-      <div>
-        <div style={{ fontSize: 13, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Season</div>
-        <div style={{ display: "flex", gap: 6 }}>
-          {[{ v: 2025, label: "2025-26 Season" }, { v: 2026, label: "2026 (World Cup)" }].map(s => (
-            <button key={s.v} onClick={() => setSeason(s.v)} style={{ background: season === s.v ? "#4ade8022" : "none", border: `1px solid ${season === s.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: season === s.v ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "6px 12px" }}>
-              {s.label}
-            </button>
-          ))}
-        </div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {LEAGUE_OPTIONS.slice(0, 7).map(l => (
+          <button key={l.id} onClick={() => { setLeagueId(l.id); setIncumbent(null); setTarget(null); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px" }}>
+            {l.label}
+          </button>
+        ))}
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        <TeamThenPlayerPicker label="🎯 Player 1" search={searchTargetTeam} setSearch={setSearchTargetTeam} suggestions={suggestTargetTeam} team={targetTeam} searching={searchingTargetTeam} slot="target" color="#a855f7" squad={targetSquad} playerId={targetPlayerId} onSearchTeam={searchTeam} onSelectTeam={selectTeam} onSelectPlayer={selectPlayerFromSquad} onClearTeam={() => setTargetTeam(null)} />
-        <TeamThenPlayerPicker label="🎯 Player 2 (optional)" search={searchIncumbentTeam} setSearch={setSearchIncumbentTeam} suggestions={suggestIncumbentTeam} team={incumbentTeam} searching={searchingIncumbentTeam} slot="incumbent" color="#4ade80" squad={incumbentSquad} playerId={incumbentPlayerId} onSearchTeam={searchTeam} onSelectTeam={selectTeam} onSelectPlayer={selectPlayerFromSquad} onClearTeam={() => setIncumbentTeam(null)} />
+        <TeamThenPlayerPicker label="Incumbent" color="#4ade80" leagueId={leagueId} player={incumbent} setPlayer={setIncumbent} />
+        <TeamThenPlayerPicker label="Transfer Target" color="#f59e0b" leagueId={leagueId} player={target} setPlayer={setTarget} />
       </div>
 
-      {(target || incumbent) && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <div>
-            <div style={{ fontSize: 10, color: "#a855f7", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Price Tag (optional)</div>
-            <input
-              placeholder="e.g. £30m"
-              value={targetPrice}
-              onChange={e => setTargetPrice(e.target.value)}
-              style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
-            />
-          </div>
-          <div>
-            <div style={{ fontSize: 10, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Price Tag (optional)</div>
-            <input
-              placeholder="e.g. £8m"
-              value={incumbentPrice}
-              onChange={e => setIncumbentPrice(e.target.value)}
-              style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
-            />
-          </div>
-        </div>
-      )}
-
-      {(loadingSquad || loadingStats) && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 15 }}>Loading...</div>}
-
-      {target && incumbent && (
+      {incumbent && target && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "22px 18px 18px" }}>
               <div style={{ textAlign: "center", marginBottom: 14 }}>
-                <div style={{ fontSize: 24, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5, marginBottom: 4 }}>The Comparison</div>
-                <span style={{ fontSize: 14, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>🔄 Transfer Fit · {season === 2026 ? "2026 World Cup" : `${season}/${season + 1}`}</span>
+                <span style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5 }}>🔁 Transfer Fit Check</span>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16 }}>
                 <div style={{ textAlign: "center" }}>
-                  {target.photo && <img src={target.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #a855f7", margin: "0 auto 8px" }} />}
-                  <div style={{ fontSize: 17, fontWeight: 900, color: "#a855f7" }}>{target.name}</div>
-                  <div style={{ fontSize: 13, color: "#e2e8f0", marginTop: 2 }}>{target.team}{target.age ? ` · ${target.age}y` : ""}</div>
-                  {targetPrice && <div style={{ fontSize: 13, color: "#a855f7", fontWeight: 700, marginTop: 3 }}>{targetPrice}</div>}
-                </div>
-                <div style={{ textAlign: "center", padding: "0 8px" }}>
-                  <div style={{ fontSize: 16, fontWeight: 900, color: "#333" }}>VS</div>
-                </div>
-                <div style={{ textAlign: "center" }}>
                   {incumbent.photo && <img src={incumbent.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 8px" }} />}
-                  <div style={{ fontSize: 17, fontWeight: 900, color: "#4ade80" }}>{incumbent.name}</div>
-                  <div style={{ fontSize: 13, color: "#e2e8f0", marginTop: 2 }}>{incumbent.team}{incumbent.age ? ` · ${incumbent.age}y` : ""}</div>
-                  {incumbentPrice && <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 700, marginTop: 3 }}>{incumbentPrice}</div>}
+                  <div style={{ fontSize: 15, fontWeight: 900, color: "#4ade80" }}>{incumbent.name}</div>
+                  <div style={{ fontSize: 11, color: "#e2e8f0" }}>{incumbent.team}</div>
+                  <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", marginTop: 3 }}>Incumbent</div>
+                </div>
+                <div style={{ fontSize: 18, fontWeight: 900, color: "#333" }}>→</div>
+                <div style={{ textAlign: "center" }}>
+                  {target.photo && <img src={target.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #f59e0b", margin: "0 auto 8px" }} />}
+                  <div style={{ fontSize: 15, fontWeight: 900, color: "#f59e0b" }}>{target.name}</div>
+                  <div style={{ fontSize: 11, color: "#e2e8f0" }}>{target.team}</div>
+                  <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", marginTop: 3 }}>Target</div>
                 </div>
               </div>
 
-              <div style={{ height: 1, background: "#1a1a2a", marginBottom: 10 }} />
-
-
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 10 }}>
-                <BentoBox title="Output" icon="⚽" color="#a855f7">
-                  <FitRow label="Goals" val1={target.goals} val2={incumbent.goals} />
-                  <FitRow label="Assists" val1={target.assists} val2={incumbent.assists} />
-                  <FitRow label="Apps" val1={target.appearances} val2={incumbent.appearances} />
-                </BentoBox>
-
-                <BentoBox title="Progression" icon="🎨" color="#60a5fa">
-                  <FitRow label="Key Passes" val1={target.keyPasses} val2={incumbent.keyPasses} />
-                  <FitRow label="Dribbles" val1={target.dribbles} val2={incumbent.dribbles} />
-                  <FitRow label="Shots" val1={target.shots} val2={incumbent.shots} />
-                </BentoBox>
-              </div>
-
-              <BentoBox title="Defensive Work" icon="🛡️">
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                  <FitRow label="Tackles" val1={target.tackles} val2={incumbent.tackles} />
-                  <FitRow label="Cards" val1={target.yellowCards} val2={incumbent.yellowCards} higherIsBetter={false} />
-                </div>
-              </BentoBox>
+              <SoloStatRow label="Goals" val1={incumbent.goals} val2={target.goals} />
+              <SoloStatRow label="Assists" val1={incumbent.assists} val2={target.assists} />
+              <SoloStatRow label="Apps" val1={incumbent.appearances} val2={target.appearances} />
+              <SoloStatRow label="Rating" val1={incumbent.rating ? parseFloat(incumbent.rating).toFixed(1) : null} val2={target.rating ? parseFloat(target.rating).toFixed(1) : null} />
+              <SoloStatRow label="Key Passes" val1={incumbent.keyPasses} val2={target.keyPasses} />
+              <SoloStatRow label="Dribbles" val1={incumbent.dribbles} val2={target.dribbles} />
             </div>
           </GraphicCard>
-          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#a855f7,#818cf8)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 19, fontWeight: 800, padding: "12px", width: "100%" }}>
-            {downloading ? "Generating..." : "⬇ Download PNG"}
-          </button>
-          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
-            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
-          </button>
-          <button onClick={fetchDebug} disabled={debugLoading} style={{ background: "none", border: "1px dashed #444", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 16, fontWeight: 600, padding: "8px", width: "100%" }}>
-            {debugLoading ? "Loading raw data..." : "🐛 Show Raw Data (Target)"}
-          </button>
-          {debugData && (
-            <pre style={{ background: "#0a0a0f", border: "1px solid #2a2a3a", borderRadius: 8, padding: 12, fontSize: 14, color: "#8f8", overflowX: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-              {JSON.stringify(debugData, null, 2)}
-            </pre>
-          )}
-        </>
-      )}
-
-      {/* Solo signing — no comparison, just the incoming player's own stats */}
-      {target && !incumbent && (
-        <>
-          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "22px 18px 18px" }}>
-              <div style={{ textAlign: "center", marginBottom: 14 }}>
-                <div style={{ fontSize: 22, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5, marginBottom: 4 }}>Player Profile</div>
-                <span style={{ fontSize: 14, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>🔄 Transfer Fit · {season === 2026 ? "2026 World Cup" : `${season}/${season + 1}`}</span>
-              </div>
-
-              <div style={{ textAlign: "center", marginBottom: 18 }}>
-                {target.photo && <img src={target.photo} alt="" crossOrigin="anonymous" style={{ width: 72, height: 72, borderRadius: "50%", objectFit: "cover", border: "2px solid #a855f7", margin: "0 auto 10px" }} />}
-                <div style={{ fontSize: 20, fontWeight: 900, color: "#a855f7" }}>{target.name}</div>
-                <div style={{ fontSize: 13, color: "#e2e8f0", marginTop: 3 }}>{target.team}{target.age ? ` · ${target.age}y` : ""}</div>
-                {targetPrice && <div style={{ fontSize: 14, color: "#a855f7", fontWeight: 700, marginTop: 4 }}>{targetPrice}</div>}
-              </div>
-
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-                <BentoBox title="Output" icon="⚽" color="#a855f7">
-                  <SoloStatRow label="Goals" val={target.goals} />
-                  <SoloStatRow label="Assists" val={target.assists} />
-                  <SoloStatRow label="Apps" val={target.appearances} />
-                </BentoBox>
-                <BentoBox title="Progression" icon="🎨" color="#60a5fa">
-                  <SoloStatRow label="Key Passes" val={target.keyPasses} />
-                  <SoloStatRow label="Dribbles" val={target.dribbles} />
-                  <SoloStatRow label="Shots" val={target.shots} />
-                </BentoBox>
-              </div>
-
-              <BentoBox title="Defensive Work" icon="🛡️" color="#f59e0b">
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                  <SoloStatRow label="Tackles" val={target.tackles} />
-                  <SoloStatRow label="Cards" val={target.yellowCards} />
-                </div>
-              </BentoBox>
-            </div>
-          </GraphicCard>
-          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#a855f7,#818cf8)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
           </button>
           <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
@@ -2860,60 +2614,54 @@ function TransferFitGraphic() {
   );
 }
 
-// ─── TEAM SEARCH SLOT (standalone, avoids re-render focus bug) ──────────────
-// ─── LEAGUE SEARCH SLOT (any of API-Football's 1000+ leagues) ───────────────
-function LeagueSearchSlot({ search, setSearch, suggestions, league, searching, onSelect, onClear, onSearch }) {
+// ─── SHARED: LEAGUE / TEAM SEARCH SLOTS ──────────────────────────────────────
+function LeagueSearchSlot({ leagueId, setLeagueId }) {
   return (
-    <div style={{ position: "relative" }}>
-      <input
-        placeholder="Search any league worldwide..."
-        value={league ? league.name : search}
-        onChange={e => {
-          setSearch(e.target.value);
-          onClear();
-          onSearch(e.target.value);
-        }}
-        style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${league ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
-      />
-      {searching && <div style={{ position: "absolute", right: 10, top: 10, fontSize: 10, color: "#e2e8f0" }}>...</div>}
-      {suggestions.length > 0 && !league && (
-        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, zIndex: 20, marginTop: 4, maxHeight: 260, overflowY: "auto" }}>
-          {suggestions.map((l, i) => (
-            <div key={i} onClick={() => onSelect(l)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", cursor: "pointer", borderBottom: "1px solid #1a1a2a" }}>
-              {l.logo && <img src={l.logo} alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />}
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>{l.name}</div>
-                <div style={{ fontSize: 10, color: "#e2e8f0" }}>{l.country} · {l.type}{l.currentSeason ? ` · ${l.currentSeason}` : ""}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+      {LEAGUE_OPTIONS.map(l => (
+        <button key={l.id} onClick={() => setLeagueId(l.id)} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
+          {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
+          {l.label}
+        </button>
+      ))}
     </div>
   );
 }
 
-function TeamSearchSlot({ label, search, setSearch, suggestions, team, searching, slot, color, onSelect, onClear, onSearch }) {
+function TeamSearchSlot({ label, color, leagueId, team, setTeam }) {
+  const [search, setSearch] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [searching, setSearching] = useState(false);
+
+  const doSearch = async (query) => {
+    setSearch(query);
+    setTeam(null);
+    if (query.length < 2) { setSuggestions([]); return; }
+    setSearching(true);
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}&leagueId=${leagueId}`);
+      const d = await r.json();
+      setSuggestions(d.teams || []);
+    } catch {}
+    setSearching(false);
+  };
+
   return (
     <div style={{ position: "relative" }}>
-      <div style={{ fontSize: 10, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 13, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{label}</div>
       <input
         placeholder="Search team..."
         value={team ? team.name : search}
-        onChange={e => {
-          setSearch(e.target.value);
-          onClear();
-          onSearch(e.target.value, slot);
-        }}
-        style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${team ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+        onChange={e => doSearch(e.target.value)}
+        style={{ width: "100%", background: "#1a1a24", border: `1.5px solid ${team ? color : "#2a2a3a"}`, borderRadius: 8, color: "#f0f0f0", fontSize: 16, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
       />
-      {searching && <div style={{ position: "absolute", right: 10, top: 38, fontSize: 10, color: "#e2e8f0" }}>...</div>}
+      {searching && <div style={{ position: "absolute", right: 10, top: 38, fontSize: 13, color: "#e2e8f0" }}>...</div>}
       {suggestions.length > 0 && !team && (
         <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, zIndex: 20, marginTop: 4, maxHeight: 220, overflowY: "auto" }}>
           {suggestions.map(t => (
-            <div key={t.id} onClick={() => onSelect(t, slot)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", cursor: "pointer", borderBottom: "1px solid #1a1a2a" }}>
+            <div key={t.id} onClick={() => { setTeam(t); setSearch(t.name); setSuggestions([]); }} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", cursor: "pointer", borderBottom: "1px solid #1a1a2a" }}>
               {t.logo && <img src={t.logo} alt="" style={{ width: 22, height: 22, objectFit: "contain" }} />}
-              <span style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>{t.name}</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0" }}>{t.name}</span>
             </div>
           ))}
         </div>
@@ -2925,158 +2673,84 @@ function TeamSearchSlot({ label, search, setSearch, suggestions, team, searching
 // ─── GOAL TIMING GRAPHIC ──────────────────────────────────────────────────────
 function GoalTimingGraphic() {
   const cardRef = useRef(null);
-  const [searchLeague, setSearchLeague] = useState("");
-  const [suggestLeague, setSuggestLeague] = useState([]);
-  const [league, setLeague] = useState(null);
-  const [searchingLeague, setSearchingLeague] = useState(false);
-
-  const [search1, setSearch1] = useState("");
-  const [suggest1, setSuggest1] = useState([]);
-  const [team1, setTeam1] = useState(null);
-  const [searching1, setSearching1] = useState(false);
-  const [stats1, setStats1] = useState(null);
-
-  const [search2, setSearch2] = useState("");
-  const [suggest2, setSuggest2] = useState([]);
-  const [team2, setTeam2] = useState(null);
-  const [searching2, setSearching2] = useState(false);
-  const [stats2, setStats2] = useState(null);
-
+  const [leagueId, setLeagueId] = useState("pl");
+  const [team, setTeam] = useState(null);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState("");
 
-  const INTERVALS = ["0-15", "16-30", "31-45", "46-60", "61-75", "76-90"];
+  const BANDS = ["0-15", "16-30", "31-45", "46-60", "61-75", "76-90"];
 
-  const searchLeagueFn = async (query) => {
-    if (query.length < 3) { setSuggestLeague([]); return; }
-    setSearchingLeague(true);
+  const load = async () => {
+    if (!team) return;
+    setLoading(true); setError(""); setData(null);
     try {
-      const r = await fetch(`/api/team-stats?mode=leaguesearch&query=${encodeURIComponent(query)}`);
+      const r = await fetch(`/api/team-stats?mode=goaltiming&teamId=${team.id}&leagueId=${leagueId}`);
       const d = await r.json();
-      setSuggestLeague(d.leagues || []);
-    } catch {}
-    setSearchingLeague(false);
-  };
-
-  const selectLeague = (l) => {
-    setLeague(l); setSuggestLeague([]); setSearchLeague(l.name);
-    setTeam1(null); setTeam2(null); setStats1(null); setStats2(null); setSearch1(""); setSearch2("");
-  };
-
-  const searchTeam = async (query, slot) => {
-    if (query.length < 3) {
-      slot === 1 ? setSuggest1([]) : setSuggest2([]);
-      return;
-    }
-    slot === 1 ? setSearching1(true) : setSearching2(true);
-    try {
-      const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
-      const d = await r.json();
-      slot === 1 ? setSuggest1(d.teams || []) : setSuggest2(d.teams || []);
-    } catch {}
-    slot === 1 ? setSearching1(false) : setSearching2(false);
-  };
-
-  const selectTeam = async (t, slot) => {
-    if (!league) return;
-    setLoading(true);
-    if (slot === 1) { setTeam1(t); setSuggest1([]); setSearch1(t.name); }
-    else { setTeam2(t); setSuggest2([]); setSearch2(t.name); }
-    try {
-      const r = await fetch(`/api/team-stats?apiLeagueId=${league.id}&season=${league.currentSeason}&teamId=${t.id}`);
-      const d = await r.json();
-      if (slot === 1) setStats1(d.available ? d : null);
-      else setStats2(d.available ? d : null);
-    } catch {}
+      if (!d.available) throw new Error("No goal timing data available for this team");
+      setData(d);
+    } catch (e) { setError(e.message); }
     setLoading(false);
   };
 
   const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-goal-timing-${team1?.name}-vs-${team2?.name}.png`, undefined, transparent);
+      await downloadCardImage(cardRef.current, `deep433-goal-timing-${team?.name}.png`, undefined, transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
 
-  const getVal = (obj, key) => {
-    if (!obj) return 0;
-    return parseInt(obj[key]?.total) || 0;
-  };
-
-  const IntervalBar = ({ label, val1, val2, max, color1, color2 }) => (
-    <div style={{ marginBottom: 10 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-        <span style={{ fontSize: 13, fontWeight: 900, color: color1 }}>{val1}</span>
-        <span style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700 }}>{label}'</span>
-        <span style={{ fontSize: 13, fontWeight: 900, color: color2 }}>{val2}</span>
-      </div>
-      <div style={{ display: "flex", gap: 4 }}>
-        <div style={{ flex: 1, height: 7, background: "#1a1a24", borderRadius: 4, overflow: "hidden", display: "flex", justifyContent: "flex-end" }}>
-          <div style={{ width: `${max ? (val1 / max) * 100 : 0}%`, background: color1, borderRadius: 4 }} />
-        </div>
-        <div style={{ flex: 1, height: 7, background: "#1a1a24", borderRadius: 4, overflow: "hidden" }}>
-          <div style={{ width: `${max ? (val2 / max) * 100 : 0}%`, background: color2, borderRadius: 4 }} />
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div>
-        <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Competition</div>
-        <LeagueSearchSlot search={searchLeague} setSearch={setSearchLeague} suggestions={suggestLeague} league={league} searching={searchingLeague} onSelect={selectLeague} onClear={() => setLeague(null)} onSearch={searchLeagueFn} />
-      </div>
+      <LeagueSearchSlot leagueId={leagueId} setLeagueId={(id) => { setLeagueId(id); setTeam(null); setData(null); }} />
+      <TeamSearchSlot label="Team" color="#4ade80" leagueId={leagueId} team={team} setTeam={setTeam} />
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        <TeamSearchSlot label="Team 1" search={search1} setSearch={setSearch1} suggestions={suggest1} team={team1} searching={searching1} slot={1} color="#4ade80" onSelect={selectTeam} onClear={() => setTeam1(null)} onSearch={searchTeam} />
-        <TeamSearchSlot label="Team 2" search={search2} setSearch={setSearch2} suggestions={suggest2} team={team2} searching={searching2} slot={2} color="#f59e0b" onSelect={selectTeam} onClear={() => setTeam2(null)} onSearch={searchTeam} />
-      </div>
+      <button onClick={load} disabled={loading || !team} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "10px", opacity: !team ? 0.5 : 1 }}>
+        {loading ? "Loading..." : "Load Goal Timing"}
+      </button>
+      {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
 
-      {loading && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 12 }}>Loading...</div>}
-
-      {stats1 && stats2 && (
+      {data && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "22px 18px 18px" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16, marginTop: 8 }}>
-                <div style={{ textAlign: "center" }}>
-                  {stats1.logo && <img src={stats1.logo} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain", margin: "0 auto 6px" }} />}
-                  <div style={{ fontSize: 13, fontWeight: 800, color: "#4ade80" }}>{stats1.team}</div>
-                </div>
-                <div style={{ textAlign: "center", padding: "0 8px" }}>
-                  <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 }}>⏱️ Goal Timing</div>
-                </div>
-                <div style={{ textAlign: "center" }}>
-                  {stats2.logo && <img src={stats2.logo} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain", margin: "0 auto 6px" }} />}
-                  <div style={{ fontSize: 13, fontWeight: 800, color: "#f59e0b" }}>{stats2.team}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
+                {team.logo && <img src={team.logo} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
+                <div>
+                  <div style={{ fontSize: 17, fontWeight: 900, color: "#f0f0f0" }}>{team.name}</div>
+                  <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 }}>Goal Timing Breakdown</div>
                 </div>
               </div>
 
-              <BentoBox title="Goals Scored" icon="⚽" color="#4ade80">
-                {(() => {
-                  const vals1 = INTERVALS.map(k => getVal(stats1.goalIntervalsFor, k));
-                  const vals2 = INTERVALS.map(k => getVal(stats2.goalIntervalsFor, k));
-                  const max = Math.max(...vals1, ...vals2, 1);
-                  return INTERVALS.map((label, i) => (
-                    <IntervalBar key={label} label={label} val1={vals1[i]} val2={vals2[i]} max={max} color1="#4ade80" color2="#f59e0b" />
-                  ));
-                })()}
-              </BentoBox>
+              <div style={{ fontSize: 12, color: "#4ade80", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>⚽ Goals Scored</div>
+              {(() => {
+                const max = Math.max(...BANDS.map(b => data.scored?.[b] || 0), 1);
+                return BANDS.map(b => (
+                  <div key={b} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                    <span style={{ fontSize: 12, color: "#e2e8f0", width: 46 }}>{b}'</span>
+                    <div style={{ flex: 1, height: 14, background: "#1a1a24", borderRadius: 4, overflow: "hidden" }}>
+                      <div style={{ width: `${Math.max(((data.scored?.[b] || 0) / max) * 100, data.scored?.[b] ? 4 : 0)}%`, height: "100%", background: "linear-gradient(90deg,#4ade80,#22c55e)" }} />
+                    </div>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: "#4ade80", width: 20, textAlign: "right" }}>{data.scored?.[b] || 0}</span>
+                  </div>
+                ));
+              })()}
 
-              <div style={{ height: 10 }} />
-
-              <BentoBox title="Goals Conceded" icon="🥅" color="#f87171">
-                {(() => {
-                  const vals1 = INTERVALS.map(k => getVal(stats1.goalIntervalsAgainst, k));
-                  const vals2 = INTERVALS.map(k => getVal(stats2.goalIntervalsAgainst, k));
-                  const max = Math.max(...vals1, ...vals2, 1);
-                  return INTERVALS.map((label, i) => (
-                    <IntervalBar key={label} label={label} val1={vals1[i]} val2={vals2[i]} max={max} color1="#4ade80" color2="#f59e0b" />
-                  ));
-                })()}
-              </BentoBox>
+              <div style={{ fontSize: 12, color: "#f59e0b", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, margin: "16px 0 8px" }}>🥅 Goals Conceded</div>
+              {(() => {
+                const max = Math.max(...BANDS.map(b => data.conceded?.[b] || 0), 1);
+                return BANDS.map(b => (
+                  <div key={b} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                    <span style={{ fontSize: 12, color: "#e2e8f0", width: 46 }}>{b}'</span>
+                    <div style={{ flex: 1, height: 14, background: "#1a1a24", borderRadius: 4, overflow: "hidden" }}>
+                      <div style={{ width: `${Math.max(((data.conceded?.[b] || 0) / max) * 100, data.conceded?.[b] ? 4 : 0)}%`, height: "100%", background: "linear-gradient(90deg,#f59e0b,#d97706)" }} />
+                    </div>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: "#f59e0b", width: 20, textAlign: "right" }}>{data.conceded?.[b] || 0}</span>
+                  </div>
+                ));
+              })()}
             </div>
           </GraphicCard>
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
@@ -3094,116 +2768,75 @@ function GoalTimingGraphic() {
 // ─── HALFTIME RECAP GRAPHIC ──────────────────────────────────────────────────
 function HalftimeRecapGraphic() {
   const cardRef = useRef(null);
-  const [selectedFixture, setSelectedFixture] = useState(null);
-  const [events, setEvents] = useState(null);
+  const [leagueId, setLeagueId] = useState("wc2026");
+  const [fixture, setFixture] = useState(null);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSelect = async (f) => {
-    setSelectedFixture(f);
-    setEvents(null);
-    setError("");
-    if (f.status === "upcoming") { setError("This match hasn't kicked off yet"); return; }
+  const load = async (f) => {
+    setFixture(f); setData(null); setError("");
     setLoading(true);
     try {
-      const r = await fetch(`/api/fixture-data?type=events&fixtureId=${f.fixtureId}`);
+      const r = await fetch(`/api/fixture-data?fixtureId=${f.fixtureId}&type=halftime`);
       const d = await r.json();
-      setEvents(d.events || []);
-    } catch (e) { setError("Could not load match events"); }
+      if (!d.available) throw new Error("Halftime data not available for this fixture yet");
+      setData(d);
+    } catch (e) { setError(e.message); }
     setLoading(false);
   };
 
   const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-ht-recap-${selectedFixture?.home}-vs-${selectedFixture?.away}.png`, undefined, transparent);
+      await downloadCardImage(cardRef.current, `deep433-halftime-${fixture?.home}-vs-${fixture?.away}.png`, undefined, transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
 
-  function normalizeTeam(s) { return (s || "").toLowerCase().replace(/[^a-z0-9]/g, ""); }
-
-  const firstHalfEvents = (events || []).filter(e => {
-    if (e.type === "Goal" && e.detail === "Missed Penalty") return false;
-    const min = parseInt(e.minute) || 0;
-    return min <= 45 && (e.type === "Goal" || e.type === "Card");
-  }).sort((a, b) => (parseInt(a.minute) || 0) - (parseInt(b.minute) || 0));
-
-  const htHomeGoals = firstHalfEvents.filter(e => e.type === "Goal" && normalizeTeam(e.team) === normalizeTeam(selectedFixture?.home)).length;
-  const htAwayGoals = firstHalfEvents.filter(e => e.type === "Goal" && normalizeTeam(e.team) === normalizeTeam(selectedFixture?.away)).length;
-
-  const hasReachedHT = selectedFixture && (selectedFixture.status === "live" || selectedFixture.status === "finished");
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      {!selectedFixture ? (
-        <FixturePicker onSelect={handleSelect} />
-      ) : (
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
-          <button onClick={() => { setSelectedFixture(null); setEvents(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "4px 10px" }}>Change</button>
-        </div>
-      )}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {LEAGUE_OPTIONS.slice(0, 7).map(l => (
+          <button key={l.id} onClick={() => { setLeagueId(l.id); setFixture(null); setData(null); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px" }}>
+            {l.label}
+          </button>
+        ))}
+      </div>
 
-      {loading && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 13, padding: "20px 0" }}>Loading match events...</div>}
-      {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
+      <FixturePicker leagueId={leagueId} onSelect={load} selected={fixture} />
+      {loading && <div style={{ color: "#e2e8f0", fontSize: 15 }}>Loading...</div>}
+      {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
 
-      {events && hasReachedHT && (
+      {data && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "22px 18px 18px" }}>
               <div style={{ textAlign: "center", marginBottom: 6 }}>
-                <span style={{ fontSize: 12, color: "#ccc", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 }}>{selectedFixture.round}</span>
+                <span style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5 }}>⏱ Halftime</span>
               </div>
-              <div style={{ textAlign: "center", marginBottom: 16 }}>
-                <span style={{ fontSize: 11, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>⏱ Halftime Recap</span>
-              </div>
-
-              {/* HERO: HT Score */}
-              <div style={{
-                background: "linear-gradient(135deg, #818cf814, #4ade800e)",
-                border: "1px solid #818cf833",
-                borderRadius: 12, padding: "18px 16px", marginBottom: 14,
-              }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center" }}>
-                  <div style={{ textAlign: "center" }}>
-                    {selectedFixture.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 38, height: 38, objectFit: "contain", margin: "0 auto 8px" }} />}
-                    <div style={{ fontSize: 15, fontWeight: 800, color: "#4ade80" }}>{selectedFixture.home}</div>
-                  </div>
-                  <div style={{ textAlign: "center", padding: "0 14px" }}>
-                    <div style={{ fontSize: 11, color: "#e2e8f0", textTransform: "uppercase", letterSpacing: 1, fontWeight: 700, marginBottom: 4 }}>HT</div>
-                    <div style={{ fontSize: 44, fontWeight: 900, color: "#f0f0f0", letterSpacing: -1.5, lineHeight: 1 }}>{htHomeGoals}-{htAwayGoals}</div>
-                  </div>
-                  <div style={{ textAlign: "center" }}>
-                    {selectedFixture.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 38, height: 38, objectFit: "contain", margin: "0 auto 8px" }} />}
-                    <div style={{ fontSize: 15, fontWeight: 800, color: "#f59e0b" }}>{selectedFixture.away}</div>
-                  </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 18, margin: "10px 0 18px" }}>
+                <div style={{ textAlign: "center" }}>
+                  {fixture.homeLogo && <img src={fixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 40, height: 40, objectFit: "contain" }} />}
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#f0f0f0", marginTop: 4 }}>{fixture.home}</div>
+                </div>
+                <div style={{ fontSize: 34, fontWeight: 900, color: "#f0f0f0" }}>{data.htScore?.home ?? 0} - {data.htScore?.away ?? 0}</div>
+                <div style={{ textAlign: "center" }}>
+                  {fixture.awayLogo && <img src={fixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 40, height: 40, objectFit: "contain" }} />}
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#f0f0f0", marginTop: 4 }}>{fixture.away}</div>
                 </div>
               </div>
 
-              <BentoBox title="First Half Events" icon="📋" color="#60a5fa">
-                {firstHalfEvents.length === 0 && (
-                  <div style={{ fontSize: 13, color: "#e2e8f0", textAlign: "center", padding: "10px 0" }}>No goals or cards in the first half</div>
-                )}
-                {firstHalfEvents.map((e, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: i < firstHalfEvents.length - 1 ? "1px solid #1a1a2a" : "none" }}>
-                    <span style={{ fontSize: 14, color: "#ccc", minWidth: 34, fontWeight: 800 }}>{e.minute}'</span>
-                    <span style={{ fontSize: 17 }}>{e.icon}</span>
-                    <span style={{ fontSize: 15, color: "#f0f0f0", fontWeight: 700, flex: 1 }}>{(e.label || "").split("(")[0].trim()}</span>
-                    <span style={{ fontSize: 13, color: normalizeTeam(e.team) === normalizeTeam(selectedFixture.home) ? "#4ade80" : "#f59e0b", fontWeight: 800 }}>
-                      {(e.team || "").split(" ").slice(-1)[0]}
-                    </span>
-                  </div>
-                ))}
-              </BentoBox>
-
-              {selectedFixture.status === "finished" && (
-                <div style={{ background: "#13131f", borderRadius: 10, padding: "12px 14px", marginTop: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{ fontSize: 12, color: "#ccc", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>
-                    {selectedFixture.statusRaw === "AET" ? "Full Time (AET)" : selectedFixture.statusRaw === "PEN" ? "Full Time (Pens)" : "Full Time"}
-                  </span>
-                  <span style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5 }}>{selectedFixture.score?.home}-{selectedFixture.score?.away}</span>
+              {(data.events || []).length > 0 && (
+                <div style={{ borderTop: "1px solid #1a1a2a", paddingTop: 10 }}>
+                  <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Key Events</div>
+                  {data.events.map((ev, i) => (
+                    <div key={i} style={{ display: "flex", gap: 8, fontSize: 14, color: "#e2e8f0", marginBottom: 6 }}>
+                      <span style={{ color: "#818cf8", fontWeight: 700, width: 32 }}>{ev.minute}'</span>
+                      <span>{ev.icon} {ev.text}</span>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -3216,154 +2849,56 @@ function HalftimeRecapGraphic() {
           </button>
         </>
       )}
-
-      {events && !hasReachedHT && (
-        <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 13, padding: "20px 0" }}>This match hasn't reached halftime yet</div>
-      )}
     </div>
   );
 }
 
-// ─── TEAM STATS COMPARISON ───────────────────────────────────────────────────
+// ─── TEAM STATS COMPARE (SIDE BY SIDE SEASON PROFILES) ───────────────────────
 function TeamStatsCompareGraphic() {
   const cardRef = useRef(null);
   const [leagueId, setLeagueId] = useState("pl");
-
-  const [search1, setSearch1] = useState("");
-  const [suggest1, setSuggest1] = useState([]);
   const [team1, setTeam1] = useState(null);
-  const [searching1, setSearching1] = useState(false);
-  const [data1, setData1] = useState(null);
-
-  const [search2, setSearch2] = useState("");
-  const [suggest2, setSuggest2] = useState([]);
   const [team2, setTeam2] = useState(null);
-  const [searching2, setSearching2] = useState(false);
-  const [data2, setData2] = useState(null);
-
-  const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
-
-  const searchTeam = async (query, slot) => {
-    if (query.length < 3) {
-      slot === 1 ? setSuggest1([]) : setSuggest2([]);
-      return;
-    }
-    slot === 1 ? setSearching1(true) : setSearching2(true);
-    try {
-      const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
-      const d = await r.json();
-      slot === 1 ? setSuggest1(d.teams || []) : setSuggest2(d.teams || []);
-    } catch {}
-    slot === 1 ? setSearching1(false) : setSearching2(false);
-  };
-
-  const selectTeam = async (t, slot) => {
-    setLoading(true);
-    if (slot === 1) { setTeam1(t); setSuggest1([]); setSearch1(t.name); }
-    else { setTeam2(t); setSuggest2([]); setSearch2(t.name); }
-    try {
-      const r = await fetch(`/api/team-stats?leagueId=${leagueId}&teamId=${t.id}`);
-      const d = await r.json();
-      if (slot === 1) setData1(d.available ? d : null);
-      else setData2(d.available ? d : null);
-    } catch {}
-    setLoading(false);
-  };
 
   const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-team-compare-${data1?.team}-vs-${data2?.team}.png`, undefined, transparent);
+      await downloadCardImage(cardRef.current, `deep433-team-compare-${team1?.name}-vs-${team2?.name}.png`, undefined, transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
 
-  const formDot = (r) => (
-    <div style={{ width: 16, height: 16, borderRadius: "50%", background: r === "W" ? "#4ade80" : r === "D" ? "#a78bfa" : "#f87171", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, color: "#0a0a0f", flexShrink: 0 }}>{r}</div>
-  );
-
-  const TeamBlock = ({ data }) => (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-        {data.logo && <img src={data.logo} alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, objectFit: "contain" }} />}
-        <div>
-          <div style={{ fontSize: 16, fontWeight: 900, color: "#f0f0f0" }}>{data.team}</div>
-          <div style={{ fontSize: 11, color: "#e2e8f0" }}>
-            {LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label} {data.seasonUsed}/{parseInt(data.seasonUsed) + 1} · Final Stats
-          </div>
-        </div>
-      </div>
-
-      <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 8 }}>
-        {data.position && (
-          <div style={{ background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 6, padding: "4px 8px", fontSize: 10, fontWeight: 700, color: "#f0f0f0" }}>
-            POS: <span style={{ color: "#4ade80" }}>{data.position}{data.position === 1 ? "st" : data.position === 2 ? "nd" : data.position === 3 ? "rd" : "th"}</span>
-          </div>
-        )}
-        <div style={{ background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 6, padding: "4px 8px", fontSize: 10, fontWeight: 700, color: "#f0f0f0" }}>
-          PTS: <span style={{ color: "#4ade80" }}>{(data.wins || 0) * 3 + (data.draws || 0)}</span>
-        </div>
-        <div style={{ background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 6, padding: "4px 8px", fontSize: 10, fontWeight: 700, color: "#f0f0f0" }}>
-          GD: <span style={{ color: (data.goalsFor - data.goalsAgainst) >= 0 ? "#4ade80" : "#f87171" }}>{(data.goalsFor - data.goalsAgainst) >= 0 ? "+" : ""}{data.goalsFor - data.goalsAgainst}</span>
-        </div>
-      </div>
-
-      {data.form && (
-        <div style={{ marginBottom: 8 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 5 }}>Final 10 Match Form</div>
-          <div style={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
-            {data.form.slice(-10).split("").map((r, i) => <div key={i}>{formDot(r)}</div>)}
-          </div>
-        </div>
-      )}
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
-        {[
-          { label: "Played",  value: data.played,       color: "#f0f0f0" },
-          { label: "Wins",    value: data.wins,         color: "#4ade80" },
-          { label: "Draws",   value: data.draws,        color: "#a78bfa" },
-          { label: "Losses",  value: data.losses,       color: "#f87171" },
-          { label: "GF",      value: data.goalsFor,     color: "#4ade80" },
-          { label: "GA",      value: data.goalsAgainst,  color: "#f87171" },
-          { label: "Clean Sheets", value: data.cleanSheets,     color: "#60a5fa" },
-          { label: "Avg Scored",   value: data.avgGoalsFor,     color: "#4ade80" },
-          { label: "Avg Conceded", value: data.avgGoalsAgainst, color: "#f87171" },
-        ].map(s => (
-          <div key={s.label} style={{ background: "#13131f", borderRadius: 6, padding: "6px 4px", textAlign: "center" }}>
-            <div style={{ fontSize: 16, fontWeight: 900, color: s.color }}>{s.value ?? "—"}</div>
-            <div style={{ fontSize: 9, color: "#e2e8f0", marginTop: 1, textTransform: "uppercase", letterSpacing: 0.3 }}>{s.label}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        {LEAGUE_OPTIONS.slice(1).map(l => (
-          <button key={l.id} onClick={() => { setLeagueId(l.id); setTeam1(null); setTeam2(null); setData1(null); setData2(null); setSearch1(""); setSearch2(""); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
-            {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
-            {l.label}
-          </button>
-        ))}
-      </div>
-
+      <LeagueSearchSlot leagueId={leagueId} setLeagueId={(id) => { setLeagueId(id); setTeam1(null); setTeam2(null); }} />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        <TeamSearchSlot label="Team 1" search={search1} setSearch={setSearch1} suggestions={suggest1} team={team1} searching={searching1} slot={1} color="#4ade80" onSelect={selectTeam} onClear={() => setTeam1(null)} onSearch={searchTeam} />
-        <TeamSearchSlot label="Team 2" search={search2} setSearch={setSearch2} suggestions={suggest2} team={team2} searching={searching2} slot={2} color="#f59e0b" onSelect={selectTeam} onClear={() => setTeam2(null)} onSearch={searchTeam} />
+        <TeamSearchSlot label="Team 1" color="#4ade80" leagueId={leagueId} team={team1} setTeam={setTeam1} />
+        <TeamSearchSlot label="Team 2" color="#f59e0b" leagueId={leagueId} team={team2} setTeam={setTeam2} />
       </div>
 
-      {loading && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 13 }}>Loading...</div>}
-
-      {data1 && data2 && (
+      {team1 && team2 && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "16px 16px 14px" }}>
-              <TeamBlock data={data1} />
-              <div style={{ height: 1, background: "#1a1a2a", margin: "12px 0" }} />
-              <TeamBlock data={data2} />
+            <div style={{ padding: "22px 18px 18px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16 }}>
+                <div style={{ textAlign: "center" }}>
+                  {team1.logo && <img src={team1.logo} alt="" crossOrigin="anonymous" style={{ width: 48, height: 48, objectFit: "contain", margin: "0 auto 6px" }} />}
+                  <div style={{ fontSize: 15, fontWeight: 900, color: "#4ade80" }}>{team1.name}</div>
+                </div>
+                <div style={{ fontSize: 16, fontWeight: 900, color: "#333" }}>VS</div>
+                <div style={{ textAlign: "center" }}>
+                  {team2.logo && <img src={team2.logo} alt="" crossOrigin="anonymous" style={{ width: 48, height: 48, objectFit: "contain", margin: "0 auto 6px" }} />}
+                  <div style={{ fontSize: 15, fontWeight: 900, color: "#f59e0b" }}>{team2.name}</div>
+                </div>
+              </div>
+
+              <SoloStatRow label="Played" val1={team1.played} val2={team2.played} />
+              <SoloStatRow label="Won" val1={team1.won} val2={team2.won} />
+              <SoloStatRow label="Goals For" val1={team1.goalsFor} val2={team2.goalsFor} />
+              <SoloStatRow label="Goals Against" val1={team1.goalsAgainst} val2={team2.goalsAgainst} higherIsBetter={false} />
+              <SoloStatRow label="Clean Sheets" val1={team1.cleanSheets} val2={team2.cleanSheets} />
+              <SoloStatRow label="Avg Possession" val1={team1.avgPossession} val2={team2.avgPossession} />
             </div>
           </GraphicCard>
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
@@ -3378,29 +2913,29 @@ function TeamStatsCompareGraphic() {
   );
 }
 
-// ─── BEST OF EUROPE (Top 2 from each major league, last season) ─────────────
+// ─── BEST OF EUROPE (CROSS-LEAGUE TOP TEAMS) ─────────────────────────────────
 function BestOfEuropeGraphic() {
   const cardRef = useRef(null);
-  const [teams, setTeams] = useState(null);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState("");
-  const [statKey, setStatKey] = useState("cleanSheets");
 
-  const STAT_OPTIONS = [
-    { key: "cleanSheets", label: "Clean Sheets", color: "#60a5fa" },
-    { key: "goalsFor", label: "Goals Scored", color: "#4ade80" },
-    { key: "goalsAgainst", label: "Goals Conceded", color: "#f87171" },
-    { key: "wins", label: "Wins", color: "#fbbf24" },
-  ];
+  const EURO_LEAGUES = ["pl", "laliga", "seriea", "bundesliga", "ligue1"];
 
   const load = async () => {
-    setLoading(true); setError(""); setTeams(null);
+    setLoading(true); setError(""); setData(null);
     try {
-      const r = await fetch(`/api/team-stats?mode=eurotop10`);
-      const d = await r.json();
-      if (!d.teams?.length) throw new Error("Could not load data");
-      setTeams(d.teams);
+      const results = await Promise.allSettled(
+        EURO_LEAGUES.map(id => fetch(`/api/team-stats?mode=leaguetop&leagueId=${id}`).then(r => r.json()).then(d => ({ id, ...d })))
+      );
+      const top = results
+        .filter(r => r.status === "fulfilled" && r.value.available)
+        .map(r => r.value.team)
+        .filter(Boolean);
+      if (!top.length) throw new Error("No standings data available yet");
+      top.sort((a, b) => (b.points || 0) - (a.points || 0));
+      setData(top);
     } catch (e) { setError(e.message); }
     setLoading(false);
   };
@@ -3408,56 +2943,34 @@ function BestOfEuropeGraphic() {
   const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-best-of-europe-${statKey}.png`, undefined, transparent);
+      await downloadCardImage(cardRef.current, `deep433-best-of-europe.png`, undefined, transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
 
-  const activeStat = STAT_OPTIONS.find(s => s.key === statKey);
-  const sorted = teams ? [...teams].sort((a, b) => (b[statKey] || 0) - (a[statKey] || 0)) : [];
-  const maxVal = sorted.length ? Math.max(...sorted.map(t => t[statKey] || 0), 1) : 1;
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Top 2 finishers from each of the 5 major leagues, last completed season.</div>
+      <button onClick={load} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "10px" }}>
+        {loading ? "Loading..." : "Load Best of Europe"}
+      </button>
+      {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
 
-      {!teams && (
-        <button onClick={load} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
-          {loading ? "Loading all 10 teams..." : "Load Best of Europe"}
-        </button>
-      )}
-      {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
-
-      {teams && (
+      {data && (
         <>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {STAT_OPTIONS.map(s => (
-              <button key={s.key} onClick={() => setStatKey(s.key)} style={{ background: statKey === s.key ? `${s.color}22` : "none", border: `1px solid ${statKey === s.key ? s.color : "#2a2a3a"}`, borderRadius: 16, color: statKey === s.key ? s.color : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px" }}>
-                {s.label}
-              </button>
-            ))}
-          </div>
-
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "22px 18px 18px" }}>
-              <div style={{ textAlign: "center", marginBottom: 4 }}>
-                <span style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>Best of Europe</span>
+              <div style={{ textAlign: "center", marginBottom: 16 }}>
+                <span style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5 }}>🌍 Best of Europe — League Leaders</span>
               </div>
-              <div style={{ textAlign: "center", marginBottom: 18 }}>
-                <span style={{ fontSize: 11, color: activeStat.color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>Ranked by {activeStat.label}</span>
-              </div>
-
-              {sorted.map((t, i) => (
-                <div key={i} style={{ marginBottom: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                    {t.logo && <img src={t.logo} alt="" crossOrigin="anonymous" style={{ width: 22, height: 22, objectFit: "contain", flexShrink: 0 }} />}
-                    <span style={{ fontSize: 13, fontWeight: 800, color: "#f0f0f0", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.team}</span>
-                    <span style={{ fontSize: 10, color: "#e2e8f0" }}>{t.leagueLabel}</span>
-                    <span style={{ fontSize: 17, fontWeight: 900, color: activeStat.color, minWidth: 26, textAlign: "right" }}>{t[statKey] ?? "—"}</span>
+              {data.map((team, i) => (
+                <div key={team.name} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: i < data.length - 1 ? "1px solid #1a1a2a" : "none" }}>
+                  <span style={{ fontSize: 15, fontWeight: 900, color: "#818cf8", width: 20 }}>{i + 1}</span>
+                  {team.logo && <img src={team.logo} alt="" crossOrigin="anonymous" style={{ width: 26, height: 26, objectFit: "contain" }} />}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: "#f0f0f0" }}>{team.name}</div>
+                    <div style={{ fontSize: 11, color: "#e2e8f0" }}>{team.league}</div>
                   </div>
-                  <div style={{ height: 7, background: "#1a1a24", borderRadius: 4, overflow: "hidden" }}>
-                    <div style={{ width: `${Math.max(((t[statKey] || 0) / maxVal) * 100, 4)}%`, height: "100%", background: activeStat.color, borderRadius: 4 }} />
-                  </div>
+                  <span style={{ fontSize: 18, fontWeight: 900, color: "#4ade80" }}>{team.points} pts</span>
                 </div>
               ))}
             </div>
@@ -3474,45 +2987,32 @@ function BestOfEuropeGraphic() {
   );
 }
 
-// ─── ZONE OF INFLUENCE (manual pitch analysis, your own read of the match) ──
-const ZONE_PRESETS = [
-  { key: "rightAttack",   label: "Right Attacking Half-Space", x: 300, y: 130 },
-  { key: "centralBox",    label: "Central Edge of the Box",     x: 210, y: 160 },
-  { key: "leftAttack",    label: "Left Attacking Half-Space",   x: 120, y: 140 },
-  { key: "rightMid",      label: "Right Central Midfield",      x: 300, y: 330 },
-  { key: "centerCircle",  label: "Center Circle / Central Mid", x: 210, y: 340 },
-  { key: "leftMid",       label: "Left Flank (Midfield)",       x: 120, y: 300 },
-  { key: "defensive",     label: "Defensive Half",               x: 210, y: 540 },
-];
+// ─── ZONE OF INFLUENCE (MANUAL HEATMAP) ──────────────────────────────────────
+const ZONE_PRESETS = {
+  "Deep Playmaker": [[10, 60], [20, 40], [20, 80], [35, 60]],
+  "Box-to-Box": [[30, 60], [50, 60], [65, 40], [65, 80]],
+  "Wide Winger": [[60, 15], [75, 15], [85, 10], [70, 25]],
+  "Advanced Striker": [[80, 60], [90, 45], [90, 75], [95, 60]],
+  "Wing-Back": [[40, 10], [55, 10], [45, 5], [60, 15]],
+};
 
-function intensityFor(pct) {
-  const p = parseFloat(pct) || 0;
-  if (p >= 35) return { color: "#ef4444", label: "High" };
-  if (p >= 18) return { color: "#f59e0b", label: "Medium-High" };
-  if (p >= 10) return { color: "#eab308", label: "Medium" };
-  if (p > 0) return { color: "#4ade80", label: "Low" };
-  return { color: "#4ade80", label: "" };
+function intensityFor(x, y, points) {
+  let maxD = 0;
+  points.forEach(([px, py]) => {
+    const d = Math.hypot(x - px, y - py);
+    if (d > maxD) maxD = d;
+  });
+  return maxD;
 }
 
 function ZoneOfInfluenceGraphic() {
   const cardRef = useRef(null);
   const [playerName, setPlayerName] = useState("");
-  const [matchContext, setMatchContext] = useState("");
-  const [zones, setZones] = useState([{ zoneKey: "", pct: "", note: "" }]);
+  const [teamName, setTeamName] = useState("");
+  const [preset, setPreset] = useState("Box-to-Box");
   const [downloading, setDownloading] = useState(false);
 
-  const updateZone = (i, field, value) => {
-    setZones(prev => prev.map((z, idx) => idx === i ? { ...z, [field]: value } : z));
-  };
-
-  const addZone = () => {
-    if (zones.length >= 6) return;
-    setZones(prev => [...prev, { zoneKey: "", pct: "", note: "" }]);
-  };
-
-  const removeZone = (i) => {
-    setZones(prev => prev.filter((_, idx) => idx !== i));
-  };
+  const points = ZONE_PRESETS[preset];
 
   const download = async (transparent = false) => {
     setDownloading(true);
@@ -3522,517 +3022,282 @@ function ZoneOfInfluenceGraphic() {
     setDownloading(false);
   };
 
-  const activeZones = zones.filter(z => z.zoneKey && z.pct);
-  const hasContent = playerName && activeZones.length > 0;
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Your own read of a player's zone of influence — pick zones, set intensity %, add notes. Not real tracking data, clearly your own analysis.</div>
+      <input placeholder="Player name" value={playerName} onChange={e => setPlayerName(e.target.value)} style={{ background: "#1a1a24", border: "1px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 16, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+      <input placeholder="Team name" value={teamName} onChange={e => setTeamName(e.target.value)} style={{ background: "#1a1a24", border: "1px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 16, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        <div>
-          <div style={{ fontSize: 10, color: "#a855f7", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Player Name</div>
-          <input value={playerName} onChange={e => setPlayerName(e.target.value)} placeholder="e.g. Lionel Messi" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
-        </div>
-        <div>
-          <div style={{ fontSize: 10, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Match Context</div>
-          <input value={matchContext} onChange={e => setMatchContext(e.target.value)} placeholder="e.g. vs England" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
-        </div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {Object.keys(ZONE_PRESETS).map(p => (
+          <button key={p} onClick={() => setPreset(p)} style={{ background: preset === p ? "#4ade8022" : "none", border: `1px solid ${preset === p ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: preset === p ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "5px 12px" }}>
+            {p}
+          </button>
+        ))}
       </div>
 
-      <div style={{ fontSize: 11, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>Zones (up to 6)</div>
-      {zones.map((z, i) => (
-        <div key={i} style={{ background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, padding: 10 }}>
-          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-            <select value={z.zoneKey} onChange={e => updateZone(i, "zoneKey", e.target.value)} style={{ flex: 1, background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "7px 8px", outline: "none", fontFamily: "inherit" }}>
-              <option value="">— Select zone —</option>
-              {ZONE_PRESETS.map(zp => <option key={zp.key} value={zp.key}>{zp.label}</option>)}
-            </select>
-            <input value={z.pct} onChange={e => updateZone(i, "pct", e.target.value)} placeholder="%" style={{ width: 60, background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "7px 8px", outline: "none", fontFamily: "inherit", textAlign: "center" }} />
-            {zones.length > 1 && <button onClick={() => removeZone(i)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#f87171", cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "0 10px" }}>✕</button>}
+      <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+        <div style={{ padding: "22px 18px 18px" }}>
+          <div style={{ textAlign: "center", marginBottom: 10 }}>
+            <span style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5 }}>🗺 Zone of Influence</span>
+            <div style={{ fontSize: 16, fontWeight: 900, color: "#f0f0f0", marginTop: 4 }}>{playerName || "Player Name"}</div>
+            <div style={{ fontSize: 12, color: "#e2e8f0" }}>{teamName || "Team"}</div>
           </div>
-          <input value={z.note} onChange={e => updateZone(i, "note", e.target.value)} placeholder="Optional note (e.g. Primary hotspot, driving into the box)" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "7px 8px", outline: "none", fontFamily: "inherit" }} />
+
+          <svg viewBox="0 0 100 70" style={{ width: "100%", background: "#0B1F17", borderRadius: 8 }}>
+            <rect x="1" y="1" width="98" height="68" fill="none" stroke="#2a4a3a" strokeWidth="0.5" />
+            <line x1="50" y1="1" x2="50" y2="69" stroke="#2a4a3a" strokeWidth="0.5" />
+            <circle cx="50" cy="35" r="8" fill="none" stroke="#2a4a3a" strokeWidth="0.5" />
+            <rect x="1" y="20" width="14" height="30" fill="none" stroke="#2a4a3a" strokeWidth="0.5" />
+            <rect x="85" y="20" width="14" height="30" fill="none" stroke="#2a4a3a" strokeWidth="0.5" />
+            {Array.from({ length: 20 }).map((_, i) =>
+              Array.from({ length: 14 }).map((_, j) => {
+                const x = i * 5 + 2.5, y = j * 5 + 2.5;
+                const d = intensityFor(x, y, points);
+                const opacity = Math.max(0, 1 - d / 35);
+                if (opacity < 0.05) return null;
+                return <rect key={`${i}-${j}`} x={x - 2.5} y={y - 2.5} width="5" height="5" fill="#4ade80" opacity={opacity * 0.7} />;
+              })
+            )}
+            <polygon points={points.map(p => p.join(",")).join(" ")} fill="#4ade8033" stroke="#4ade80" strokeWidth="0.8" />
+          </svg>
+          <div style={{ fontSize: 12, color: "#e2e8f0", textAlign: "center", marginTop: 8 }}>{preset} zone — analyst's read, not tracking data</div>
         </div>
-      ))}
-      {zones.length < 6 && (
-        <button onClick={addZone} style={{ background: "none", border: "1px dashed #4ade80", borderRadius: 8, color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "8px" }}>+ Add Zone</button>
-      )}
-
-      {hasContent && (
-        <>
-          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "20px 18px" }}>
-              <div style={{ textAlign: "center", marginBottom: 4 }}>
-                <span style={{ fontSize: 11, color: "#a855f7", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>⚔️ Zone of Influence</span>
-              </div>
-              <div style={{ textAlign: "center", marginBottom: 14 }}>
-                <span style={{ fontSize: 18, fontWeight: 900, color: "#f0f0f0" }}>{playerName}</span>
-                {matchContext && <span style={{ fontSize: 13, color: "#e2e8f0" }}> — {matchContext}</span>}
-              </div>
-
-              <div style={{ position: "relative", maxWidth: 320, margin: "0 auto" }}>
-                <svg viewBox="0 0 420 680" xmlns="http://www.w3.org/2000/svg" style={{ display: "block", width: "100%" }}>
-                  <defs>
-                    {activeZones.map((z, i) => {
-                      const intensity = intensityFor(z.pct);
-                      return (
-                        <radialGradient key={i} id={`heat${i}`} cx="50%" cy="50%" r="50%">
-                          <stop offset="0%" stopColor={intensity.color} stopOpacity="0.6" />
-                          <stop offset="60%" stopColor={intensity.color} stopOpacity="0.25" />
-                          <stop offset="100%" stopColor={intensity.color} stopOpacity="0" />
-                        </radialGradient>
-                      );
-                    })}
-                  </defs>
-                  <rect x="2" y="2" width="416" height="676" fill="#0d2818" stroke="#2a4a3a" strokeWidth="2" rx="4" />
-                  <line x1="2" y1="340" x2="418" y2="340" stroke="#2a4a3a" strokeWidth="2" />
-                  <circle cx="210" cy="340" r="60" fill="none" stroke="#2a4a3a" strokeWidth="2" />
-                  <rect x="110" y="20" width="200" height="90" fill="none" stroke="#2a4a3a" strokeWidth="2" />
-                  <rect x="110" y="570" width="200" height="90" fill="none" stroke="#2a4a3a" strokeWidth="2" />
-                  {activeZones.map((z, i) => {
-                    const preset = ZONE_PRESETS.find(zp => zp.key === z.zoneKey);
-                    if (!preset) return null;
-                    const pct = parseFloat(z.pct) || 0;
-                    const radius = 40 + pct * 2.2;
-                    return <ellipse key={i} cx={preset.x} cy={preset.y} rx={radius} ry={radius * 0.75} fill={`url(#heat${i})`} />;
-                  })}
-                </svg>
-
-                {activeZones.map((z, i) => {
-                  const preset = ZONE_PRESETS.find(zp => zp.key === z.zoneKey);
-                  if (!preset || !z.note) return null;
-                  const intensity = intensityFor(z.pct);
-                  const leftPct = (preset.x / 420) * 100;
-                  const topPct = (preset.y / 680) * 100;
-                  const alignLeft = leftPct < 50;
-                  return (
-                    <div key={i} style={{
-                      position: "absolute", top: `${topPct}%`, [alignLeft ? "left" : "right"]: "4%",
-                      transform: "translateY(-50%)", background: "#13131fee", border: "1px solid #2a2a3a", borderRadius: 8,
-                      padding: "5px 9px", fontSize: 10, fontWeight: 700, color: "#f0f0f0", maxWidth: 120,
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
-                    }}>
-                      <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: intensity.color, marginRight: 4 }} />
-                      {z.note}
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", marginTop: 14 }}>
-                {activeZones.map((z, i) => {
-                  const preset = ZONE_PRESETS.find(zp => zp.key === z.zoneKey);
-                  const intensity = intensityFor(z.pct);
-                  return (
-                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, background: "#13131f", borderRadius: 6, padding: "4px 8px" }}>
-                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: intensity.color }} />
-                      <span style={{ fontSize: 10, color: "#e2e8f0" }}>{preset?.label}</span>
-                      <span style={{ fontSize: 11, fontWeight: 900, color: intensity.color }}>{z.pct}%</span>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div style={{ fontSize: 9, color: "#e2e8f0", textAlign: "center", marginTop: 12 }}>Deep433's own analysis — not tracking data</div>
-            </div>
-          </GraphicCard>
-          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
-            {downloading ? "Generating..." : "⬇ Download PNG"}
-          </button>
-          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
-            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
-          </button>
-        </>
-      )}
+      </GraphicCard>
+      <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+        {downloading ? "Generating..." : "⬇ Download PNG"}
+      </button>
+      <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+        {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+      </button>
     </div>
   );
 }
 
-// ─── QUICK VS (Tackles + Dribbles only, fast narrative card) ────────────────
+// ─── QUICK VS (FAST ATTACKER-VS-DEFENDER CARD) ───────────────────────────────
 function QuickVSGraphic() {
   const cardRef = useRef(null);
-  const [season, setSeason] = useState(2025);
-
-  const [searchTargetTeam, setSearchTargetTeam] = useState("");
-  const [suggestTargetTeam, setSuggestTargetTeam] = useState([]);
-  const [targetTeam, setTargetTeam] = useState(null);
-  const [searchingTargetTeam, setSearchingTargetTeam] = useState(false);
-  const [targetSquad, setTargetSquad] = useState([]);
-  const [targetPlayerId, setTargetPlayerId] = useState("");
-  const [target, setTarget] = useState(null);
-
-  const [searchIncumbentTeam, setSearchIncumbentTeam] = useState("");
-  const [suggestIncumbentTeam, setSuggestIncumbentTeam] = useState([]);
-  const [incumbentTeam, setIncumbentTeam] = useState(null);
-  const [searchingIncumbentTeam, setSearchingIncumbentTeam] = useState(false);
-  const [incumbentSquad, setIncumbentSquad] = useState([]);
-  const [incumbentPlayerId, setIncumbentPlayerId] = useState("");
-  const [incumbent, setIncumbent] = useState(null);
-
-  const [loadingSquad, setLoadingSquad] = useState(false);
-  const [loadingStats, setLoadingStats] = useState(false);
+  const [name1, setName1] = useState("");
+  const [team1, setTeam1] = useState("");
+  const [stat1, setStat1] = useState("");
+  const [label1, setLabel1] = useState("Goals");
+  const [name2, setName2] = useState("");
+  const [team2, setTeam2] = useState("");
+  const [stat2, setStat2] = useState("");
+  const [label2, setLabel2] = useState("Tackles");
   const [downloading, setDownloading] = useState(false);
-
-  const searchTeam = async (query, slot) => {
-    if (query.length < 3) {
-      slot === "target" ? setSuggestTargetTeam([]) : setSuggestIncumbentTeam([]);
-      return;
-    }
-    slot === "target" ? setSearchingTargetTeam(true) : setSearchingIncumbentTeam(true);
-    try {
-      const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
-      const d = await r.json();
-      slot === "target" ? setSuggestTargetTeam(d.teams || []) : setSuggestIncumbentTeam(d.teams || []);
-    } catch {}
-    slot === "target" ? setSearchingTargetTeam(false) : setSearchingIncumbentTeam(false);
-  };
-
-  const selectTeam = async (t, slot) => {
-    setLoadingSquad(true);
-    if (slot === "target") {
-      setTargetTeam(t); setSuggestTargetTeam([]); setSearchTargetTeam(t.name);
-      setTargetPlayerId(""); setTarget(null); setTargetSquad([]);
-    } else {
-      setIncumbentTeam(t); setSuggestIncumbentTeam([]); setSearchIncumbentTeam(t.name);
-      setIncumbentPlayerId(""); setIncumbent(null); setIncumbentSquad([]);
-    }
-    try {
-      const r = await fetch(`/api/team-stats?mode=teamsquad&teamId=${t.id}`);
-      const d = await r.json();
-      if (slot === "target") setTargetSquad(d.players || []);
-      else setIncumbentSquad(d.players || []);
-    } catch {}
-    setLoadingSquad(false);
-  };
-
-  const selectPlayerFromSquad = async (playerId, slot) => {
-    if (slot === "target") setTargetPlayerId(playerId); else setIncumbentPlayerId(playerId);
-    const squad = slot === "target" ? targetSquad : incumbentSquad;
-    const basePlayer = squad.find(p => String(p.id) === String(playerId));
-    if (!basePlayer) return;
-
-    const teamInfo = slot === "target" ? targetTeam : incumbentTeam;
-
-    setLoadingStats(true);
-    try {
-      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${playerId}&season=${season}&teamId=${teamInfo?.id}${season === 2026 ? '&onlyLeagueId=1' : ''}`);
-      const d = await r.json();
-      const enriched = d.available
-        ? { ...d, photo: basePlayer.photo, age: basePlayer.age, team: teamInfo?.name, teamLogo: teamInfo?.logo }
-        : { ...basePlayer, team: teamInfo?.name, teamLogo: teamInfo?.logo };
-      if (slot === "target") setTarget(enriched); else setIncumbent(enriched);
-    } catch {
-      if (slot === "target") setTarget(basePlayer); else setIncumbent(basePlayer);
-    }
-    setLoadingStats(false);
-  };
 
   const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-quickvs-${target?.name}-vs-${incumbent?.name}.png`, undefined, transparent);
+      await downloadCardImage(cardRef.current, `deep433-quick-vs-${name1 || "p1"}-vs-${name2 || "p2"}.png`, undefined, transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
 
+  const inputStyle = { background: "#1a1a24", border: "1px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 15, padding: "8px 10px", outline: "none", fontFamily: "inherit", width: "100%" };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Fast attacker-vs-defender narrative — Tackles & Dribbles only. Search any team worldwide.</div>
-
-      <div>
-        <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Season</div>
-        <div style={{ display: "flex", gap: 6 }}>
-          {[{ v: 2025, label: "2025-26 Season" }, { v: 2026, label: "2026 (World Cup)" }].map(s => (
-            <button key={s.v} onClick={() => setSeason(s.v)} style={{ background: season === s.v ? "#4ade8022" : "none", border: `1px solid ${season === s.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: season === s.v ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px" }}>
-              {s.label}
-            </button>
-          ))}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 700, textTransform: "uppercase" }}>Player 1</div>
+          <input placeholder="Name" value={name1} onChange={e => setName1(e.target.value)} style={inputStyle} />
+          <input placeholder="Team" value={team1} onChange={e => setTeam1(e.target.value)} style={inputStyle} />
+          <input placeholder="Stat label (e.g. Goals)" value={label1} onChange={e => setLabel1(e.target.value)} style={inputStyle} />
+          <input placeholder="Value" value={stat1} onChange={e => setStat1(e.target.value)} style={inputStyle} />
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ fontSize: 13, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase" }}>Player 2</div>
+          <input placeholder="Name" value={name2} onChange={e => setName2(e.target.value)} style={inputStyle} />
+          <input placeholder="Team" value={team2} onChange={e => setTeam2(e.target.value)} style={inputStyle} />
+          <input placeholder="Stat label (e.g. Tackles)" value={label2} onChange={e => setLabel2(e.target.value)} style={inputStyle} />
+          <input placeholder="Value" value={stat2} onChange={e => setStat2(e.target.value)} style={inputStyle} />
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        <TeamThenPlayerPicker label="⚡ Player 1" search={searchTargetTeam} setSearch={setSearchTargetTeam} suggestions={suggestTargetTeam} team={targetTeam} searching={searchingTargetTeam} slot="target" color="#a855f7" squad={targetSquad} playerId={targetPlayerId} onSearchTeam={searchTeam} onSelectTeam={selectTeam} onSelectPlayer={selectPlayerFromSquad} onClearTeam={() => setTargetTeam(null)} />
-        <TeamThenPlayerPicker label="⚡ Player 2" search={searchIncumbentTeam} setSearch={setSearchIncumbentTeam} suggestions={suggestIncumbentTeam} team={incumbentTeam} searching={searchingIncumbentTeam} slot="incumbent" color="#4ade80" squad={incumbentSquad} playerId={incumbentPlayerId} onSearchTeam={searchTeam} onSelectTeam={selectTeam} onSelectPlayer={selectPlayerFromSquad} onClearTeam={() => setIncumbentTeam(null)} />
-      </div>
-
-      {(loadingSquad || loadingStats) && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 12 }}>Loading...</div>}
-
-      {target && incumbent && (
-        <>
-          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "26px 18px" }}>
-              <div style={{ textAlign: "center", marginBottom: 22 }}>
-                <span style={{ fontSize: 24, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5 }}>THE BATTLE</span>
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                <div style={{ textAlign: "center", flex: 1 }}>
-                  {target.photo && <img src={target.photo} alt="" crossOrigin="anonymous" style={{ width: 92, height: 92, borderRadius: "50%", objectFit: "cover", border: "3px solid #a855f7", margin: "0 auto 10px" }} />}
-                  <div style={{ fontSize: 19, fontWeight: 900, color: "#a855f7" }}>{target.name}</div>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 4 }}>
-                    {TEAM_FLAG_CODES[target.team] && <img src={`https://flagcdn.com/w40/${TEAM_FLAG_CODES[target.team]}.png`} alt="" style={{ width: 18, height: 13, objectFit: "cover", borderRadius: 2 }} />}
-                    <span style={{ fontSize: 13, color: "#e2e8f0" }}>{target.team}</span>
-                  </div>
-                </div>
-                <div style={{ textAlign: "center", padding: "0 4px" }}>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: "#e2e8f0" }}>VS</div>
-                </div>
-                <div style={{ textAlign: "center", flex: 1 }}>
-                  {incumbent.photo && <img src={incumbent.photo} alt="" crossOrigin="anonymous" style={{ width: 92, height: 92, borderRadius: "50%", objectFit: "cover", border: "3px solid #4ade80", margin: "0 auto 10px" }} />}
-                  <div style={{ fontSize: 19, fontWeight: 900, color: "#4ade80" }}>{incumbent.name}</div>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 4 }}>
-                    {TEAM_FLAG_CODES[incumbent.team] && <img src={`https://flagcdn.com/w40/${TEAM_FLAG_CODES[incumbent.team]}.png`} alt="" style={{ width: 18, height: 13, objectFit: "cover", borderRadius: 2 }} />}
-                    <span style={{ fontSize: 13, color: "#e2e8f0" }}>{incumbent.team}</span>
-                  </div>
-                </div>
-              </div>
+      <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+        <div style={{ padding: "26px 18px" }}>
+          <div style={{ textAlign: "center", marginBottom: 16 }}>
+            <span style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5 }}>⚡ Quick VS</span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center" }}>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 18, fontWeight: 900, color: "#4ade80" }}>{name1 || "Player 1"}</div>
+              <div style={{ fontSize: 12, color: "#e2e8f0", marginBottom: 10 }}>{team1 || "Team"}</div>
+              <div style={{ fontSize: 30, fontWeight: 900, color: "#f0f0f0" }}>{stat1 || "—"}</div>
+              <div style={{ fontSize: 11, color: "#818cf8", fontWeight: 700, textTransform: "uppercase" }}>{label1}</div>
             </div>
-          </GraphicCard>
-          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#a855f7,#4ade80)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
-            {downloading ? "Generating..." : "⬇ Download PNG"}
-          </button>
-          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
-            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
-          </button>
-        </>
-      )}
+            <div style={{ fontSize: 20, fontWeight: 900, color: "#333", padding: "0 10px" }}>VS</div>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 18, fontWeight: 900, color: "#f59e0b" }}>{name2 || "Player 2"}</div>
+              <div style={{ fontSize: 12, color: "#e2e8f0", marginBottom: 10 }}>{team2 || "Team"}</div>
+              <div style={{ fontSize: 30, fontWeight: 900, color: "#f0f0f0" }}>{stat2 || "—"}</div>
+              <div style={{ fontSize: 11, color: "#818cf8", fontWeight: 700, textTransform: "uppercase" }}>{label2}</div>
+            </div>
+          </div>
+        </div>
+      </GraphicCard>
+      <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+        {downloading ? "Generating..." : "⬇ Download PNG"}
+      </button>
+      <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+        {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+      </button>
     </div>
   );
 }
 
-// ─── BEYOND THE SCORESHEET (single player praise, non-scoresheet stats) ─────
+// ─── BEYOND THE SCORESHEET (UNSUNG PERFORMANCE SPOTLIGHT) ────────────────────
 function BeyondScoresheetGraphic() {
   const cardRef = useRef(null);
-  const [season, setSeason] = useState(2025);
-
-  const [searchTeam, setSearchTeamText] = useState("");
-  const [suggestTeam, setSuggestTeam] = useState([]);
-  const [team, setTeam] = useState(null);
-  const [searchingTeam, setSearchingTeam] = useState(false);
-  const [squad, setSquad] = useState([]);
-  const [playerId, setPlayerId] = useState("");
-  const [player, setPlayer] = useState(null);
-  const [note, setNote] = useState("");
-
-  const [loadingSquad, setLoadingSquad] = useState(false);
-  const [loadingStats, setLoadingStats] = useState(false);
+  const [name, setName] = useState("");
+  const [team, setTeam] = useState("");
+  const [role, setRole] = useState("");
+  const [blurb, setBlurb] = useState("");
+  const [stat1, setStat1] = useState("");
+  const [statLabel1, setStatLabel1] = useState("");
+  const [stat2, setStat2] = useState("");
+  const [statLabel2, setStatLabel2] = useState("");
+  const [stat3, setStat3] = useState("");
+  const [statLabel3, setStatLabel3] = useState("");
   const [downloading, setDownloading] = useState(false);
-  const [debugData, setDebugData] = useState(null);
-  const [debugLoading, setDebugLoading] = useState(false);
-
-  const doSearchTeam = async (query) => {
-    if (query.length < 3) { setSuggestTeam([]); return; }
-    setSearchingTeam(true);
-    try {
-      const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
-      const d = await r.json();
-      setSuggestTeam(d.teams || []);
-    } catch {}
-    setSearchingTeam(false);
-  };
-
-  const selectTeamFn = async (t) => {
-    setLoadingSquad(true);
-    setTeam(t); setSuggestTeam([]); setSearchTeamText(t.name);
-    setPlayerId(""); setPlayer(null); setSquad([]);
-    try {
-      const r = await fetch(`/api/team-stats?mode=teamsquad&teamId=${t.id}`);
-      const d = await r.json();
-      setSquad(d.players || []);
-    } catch {}
-    setLoadingSquad(false);
-  };
-
-  const selectPlayerFn = async (pid) => {
-    setPlayerId(pid);
-    const basePlayer = squad.find(p => String(p.id) === String(pid));
-    if (!basePlayer) return;
-    setLoadingStats(true);
-    try {
-      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${pid}&season=${season}&teamId=${team?.id}${season === 2026 ? '&onlyLeagueId=1' : ''}`);
-      const d = await r.json();
-      const enriched = d.available
-        ? { ...d, photo: basePlayer.photo, age: basePlayer.age, team: team?.name, teamLogo: team?.logo }
-        : { ...basePlayer, team: team?.name, teamLogo: team?.logo };
-      setPlayer(enriched);
-    } catch {
-      setPlayer(basePlayer);
-    }
-    setLoadingStats(false);
-  };
-
-  const fetchDebug = async () => {
-    if (!player || !team) return;
-    setDebugLoading(true);
-    setDebugData(null);
-    try {
-      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${player.id}&season=${season}&teamId=${team.id}${season === 2026 ? '&onlyLeagueId=1' : ''}&debug=true`);
-      const d = await r.json();
-      setDebugData(d);
-    } catch (e) {
-      setDebugData({ error: e.message });
-    }
-    setDebugLoading(false);
-  };
 
   const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-beyond-scoresheet-${player?.name}.png`, undefined, transparent);
+      await downloadCardImage(cardRef.current, `deep433-beyond-scoresheet-${name || "player"}.png`, undefined, transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
 
+  const inputStyle = { background: "#1a1a24", border: "1px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 15, padding: "8px 10px", outline: "none", fontFamily: "inherit", width: "100%" };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Praise for the players whose value doesn't show up in goals and assists. Search any team worldwide.</div>
-
-      <div>
-        <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Season</div>
-        <div style={{ display: "flex", gap: 6 }}>
-          {[{ v: 2025, label: "2025-26 Season" }, { v: 2026, label: "2026 (World Cup)" }].map(s => (
-            <button key={s.v} onClick={() => setSeason(s.v)} style={{ background: season === s.v ? "#4ade8022" : "none", border: `1px solid ${season === s.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: season === s.v ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px" }}>
-              {s.label}
-            </button>
-          ))}
+      <input placeholder="Player name" value={name} onChange={e => setName(e.target.value)} style={inputStyle} />
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <input placeholder="Team" value={team} onChange={e => setTeam(e.target.value)} style={inputStyle} />
+        <input placeholder="Role (e.g. Holding Midfielder)" value={role} onChange={e => setRole(e.target.value)} style={inputStyle} />
+      </div>
+      <textarea placeholder="Why this performance mattered..." value={blurb} onChange={e => setBlurb(e.target.value)} rows={3} style={{ ...inputStyle, resize: "vertical", fontFamily: "inherit" }} />
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+        <div>
+          <input placeholder="Label" value={statLabel1} onChange={e => setStatLabel1(e.target.value)} style={{ ...inputStyle, marginBottom: 6 }} />
+          <input placeholder="Value" value={stat1} onChange={e => setStat1(e.target.value)} style={inputStyle} />
+        </div>
+        <div>
+          <input placeholder="Label" value={statLabel2} onChange={e => setStatLabel2(e.target.value)} style={{ ...inputStyle, marginBottom: 6 }} />
+          <input placeholder="Value" value={stat2} onChange={e => setStat2(e.target.value)} style={inputStyle} />
+        </div>
+        <div>
+          <input placeholder="Label" value={statLabel3} onChange={e => setStatLabel3(e.target.value)} style={{ ...inputStyle, marginBottom: 6 }} />
+          <input placeholder="Value" value={stat3} onChange={e => setStat3(e.target.value)} style={inputStyle} />
         </div>
       </div>
 
-      <TeamThenPlayerPicker label="🎯 Player" search={searchTeam} setSearch={setSearchTeamText} suggestions={suggestTeam} team={team} searching={searchingTeam} slot="target" color="#4ade80" squad={squad} playerId={playerId} onSearchTeam={doSearchTeam} onSelectTeam={selectTeamFn} onSelectPlayer={selectPlayerFn} onClearTeam={() => setTeam(null)} />
-
-      {(loadingSquad || loadingStats) && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 12 }}>Loading...</div>}
-
-      {player && (
-        <>
-          <div>
-            <div style={{ fontSize: 10, color: "#a855f7", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Why he stands out (optional note)</div>
-            <input value={note} onChange={e => setNote(e.target.value)} placeholder="e.g. Anchors the midfield without ever making a headline" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+      <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+        <div style={{ padding: "24px 20px" }}>
+          <div style={{ textAlign: "center", marginBottom: 14 }}>
+            <span style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5 }}>🔍 Beyond The Scoresheet</span>
           </div>
-
-          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "24px 18px" }}>
-              <div style={{ textAlign: "center", marginBottom: 4 }}>
-                <span style={{ fontSize: 11, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>👁️ Beyond The Scoresheet</span>
-              </div>
-
-              <div style={{ textAlign: "center", marginBottom: 18 }}>
-                {player.photo && <img src={player.photo} alt="" crossOrigin="anonymous" style={{ width: 88, height: 88, borderRadius: "50%", objectFit: "cover", border: "3px solid #4ade80", margin: "0 auto 10px" }} />}
-                <div style={{ fontSize: 22, fontWeight: 900, color: "#f0f0f0" }}>{player.name}</div>
-                <div style={{ fontSize: 13, color: "#e2e8f0", marginTop: 2 }}>{player.team}</div>
-              </div>
-
-              {note && (
-                <div style={{ background: "#13131f", border: "1px solid #4ade8033", borderRadius: 10, padding: "12px 16px", marginBottom: 16, textAlign: "center" }}>
-                  <span style={{ fontSize: 13, color: "#f0f0f0", fontStyle: "italic" }}>"{note}"</span>
-                </div>
-              )}
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                {[
-                  { label: "Goals", value: player.goals, color: "#e2e8f0" },
-                  { label: "Assists", value: player.assists, color: "#e2e8f0" },
-                  { label: "Tackles", value: player.tackles, color: "#4ade80" },
-                  { label: "Interceptions", value: player.interceptions, color: "#60a5fa" },
-                  { label: "Duels Won", value: player.duelsWon, color: "#f59e0b" },
-                  { label: "Key Passes", value: player.keyPasses, color: "#a855f7" },
-                  { label: "Pass Accuracy", value: player.passAccuracy ? `${player.passAccuracy}%` : null, color: "#4ade80" },
-                  { label: "Apps", value: player.appearances, color: "#e2e8f0" },
-                ].map(s => (
-                  <div key={s.label} style={{ background: "#13131f", borderRadius: 10, padding: "14px 10px", textAlign: "center" }}>
-                    <div style={{ fontSize: 26, fontWeight: 900, color: s.color }}>{s.value ?? "—"}</div>
-                    <div style={{ fontSize: 11, color: "#e2e8f0", marginTop: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{s.label}</div>
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ fontSize: 10, color: "#e2e8f0", textAlign: "center", marginTop: 14 }}>Not on the scoresheet. Still doing the work.</div>
+          <div style={{ textAlign: "center", marginBottom: 14 }}>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#f0f0f0" }}>{name || "Player Name"}</div>
+            <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 700 }}>{team || "Team"} · {role || "Role"}</div>
+          </div>
+          {blurb && (
+            <div style={{ fontSize: 15, color: "#e2e8f0", lineHeight: 1.5, textAlign: "center", marginBottom: 16, fontStyle: "italic" }}>
+              "{blurb}"
             </div>
-          </GraphicCard>
-          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
-            {downloading ? "Generating..." : "⬇ Download PNG"}
-          </button>
-          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
-            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
-          </button>
-          <button onClick={fetchDebug} disabled={debugLoading} style={{ background: "none", border: "1px dashed #444", borderRadius: 8, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: "8px", width: "100%", marginTop: 6 }}>
-            {debugLoading ? "Loading raw data..." : "🐛 Show Raw Data"}
-          </button>
-          {debugData && (
-            <pre style={{ background: "#0a0a0f", border: "1px solid #2a2a3a", borderRadius: 8, padding: 12, fontSize: 11, color: "#8f8", overflowX: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-              {JSON.stringify(debugData, null, 2)}
-            </pre>
           )}
-        </>
-      )}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, borderTop: "1px solid #1a1a2a", paddingTop: 14 }}>
+            {[[statLabel1, stat1], [statLabel2, stat2], [statLabel3, stat3]].map(([lbl, val], i) => (
+              <div key={i} style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 24, fontWeight: 900, color: "#4ade80" }}>{val || "—"}</div>
+                <div style={{ fontSize: 11, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase" }}>{lbl || "Stat"}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </GraphicCard>
+      <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+        {downloading ? "Generating..." : "⬇ Download PNG"}
+      </button>
+      <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+        {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+      </button>
     </div>
   );
 }
 
+// ─── MAIN EXPORT ──────────────────────────────────────────────────────────────
 export default function DataGraphics({ history = [], supabase }) {
-  const [activeSection, setActiveSection] = useState("match");
-  const [sectionMenuOpen, setSectionMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState("matchstats");
 
   const sections = [
-    { id: "insights", label: "📊 Brief Insights" },
-    { id: "pitch",    label: "⚽ Pitch View" },
-    { id: "h2h",      label: "🆚 Player H2H" },
-    { id: "matchh2h", label: "📋 Match H2H" },
-    { id: "glove",    label: "Golden Glove" },
-    { id: "transfer", label: "🔄 Transfer Fit" },
-    { id: "timing",   label: "⏱️ Goal Timing" },
-    { id: "halftime", label: "⏸ Halftime Recap" },
-    { id: "match",    label: "📈 Match Stats" },
-    { id: "player",   label: "⭐ Player Ratings" },
-    { id: "top",      label: "🥇 Leaderboard" },
-    { id: "team",     label: "🛡 Team Stats" },
+    { id: "matchstats", label: "📊 Match Stats" },
+    { id: "playerratings", label: "⭐ Player Ratings" },
+    { id: "leaderboard", label: "🏆 Leaderboard" },
+    { id: "teamstats", label: "📈 Team Stats" },
     { id: "teamcompare", label: "⚔️ Team Compare" },
-    { id: "bestofeurope", label: "🏆 Best of Europe" },
-    { id: "zoneofinfluence", label: "⚔️ Zone of Influence" },
+    { id: "recap", label: "🤖 Recap" },
+    { id: "bracket", label: "🏟️ Bracket" },
+    { id: "insights", label: "🧠 Deep Insights" },
+    { id: "pitchview", label: "🟩 Pitch View" },
+    { id: "playerh2h", label: "🆚 Player H2H" },
+    { id: "matchh2h", label: "🥊 Match H2H" },
+    { id: "goldenglove", label: "🧤 Golden Glove" },
+    { id: "transferfit", label: "🔁 Transfer Fit" },
+    { id: "goaltiming", label: "⏱ Goal Timing" },
+    { id: "halftime", label: "⏸ Halftime Recap" },
+    { id: "besteurope", label: "🌍 Best of Europe" },
+    { id: "zoneofinfluence", label: "🗺 Zone of Influence" },
     { id: "quickvs", label: "⚡ Quick VS" },
-    { id: "beyondscoresheet", label: "👁️ Beyond The Scoresheet" },
-    { id: "recap",    label: "📋 Recap" },
-    { id: "bracket",  label: "🏆 Bracket" },
+    { id: "beyondscoresheet", label: "🔍 Beyond The Scoresheet" },
+    { id: "passing", label: "🔁 Passing Breakdown" },
+    { id: "shotplacement", label: "🎯 Shot Placement" },
   ];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');`}</style>
-
-      <div style={{ position: "relative" }}>
-        <button onClick={() => setSectionMenuOpen(o => !o)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", background: "#13131f", border: "1px solid #a855f7", borderRadius: 10, color: "#a855f7", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "12px 16px" }}>
-          <span>{sections.find(s => s.id === activeSection)?.label}</span>
-          <span style={{ fontSize: 12 }}>{sectionMenuOpen ? "▲" : "▼"}</span>
-        </button>
-        {sectionMenuOpen && (
-          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 30, marginTop: 4, background: "#0a0a0f", border: "1px solid #2a2a3a", borderRadius: 10, maxHeight: 400, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4, padding: 6 }}>
-            {sections.map(s => (
-              <button key={s.id} onClick={() => { setActiveSection(s.id); setSectionMenuOpen(false); }} style={{ background: activeSection === s.id ? "#a855f722" : "none", border: "none", borderRadius: 8, color: activeSection === s.id ? "#a855f7" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "10px 12px", textAlign: "left", width: "100%" }}>
-                {s.label}
-              </button>
-            ))}
-          </div>
-        )}
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", paddingBottom: 4 }}>
+        {sections.map(s => (
+          <button
+            key={s.id}
+            onClick={() => setActiveSection(s.id)}
+            style={{
+              background: activeSection === s.id ? "#C8FF4D" : "#1a1a24",
+              border: "none", borderRadius: 20,
+              color: activeSection === s.id ? "#0a0a0f" : "#e2e8f0",
+              cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700,
+              padding: "7px 14px",
+            }}
+          >
+            {s.label}
+          </button>
+        ))}
       </div>
 
-      {activeSection === "insights" && <DeepInsightsGraphic history={history} />}
-      {activeSection === "pitch"    && <MatchPitchViewGraphic />}
-      {activeSection === "h2h"      && <PlayerH2HGraphic />}
-      {activeSection === "matchh2h" && <MatchH2HGraphic />}
-      {activeSection === "glove"    && <GoldenGloveGraphic />}
-      {activeSection === "transfer" && <TransferFitGraphic />}
-      {activeSection === "timing"   && <GoalTimingGraphic />}
-      {activeSection === "halftime" && <HalftimeRecapGraphic />}
-      {activeSection === "match"    && <MatchStatsGraphic />}
-      {activeSection === "player"   && <PlayerRatingsGraphic />}
-      {activeSection === "top"      && <TopScorersGraphic />}
-      {activeSection === "team"     && <TeamStatsGraphic />}
+      {activeSection === "matchstats" && <MatchStatsGraphic />}
+      {activeSection === "playerratings" && <PlayerRatingsGraphic />}
+      {activeSection === "leaderboard" && <TopScorersGraphic />}
+      {activeSection === "teamstats" && <TeamStatsGraphic />}
       {activeSection === "teamcompare" && <TeamStatsCompareGraphic />}
-      {activeSection === "bestofeurope" && <BestOfEuropeGraphic />}
+      {activeSection === "recap" && <RecapGraphic history={history} supabase={supabase} />}
+      {activeSection === "bracket" && <BracketGraphic />}
+      {activeSection === "insights" && <DeepInsightsGraphic />}
+      {activeSection === "pitchview" && <MatchPitchViewGraphic />}
+      {activeSection === "playerh2h" && <PlayerH2HGraphic />}
+      {activeSection === "matchh2h" && <MatchH2HGraphic />}
+      {activeSection === "goldenglove" && <GoldenGloveGraphic />}
+      {activeSection === "transferfit" && <TransferFitGraphic />}
+      {activeSection === "goaltiming" && <GoalTimingGraphic />}
+      {activeSection === "halftime" && <HalftimeRecapGraphic />}
+      {activeSection === "besteurope" && <BestOfEuropeGraphic />}
       {activeSection === "zoneofinfluence" && <ZoneOfInfluenceGraphic />}
       {activeSection === "quickvs" && <QuickVSGraphic />}
       {activeSection === "beyondscoresheet" && <BeyondScoresheetGraphic />}
-      {activeSection === "recap"    && <RecapGraphic history={history} />}
-      {activeSection === "bracket"  && <BracketGraphic history={history} />}
+      {activeSection === "passing" && <PassingBreakdownGraphic />}
+      {activeSection === "shotplacement" && <ShotPlacementGraphic />}
     </div>
   );
 }
