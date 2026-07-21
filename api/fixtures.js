@@ -15,6 +15,7 @@ const LEAGUE_MAP = {
   copadelrey:  { id: 143, season: 2026 },
   afcon:       { id: 6,   season: 2025 },
   copamerica:  { id: 9,   season: 2024 },
+  friendlies:  { id: 667, season: 2026 },
 };
 
 function mapStatus(short) {
