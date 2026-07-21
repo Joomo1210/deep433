@@ -59,6 +59,7 @@ const LEAGUE_OPTIONS = [
   { id: "bundesliga", label: "Bundesliga" },
   { id: "ligue1", label: "Ligue 1" },
   { id: "ucl",    label: "Champions League" },
+  { id: "friendlies", label: "Club Friendlies" },  // ← add this line
 ];
 
 // ─── FIXTURE PICKER ──────────────────────────────────────────────────────────
