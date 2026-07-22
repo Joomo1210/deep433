@@ -2137,8 +2137,8 @@ function PlayerH2HGraphic() {
               }}>
                 <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8, textAlign: "center" }}>⭐ Rating</div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: 32, fontWeight: 900, color: "#4ade80" }}>{player1.rating ? parseFloat(player1.rating).toFixed(1) : "—"}</span>
-                  <span style={{ fontSize: 32, fontWeight: 900, color: "#f59e0b" }}>{player2.rating ? parseFloat(player2.rating).toFixed(1) : "—"}</span>
+                  <span style={{ fontSize: 32, fontWeight: 900, color: "#4ade80" }}>{player1.rating ? parseFloat(player1.rating).toFixed(2) : "—"}</span>
+                  <span style={{ fontSize: 32, fontWeight: 900, color: "#f59e0b" }}>{player2.rating ? parseFloat(player2.rating).toFixed(2) : "—"}</span>
                 </div>
               </div>
 
@@ -2446,8 +2446,8 @@ function MatchH2HGraphic() {
               }}>
                 <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8, textAlign: "center" }}>⭐ Match Rating</div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: 32, fontWeight: 900, color: "#4ade80" }}>{player1.rating ? parseFloat(player1.rating).toFixed(1) : "—"}</span>
-                  <span style={{ fontSize: 32, fontWeight: 900, color: "#f59e0b" }}>{player2.rating ? parseFloat(player2.rating).toFixed(1) : "—"}</span>
+                  <span style={{ fontSize: 32, fontWeight: 900, color: "#4ade80" }}>{player1.rating ? parseFloat(player1.rating).toFixed(2) : "—"}</span>
+                  <span style={{ fontSize: 32, fontWeight: 900, color: "#f59e0b" }}>{player2.rating ? parseFloat(player2.rating).toFixed(2) : "—"}</span>
                 </div>
               </div>
 
