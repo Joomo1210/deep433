@@ -119,6 +119,16 @@ export default async function handler(req, res) {
         headers: { "x-apisports-key": apiKey }
       });
       const data = await r.json();
+
+      if (req.query.debug === "true") {
+        return res.status(200).json({
+          debug: true,
+          rawResponseCount: data.response?.length || 0,
+          apiErrors: data.errors,
+          rawResponse: data.response,
+        });
+      }
+
       const teams = (data.response || []).slice(0, 8).map(t => ({
         id: t.team?.id,
         name: t.team?.name,
