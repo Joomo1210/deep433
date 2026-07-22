@@ -283,10 +283,21 @@ export default async function handler(req, res) {
       apiUrl = `https://v3.football.api-sports.io/players?search=${encodeURIComponent(query)}&season=${season}`;
     }
     try {
-      const r = await fetch(apiUrl, {
+      let r = await fetch(apiUrl, {
         headers: { "x-apisports-key": apiKey }
       });
-      const data = await r.json();
+      let data = await r.json();
+
+      // If the league-scoped search comes back empty, the new season likely has no
+      // registered player data yet — automatically retry with the previous season.
+      // Once the new season's data exists, this naturally stops triggering.
+      if (leagueId && (!data.response || data.response.length === 0)) {
+        const league = LEAGUE_MAP[leagueId];
+        const prevUrl = `https://v3.football.api-sports.io/players?search=${encodeURIComponent(query)}&league=${league.id}&season=${league.season - 1}`;
+        r = await fetch(prevUrl, { headers: { "x-apisports-key": apiKey } });
+        data = await r.json();
+      }
+
       const players = (data.response || []).slice(0, 8).map(p => ({
         id: p.player?.id,
         name: p.player?.name,
