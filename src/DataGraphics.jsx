@@ -59,7 +59,6 @@ const LEAGUE_OPTIONS = [
   { id: "bundesliga", label: "Bundesliga" },
   { id: "ligue1", label: "Ligue 1" },
   { id: "ucl",    label: "Champions League" },
-  { id: "friendlies", label: "Club Friendlies" },  // ← add this line
 ];
 
 // ─── FIXTURE PICKER ──────────────────────────────────────────────────────────
@@ -412,6 +411,8 @@ function MatchStatsGraphic() {
                 <BentoBox title="Attack" icon="🎯" color="#4ade80">
                   <AnimatedStatBar label="Total Shots" homeVal={s.home.stats.shotsTotal} awayVal={s.away.stats.shotsTotal} animate={animate} />
                   <AnimatedStatBar label="On Target" homeVal={s.home.stats.shotsOnGoal} awayVal={s.away.stats.shotsOnGoal} animate={animate} />
+                  <AnimatedStatBar label="Inside Box" homeVal={s.home.stats.shotsInsideBox} awayVal={s.away.stats.shotsInsideBox} animate={animate} />
+                  <AnimatedStatBar label="Outside Box" homeVal={s.home.stats.shotsOutsideBox} awayVal={s.away.stats.shotsOutsideBox} animate={animate} />
                   <AnimatedStatBar label="Corners" homeVal={s.home.stats.corners} awayVal={s.away.stats.corners} animate={animate} />
                 </BentoBox>
 
@@ -424,6 +425,8 @@ function MatchStatsGraphic() {
 
               <BentoBox title="Efficiency" icon="🧤" color="#818cf8">
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                  <AnimatedStatBar label="Total Passes" homeVal={s.home.stats.passesTotal} awayVal={s.away.stats.passesTotal} animate={animate} />
+                  <AnimatedStatBar label="Passes Completed" homeVal={s.home.stats.passesAccurate} awayVal={s.away.stats.passesAccurate} animate={animate} />
                   <AnimatedStatBar label="Pass Accuracy" homeVal={s.home.stats.passAccuracy} awayVal={s.away.stats.passAccuracy} unit="%" animate={animate} />
                   <AnimatedStatBar label="Saves" homeVal={s.home.stats.saves} awayVal={s.away.stats.saves} animate={animate} />
                 </div>
