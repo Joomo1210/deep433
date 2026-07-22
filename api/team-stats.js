@@ -129,7 +129,20 @@ export default async function handler(req, res) {
         });
       }
 
-      const teams = (data.response || []).slice(0, 8).map(t => ({
+      // API-Football's search matches on country name too, so searching "Norway"
+      // returns 300+ Norwegian clubs alongside the actual Norway national team.
+      // Sort so exact name matches (especially national teams) come first,
+      // otherwise the national team gets buried past our result limit.
+      const q = query.toLowerCase();
+      const sorted = [...(data.response || [])].sort((a, b) => {
+        const aExact = a.team?.name?.toLowerCase() === q;
+        const bExact = b.team?.name?.toLowerCase() === q;
+        if (aExact !== bExact) return aExact ? -1 : 1;
+        if (a.team?.national !== b.team?.national) return a.team?.national ? -1 : 1;
+        return 0;
+      });
+
+      const teams = sorted.slice(0, 8).map(t => ({
         id: t.team?.id,
         name: t.team?.name,
         logo: t.team?.logo,
