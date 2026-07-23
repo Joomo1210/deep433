@@ -94,64 +94,20 @@ export default function LandingPage({ onGetStarted }) {
         </div>
       </nav>
 
-      {/* HERO */}
-      <section style={{ padding: "80px 24px 24px", maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#1a0a2e", border: "1px solid #7c3aed44", borderRadius: 40, padding: "6px 16px", marginBottom: 20 }}>
-          <span className="pulse" style={{ width: 8, height: 8, borderRadius: "50%", background: "#4ade80", display: "inline-block" }}/>
-          <span style={{ fontSize: 12, fontWeight: 700, color: "#4ade80", letterSpacing: 1 }}>LIVE COVERAGE · EVERY MATCHDAY</span>
-        </div>
-
-        <div className="hero-title" style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 34, lineHeight: 1.2, marginBottom: 14 }}>
+      {/* HERO — compact strip, fixtures/predictions are the real front door */}
+      <section style={{ padding: "40px 24px 20px", maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
+        <div style={{ fontSize: 20, fontWeight: 800, color: "#f0f0f0", marginBottom: 6 }}>
           The stats have spoken. <span style={{ color: "#7c3aed" }}>The AI has its call.</span> <span style={{ color: "#4ade80" }}>What's yours?</span>
         </div>
-
-        <p style={{ fontSize: 16, color: "#888", lineHeight: 1.6, maxWidth: 560, margin: "0 auto 28px" }}>
-          Predict the score, then find out if you can out-think the machine — plus stats, graphics, and paid writing, all in one place.
+        <p style={{ fontSize: 14, color: "#777", marginBottom: 0 }}>
+          Predict this matchday's fixtures below, or explore everything else Deep433 offers further down.
         </p>
-
-        <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-          <button className="cta-btn" onClick={onGetStarted}>⚡ Predict a Match</button>
-          <a href="/blog" className="ghost-btn">📰 Read the Latest</a>
-          <a href="/leaderboard" className="ghost-btn">🏆 Community Leaderboard</a>
-          <a href="/submit" className="ghost-btn">✍️ Write & Get Paid</a>
-        </div>
       </section>
 
-      {/* What's Inside — full site map for new visitors */}
-      <section style={{ background: "#f6f7f5", padding: "48px 20px 60px" }}>
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 32 }}>
-            <div style={{ fontSize: 28, fontWeight: 900, color: "#111", marginBottom: 6 }}>Everything Deep433 Has To Offer</div>
-            <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>What's Inside</div>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
-            {[
-            { icon: "⚡", title: "Predict", desc: "Make your call before kickoff, compare against 433's AI prediction.", href: "/" },
-            { icon: "🔴", title: "Live Scores", desc: "Real-time scores across every major league and tournament.", href: "/" },
-            { icon: "🏆", title: "Bracket", desc: "Follow knockout tournaments through to the final.", href: "/" },
-            { icon: "🎖", title: "Season Awards", desc: "End-of-season leaders across goals, assists, clean sheets and more.", href: "/" },
-            { icon: "📊", title: "Graphics", desc: "Build your own player and team comparison cards, free to use.", href: "/" },
-            { icon: "🆚", title: "You vs AI", desc: "Track your prediction record against 433 all season long.", href: "/" },
-            { icon: "🏅", title: "Badges", desc: "Earn badges as you build your prediction history.", href: "/" },
-            { icon: "📋", title: "History", desc: "Every prediction you've made, all in one place.", href: "/" },
-            { icon: "📰", title: "Blog", desc: "Data-driven previews, recaps, and community-written takes.", href: "/blog" },
-            { icon: "🏆", title: "Leaderboard", desc: "See how this round's Community Takes writers ranked.", href: "/leaderboard" },
-            { icon: "✍️", title: "Write & Get Paid", desc: "Submit your own take on a big match, get published, get paid.", href: "/submit" },
-          ].map(item => (
-            <a key={item.title} href={item.href} style={{ display: "block", textDecoration: "none", background: "#fff", border: "1px solid #eee", borderRadius: 12, padding: "18px 16px", transition: "transform 0.15s" }}>
-              <div style={{ fontSize: 24, marginBottom: 8 }}>{item.icon}</div>
-              <div style={{ fontSize: 15, fontWeight: 800, color: "#111", marginBottom: 4 }}>{item.title}</div>
-              <div style={{ fontSize: 12.5, color: "#777", lineHeight: 1.5 }}>{item.desc}</div>
-            </a>
-          ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FIXTURES */}
-      <section style={{ maxWidth: 900, margin: "0 auto", padding: "40px 20px" }}>
+      {/* FIXTURES — main traffic driver, sits at the top */}
+      <section style={{ maxWidth: 900, margin: "0 auto", padding: "20px 20px 40px" }}>
         <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <div style={{ fontSize: 24, fontWeight: 900, color: "#f0f0f0" }}>Upcoming Fixtures</div>
+          <div style={{ fontSize: 26, fontWeight: 900, color: "#f0f0f0" }}>Upcoming Fixtures</div>
         </div>
 
         <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap", marginBottom: 24 }}>
@@ -190,6 +146,44 @@ export default function LandingPage({ onGetStarted }) {
               </div>
             </div>
           ))}
+        </div>
+
+        <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginTop: 28 }}>
+          <button className="cta-btn" onClick={onGetStarted}>⚡ Predict a Match</button>
+          <a href="/blog" className="ghost-btn">📰 Read the Latest</a>
+          <a href="/leaderboard" className="ghost-btn">🏆 Community Leaderboard</a>
+          <a href="/submit" className="ghost-btn">✍️ Write & Get Paid</a>
+        </div>
+      </section>
+
+      {/* What's Inside — full site map for new visitors */}
+      <section style={{ background: "#f6f7f5", padding: "48px 20px 60px" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 32 }}>
+            <div style={{ fontSize: 28, fontWeight: 900, color: "#111", marginBottom: 6 }}>Everything Deep433 Has To Offer</div>
+            <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>What's Inside</div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+            {[
+            { icon: "⚡", title: "Predict", desc: "Make your call before kickoff, compare against 433's AI prediction.", href: "/" },
+            { icon: "🔴", title: "Live Scores", desc: "Real-time scores across every major league and tournament.", href: "/" },
+            { icon: "🏆", title: "Bracket", desc: "Follow knockout tournaments through to the final.", href: "/" },
+            { icon: "🎖", title: "Season Awards", desc: "End-of-season leaders across goals, assists, clean sheets and more.", href: "/" },
+            { icon: "📊", title: "Graphics", desc: "Build your own player and team comparison cards, free to use.", href: "/" },
+            { icon: "🆚", title: "You vs AI", desc: "Track your prediction record against 433 all season long.", href: "/" },
+            { icon: "🏅", title: "Badges", desc: "Earn badges as you build your prediction history.", href: "/" },
+            { icon: "📋", title: "History", desc: "Every prediction you've made, all in one place.", href: "/" },
+            { icon: "📰", title: "Blog", desc: "Data-driven previews, recaps, and community-written takes.", href: "/blog" },
+            { icon: "🏆", title: "Leaderboard", desc: "See how this round's Community Takes writers ranked.", href: "/leaderboard" },
+            { icon: "✍️", title: "Write & Get Paid", desc: "Submit your own take on a big match, get published, get paid.", href: "/submit" },
+          ].map(item => (
+            <a key={item.title} href={item.href} style={{ display: "block", textDecoration: "none", background: "#fff", border: "1px solid #eee", borderRadius: 12, padding: "18px 16px", transition: "transform 0.15s" }}>
+              <div style={{ fontSize: 24, marginBottom: 8 }}>{item.icon}</div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#111", marginBottom: 4 }}>{item.title}</div>
+              <div style={{ fontSize: 12.5, color: "#777", lineHeight: 1.5 }}>{item.desc}</div>
+            </a>
+          ))}
+          </div>
         </div>
       </section>
 
