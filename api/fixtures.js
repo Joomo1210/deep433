@@ -15,7 +15,10 @@ const LEAGUE_MAP = {
   copadelrey:  { id: 143, season: 2026 },
   afcon:       { id: 6,   season: 2025 },
   copamerica:  { id: 9,   season: 2024 },
-  friendlies:  { id: 667, season: 2026 },
+  communityshield: { id: 528, season: 2026 },
+  dflsupercup:     { id: 529, season: 2026 },
+  tropheedeschampions: { id: 526, season: 2026 },
+  supercoppa:      { id: 547, season: 2026 },
 };
 
 function mapStatus(short) {
