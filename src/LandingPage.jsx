@@ -31,9 +31,18 @@ function useFixtures(leagueId) {
   useEffect(() => {
     async function load() {
       try {
-        const r = await fetch(`/api/fixtures?leagueId=${leagueId}`);
+        const r = await fetch(`/api/fixtures?leagueId=${leagueId}&full=true`);
         const d = await r.json();
-        setFixtures((d.fixtures || []).slice(0, 6));
+        const all = d.fixtures || [];
+
+        // Prioritize fixtures that haven't been played yet, soonest first —
+        // full=true returns the whole season, so without this the widget
+        // could show random past matches instead of what's coming up next.
+        const upcoming = all.filter(f => f.status !== "FT").sort((a, b) => new Date(a.date) - new Date(b.date));
+        const recent = all.filter(f => f.status === "FT").sort((a, b) => new Date(b.date) - new Date(a.date));
+        const ordered = upcoming.length > 0 ? upcoming : recent;
+
+        setFixtures(ordered.slice(0, 6));
       } catch {}
       setLoaded(true);
     }
