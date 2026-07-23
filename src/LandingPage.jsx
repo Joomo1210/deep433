@@ -65,6 +65,10 @@ export default function LandingPage({ onGetStarted }) {
     { id: "bundesliga", label: "Bundesliga" },
     { id: "ligue1", label: "Ligue 1" },
     { id: "ucl", label: "Champions League" },
+    { id: "communityshield", label: "Community Shield" },
+    { id: "dflsupercup", label: "DFL-Supercup" },
+    { id: "tropheedeschampions", label: "Trophée des Champions" },
+    { id: "supercoppa", label: "Supercoppa Italiana" },
   ];
 
   return (
