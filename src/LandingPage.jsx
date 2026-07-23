@@ -53,8 +53,6 @@ function useFixtures(leagueId) {
 
 export default function LandingPage({ onGetStarted }) {
   const { posts, loaded } = useLatestPosts(6);
-  const featured = posts[0];
-  const rest = posts.slice(1);
 
   const [fixtureLeague, setFixtureLeague] = useState("pl");
   const { fixtures, loaded: fixturesLoaded } = useFixtures(fixtureLeague);
@@ -82,8 +80,6 @@ export default function LandingPage({ onGetStarted }) {
         .cta-btn:hover { opacity: 0.9; transform: translateY(-2px); }
         .ghost-btn { background: none; border: 1.5px solid #3a2a5a; border-radius: 10px; color: #888; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 600; padding: 10px 24px; transition: all 0.2s; text-decoration: none; display: inline-block; }
         .ghost-btn:hover { border-color: #7c3aed; color: #a78bfa; }
-        .featured-card { display: block; background: linear-gradient(135deg, #1a1035, #0f0a20); border: 1px solid #2a1f4a; border-radius: 18px; padding: 36px; text-decoration: none; transition: border-color 0.2s; }
-        .featured-card:hover { border-color: #4ade80; }
         .post-card { display: block; background: #13102a; border: 1px solid #2a1f4a; border-radius: 14px; padding: 22px; text-decoration: none; transition: border-color 0.2s, transform 0.15s; }
         .post-card:hover { border-color: #4ade80; transform: translateY(-2px); }
         .predict-strip { background: linear-gradient(135deg, #13102a, #0d0018); border: 1px solid #2a1f4a; border-radius: 16px; padding: 28px; display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
@@ -200,28 +196,14 @@ export default function LandingPage({ onGetStarted }) {
         </div>
       </section>
 
-      {/* FEATURED POST */}
-      {loaded && featured && (
-        <section style={{ padding: "20px 24px 60px", maxWidth: 1000, margin: "0 auto" }}>
-          <a href={`/blog/${featured.slug}`} className="featured-card">
-            {featured.image_url && (
-              <img src={featured.image_url} alt="" style={{ width: '100%', height: 260, objectFit: 'cover', borderRadius: 12, marginBottom: 20 }} />
-            )}
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase", letterSpacing: 2, marginBottom: 14 }}>
-              {featured.category}{featured.gameweek ? ` · ${featured.gameweek}` : ""}
-            </div>
-            <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 38, lineHeight: 1.1, marginBottom: 14, maxWidth: 700 }}>{featured.title}</div>
-            {featured.subtitle && <p style={{ fontSize: 16, color: "#999", lineHeight: 1.6, maxWidth: 620 }}>{featured.subtitle}</p>}
-            <div style={{ marginTop: 20, fontSize: 13, fontWeight: 700, color: "#4ade80" }}>Read the full breakdown →</div>
-          </a>
-        </section>
-      )}
-
-      {/* MORE POSTS */}
-      {loaded && rest.length > 0 && (
-        <section style={{ padding: "0 24px 80px", maxWidth: 1000, margin: "0 auto" }}>
-          <div className="posts-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-            {rest.map(post => (
+      {/* BLOG TEASER — compact cards, full content lives on the blog itself */}
+      {loaded && posts.length > 0 && (
+        <section style={{ padding: "20px 24px 80px", maxWidth: 1000, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 20 }}>
+            <div style={{ fontSize: 24, fontWeight: 900, color: "#f0f0f0" }}>From the Blog</div>
+          </div>
+          <div className="posts-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 24 }}>
+            {posts.map(post => (
               <a key={post.id} href={`/blog/${post.slug}`} className="post-card">
                 <div style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>
                   {post.category}{post.gameweek ? ` · ${post.gameweek}` : ""}
@@ -230,6 +212,9 @@ export default function LandingPage({ onGetStarted }) {
                 {post.match_label && <div style={{ fontSize: 13, color: "#666" }}>{post.match_label}</div>}
               </a>
             ))}
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <a href="/blog" className="ghost-btn">See All Posts →</a>
           </div>
         </section>
       )}
