@@ -95,6 +95,35 @@ export default function LandingPage({ onGetStarted }) {
         </div>
       </section>
 
+      {/* What's Inside — full site map for new visitors */}
+      <section style={{ maxWidth: 900, margin: "0 auto", padding: "20px 20px 60px" }}>
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
+          <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 800, textTransform: "uppercase", letterSpacing: 2, marginBottom: 6 }}>What's Inside</div>
+          <div style={{ fontSize: 26, fontWeight: 900, color: "#111" }}>Everything Deep433 has to offer</div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+          {[
+            { icon: "⚡", title: "Predict", desc: "Make your call before kickoff, compare against 433's AI prediction.", href: "/" },
+            { icon: "🔴", title: "Live Scores", desc: "Real-time scores across every major league and tournament.", href: "/" },
+            { icon: "🏆", title: "Bracket", desc: "Follow knockout tournaments through to the final.", href: "/" },
+            { icon: "🎖", title: "Season Awards", desc: "End-of-season leaders across goals, assists, clean sheets and more.", href: "/" },
+            { icon: "📊", title: "Graphics", desc: "Build your own player and team comparison cards, free to use.", href: "/" },
+            { icon: "🆚", title: "You vs AI", desc: "Track your prediction record against 433 all season long.", href: "/" },
+            { icon: "🏅", title: "Badges", desc: "Earn badges as you build your prediction history.", href: "/" },
+            { icon: "📋", title: "History", desc: "Every prediction you've made, all in one place.", href: "/" },
+            { icon: "📰", title: "Blog", desc: "Data-driven previews, recaps, and community-written takes.", href: "/blog" },
+            { icon: "🏆", title: "Leaderboard", desc: "See how this round's Community Takes writers ranked.", href: "/leaderboard" },
+            { icon: "✍️", title: "Write & Get Paid", desc: "Submit your own take on a big match, get published, get paid.", href: "/submit" },
+          ].map(item => (
+            <a key={item.title} href={item.href} style={{ display: "block", textDecoration: "none", background: "#fff", border: "1px solid #eee", borderRadius: 12, padding: "18px 16px", transition: "transform 0.15s" }}>
+              <div style={{ fontSize: 24, marginBottom: 8 }}>{item.icon}</div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#111", marginBottom: 4 }}>{item.title}</div>
+              <div style={{ fontSize: 12.5, color: "#777", lineHeight: 1.5 }}>{item.desc}</div>
+            </a>
+          ))}
+        </div>
+      </section>
+
       {/* FEATURED POST */}
       {loaded && featured && (
         <section style={{ padding: "20px 24px 60px", maxWidth: 1000, margin: "0 auto" }}>
