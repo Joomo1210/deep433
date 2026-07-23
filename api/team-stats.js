@@ -21,6 +21,21 @@ export default async function handler(req, res) {
   // ── Team name search ──
   // ── League search (any of API-Football's 1000+ leagues, not just our curated 7) ──
   // ── Best of Europe: top 2 teams from each of the 5 major leagues, last completed season ──
+  // Retries a fetch once after a short delay if it comes back empty/failed —
+  // handles transient rate-limiting so a single hiccup doesn't silently
+  // drop a team from the results.
+  async function fetchWithRetry(url, headers, validate) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const r = await fetch(url, { headers });
+        const data = await r.json();
+        if (validate(data)) return data;
+      } catch {}
+      if (attempt === 0) await new Promise(res => setTimeout(res, 400));
+    }
+    return null;
+  }
+
   if (mode === "eurotop10") {
     const BIG5 = ["pl", "laliga", "seriea", "bundesliga", "ligue1"];
     const debugInfo = [];
@@ -32,10 +47,11 @@ export default async function handler(req, res) {
         // Use last completed season (LEAGUE_MAP holds the upcoming season)
         const lastSeason = league.season - 1;
 
-        const standingsR = await fetch(`https://v3.football.api-sports.io/standings?league=${league.id}&season=${lastSeason}`, {
-          headers: { "x-apisports-key": apiKey }
-        });
-        const standingsData = await standingsR.json();
+        const standingsData = await fetchWithRetry(
+          `https://v3.football.api-sports.io/standings?league=${league.id}&season=${lastSeason}`,
+          { "x-apisports-key": apiKey },
+          (d) => d.response?.[0]?.league?.standings?.[0]?.length > 0
+        ) || {};
         const table = standingsData.response?.[0]?.league?.standings?.[0] || [];
         const top2 = table.slice(0, 2);
 
@@ -43,11 +59,12 @@ export default async function handler(req, res) {
 
         for (const row of top2) {
           const teamId = row.team?.id;
-          const statsR = await fetch(`https://v3.football.api-sports.io/teams/statistics?league=${league.id}&season=${lastSeason}&team=${teamId}`, {
-            headers: { "x-apisports-key": apiKey }
-          });
-          const statsData = await statsR.json();
-          const s = statsData.response;
+          const statsData = await fetchWithRetry(
+            `https://v3.football.api-sports.io/teams/statistics?league=${league.id}&season=${lastSeason}&team=${teamId}`,
+            { "x-apisports-key": apiKey },
+            (d) => !!d.response
+          );
+          const s = statsData?.response;
           if (!s) continue;
 
           teams.push({
@@ -80,7 +97,7 @@ export default async function handler(req, res) {
         return res.status(200).json({ debug: true, debugInfo, teamCount: teams.length });
       }
 
-      return res.status(200).json({ teams });
+      return res.status(200).json({ teams, complete: teams.length === 10 });
     } catch (err) {
       return res.status(200).json({ teams: [], error: err.message });
     }
