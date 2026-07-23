@@ -1,12 +1,13 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import App from './App.jsx' 
+import App from './App.jsx'
 import BlogIndex from './BlogIndex.jsx'
 import BlogPost from './BlogPost.jsx'
 import AdminNewPost from './AdminNewPost.jsx'
 import AdminEditPost from './AdminEditPost.jsx'
 import AdminReviewSubmissions from './AdminReviewSubmissions.jsx'
 import AdminReviewResults from './AdminReviewResults.jsx'
+import CommunityLeaderboard from './CommunityLeaderboard.jsx'
 import SubmitTake from './SubmitTake.jsx'
 import AdminGate from './AdminGate.jsx'
 
@@ -32,6 +33,9 @@ function Router() {
   }
   if (path === '/admin/review-results') {
     return <AdminGate><AdminReviewResults /></AdminGate>;
+  }
+  if (path === '/leaderboard' || path === '/leaderboard/') {
+    return <CommunityLeaderboard />;
   }
   return <App />;
 }
