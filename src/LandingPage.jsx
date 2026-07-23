@@ -112,6 +112,7 @@ export default function LandingPage({ onGetStarted }) {
         @media (max-width: 768px) {
           .posts-grid { grid-template-columns: 1fr !important; }
           .hero-title { font-size: 17px !important; }
+          .preview-list { grid-template-columns: 1fr !important; }
         }
       `}</style>
 
@@ -217,7 +218,7 @@ export default function LandingPage({ onGetStarted }) {
             <div style={{ fontSize: 12, fontWeight: 700, color: "#fbbf24", textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🥇 World Cup Top Scorers</div>
             {!scorersLoaded && <div style={{ color: "#666", fontSize: 13 }}>Loading…</div>}
             {scorersLoaded && topScorers.length === 0 && <div style={{ color: "#666", fontSize: 13 }}>Not available right now.</div>}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 14px" }}>
+            <div className="preview-list" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 14px" }}>
               {topScorers.map((p, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: "1px solid #1e1830", gap: 6 }}>
                   <span style={{ fontSize: 12.5, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
@@ -235,7 +236,7 @@ export default function LandingPage({ onGetStarted }) {
             <div style={{ fontSize: 12, fontWeight: 700, color: "#a855f7", textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🎯 World Cup Top Assists</div>
             {!assistsLoaded && <div style={{ color: "#666", fontSize: 13 }}>Loading…</div>}
             {assistsLoaded && topAssists.length === 0 && <div style={{ color: "#666", fontSize: 13 }}>Not available right now.</div>}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 14px" }}>
+            <div className="preview-list" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 14px" }}>
               {topAssists.map((p, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: "1px solid #1e1830", gap: 6 }}>
                   <span style={{ fontSize: 12.5, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
@@ -253,7 +254,7 @@ export default function LandingPage({ onGetStarted }) {
             <div style={{ fontSize: 12, fontWeight: 700, color: "#60a5fa", textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🏆 Best of Europe · Clean Sheets</div>
             {!europeLoaded && <div style={{ color: "#666", fontSize: 13 }}>Loading…</div>}
             {europeLoaded && bestOfEurope.length === 0 && <div style={{ color: "#666", fontSize: 13 }}>Not available right now.</div>}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 14px" }}>
+            <div className="preview-list" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 14px" }}>
               {bestOfEurope.map((t, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: "1px solid #1e1830", gap: 6 }}>
                   <span style={{ fontSize: 12.5, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
@@ -271,7 +272,7 @@ export default function LandingPage({ onGetStarted }) {
             <div style={{ fontSize: 12, fontWeight: 700, color: "#4ade80", textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>⚽ Best of Europe · Top Goals</div>
             {!goalsLoaded && <div style={{ color: "#666", fontSize: 13 }}>Loading…</div>}
             {goalsLoaded && topGoalsClubs.length === 0 && <div style={{ color: "#666", fontSize: 13 }}>Not available right now.</div>}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 14px" }}>
+            <div className="preview-list" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 14px" }}>
               {topGoalsClubs.map((t, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: "1px solid #1e1830", gap: 6 }}>
                   <span style={{ fontSize: 12.5, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
