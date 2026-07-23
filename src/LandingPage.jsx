@@ -17,15 +17,20 @@ function useTopScorers(leagueId, type = "scorers") {
   const [players, setPlayers] = useState([]);
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
+    let ignore = false;
+    setLoaded(false);
     async function load() {
       try {
         const r = await fetch(`/api/top-scorers?leagueId=${leagueId}&type=${type}`);
         const d = await r.json();
-        setPlayers((d.players || []).slice(0, 10));
-      } catch {}
-      setLoaded(true);
+        if (!ignore) setPlayers((d.players || []).slice(0, 10));
+      } catch {
+        if (!ignore) setPlayers([]);
+      }
+      if (!ignore) setLoaded(true);
     }
     load();
+    return () => { ignore = true; };
   }, [leagueId, type]);
   return { players, loaded };
 }
@@ -34,16 +39,30 @@ function useBestOfEurope(sortBy = "cleanSheets") {
   const [teams, setTeams] = useState([]);
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
+    let ignore = false;
+    setLoaded(false);
+    async function fetchOnce() {
+      const r = await fetch(`/api/team-stats?mode=eurotop10`);
+      return r.json();
+    }
     async function load() {
       try {
-        const r = await fetch(`/api/team-stats?mode=eurotop10`);
-        const d = await r.json();
-        const sorted = [...(d.teams || [])].sort((a, b) => (b[sortBy] || 0) - (a[sortBy] || 0));
-        setTeams(sorted.slice(0, 10));
-      } catch {}
-      setLoaded(true);
+        let d = await fetchOnce();
+        // Retry once if the first attempt came back incomplete (e.g. a
+        // team's stats call got rate-limited) before giving up.
+        if (!d.complete) d = await fetchOnce();
+
+        if (d.complete) {
+          const sorted = [...(d.teams || [])].sort((a, b) => (b[sortBy] || 0) - (a[sortBy] || 0));
+          if (!ignore) setTeams(sorted.slice(0, 10));
+        }
+      } catch {
+        if (!ignore) setTeams([]);
+      }
+      if (!ignore) setLoaded(true);
     }
     load();
+    return () => { ignore = true; };
   }, [sortBy]);
   return { teams, loaded };
 }
@@ -52,6 +71,8 @@ function useFixtures(leagueId) {
   const [fixtures, setFixtures] = useState([]);
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
+    let ignore = false;
+    setLoaded(false);
     async function load() {
       try {
         const r = await fetch(`/api/fixtures?leagueId=${leagueId}&full=true`);
@@ -65,11 +86,14 @@ function useFixtures(leagueId) {
         const recent = all.filter(f => f.status === "FT").sort((a, b) => new Date(b.date) - new Date(a.date));
         const ordered = upcoming.length > 0 ? upcoming : recent;
 
-        setFixtures(ordered.slice(0, 6));
-      } catch {}
-      setLoaded(true);
+        if (!ignore) setFixtures(ordered.slice(0, 6));
+      } catch {
+        if (!ignore) setFixtures([]);
+      }
+      if (!ignore) setLoaded(true);
     }
     load();
+    return () => { ignore = true; };
   }, [leagueId]);
   return { fixtures, loaded };
 }
