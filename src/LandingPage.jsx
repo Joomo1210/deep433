@@ -25,10 +25,38 @@ function useLatestPosts(limit) {
   return { posts, loaded };
 }
 
+function useFixtures(leagueId) {
+  const [fixtures, setFixtures] = useState([]);
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    async function load() {
+      try {
+        const r = await fetch(`/api/fixtures?leagueId=${leagueId}`);
+        const d = await r.json();
+        setFixtures((d.fixtures || []).slice(0, 6));
+      } catch {}
+      setLoaded(true);
+    }
+    load();
+  }, [leagueId]);
+  return { fixtures, loaded };
+}
+
 export default function LandingPage({ onGetStarted }) {
   const { posts, loaded } = useLatestPosts(6);
   const featured = posts[0];
   const rest = posts.slice(1);
+
+  const [fixtureLeague, setFixtureLeague] = useState("pl");
+  const { fixtures, loaded: fixturesLoaded } = useFixtures(fixtureLeague);
+  const FIXTURE_LEAGUES = [
+    { id: "pl", label: "Premier League" },
+    { id: "laliga", label: "La Liga" },
+    { id: "seriea", label: "Serie A" },
+    { id: "bundesliga", label: "Bundesliga" },
+    { id: "ligue1", label: "Ligue 1" },
+    { id: "ucl", label: "Champions League" },
+  ];
 
   return (
     <div style={{ minHeight: "100vh", background: "#0a0010", color: "#f0f0f0", fontFamily: "'Inter','Helvetica Neue',sans-serif", overflowX: "hidden" }}>
@@ -90,13 +118,14 @@ export default function LandingPage({ onGetStarted }) {
       </section>
 
       {/* What's Inside — full site map for new visitors */}
-      <section style={{ maxWidth: 900, margin: "0 auto", padding: "20px 20px 60px" }}>
-        <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 800, textTransform: "uppercase", letterSpacing: 2, marginBottom: 6 }}>What's Inside</div>
-          <div style={{ fontSize: 26, fontWeight: 900, color: "#111" }}>Everything Deep433 has to offer</div>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
-          {[
+      <section style={{ background: "#f6f7f5", padding: "48px 20px 60px" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 32 }}>
+            <div style={{ fontSize: 28, fontWeight: 900, color: "#111", marginBottom: 6 }}>Everything Deep433 Has To Offer</div>
+            <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>What's Inside</div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+            {[
             { icon: "⚡", title: "Predict", desc: "Make your call before kickoff, compare against 433's AI prediction.", href: "/" },
             { icon: "🔴", title: "Live Scores", desc: "Real-time scores across every major league and tournament.", href: "/" },
             { icon: "🏆", title: "Bracket", desc: "Follow knockout tournaments through to the final.", href: "/" },
@@ -114,6 +143,52 @@ export default function LandingPage({ onGetStarted }) {
               <div style={{ fontSize: 15, fontWeight: 800, color: "#111", marginBottom: 4 }}>{item.title}</div>
               <div style={{ fontSize: 12.5, color: "#777", lineHeight: 1.5 }}>{item.desc}</div>
             </a>
+          ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FIXTURES */}
+      <section style={{ maxWidth: 900, margin: "0 auto", padding: "40px 20px" }}>
+        <div style={{ textAlign: "center", marginBottom: 20 }}>
+          <div style={{ fontSize: 24, fontWeight: 900, color: "#f0f0f0" }}>Upcoming Fixtures</div>
+        </div>
+
+        <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap", marginBottom: 24 }}>
+          {FIXTURE_LEAGUES.map(l => (
+            <button
+              key={l.id}
+              onClick={() => setFixtureLeague(l.id)}
+              style={{
+                background: fixtureLeague === l.id ? "#4ade8022" : "none",
+                border: `1px solid ${fixtureLeague === l.id ? "#4ade80" : "#2a1f4a"}`,
+                borderRadius: 20, color: fixtureLeague === l.id ? "#4ade80" : "#888",
+                cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "6px 14px",
+              }}
+            >
+              {l.label}
+            </button>
+          ))}
+        </div>
+
+        {!fixturesLoaded && <div style={{ textAlign: "center", color: "#666", fontSize: 14 }}>Loading fixtures…</div>}
+        {fixturesLoaded && fixtures.length === 0 && (
+          <div style={{ textAlign: "center", color: "#666", fontSize: 14 }}>No upcoming fixtures found for this competition right now.</div>
+        )}
+
+        <div style={{ display: "grid", gap: 10 }}>
+          {fixtures.map((f, i) => (
+            <div key={i} style={{ background: "#13102a", border: "1px solid #2a1f4a", borderRadius: 12, padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0" }}>{f.home} <span style={{ color: "#555" }}>vs</span> {f.away}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <span style={{ fontSize: 13, color: "#888" }}>{f.date}</span>
+                {f.status === "FT" ? (
+                  <span style={{ fontSize: 14, fontWeight: 800, color: "#4ade80" }}>{f.fulltimeScore?.home}-{f.fulltimeScore?.away}</span>
+                ) : (
+                  <button onClick={onGetStarted} style={{ background: "#4ade80", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 800, padding: "5px 12px" }}>Predict →</button>
+                )}
+              </div>
+            </div>
           ))}
         </div>
       </section>
