@@ -215,7 +215,11 @@ export default function LandingPage({ onGetStarted }) {
 
           {/* World Cup Top Scorers */}
           <div style={{ background: "#13102a", border: "1px solid #2a1f4a", borderRadius: 14, padding: 20 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#fbbf24", textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🥇 World Cup Top Scorers</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 2 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#fbbf24", textTransform: "uppercase", letterSpacing: 1 }}>🥇 World Cup Top Scorers</div>
+              <img src="/deep433.jpg" alt="Deep433" style={{ width: 22, height: 22, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+            </div>
+            <div style={{ fontSize: 11, color: "#666", marginBottom: 12 }}>2026 Tournament</div>
             {!scorersLoaded && <div style={{ color: "#666", fontSize: 13 }}>Loading…</div>}
             {scorersLoaded && topScorers.length === 0 && <div style={{ color: "#666", fontSize: 13 }}>Not available right now.</div>}
             <div className="preview-list" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 14px" }}>
@@ -233,7 +237,11 @@ export default function LandingPage({ onGetStarted }) {
 
           {/* World Cup Top Assists */}
           <div style={{ background: "#13102a", border: "1px solid #2a1f4a", borderRadius: 14, padding: 20 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#a855f7", textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🎯 World Cup Top Assists</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 2 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#a855f7", textTransform: "uppercase", letterSpacing: 1 }}>🎯 World Cup Top Assists</div>
+              <img src="/deep433.jpg" alt="Deep433" style={{ width: 22, height: 22, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+            </div>
+            <div style={{ fontSize: 11, color: "#666", marginBottom: 12 }}>2026 Tournament</div>
             {!assistsLoaded && <div style={{ color: "#666", fontSize: 13 }}>Loading…</div>}
             {assistsLoaded && topAssists.length === 0 && <div style={{ color: "#666", fontSize: 13 }}>Not available right now.</div>}
             <div className="preview-list" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 14px" }}>
@@ -251,7 +259,11 @@ export default function LandingPage({ onGetStarted }) {
 
           {/* Best of Europe */}
           <div style={{ background: "#13102a", border: "1px solid #2a1f4a", borderRadius: 14, padding: 20 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#60a5fa", textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🏆 Best of Europe · Clean Sheets</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 2 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#60a5fa", textTransform: "uppercase", letterSpacing: 1 }}>🏆 Best of Europe · Clean Sheets</div>
+              <img src="/deep433.jpg" alt="Deep433" style={{ width: 22, height: 22, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+            </div>
+            <div style={{ fontSize: 11, color: "#666", marginBottom: 12 }}>2025/2026 Season</div>
             {!europeLoaded && <div style={{ color: "#666", fontSize: 13 }}>Loading…</div>}
             {europeLoaded && bestOfEurope.length === 0 && <div style={{ color: "#666", fontSize: 13 }}>Not available right now.</div>}
             <div className="preview-list" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 14px" }}>
@@ -269,7 +281,11 @@ export default function LandingPage({ onGetStarted }) {
 
           {/* Best of Europe — Goals */}
           <div style={{ background: "#13102a", border: "1px solid #2a1f4a", borderRadius: 14, padding: 20 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#4ade80", textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>⚽ Best of Europe · Top Goals</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 2 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#4ade80", textTransform: "uppercase", letterSpacing: 1 }}>⚽ Best of Europe · Top Goals</div>
+              <img src="/deep433.jpg" alt="Deep433" style={{ width: 22, height: 22, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+            </div>
+            <div style={{ fontSize: 11, color: "#666", marginBottom: 12 }}>2025/2026 Season</div>
             {!goalsLoaded && <div style={{ color: "#666", fontSize: 13 }}>Loading…</div>}
             {goalsLoaded && topGoalsClubs.length === 0 && <div style={{ color: "#666", fontSize: 13 }}>Not available right now.</div>}
             <div className="preview-list" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 14px" }}>
