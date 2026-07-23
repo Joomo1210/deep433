@@ -1,29 +1,4 @@
 import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  "https://idisdztwpvedtnroiian.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlkaXNkenR3cHZlZHRucm9paWFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NTczOTQsImV4cCI6MjA5NzAzMzM5NH0.YmF0DqWmopuJs9Ci1hdFi0XDMoWRD0yfVwOuuG7WVyE"
-);
-
-function useLatestPosts(limit) {
-  const [posts, setPosts] = useState([]);
-  const [loaded, setLoaded] = useState(false);
-  useEffect(() => {
-    async function load() {
-      const { data } = await supabase
-        .from("blog_posts")
-        .select("*")
-        .eq("published", true)
-        .order("published_at", { ascending: false })
-        .limit(limit);
-      setPosts(data || []);
-      setLoaded(true);
-    }
-    load();
-  }, [limit]);
-  return { posts, loaded };
-}
 
 function useFixtures(leagueId) {
   const [fixtures, setFixtures] = useState([]);
@@ -52,7 +27,6 @@ function useFixtures(leagueId) {
 }
 
 export default function LandingPage({ onGetStarted }) {
-  const { posts, loaded } = useLatestPosts(6);
 
   const [fixtureLeague, setFixtureLeague] = useState("pl");
   const { fixtures, loaded: fixturesLoaded } = useFixtures(fixtureLeague);
@@ -141,21 +115,38 @@ export default function LandingPage({ onGetStarted }) {
           <div style={{ textAlign: "center", color: "#666", fontSize: 14 }}>No upcoming fixtures found for this competition right now.</div>
         )}
 
-        <div style={{ display: "grid", gap: 10 }}>
-          {fixtures.map((f, i) => (
-            <div key={i} style={{ background: "#13102a", border: "1px solid #2a1f4a", borderRadius: 12, padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0" }}>{f.home} <span style={{ color: "#555" }}>vs</span> {f.away}</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <span style={{ fontSize: 13, color: "#888" }}>{f.date}</span>
-                {f.status === "FT" ? (
-                  <span style={{ fontSize: 14, fontWeight: 800, color: "#4ade80" }}>{f.fulltimeScore?.home}-{f.fulltimeScore?.away}</span>
-                ) : (
-                  <button onClick={onGetStarted} style={{ background: "#4ade80", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 800, padding: "5px 12px" }}>Predict →</button>
-                )}
+        {(() => {
+          const groups = {};
+          fixtures.forEach(f => {
+            if (!groups[f.date]) groups[f.date] = [];
+            groups[f.date].push(f);
+          });
+          const dateFormatter = (d) => new Date(d).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+          const timeFormatter = (iso) => iso ? new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "";
+
+          return Object.keys(groups).map(date => (
+            <div key={date} style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
+                {dateFormatter(date)}
+              </div>
+              <div style={{ display: "grid", gap: 10 }}>
+                {groups[date].map((f, i) => (
+                  <div key={i} style={{ background: "#13102a", border: "1px solid #2a1f4a", borderRadius: 12, padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0" }}>{f.home} <span style={{ color: "#555" }}>vs</span> {f.away}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <span style={{ fontSize: 13, color: "#888" }}>{timeFormatter(f.kickoff)}</span>
+                      {f.status === "FT" ? (
+                        <span style={{ fontSize: 14, fontWeight: 800, color: "#4ade80" }}>{f.fulltimeScore?.home}-{f.fulltimeScore?.away}</span>
+                      ) : (
+                        <button onClick={onGetStarted} style={{ background: "#4ade80", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 800, padding: "5px 12px" }}>Predict →</button>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
-        </div>
+          ));
+        })()}
 
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginTop: 28 }}>
           <button className="cta-btn" onClick={onGetStarted}>⚡ Predict a Match</button>
@@ -196,37 +187,14 @@ export default function LandingPage({ onGetStarted }) {
         </div>
       </section>
 
-      {/* BLOG TEASER — compact cards, full content lives on the blog itself */}
-      {loaded && posts.length > 0 && (
-        <section style={{ padding: "20px 24px 80px", maxWidth: 1000, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 20 }}>
-            <div style={{ fontSize: 24, fontWeight: 900, color: "#f0f0f0" }}>📰 Read Community Takes</div>
-          </div>
-          <div className="posts-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 24 }}>
-            {posts.map(post => (
-              <a key={post.id} href={`/blog/${post.slug}`} className="post-card">
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>
-                  {post.category}{post.gameweek ? ` · ${post.gameweek}` : ""}
-                </div>
-                <div style={{ fontSize: 17, fontWeight: 800, lineHeight: 1.3, marginBottom: 8 }}>{post.title}</div>
-                {post.match_label && <div style={{ fontSize: 13, color: "#666" }}>{post.match_label}</div>}
-              </a>
-            ))}
-          </div>
-          <div style={{ textAlign: "center" }}>
-            <a href="/blog" className="ghost-btn">See All Posts →</a>
-          </div>
-        </section>
-      )}
-
-      {/* EMPTY STATE — before first post is published */}
-      {loaded && posts.length === 0 && (
-        <section style={{ padding: "0 24px 80px", maxWidth: 700, margin: "0 auto", textAlign: "center" }}>
-          <div style={{ border: "1px dashed #2a1f4a", borderRadius: 16, padding: 48, color: "#666" }}>
-            First breakdown drops once matchday kicks off. Check back soon.
-          </div>
-        </section>
-      )}
+      {/* BLOG CTA — no previews here, just a single link into the blog itself */}
+      <section style={{ padding: "20px 24px 80px", maxWidth: 700, margin: "0 auto", textAlign: "center" }}>
+        <a href="/blog" style={{ display: "block", background: "linear-gradient(135deg, #1a1035, #0f0a20)", border: "1px solid #2a1f4a", borderRadius: 16, padding: "32px", textDecoration: "none", transition: "border-color 0.2s" }}>
+          <div style={{ fontSize: 22, fontWeight: 900, color: "#f0f0f0", marginBottom: 8 }}>📰 Read Community Takes</div>
+          <div style={{ fontSize: 14, color: "#888" }}>Match breakdowns, previews, and fan-written takes — all on the blog.</div>
+          <div style={{ marginTop: 16, fontSize: 13, fontWeight: 700, color: "#4ade80" }}>Visit the blog →</div>
+        </a>
+      </section>
 
       {/* PREDICT STRIP */}
       <section style={{ padding: "0 24px 100px", maxWidth: 1000, margin: "0 auto" }}>
