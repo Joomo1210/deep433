@@ -67,24 +67,20 @@ export default function LandingPage({ onGetStarted }) {
       </nav>
 
       {/* HERO */}
-      <section style={{ padding: "120px 24px 60px", maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#1a0a2e", border: "1px solid #7c3aed44", borderRadius: 40, padding: "6px 16px", marginBottom: 28 }}>
+      <section style={{ padding: "100px 24px 30px", maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#1a0a2e", border: "1px solid #7c3aed44", borderRadius: 40, padding: "6px 16px", marginBottom: 20 }}>
           <span className="pulse" style={{ width: 8, height: 8, borderRadius: "50%", background: "#4ade80", display: "inline-block" }}/>
           <span style={{ fontSize: 12, fontWeight: 700, color: "#4ade80", letterSpacing: 1 }}>LIVE COVERAGE · EVERY MATCHDAY</span>
         </div>
 
-        <div className="hero-title" style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 64, lineHeight: 1.0, marginBottom: 24 }}>
+        <div className="hero-title" style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 56, lineHeight: 1.0, marginBottom: 18 }}>
           The stats have spoken.<br/>
           <span style={{ color: "#7c3aed" }}>The AI has its call.</span><br/>
           <span style={{ color: "#4ade80" }}>What's yours?</span>
         </div>
 
-        <p style={{ fontSize: 19, color: "#888", lineHeight: 1.7, maxWidth: 580, margin: "0 auto 20px" }}>
-         "Every matchday, Deep433 breaks down the stats, the AI makes its call, then it's over to you. Predict the score and find out if you can out-think the machine."
-        </p>
-
-        <p style={{ fontSize: 15, color: "#666", lineHeight: 1.7, maxWidth: 620, margin: "0 auto 36px" }}>
-          Whether you're predicting for fun, tracking betting odds, scouting transfer fits, creating football content and need a quick stat, or just a fan who loves the numbers — Deep433 is your football data engine.
+        <p style={{ fontSize: 16, color: "#888", lineHeight: 1.6, maxWidth: 560, margin: "0 auto 28px" }}>
+          Predict the score, then find out if you can out-think the machine — plus stats, graphics, and paid writing, all in one place.
         </p>
 
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
