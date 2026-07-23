@@ -200,7 +200,7 @@ export default function LandingPage({ onGetStarted }) {
       {loaded && posts.length > 0 && (
         <section style={{ padding: "20px 24px 80px", maxWidth: 1000, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 20 }}>
-            <div style={{ fontSize: 24, fontWeight: 900, color: "#f0f0f0" }}>Read The Blog</div>
+            <div style={{ fontSize: 24, fontWeight: 900, color: "#f0f0f0" }}>📰 Read Community Takes</div>
           </div>
           <div className="posts-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 24 }}>
             {posts.map(post => (
