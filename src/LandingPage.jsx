@@ -1,5 +1,18 @@
 import { useEffect, useState } from "react";
 
+// Nationality -> ISO code for flag images (flagcdn.com), covers common WC nations
+const NATION_FLAG_CODES = {
+  "Argentina": "ar", "France": "fr", "Brazil": "br", "England": "gb-eng",
+  "Spain": "es", "Portugal": "pt", "Germany": "de", "Netherlands": "nl",
+  "Belgium": "be", "Croatia": "hr", "Morocco": "ma", "Italy": "it",
+  "Uruguay": "uy", "Colombia": "co", "Senegal": "sn", "Japan": "jp",
+  "Korea Republic": "kr", "USA": "us", "Mexico": "mx", "Switzerland": "ch",
+  "Denmark": "dk", "Ecuador": "ec", "Poland": "pl", "Ghana": "gh",
+  "Nigeria": "ng", "Egypt": "eg", "Algeria": "dz", "Tunisia": "tn",
+  "Norway": "no", "Sweden": "se", "Austria": "at", "Wales": "gb-wls",
+  "Scotland": "gb-sct", "Ukraine": "ua", "Serbia": "rs", "Turkey": "tr",
+};
+
 function useTopScorers(leagueId, type = "scorers") {
   const [players, setPlayers] = useState([]);
   const [loaded, setLoaded] = useState(false);
@@ -8,7 +21,7 @@ function useTopScorers(leagueId, type = "scorers") {
       try {
         const r = await fetch(`/api/top-scorers?leagueId=${leagueId}&type=${type}`);
         const d = await r.json();
-        setPlayers((d.players || []).slice(0, 5));
+        setPlayers((d.players || []).slice(0, 10));
       } catch {}
       setLoaded(true);
     }
@@ -26,7 +39,7 @@ function useBestOfEurope(sortBy = "cleanSheets") {
         const r = await fetch(`/api/team-stats?mode=eurotop10`);
         const d = await r.json();
         const sorted = [...(d.teams || [])].sort((a, b) => (b[sortBy] || 0) - (a[sortBy] || 0));
-        setTeams(sorted.slice(0, 5));
+        setTeams(sorted.slice(0, 10));
       } catch {}
       setLoaded(true);
     }
@@ -204,12 +217,17 @@ export default function LandingPage({ onGetStarted }) {
             <div style={{ fontSize: 12, fontWeight: 700, color: "#fbbf24", textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🥇 World Cup Top Scorers</div>
             {!scorersLoaded && <div style={{ color: "#666", fontSize: 13 }}>Loading…</div>}
             {scorersLoaded && topScorers.length === 0 && <div style={{ color: "#666", fontSize: 13 }}>Not available right now.</div>}
-            {topScorers.map((p, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: i < topScorers.length - 1 ? "1px solid #1e1830" : "none" }}>
-                <span style={{ fontSize: 14, color: "#f0f0f0" }}>{i + 1}. {p.name}</span>
-                <span style={{ fontSize: 15, fontWeight: 800, color: "#fbbf24" }}>{p.goals}</span>
-              </div>
-            ))}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 14px" }}>
+              {topScorers.map((p, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: "1px solid #1e1830", gap: 6 }}>
+                  <span style={{ fontSize: 12.5, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
+                    {NATION_FLAG_CODES[p.nationality] && <img src={`https://flagcdn.com/w20/${NATION_FLAG_CODES[p.nationality]}.png`} alt="" style={{ width: 14, height: 10, objectFit: "cover", borderRadius: 2, flexShrink: 0 }} />}
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{i + 1}. {p.name}</span>
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: "#fbbf24", flexShrink: 0 }}>{p.goals}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* World Cup Top Assists */}
@@ -217,12 +235,17 @@ export default function LandingPage({ onGetStarted }) {
             <div style={{ fontSize: 12, fontWeight: 700, color: "#a855f7", textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🎯 World Cup Top Assists</div>
             {!assistsLoaded && <div style={{ color: "#666", fontSize: 13 }}>Loading…</div>}
             {assistsLoaded && topAssists.length === 0 && <div style={{ color: "#666", fontSize: 13 }}>Not available right now.</div>}
-            {topAssists.map((p, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: i < topAssists.length - 1 ? "1px solid #1e1830" : "none" }}>
-                <span style={{ fontSize: 14, color: "#f0f0f0" }}>{i + 1}. {p.name}</span>
-                <span style={{ fontSize: 15, fontWeight: 800, color: "#a855f7" }}>{p.assists}</span>
-              </div>
-            ))}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 14px" }}>
+              {topAssists.map((p, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: "1px solid #1e1830", gap: 6 }}>
+                  <span style={{ fontSize: 12.5, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
+                    {NATION_FLAG_CODES[p.nationality] && <img src={`https://flagcdn.com/w20/${NATION_FLAG_CODES[p.nationality]}.png`} alt="" style={{ width: 14, height: 10, objectFit: "cover", borderRadius: 2, flexShrink: 0 }} />}
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{i + 1}. {p.name}</span>
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: "#a855f7", flexShrink: 0 }}>{p.assists}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Best of Europe */}
@@ -230,12 +253,17 @@ export default function LandingPage({ onGetStarted }) {
             <div style={{ fontSize: 12, fontWeight: 700, color: "#60a5fa", textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🏆 Best of Europe · Clean Sheets</div>
             {!europeLoaded && <div style={{ color: "#666", fontSize: 13 }}>Loading…</div>}
             {europeLoaded && bestOfEurope.length === 0 && <div style={{ color: "#666", fontSize: 13 }}>Not available right now.</div>}
-            {bestOfEurope.map((t, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: i < bestOfEurope.length - 1 ? "1px solid #1e1830" : "none" }}>
-                <span style={{ fontSize: 14, color: "#f0f0f0" }}>{i + 1}. {t.team}</span>
-                <span style={{ fontSize: 15, fontWeight: 800, color: "#60a5fa" }}>{t.cleanSheets}</span>
-              </div>
-            ))}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 14px" }}>
+              {bestOfEurope.map((t, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: "1px solid #1e1830", gap: 6 }}>
+                  <span style={{ fontSize: 12.5, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
+                    {t.logo && <img src={t.logo} alt="" style={{ width: 14, height: 14, objectFit: "contain", flexShrink: 0 }} />}
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{i + 1}. {t.team}</span>
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: "#60a5fa", flexShrink: 0 }}>{t.cleanSheets}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Best of Europe — Goals */}
@@ -243,12 +271,17 @@ export default function LandingPage({ onGetStarted }) {
             <div style={{ fontSize: 12, fontWeight: 700, color: "#4ade80", textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>⚽ Best of Europe · Top Goals</div>
             {!goalsLoaded && <div style={{ color: "#666", fontSize: 13 }}>Loading…</div>}
             {goalsLoaded && topGoalsClubs.length === 0 && <div style={{ color: "#666", fontSize: 13 }}>Not available right now.</div>}
-            {topGoalsClubs.map((t, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: i < topGoalsClubs.length - 1 ? "1px solid #1e1830" : "none" }}>
-                <span style={{ fontSize: 14, color: "#f0f0f0" }}>{i + 1}. {t.team}</span>
-                <span style={{ fontSize: 15, fontWeight: 800, color: "#4ade80" }}>{t.goalsFor}</span>
-              </div>
-            ))}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 14px" }}>
+              {topGoalsClubs.map((t, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: "1px solid #1e1830", gap: 6 }}>
+                  <span style={{ fontSize: 12.5, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
+                    {t.logo && <img src={t.logo} alt="" style={{ width: 14, height: 14, objectFit: "contain", flexShrink: 0 }} />}
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{i + 1}. {t.team}</span>
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: "#4ade80", flexShrink: 0 }}>{t.goalsFor}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
         </div>
