@@ -1,5 +1,40 @@
 import { useEffect, useState } from "react";
 
+function useTopScorers(leagueId) {
+  const [players, setPlayers] = useState([]);
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    async function load() {
+      try {
+        const r = await fetch(`/api/top-scorers?leagueId=${leagueId}&type=scorers`);
+        const d = await r.json();
+        setPlayers((d.players || []).slice(0, 5));
+      } catch {}
+      setLoaded(true);
+    }
+    load();
+  }, [leagueId]);
+  return { players, loaded };
+}
+
+function useBestOfEurope() {
+  const [teams, setTeams] = useState([]);
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    async function load() {
+      try {
+        const r = await fetch(`/api/team-stats?mode=eurotop10`);
+        const d = await r.json();
+        const sorted = [...(d.teams || [])].sort((a, b) => (b.cleanSheets || 0) - (a.cleanSheets || 0));
+        setTeams(sorted.slice(0, 5));
+      } catch {}
+      setLoaded(true);
+    }
+    load();
+  }, []);
+  return { teams, loaded };
+}
+
 function useFixtures(leagueId) {
   const [fixtures, setFixtures] = useState([]);
   const [loaded, setLoaded] = useState(false);
@@ -30,6 +65,8 @@ export default function LandingPage({ onGetStarted }) {
 
   const [fixtureLeague, setFixtureLeague] = useState("pl");
   const { fixtures, loaded: fixturesLoaded } = useFixtures(fixtureLeague);
+  const { players: topScorers, loaded: scorersLoaded } = useTopScorers("wc2026");
+  const { teams: bestOfEurope, loaded: europeLoaded } = useBestOfEurope();
   const FIXTURE_LEAGUES = [
     { id: "pl", label: "Premier League" },
     { id: "laliga", label: "La Liga" },
@@ -59,7 +96,7 @@ export default function LandingPage({ onGetStarted }) {
         .predict-strip { background: linear-gradient(135deg, #13102a, #0d0018); border: 1px solid #2a1f4a; border-radius: 16px; padding: 28px; display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
         @media (max-width: 768px) {
           .posts-grid { grid-template-columns: 1fr !important; }
-          .hero-title { font-size: 26px !important; }
+          .hero-title { font-size: 17px !important; }
         }
       `}</style>
 
@@ -79,10 +116,10 @@ export default function LandingPage({ onGetStarted }) {
 
       {/* HERO — compact strip, fixtures/predictions are the real front door */}
       <section style={{ padding: "40px 24px 20px", maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
-        <div style={{ fontSize: 20, fontWeight: 800, color: "#f0f0f0", marginBottom: 6 }}>
+        <div className="hero-title" style={{ fontSize: 20, fontWeight: 800, color: "#f0f0f0", lineHeight: 1.4, marginBottom: 10 }}>
           The stats have spoken. <span style={{ color: "#7c3aed" }}>The AI has its call.</span> <span style={{ color: "#4ade80" }}>What's yours?</span>
         </div>
-        <p style={{ fontSize: 14, color: "#777", marginBottom: 0 }}>
+        <p style={{ fontSize: 14, color: "#777", lineHeight: 1.5, marginBottom: 0 }}>
           Predict this matchday's fixtures below, or explore everything else Deep433 offers further down.
         </p>
       </section>
@@ -153,6 +190,42 @@ export default function LandingPage({ onGetStarted }) {
           <a href="/blog" className="ghost-btn">📰 Read the Latest</a>
           <a href="/leaderboard" className="ghost-btn">🏆 Community Leaderboard</a>
           <a href="/submit" className="ghost-btn">✍️ Write & Get Paid</a>
+        </div>
+      </section>
+
+      {/* PREVIEW CARDS — a taste of Graphics tab tools */}
+      <section style={{ maxWidth: 900, margin: "0 auto", padding: "10px 20px 40px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
+
+          {/* World Cup Top Scorers */}
+          <div style={{ background: "#13102a", border: "1px solid #2a1f4a", borderRadius: 14, padding: 20 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#fbbf24", textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🥇 World Cup Top Scorers</div>
+            {!scorersLoaded && <div style={{ color: "#666", fontSize: 13 }}>Loading…</div>}
+            {scorersLoaded && topScorers.length === 0 && <div style={{ color: "#666", fontSize: 13 }}>Not available right now.</div>}
+            {topScorers.map((p, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: i < topScorers.length - 1 ? "1px solid #1e1830" : "none" }}>
+                <span style={{ fontSize: 14, color: "#f0f0f0" }}>{i + 1}. {p.name}</span>
+                <span style={{ fontSize: 15, fontWeight: 800, color: "#fbbf24" }}>{p.goals}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Best of Europe */}
+          <div style={{ background: "#13102a", border: "1px solid #2a1f4a", borderRadius: 14, padding: 20 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#60a5fa", textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🏆 Best of Europe · Clean Sheets</div>
+            {!europeLoaded && <div style={{ color: "#666", fontSize: 13 }}>Loading…</div>}
+            {europeLoaded && bestOfEurope.length === 0 && <div style={{ color: "#666", fontSize: 13 }}>Not available right now.</div>}
+            {bestOfEurope.map((t, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: i < bestOfEurope.length - 1 ? "1px solid #1e1830" : "none" }}>
+                <span style={{ fontSize: 14, color: "#f0f0f0" }}>{i + 1}. {t.team}</span>
+                <span style={{ fontSize: 15, fontWeight: 800, color: "#60a5fa" }}>{t.cleanSheets}</span>
+              </div>
+            ))}
+          </div>
+
+        </div>
+        <div style={{ textAlign: "center", marginTop: 16 }}>
+          <button onClick={onGetStarted} style={{ background: "none", border: "none", fontSize: 13, color: "#4ade80", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Build your own cards in Graphics →</button>
         </div>
       </section>
 
