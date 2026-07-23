@@ -48,7 +48,7 @@ export default function LandingPage({ onGetStarted }) {
         .predict-strip { background: linear-gradient(135deg, #13102a, #0d0018); border: 1px solid #2a1f4a; border-radius: 16px; padding: 28px; display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
         @media (max-width: 768px) {
           .posts-grid { grid-template-columns: 1fr !important; }
-          .hero-title { font-size: 44px !important; }
+          .hero-title { font-size: 26px !important; }
         }
       `}</style>
 
@@ -67,16 +67,14 @@ export default function LandingPage({ onGetStarted }) {
       </nav>
 
       {/* HERO */}
-      <section style={{ padding: "100px 24px 30px", maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
+      <section style={{ padding: "80px 24px 24px", maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#1a0a2e", border: "1px solid #7c3aed44", borderRadius: 40, padding: "6px 16px", marginBottom: 20 }}>
           <span className="pulse" style={{ width: 8, height: 8, borderRadius: "50%", background: "#4ade80", display: "inline-block" }}/>
           <span style={{ fontSize: 12, fontWeight: 700, color: "#4ade80", letterSpacing: 1 }}>LIVE COVERAGE · EVERY MATCHDAY</span>
         </div>
 
-        <div className="hero-title" style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 56, lineHeight: 1.0, marginBottom: 18 }}>
-          The stats have spoken.<br/>
-          <span style={{ color: "#7c3aed" }}>The AI has its call.</span><br/>
-          <span style={{ color: "#4ade80" }}>What's yours?</span>
+        <div className="hero-title" style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 34, lineHeight: 1.2, marginBottom: 14 }}>
+          The stats have spoken. <span style={{ color: "#7c3aed" }}>The AI has its call.</span> <span style={{ color: "#4ade80" }}>What's yours?</span>
         </div>
 
         <p style={{ fontSize: 16, color: "#888", lineHeight: 1.6, maxWidth: 560, margin: "0 auto 28px" }}>
