@@ -60,6 +60,40 @@ const STATIC_STATS = {
     { team: "Man City, Real Madrid, Inter, Lens", logo: "", goalsAgainst: 35 },
     { team: "Barcelona, Napoli, Bayern München", logo: "", goalsAgainst: 36 },
   ],
+  // Real, verified data (researched earlier)
+  plRecordSignings: [
+    { player: "Alexander Isak", club: "Liverpool", fee: "£125m" },
+    { player: "Morgan Rogers", club: "Chelsea", fee: "£117m" },
+    { player: "Florian Wirtz", club: "Liverpool", fee: "£116.5m" },
+    { player: "Elliot Anderson", club: "Man City", fee: "£116m" },
+    { player: "Moises Caicedo", club: "Chelsea", fee: "£115m" },
+  ],
+  // PLACEHOLDER — replace with real data
+  plTopScorers2526: [
+    { name: "Player Name", team: "Team", goals: 0 },
+    { name: "Player Name", team: "Team", goals: 0 },
+    { name: "Player Name", team: "Team", goals: 0 },
+    { name: "Player Name", team: "Team", goals: 0 },
+    { name: "Player Name", team: "Team", goals: 0 },
+  ],
+  // PLACEHOLDER — replace with real data
+  mvp: [
+    { name: "Player Name", team: "Team", value: "€0m" },
+    { name: "Player Name", team: "Team", value: "€0m" },
+    { name: "Player Name", team: "Team", value: "€0m" },
+    { name: "Player Name", team: "Team", value: "€0m" },
+    { name: "Player Name", team: "Team", value: "€0m" },
+  ],
+  // PLACEHOLDER — replace with real data
+  youngMvp: [
+    { name: "Player Name", team: "Team", age: 0, value: "€0m" },
+    { name: "Player Name", team: "Team", age: 0, value: "€0m" },
+    { name: "Player Name", team: "Team", age: 0, value: "€0m" },
+    { name: "Player Name", team: "Team", age: 0, value: "€0m" },
+    { name: "Player Name", team: "Team", age: 0, value: "€0m" },
+  ],
+  // PLACEHOLDER — single winner, replace with real data
+  ballonDor: { name: "Player Name", team: "Team", year: "2025" },
 };
 
 function useFixtures(leagueId) {
@@ -164,22 +198,36 @@ export default function LandingPage({ onGetStarted }) {
         <div style={{ background: "#13102a", border: "1px solid #2a1f4a", borderRadius: 16, padding: 22, position: "relative", overflow: "hidden" }}>
           <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
 
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
             <div>
               <div style={{ fontSize: 16, fontWeight: 900, color: "#f0f0f0" }}>📊 Records</div>
-              <div style={{ fontSize: 13, color: "#a78bfa", fontWeight: 700, marginTop: 4 }}>
-                {statsView === "scorers" && "World Cup Top Scorers"}
-                {statsView === "assists" && "World Cup Top Assists"}
-                {statsView === "cleanSheets" && "Best of Europe · Clean Sheets"}
-                {statsView === "topGoals" && "Best of Europe · Top Goals"}
-                {statsView === "wins" && "Best of Europe · Most Wins"}
-                {statsView === "goalsConceded" && "Best of Europe · Fewest Goals Conceded"}
-              </div>
-              <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>
-                {(statsView === "scorers" || statsView === "assists") ? "2026 Tournament" : "2025/2026 Season"}
+              <div style={{ fontSize: 12, color: "#888", marginTop: 4, lineHeight: 1.5 }}>
+                World Cup stats, Europe's best, market values, and Premier League history — all in one place.
               </div>
             </div>
             <img src="/deep433.jpg" alt="Deep433" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+          </div>
+
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 13, color: "#a78bfa", fontWeight: 700, marginTop: 4 }}>
+              {statsView === "scorers" && "World Cup Top Scorers"}
+              {statsView === "assists" && "World Cup Top Assists"}
+              {statsView === "cleanSheets" && "Best of Europe · Clean Sheets"}
+              {statsView === "topGoals" && "Best of Europe · Top Goals"}
+              {statsView === "wins" && "Best of Europe · Most Wins"}
+              {statsView === "goalsConceded" && "Best of Europe · Fewest Goals Conceded"}
+              {statsView === "plRecordSignings" && "Premier League · Record Signings"}
+              {statsView === "plTopScorers2526" && "Premier League · Top Scorers 2025/26"}
+              {statsView === "mvp" && "Most Valuable Players"}
+              {statsView === "youngMvp" && "Most Valuable Young Players"}
+              {statsView === "ballonDor" && "Current Ballon d'Or Winner"}
+            </div>
+            <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>
+              {(statsView === "scorers" || statsView === "assists") && "2026 Tournament"}
+              {(statsView === "cleanSheets" || statsView === "topGoals" || statsView === "wins" || statsView === "goalsConceded" || statsView === "plTopScorers2526") && "2025/2026 Season"}
+              {statsView === "plRecordSignings" && "All-Time"}
+              {(statsView === "mvp" || statsView === "youngMvp" || statsView === "ballonDor") && "Current"}
+            </div>
           </div>
 
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
@@ -190,6 +238,11 @@ export default function LandingPage({ onGetStarted }) {
               { id: "topGoals", label: "Top Goals" },
               { id: "wins", label: "Wins" },
               { id: "goalsConceded", label: "Fewest Conceded" },
+              { id: "plRecordSignings", label: "PL Record Fees" },
+              { id: "plTopScorers2526", label: "PL Scorers 25/26" },
+              { id: "mvp", label: "Most Valuable" },
+              { id: "youngMvp", label: "Most Valuable U21" },
+              { id: "ballonDor", label: "Ballon d'Or" },
             ].map(btn => (
               <button
                 key={btn.id}
@@ -273,6 +326,45 @@ export default function LandingPage({ onGetStarted }) {
                 </div>
               )
             ))}
+            {(statsView === "plRecordSignings" ? STATIC_STATS.plRecordSignings : []).map((p, i) => (
+              statsView === "plRecordSignings" && (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < 4 ? "1px solid #1e1830" : "none" }}>
+                  <span style={{ fontSize: 14, color: "#f0f0f0" }}>{i + 1}. {p.player} <span style={{ color: "#666", fontSize: 12 }}>· {p.club}</span></span>
+                  <span style={{ fontSize: 15, fontWeight: 800, color: "#fbbf24" }}>{p.fee}</span>
+                </div>
+              )
+            ))}
+            {(statsView === "plTopScorers2526" ? STATIC_STATS.plTopScorers2526 : []).map((p, i) => (
+              statsView === "plTopScorers2526" && (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < 4 ? "1px solid #1e1830" : "none" }}>
+                  <span style={{ fontSize: 14, color: "#f0f0f0" }}>{i + 1}. {p.name} <span style={{ color: "#666", fontSize: 12 }}>· {p.team}</span></span>
+                  <span style={{ fontSize: 15, fontWeight: 800, color: "#4ade80" }}>{p.goals}</span>
+                </div>
+              )
+            ))}
+            {(statsView === "mvp" ? STATIC_STATS.mvp : []).map((p, i) => (
+              statsView === "mvp" && (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < 4 ? "1px solid #1e1830" : "none" }}>
+                  <span style={{ fontSize: 14, color: "#f0f0f0" }}>{i + 1}. {p.name} <span style={{ color: "#666", fontSize: 12 }}>· {p.team}</span></span>
+                  <span style={{ fontSize: 15, fontWeight: 800, color: "#60a5fa" }}>{p.value}</span>
+                </div>
+              )
+            ))}
+            {(statsView === "youngMvp" ? STATIC_STATS.youngMvp : []).map((p, i) => (
+              statsView === "youngMvp" && (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < 4 ? "1px solid #1e1830" : "none" }}>
+                  <span style={{ fontSize: 14, color: "#f0f0f0" }}>{i + 1}. {p.name} <span style={{ color: "#666", fontSize: 12 }}>· {p.team}, {p.age}y</span></span>
+                  <span style={{ fontSize: 15, fontWeight: 800, color: "#60a5fa" }}>{p.value}</span>
+                </div>
+              )
+            ))}
+            {statsView === "ballonDor" && (
+              <div style={{ textAlign: "center", padding: "20px 0" }}>
+                <div style={{ fontSize: 32, marginBottom: 8 }}>🏆</div>
+                <div style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>{STATIC_STATS.ballonDor.name}</div>
+                <div style={{ fontSize: 14, color: "#888", marginTop: 4 }}>{STATIC_STATS.ballonDor.team} · {STATIC_STATS.ballonDor.year}</div>
+              </div>
+            )}
           </div>
 
           <div style={{ textAlign: "center", marginTop: 16 }}>
