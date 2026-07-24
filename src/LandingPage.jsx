@@ -77,8 +77,8 @@ function useFixtures(leagueId) {
         // Prioritize fixtures that haven't been played yet, soonest first —
         // full=true returns the whole season, so without this the widget
         // could show random past matches instead of what's coming up next.
-        const upcoming = all.filter(f => f.status !== "FT").sort((a, b) => new Date(a.date) - new Date(b.date));
-        const recent = all.filter(f => f.status === "FT").sort((a, b) => new Date(b.date) - new Date(a.date));
+        const upcoming = all.filter(f => f.status !== "finished").sort((a, b) => new Date(a.date) - new Date(b.date));
+        const recent = all.filter(f => f.status === "finished").sort((a, b) => new Date(b.date) - new Date(a.date));
         const ordered = upcoming.length > 0 ? upcoming : recent;
 
         if (!ignore) setFixtures(ordered.slice(0, 6));
@@ -239,7 +239,7 @@ export default function LandingPage({ onGetStarted }) {
                     <div style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0" }}>{f.home} <span style={{ color: "#555" }}>vs</span> {f.away}</div>
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                       <span style={{ fontSize: 13, color: "#888" }}>{timeFormatter(f.kickoff)}</span>
-                      {f.status === "FT" ? (
+                      {f.status === "finished" ? (
                         <span style={{ fontSize: 14, fontWeight: 800, color: "#4ade80" }}>{f.fulltimeScore?.home}-{f.fulltimeScore?.away}</span>
                       ) : (
                         <button onClick={onGetStarted} style={{ background: "#4ade80", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 800, padding: "5px 12px" }}>Predict →</button>
