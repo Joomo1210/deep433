@@ -13,59 +13,40 @@ const NATION_FLAG_CODES = {
   "Scotland": "gb-sct", "Ukraine": "ua", "Serbia": "rs", "Turkey": "tr",
 };
 
-function useTopScorers(leagueId, type = "scorers") {
-  const [players, setPlayers] = useState([]);
-  const [loaded, setLoaded] = useState(false);
-  useEffect(() => {
-    let ignore = false;
-    setLoaded(false);
-    async function load() {
-      try {
-        const r = await fetch(`/api/top-scorers?leagueId=${leagueId}&type=${type}`);
-        const d = await r.json();
-        if (!ignore) setPlayers((d.players || []).slice(0, 10));
-      } catch {
-        if (!ignore) setPlayers([]);
-      }
-      if (!ignore) setLoaded(true);
-    }
-    load();
-    return () => { ignore = true; };
-  }, [leagueId, type]);
-  return { players, loaded };
-}
-
-function useBestOfEurope(sortBy = "cleanSheets") {
-  const [teams, setTeams] = useState([]);
-  const [loaded, setLoaded] = useState(false);
-  useEffect(() => {
-    let ignore = false;
-    setLoaded(false);
-    async function fetchOnce() {
-      const r = await fetch(`/api/team-stats?mode=eurotop10`);
-      return r.json();
-    }
-    async function load() {
-      try {
-        let d = await fetchOnce();
-        // Retry once if the first attempt came back incomplete (e.g. a
-        // team's stats call got rate-limited) before giving up.
-        if (!d.complete) d = await fetchOnce();
-
-        if (d.complete) {
-          const sorted = [...(d.teams || [])].sort((a, b) => (b[sortBy] || 0) - (a[sortBy] || 0));
-          if (!ignore) setTeams(sorted.slice(0, 10));
-        }
-      } catch {
-        if (!ignore) setTeams([]);
-      }
-      if (!ignore) setLoaded(true);
-    }
-    load();
-    return () => { ignore = true; };
-  }, [sortBy]);
-  return { teams, loaded };
-}
+// ─── STATIC STATS — hardcoded since this data is final/unchanging ──────────
+// World Cup 2026 and the 2025-26 European season are both finished — no live
+// API needed. PLACEHOLDER VALUES BELOW: replace with real numbers once
+// Joseph provides them, then this comment can be removed.
+const STATIC_STATS = {
+  scorers: [
+    { name: "Player Name", nationality: "Argentina", goals: 0 },
+    { name: "Player Name", nationality: "France", goals: 0 },
+    { name: "Player Name", nationality: "England", goals: 0 },
+    { name: "Player Name", nationality: "Spain", goals: 0 },
+    { name: "Player Name", nationality: "Brazil", goals: 0 },
+  ],
+  assists: [
+    { name: "Player Name", nationality: "Argentina", assists: 0 },
+    { name: "Player Name", nationality: "France", assists: 0 },
+    { name: "Player Name", nationality: "England", assists: 0 },
+    { name: "Player Name", nationality: "Spain", assists: 0 },
+    { name: "Player Name", nationality: "Brazil", assists: 0 },
+  ],
+  cleanSheets: [
+    { team: "Team Name", logo: "", cleanSheets: 0 },
+    { team: "Team Name", logo: "", cleanSheets: 0 },
+    { team: "Team Name", logo: "", cleanSheets: 0 },
+    { team: "Team Name", logo: "", cleanSheets: 0 },
+    { team: "Team Name", logo: "", cleanSheets: 0 },
+  ],
+  topGoals: [
+    { team: "Team Name", logo: "", goalsFor: 0 },
+    { team: "Team Name", logo: "", goalsFor: 0 },
+    { team: "Team Name", logo: "", goalsFor: 0 },
+    { team: "Team Name", logo: "", goalsFor: 0 },
+    { team: "Team Name", logo: "", goalsFor: 0 },
+  ],
+};
 
 function useFixtures(leagueId) {
   const [fixtures, setFixtures] = useState([]);
@@ -102,10 +83,7 @@ export default function LandingPage({ onGetStarted }) {
 
   const [fixtureLeague, setFixtureLeague] = useState("pl");
   const { fixtures, loaded: fixturesLoaded } = useFixtures(fixtureLeague);
-  const { players: topScorers, loaded: scorersLoaded } = useTopScorers("wc2026", "scorers");
-  const { players: topAssists, loaded: assistsLoaded } = useTopScorers("wc2026", "assists");
-  const { teams: bestOfEurope, loaded: europeLoaded } = useBestOfEurope("cleanSheets");
-  const { teams: topGoalsClubs, loaded: goalsLoaded } = useBestOfEurope("goalsFor");
+  const [statsView, setStatsView] = useState("scorers");
   const FIXTURE_LEAGUES = [
     { id: "pl", label: "Premier League" },
     { id: "laliga", label: "La Liga" },
@@ -136,7 +114,6 @@ export default function LandingPage({ onGetStarted }) {
         @media (max-width: 768px) {
           .posts-grid { grid-template-columns: 1fr !important; }
           .hero-title { font-size: 17px !important; }
-          .preview-list { grid-template-columns: 1fr !important; }
         }
       `}</style>
 
@@ -233,101 +210,98 @@ export default function LandingPage({ onGetStarted }) {
         </div>
       </section>
 
-      {/* PREVIEW CARDS — a taste of Graphics tab tools */}
-      <section style={{ maxWidth: 900, margin: "0 auto", padding: "10px 20px 40px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
+      {/* STATS WIDGET — single toggle-based card, static data (no API) */}
+      <section style={{ maxWidth: 560, margin: "0 auto", padding: "10px 20px 40px" }}>
+        <div style={{ background: "#13102a", border: "1px solid #2a1f4a", borderRadius: 16, padding: 22, position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
 
-          {/* World Cup Top Scorers */}
-          <div style={{ background: "#13102a", border: "1px solid #2a1f4a", borderRadius: 14, padding: 20 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 2 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#fbbf24", textTransform: "uppercase", letterSpacing: 1 }}>🥇 World Cup Top Scorers</div>
-              <img src="/deep433.jpg" alt="Deep433" style={{ width: 22, height: 22, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 900, color: "#f0f0f0" }}>
+                {statsView === "scorers" && "🥇 World Cup Top Scorers"}
+                {statsView === "assists" && "🎯 World Cup Top Assists"}
+                {statsView === "cleanSheets" && "🏆 Best of Europe · Clean Sheets"}
+                {statsView === "topGoals" && "⚽ Best of Europe · Top Goals"}
+              </div>
+              <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>
+                {(statsView === "scorers" || statsView === "assists") ? "2026 Tournament" : "2025/2026 Season"}
+              </div>
             </div>
-            <div style={{ fontSize: 11, color: "#666", marginBottom: 12 }}>2026 Tournament</div>
-            {!scorersLoaded && <div style={{ color: "#666", fontSize: 13 }}>Loading…</div>}
-            {scorersLoaded && topScorers.length === 0 && <div style={{ color: "#666", fontSize: 13 }}>Not available right now.</div>}
-            <div className="preview-list" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 14px" }}>
-              {topScorers.map((p, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: "1px solid #1e1830", gap: 6 }}>
-                  <span style={{ fontSize: 12.5, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
-                    {NATION_FLAG_CODES[p.nationality] && <img src={`https://flagcdn.com/w20/${NATION_FLAG_CODES[p.nationality]}.png`} alt="" style={{ width: 14, height: 10, objectFit: "cover", borderRadius: 2, flexShrink: 0 }} />}
-                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{i + 1}. {p.name}</span>
-                  </span>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: "#fbbf24", flexShrink: 0 }}>{p.goals}</span>
-                </div>
-              ))}
-            </div>
+            <img src="/deep433.jpg" alt="Deep433" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
           </div>
 
-          {/* World Cup Top Assists */}
-          <div style={{ background: "#13102a", border: "1px solid #2a1f4a", borderRadius: 14, padding: 20 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 2 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#a855f7", textTransform: "uppercase", letterSpacing: 1 }}>🎯 World Cup Top Assists</div>
-              <img src="/deep433.jpg" alt="Deep433" style={{ width: 22, height: 22, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
-            </div>
-            <div style={{ fontSize: 11, color: "#666", marginBottom: 12 }}>2026 Tournament</div>
-            {!assistsLoaded && <div style={{ color: "#666", fontSize: 13 }}>Loading…</div>}
-            {assistsLoaded && topAssists.length === 0 && <div style={{ color: "#666", fontSize: 13 }}>Not available right now.</div>}
-            <div className="preview-list" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 14px" }}>
-              {topAssists.map((p, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: "1px solid #1e1830", gap: 6 }}>
-                  <span style={{ fontSize: 12.5, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
-                    {NATION_FLAG_CODES[p.nationality] && <img src={`https://flagcdn.com/w20/${NATION_FLAG_CODES[p.nationality]}.png`} alt="" style={{ width: 14, height: 10, objectFit: "cover", borderRadius: 2, flexShrink: 0 }} />}
-                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{i + 1}. {p.name}</span>
-                  </span>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: "#a855f7", flexShrink: 0 }}>{p.assists}</span>
-                </div>
-              ))}
-            </div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
+            {[
+              { id: "scorers", label: "Scorers" },
+              { id: "assists", label: "Assists" },
+              { id: "cleanSheets", label: "Clean Sheets" },
+              { id: "topGoals", label: "Top Goals" },
+            ].map(btn => (
+              <button
+                key={btn.id}
+                onClick={() => setStatsView(btn.id)}
+                style={{
+                  background: statsView === btn.id ? "#4ade8022" : "none",
+                  border: `1px solid ${statsView === btn.id ? "#4ade80" : "#2a1f4a"}`,
+                  borderRadius: 20, color: statsView === btn.id ? "#4ade80" : "#888",
+                  cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px",
+                }}
+              >
+                {btn.label}
+              </button>
+            ))}
           </div>
 
-          {/* Best of Europe */}
-          <div style={{ background: "#13102a", border: "1px solid #2a1f4a", borderRadius: 14, padding: 20 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 2 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#60a5fa", textTransform: "uppercase", letterSpacing: 1 }}>🏆 Best of Europe · Clean Sheets</div>
-              <img src="/deep433.jpg" alt="Deep433" style={{ width: 22, height: 22, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
-            </div>
-            <div style={{ fontSize: 11, color: "#666", marginBottom: 12 }}>2025/2026 Season</div>
-            {!europeLoaded && <div style={{ color: "#666", fontSize: 13 }}>Loading…</div>}
-            {europeLoaded && bestOfEurope.length === 0 && <div style={{ color: "#666", fontSize: 13 }}>Not available right now.</div>}
-            <div className="preview-list" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 14px" }}>
-              {bestOfEurope.map((t, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: "1px solid #1e1830", gap: 6 }}>
-                  <span style={{ fontSize: 12.5, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
-                    {t.logo && <img src={t.logo} alt="" style={{ width: 14, height: 14, objectFit: "contain", flexShrink: 0 }} />}
-                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{i + 1}. {t.team}</span>
+          <div>
+            {(statsView === "scorers" ? STATIC_STATS.scorers : []).map((p, i) => (
+              statsView === "scorers" && (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < 4 ? "1px solid #1e1830" : "none" }}>
+                  <span style={{ fontSize: 14, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 6 }}>
+                    {NATION_FLAG_CODES[p.nationality] && <img src={`https://flagcdn.com/w20/${NATION_FLAG_CODES[p.nationality]}.png`} alt="" style={{ width: 16, height: 12, objectFit: "cover", borderRadius: 2 }} />}
+                    {i + 1}. {p.name}
                   </span>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: "#60a5fa", flexShrink: 0 }}>{t.cleanSheets}</span>
+                  <span style={{ fontSize: 15, fontWeight: 800, color: "#fbbf24" }}>{p.goals}</span>
                 </div>
-              ))}
-            </div>
+              )
+            ))}
+            {(statsView === "assists" ? STATIC_STATS.assists : []).map((p, i) => (
+              statsView === "assists" && (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < 4 ? "1px solid #1e1830" : "none" }}>
+                  <span style={{ fontSize: 14, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 6 }}>
+                    {NATION_FLAG_CODES[p.nationality] && <img src={`https://flagcdn.com/w20/${NATION_FLAG_CODES[p.nationality]}.png`} alt="" style={{ width: 16, height: 12, objectFit: "cover", borderRadius: 2 }} />}
+                    {i + 1}. {p.name}
+                  </span>
+                  <span style={{ fontSize: 15, fontWeight: 800, color: "#a855f7" }}>{p.assists}</span>
+                </div>
+              )
+            ))}
+            {(statsView === "cleanSheets" ? STATIC_STATS.cleanSheets : []).map((t, i) => (
+              statsView === "cleanSheets" && (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < 4 ? "1px solid #1e1830" : "none" }}>
+                  <span style={{ fontSize: 14, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 6 }}>
+                    {t.logo && <img src={t.logo} alt="" style={{ width: 16, height: 16, objectFit: "contain" }} />}
+                    {i + 1}. {t.team}
+                  </span>
+                  <span style={{ fontSize: 15, fontWeight: 800, color: "#60a5fa" }}>{t.cleanSheets}</span>
+                </div>
+              )
+            ))}
+            {(statsView === "topGoals" ? STATIC_STATS.topGoals : []).map((t, i) => (
+              statsView === "topGoals" && (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < 4 ? "1px solid #1e1830" : "none" }}>
+                  <span style={{ fontSize: 14, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 6 }}>
+                    {t.logo && <img src={t.logo} alt="" style={{ width: 16, height: 16, objectFit: "contain" }} />}
+                    {i + 1}. {t.team}
+                  </span>
+                  <span style={{ fontSize: 15, fontWeight: 800, color: "#4ade80" }}>{t.goalsFor}</span>
+                </div>
+              )
+            ))}
           </div>
 
-          {/* Best of Europe — Goals */}
-          <div style={{ background: "#13102a", border: "1px solid #2a1f4a", borderRadius: 14, padding: 20 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 2 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#4ade80", textTransform: "uppercase", letterSpacing: 1 }}>⚽ Best of Europe · Top Goals</div>
-              <img src="/deep433.jpg" alt="Deep433" style={{ width: 22, height: 22, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
-            </div>
-            <div style={{ fontSize: 11, color: "#666", marginBottom: 12 }}>2025/2026 Season</div>
-            {!goalsLoaded && <div style={{ color: "#666", fontSize: 13 }}>Loading…</div>}
-            {goalsLoaded && topGoalsClubs.length === 0 && <div style={{ color: "#666", fontSize: 13 }}>Not available right now.</div>}
-            <div className="preview-list" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 14px" }}>
-              {topGoalsClubs.map((t, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: "1px solid #1e1830", gap: 6 }}>
-                  <span style={{ fontSize: 12.5, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
-                    {t.logo && <img src={t.logo} alt="" style={{ width: 14, height: 14, objectFit: "contain", flexShrink: 0 }} />}
-                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{i + 1}. {t.team}</span>
-                  </span>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: "#4ade80", flexShrink: 0 }}>{t.goalsFor}</span>
-                </div>
-              ))}
-            </div>
+          <div style={{ textAlign: "center", marginTop: 16 }}>
+            <button onClick={onGetStarted} style={{ background: "none", border: "none", fontSize: 13, color: "#4ade80", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Build your own cards in Graphics →</button>
           </div>
-
-        </div>
-        <div style={{ textAlign: "center", marginTop: 16 }}>
-          <button onClick={onGetStarted} style={{ background: "none", border: "none", fontSize: 13, color: "#4ade80", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Build your own cards in Graphics →</button>
         </div>
       </section>
 
