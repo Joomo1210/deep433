@@ -93,7 +93,7 @@ const STATIC_STATS = {
     { name: "Player Name", team: "Team", age: 0, value: "€0m" },
   ],
   // PLACEHOLDER — single winner, replace with real data
-  ballonDor: { name: "Player Name", team: "Team", year: "2025" },
+  ballonDor: { name: "Ousmane Dembélé", team: "Paris Saint-Germain", year: "2025" },
 };
 
 function useFixtures(leagueId) {
