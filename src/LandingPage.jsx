@@ -186,10 +186,10 @@ export default function LandingPage({ onGetStarted }) {
       {/* HERO — compact strip, fixtures/predictions are the real front door */}
       <section style={{ padding: "90px 24px 20px", maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
         <div className="hero-title" style={{ fontSize: 20, fontWeight: 800, color: "#f0f0f0", lineHeight: 1.4, marginBottom: 10 }}>
-          The stats have spoken. <span style={{ color: "#7c3aed" }}>The AI has its call.</span> <span style={{ color: "#4ade80" }}>What's yours?</span>
+          The data has spoken. <span style={{ color: "#7c3aed" }}>The AI has its call.</span> <span style={{ color: "#4ade80" }}>What's yours?</span>
         </div>
         <p style={{ fontSize: 14, color: "#777", lineHeight: 1.5, marginBottom: 0 }}>
-          Predict this matchday's fixtures below, or explore everything else Deep433 offers further down.
+          Powered by real football data — stats, records, and predictions in one place.
         </p>
       </section>
 
