@@ -70,11 +70,11 @@ const STATIC_STATS = {
   ],
   // PLACEHOLDER — replace with real data
   plTopScorers2526: [
-    { name: "Player Name", team: "Team", goals: 0 },
-    { name: "Player Name", team: "Team", goals: 0 },
-    { name: "Player Name", team: "Team", goals: 0 },
-    { name: "Player Name", team: "Team", goals: 0 },
-    { name: "Player Name", team: "Team", goals: 0 },
+    { name: "E. Haaland", team: "Manchester City", goals: 27 },
+    { name: "Thiago", team: "Brentford", goals: 22 },
+    { name: "João Pedro", team: "Chelsea", goals: 15 },
+    { name: "O. Watkins", team: "Aston Villa", goals: 14 },
+    { name: "M. Gibbs-White", team: "Nottingham Forest", goals: 14 },
   ],
   // PLACEHOLDER — replace with real data
   mvp: [
