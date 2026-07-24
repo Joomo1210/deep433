@@ -160,12 +160,18 @@ export default function LandingPage({ onGetStarted }) {
         .cta-btn:hover { opacity: 0.9; transform: translateY(-2px); }
         .ghost-btn { background: none; border: 1.5px solid #3a2a5a; border-radius: 10px; color: #888; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 600; padding: 10px 24px; transition: all 0.2s; text-decoration: none; display: inline-block; }
         .ghost-btn:hover { border-color: #7c3aed; color: #a78bfa; }
+        .nav-cta-btn { background: #4ade80; border: none; border-radius: 8px; color: #0a0f0a; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 800; padding: 8px 14px; white-space: nowrap; flex-shrink: 0; transition: background 0.2s; }
+        .nav-cta-btn:hover { background: #22c55e; }
         .post-card { display: block; background: #13102a; border: 1px solid #2a1f4a; border-radius: 14px; padding: 22px; text-decoration: none; transition: border-color 0.2s, transform 0.15s; }
         .post-card:hover { border-color: #4ade80; transform: translateY(-2px); }
         .predict-strip { background: linear-gradient(135deg, #13102a, #0d0018); border: 1px solid #2a1f4a; border-radius: 16px; padding: 28px; display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
         @media (max-width: 768px) {
           .posts-grid { grid-template-columns: 1fr !important; }
           .hero-title { font-size: 17px !important; }
+        }
+        @media (max-width: 480px) {
+          .nav-subtitle { display: none !important; }
+          .nav-cta-btn { font-size: 11px !important; padding: 7px 10px !important; }
         }
       `}</style>
 
@@ -175,11 +181,11 @@ export default function LandingPage({ onGetStarted }) {
           <img src="/deep433.jpg" alt="Deep433" style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover" }} />
           <div>
             <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 22, color: "#4ade80", letterSpacing: 2 }}>DEEP433</div>
-            <div style={{ fontSize: 9, color: "#7c3aed", letterSpacing: 2, fontWeight: 700 }}>DATA-DRIVEN FOOTBALL INSIGHTS</div>
+            <div className="nav-subtitle" style={{ fontSize: 9, color: "#7c3aed", letterSpacing: 2, fontWeight: 700 }}>DATA-DRIVEN FOOTBALL INSIGHTS</div>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <button className="ghost-btn" onClick={onGetStarted}>Predict a Match</button>
+          <button className="nav-cta-btn" onClick={onGetStarted}>Predict a Match</button>
         </div>
       </nav>
 
