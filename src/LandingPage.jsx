@@ -188,7 +188,7 @@ export default function LandingPage({ onGetStarted }) {
         <div className="hero-title" style={{ fontSize: 20, fontWeight: 800, color: "#f0f0f0", lineHeight: 1.4, marginBottom: 10 }}>
           The data has spoken. <span style={{ color: "#7c3aed" }}>The AI has its call.</span> <span style={{ color: "#4ade80" }}>What's yours?</span>
         </div>
-        <p style={{ fontSize: 14, color: "#777", lineHeight: 1.5, marginBottom: 0 }}>
+        <p style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.5, marginBottom: 0 }}>
           Powered by real football data — stats, records, and predictions in one place.
         </p>
       </section>
@@ -201,7 +201,7 @@ export default function LandingPage({ onGetStarted }) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
             <div>
               <div style={{ fontSize: 16, fontWeight: 900, color: "#f0f0f0" }}>📊 Records</div>
-              <div style={{ fontSize: 12, color: "#888", marginTop: 4, lineHeight: 1.5 }}>
+              <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4, lineHeight: 1.5 }}>
                 World Cup stats, Europe's best, market values, and Premier League history — all in one place.
               </div>
             </div>
@@ -222,7 +222,7 @@ export default function LandingPage({ onGetStarted }) {
               {statsView === "youngMvp" && "Most Valuable Young Players"}
               {statsView === "ballonDor" && "Current Ballon d'Or Winner"}
             </div>
-            <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>
+            <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>
               {(statsView === "scorers" || statsView === "assists") && "2026 Tournament"}
               {(statsView === "cleanSheets" || statsView === "topGoals" || statsView === "wins" || statsView === "goalsConceded" || statsView === "plTopScorers2526") && "2025/2026 Season"}
               {statsView === "plRecordSignings" && "All-Time"}
@@ -250,7 +250,7 @@ export default function LandingPage({ onGetStarted }) {
                 style={{
                   background: statsView === btn.id ? "#4ade8022" : "none",
                   border: `1px solid ${statsView === btn.id ? "#4ade80" : "#2a1f4a"}`,
-                  borderRadius: 20, color: statsView === btn.id ? "#4ade80" : "#888",
+                  borderRadius: 20, color: statsView === btn.id ? "#4ade80" : "#94a3b8",
                   cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px",
                 }}
               >
@@ -265,7 +265,7 @@ export default function LandingPage({ onGetStarted }) {
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < 4 ? "1px solid #1e1830" : "none" }}>
                   <span style={{ fontSize: 14, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 6 }}>
                     {NATION_FLAG_CODES[p.nationality] && <img src={`https://flagcdn.com/w20/${NATION_FLAG_CODES[p.nationality]}.png`} alt="" style={{ width: 16, height: 12, objectFit: "cover", borderRadius: 2 }} />}
-                    {i + 1}. {p.name} {p.apps && <span style={{ color: "#666", fontSize: 12 }}>· {p.apps} apps</span>}
+                    {i + 1}. {p.name} {p.apps && <span style={{ color: "#94a3b8", fontSize: 12 }}>· {p.apps} apps</span>}
                   </span>
                   <span style={{ fontSize: 15, fontWeight: 800, color: "#fbbf24" }}>{p.goals}</span>
                 </div>
@@ -276,7 +276,7 @@ export default function LandingPage({ onGetStarted }) {
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < 4 ? "1px solid #1e1830" : "none" }}>
                   <span style={{ fontSize: 14, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 6 }}>
                     {NATION_FLAG_CODES[p.nationality] && <img src={`https://flagcdn.com/w20/${NATION_FLAG_CODES[p.nationality]}.png`} alt="" style={{ width: 16, height: 12, objectFit: "cover", borderRadius: 2 }} />}
-                    {i + 1}. {p.name} {p.apps && <span style={{ color: "#666", fontSize: 12 }}>· {p.apps} apps</span>}
+                    {i + 1}. {p.name} {p.apps && <span style={{ color: "#94a3b8", fontSize: 12 }}>· {p.apps} apps</span>}
                   </span>
                   <span style={{ fontSize: 15, fontWeight: 800, color: "#a855f7" }}>{p.assists}</span>
                 </div>
@@ -329,7 +329,7 @@ export default function LandingPage({ onGetStarted }) {
             {(statsView === "plRecordSignings" ? STATIC_STATS.plRecordSignings : []).map((p, i) => (
               statsView === "plRecordSignings" && (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < 4 ? "1px solid #1e1830" : "none" }}>
-                  <span style={{ fontSize: 14, color: "#f0f0f0" }}>{i + 1}. {p.player} <span style={{ color: "#666", fontSize: 12 }}>· {p.club}</span></span>
+                  <span style={{ fontSize: 14, color: "#f0f0f0" }}>{i + 1}. {p.player} <span style={{ color: "#94a3b8", fontSize: 12 }}>· {p.club}</span></span>
                   <span style={{ fontSize: 15, fontWeight: 800, color: "#fbbf24" }}>{p.fee}</span>
                 </div>
               )
@@ -337,7 +337,7 @@ export default function LandingPage({ onGetStarted }) {
             {(statsView === "plTopScorers2526" ? STATIC_STATS.plTopScorers2526 : []).map((p, i) => (
               statsView === "plTopScorers2526" && (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < 4 ? "1px solid #1e1830" : "none" }}>
-                  <span style={{ fontSize: 14, color: "#f0f0f0" }}>{i + 1}. {p.name} <span style={{ color: "#666", fontSize: 12 }}>· {p.team}</span></span>
+                  <span style={{ fontSize: 14, color: "#f0f0f0" }}>{i + 1}. {p.name} <span style={{ color: "#94a3b8", fontSize: 12 }}>· {p.team}</span></span>
                   <span style={{ fontSize: 15, fontWeight: 800, color: "#4ade80" }}>{p.goals}</span>
                 </div>
               )
@@ -345,7 +345,7 @@ export default function LandingPage({ onGetStarted }) {
             {(statsView === "mvp" ? STATIC_STATS.mvp : []).map((p, i) => (
               statsView === "mvp" && (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < 4 ? "1px solid #1e1830" : "none" }}>
-                  <span style={{ fontSize: 14, color: "#f0f0f0" }}>{i + 1}. {p.name} <span style={{ color: "#666", fontSize: 12 }}>· {p.team}</span></span>
+                  <span style={{ fontSize: 14, color: "#f0f0f0" }}>{i + 1}. {p.name} <span style={{ color: "#94a3b8", fontSize: 12 }}>· {p.team}</span></span>
                   <span style={{ fontSize: 15, fontWeight: 800, color: "#60a5fa" }}>{p.value}</span>
                 </div>
               )
@@ -353,7 +353,7 @@ export default function LandingPage({ onGetStarted }) {
             {(statsView === "youngMvp" ? STATIC_STATS.youngMvp : []).map((p, i) => (
               statsView === "youngMvp" && (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < 4 ? "1px solid #1e1830" : "none" }}>
-                  <span style={{ fontSize: 14, color: "#f0f0f0" }}>{i + 1}. {p.name} <span style={{ color: "#666", fontSize: 12 }}>· {p.team}, {p.age}y</span></span>
+                  <span style={{ fontSize: 14, color: "#f0f0f0" }}>{i + 1}. {p.name} <span style={{ color: "#94a3b8", fontSize: 12 }}>· {p.team}, {p.age}y</span></span>
                   <span style={{ fontSize: 15, fontWeight: 800, color: "#60a5fa" }}>{p.value}</span>
                 </div>
               )
@@ -362,7 +362,7 @@ export default function LandingPage({ onGetStarted }) {
               <div style={{ textAlign: "center", padding: "20px 0" }}>
                 <div style={{ fontSize: 32, marginBottom: 8 }}>🏆</div>
                 <div style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>{STATIC_STATS.ballonDor.name}</div>
-                <div style={{ fontSize: 14, color: "#888", marginTop: 4 }}>{STATIC_STATS.ballonDor.team} · {STATIC_STATS.ballonDor.year}</div>
+                <div style={{ fontSize: 14, color: "#94a3b8", marginTop: 4 }}>{STATIC_STATS.ballonDor.team} · {STATIC_STATS.ballonDor.year}</div>
               </div>
             )}
           </div>
@@ -387,7 +387,7 @@ export default function LandingPage({ onGetStarted }) {
               style={{
                 background: fixtureLeague === l.id ? "#4ade8022" : "none",
                 border: `1px solid ${fixtureLeague === l.id ? "#4ade80" : "#2a1f4a"}`,
-                borderRadius: 20, color: fixtureLeague === l.id ? "#4ade80" : "#888",
+                borderRadius: 20, color: fixtureLeague === l.id ? "#4ade80" : "#94a3b8",
                 cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "6px 14px",
               }}
             >
@@ -402,7 +402,7 @@ export default function LandingPage({ onGetStarted }) {
               style={{
                 background: FIXTURE_CUPS.some(c => c.id === fixtureLeague) ? "#4ade8022" : "none",
                 border: `1px solid ${FIXTURE_CUPS.some(c => c.id === fixtureLeague) ? "#4ade80" : "#2a1f4a"}`,
-                borderRadius: 20, color: FIXTURE_CUPS.some(c => c.id === fixtureLeague) ? "#4ade80" : "#888",
+                borderRadius: 20, color: FIXTURE_CUPS.some(c => c.id === fixtureLeague) ? "#4ade80" : "#94a3b8",
                 cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "6px 14px",
               }}
             >
@@ -428,9 +428,9 @@ export default function LandingPage({ onGetStarted }) {
           </div>
         </div>
 
-        {!fixturesLoaded && <div style={{ textAlign: "center", color: "#666", fontSize: 14 }}>Loading fixtures…</div>}
+        {!fixturesLoaded && <div style={{ textAlign: "center", color: "#94a3b8", fontSize: 14 }}>Loading fixtures…</div>}
         {fixturesLoaded && fixtures.length === 0 && (
-          <div style={{ textAlign: "center", color: "#666", fontSize: 14 }}>No upcoming fixtures found for this competition right now.</div>
+          <div style={{ textAlign: "center", color: "#94a3b8", fontSize: 14 }}>No upcoming fixtures found for this competition right now.</div>
         )}
 
         {(() => {
@@ -450,9 +450,9 @@ export default function LandingPage({ onGetStarted }) {
               <div style={{ display: "grid", gap: 10 }}>
                 {groups[date].map((f, i) => (
                   <div key={i} style={{ background: "#13102a", border: "1px solid #2a1f4a", borderRadius: 12, padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0" }}>{f.home} <span style={{ color: "#555" }}>vs</span> {f.away}</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0" }}>{f.home} <span style={{ color: "#94a3b8" }}>vs</span> {f.away}</div>
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <span style={{ fontSize: 13, color: "#888" }}>{timeFormatter(f.kickoff)}</span>
+                      <span style={{ fontSize: 13, color: "#94a3b8" }}>{timeFormatter(f.kickoff)}</span>
                       {f.status === "finished" ? (
                         <span style={{ fontSize: 14, fontWeight: 800, color: "#4ade80" }}>{f.fulltimeScore?.home}-{f.fulltimeScore?.away}</span>
                       ) : (
@@ -478,8 +478,8 @@ export default function LandingPage({ onGetStarted }) {
       <section style={{ background: "#f6f7f5", padding: "48px 20px 60px" }}>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 32 }}>
-            <div style={{ fontSize: 28, fontWeight: 900, color: "#111", marginBottom: 6 }}>Everything Deep433 Has To Offer</div>
-            <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>What's Inside</div>
+            <div style={{ fontSize: 28, fontWeight: 900, color: "#111", marginBottom: 6 }}>One App, Every Angle on Football</div>
+            <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>Your Toolkit</div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
             {[
@@ -505,7 +505,7 @@ export default function LandingPage({ onGetStarted }) {
       <section style={{ padding: "20px 24px 80px", maxWidth: 700, margin: "0 auto", textAlign: "center" }}>
         <a href="/blog" style={{ display: "block", background: "linear-gradient(135deg, #1a1035, #0f0a20)", border: "1px solid #2a1f4a", borderRadius: 16, padding: "32px", textDecoration: "none", transition: "border-color 0.2s" }}>
           <div style={{ fontSize: 22, fontWeight: 900, color: "#f0f0f0", marginBottom: 8 }}>📰 Read Community Takes</div>
-          <div style={{ fontSize: 14, color: "#888" }}>Match breakdowns, previews, and fan-written takes — all on the blog.</div>
+          <div style={{ fontSize: 14, color: "#94a3b8" }}>Match breakdowns, previews, and fan-written takes — all on the blog.</div>
           <div style={{ marginTop: 16, fontSize: 13, fontWeight: 700, color: "#4ade80" }}>Visit the blog →</div>
         </a>
       </section>
@@ -516,7 +516,7 @@ export default function LandingPage({ onGetStarted }) {
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: "#4ade80", textTransform: "uppercase", marginBottom: 8 }}>Your Turn</div>
             <div style={{ fontSize: 22, fontWeight: 800 }}>Done reading? Make your own prediction.</div>
-            <div style={{ fontSize: 14, color: "#888", marginTop: 6 }}>Lock in a scoreline, see how it compares to the AI's guess — no account needed.</div>
+            <div style={{ fontSize: 14, color: "#94a3b8", marginTop: 6 }}>Lock in a scoreline, see how it compares to the AI's guess — no account needed.</div>
           </div>
           <button className="cta-btn" onClick={onGetStarted}>⚡ Predict Now</button>
         </div>
@@ -532,7 +532,7 @@ export default function LandingPage({ onGetStarted }) {
         <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 16, marginTop: 4 }}>
           <a href="/blog" style={{ fontSize: 12, color: "#7c3aed", textDecoration: "none" }}>Read the Journal →</a>
           <a href="/leaderboard" style={{ fontSize: 12, color: "#7c3aed", textDecoration: "none" }}>Leaderboard →</a>
-          <a href="https://x.com/Deep_433" target="_blank" rel="noreferrer" aria-label="Follow Deep433 on X" style={{ display: "inline-flex", color: "#888" }}>
+          <a href="https://x.com/Deep_433" target="_blank" rel="noreferrer" aria-label="Follow Deep433 on X" style={{ display: "inline-flex", color: "#94a3b8" }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
           </a>
         </div>
