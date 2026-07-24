@@ -78,11 +78,11 @@ const STATIC_STATS = {
   ],
   // PLACEHOLDER — replace with real data
   mvp: [
-    { name: "Player Name", team: "Team", value: "€0m" },
-    { name: "Player Name", team: "Team", value: "€0m" },
-    { name: "Player Name", team: "Team", value: "€0m" },
-    { name: "Player Name", team: "Team", value: "€0m" },
-    { name: "Player Name", team: "Team", value: "€0m" },
+    { name: "Erling Haaland", team: "Manchester City", value: "€220m" },
+    { name: "Lamine Yamal", team: "FC Barcelona", value: "€220m" },
+    { name: "Kylian Mbappé", team: "Real Madrid", value: "€200m" },
+    { name: "Michael Olise", team: "Bayern Munich", value: "€170m" },
+    { name: "Jude Bellingham", team: "Real Madrid", value: "€160m" },
   ],
   // PLACEHOLDER — replace with real data
   youngMvp: [
