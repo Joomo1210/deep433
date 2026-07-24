@@ -19,11 +19,11 @@ const NATION_FLAG_CODES = {
 // Joseph provides them, then this comment can be removed.
 const STATIC_STATS = {
   scorers: [
-    { name: "Player Name", nationality: "Argentina", goals: 0 },
-    { name: "Player Name", nationality: "France", goals: 0 },
-    { name: "Player Name", nationality: "England", goals: 0 },
-    { name: "Player Name", nationality: "Spain", goals: 0 },
-    { name: "Player Name", nationality: "Brazil", goals: 0 },
+    { name: "Kylian Mbappé", nationality: "France", goals: 10 },
+    { name: "L. Messi", nationality: "Argentina", goals: 8 },
+    { name: "J. Bellingham", nationality: "England", goals: 7 },
+    { name: "E. Haaland", nationality: "Norway", goals: 7 },
+    { name: "O. Dembélé", nationality: "France", goals: 6 },
   ],
   assists: [
     { name: "Player Name", nationality: "Argentina", assists: 0 },
