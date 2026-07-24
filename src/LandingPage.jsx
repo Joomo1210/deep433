@@ -19,18 +19,18 @@ const NATION_FLAG_CODES = {
 // Joseph provides them, then this comment can be removed.
 const STATIC_STATS = {
   scorers: [
-    { name: "Kylian Mbappé", nationality: "France", goals: 10 },
-    { name: "L. Messi", nationality: "Argentina", goals: 8 },
-    { name: "J. Bellingham", nationality: "England", goals: 7 },
-    { name: "E. Haaland", nationality: "Norway", goals: 7 },
+    { name: "Kylian Mbappé", nationality: "France", apps: 8, goals: 10 },
+    { name: "L. Messi", nationality: "Argentina", apps: 7, goals: 8 },
+    { name: "J. Bellingham", nationality: "England", apps: 8, goals: 7 },
+    { name: "E. Haaland", nationality: "Norway", apps: 5, goals: 7 },
     { name: "O. Dembélé, H. Kane", nationality: "", goals: 6 },
   ],
   assists: [
-    { name: "Player Name", nationality: "Argentina", assists: 0 },
-    { name: "Player Name", nationality: "France", assists: 0 },
-    { name: "Player Name", nationality: "England", assists: 0 },
-    { name: "Player Name", nationality: "Spain", assists: 0 },
-    { name: "Player Name", nationality: "Brazil", assists: 0 },
+    { name: "M. Olise", nationality: "France", apps: 8, assists: 7 },
+    { name: "Kylian Mbappé", nationality: "France", apps: 8, assists: 4 },
+    { name: "L. Messi", nationality: "Argentina", apps: 8, assists: 4 },
+    { name: "Brahim Díaz", nationality: "Morocco", apps: 6, assists: 4 },
+    { name: "Bruno Guimarães", nationality: "Brazil", apps: 5, assists: 4 },
   ],
   cleanSheets: [
     { team: "Arsenal", logo: "", cleanSheets: 19 },
@@ -313,7 +313,7 @@ export default function LandingPage({ onGetStarted }) {
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < 4 ? "1px solid #1e1830" : "none" }}>
                   <span style={{ fontSize: 14, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 6 }}>
                     {NATION_FLAG_CODES[p.nationality] && <img src={`https://flagcdn.com/w20/${NATION_FLAG_CODES[p.nationality]}.png`} alt="" style={{ width: 16, height: 12, objectFit: "cover", borderRadius: 2 }} />}
-                    {i + 1}. {p.name}
+                    {i + 1}. {p.name} {p.apps && <span style={{ color: "#666", fontSize: 12 }}>· {p.apps} apps</span>}
                   </span>
                   <span style={{ fontSize: 15, fontWeight: 800, color: "#fbbf24" }}>{p.goals}</span>
                 </div>
@@ -324,7 +324,7 @@ export default function LandingPage({ onGetStarted }) {
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < 4 ? "1px solid #1e1830" : "none" }}>
                   <span style={{ fontSize: 14, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 6 }}>
                     {NATION_FLAG_CODES[p.nationality] && <img src={`https://flagcdn.com/w20/${NATION_FLAG_CODES[p.nationality]}.png`} alt="" style={{ width: 16, height: 12, objectFit: "cover", borderRadius: 2 }} />}
-                    {i + 1}. {p.name}
+                    {i + 1}. {p.name} {p.apps && <span style={{ color: "#666", fontSize: 12 }}>· {p.apps} apps</span>}
                   </span>
                   <span style={{ fontSize: 15, fontWeight: 800, color: "#a855f7" }}>{p.assists}</span>
                 </div>
