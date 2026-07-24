@@ -218,6 +218,12 @@ export default function LandingPage({ onGetStarted }) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
             <div>
               <div style={{ fontSize: 16, fontWeight: 900, color: "#f0f0f0" }}>📊 Records</div>
+              <div style={{ fontSize: 13, color: "#a78bfa", fontWeight: 700, marginTop: 4 }}>
+                {statsView === "scorers" && "World Cup Top Scorers"}
+                {statsView === "assists" && "World Cup Top Assists"}
+                {statsView === "cleanSheets" && "Best of Europe · Clean Sheets"}
+                {statsView === "topGoals" && "Best of Europe · Top Goals"}
+              </div>
               <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>
                 {(statsView === "scorers" || statsView === "assists") ? "2026 Tournament" : "2025/2026 Season"}
               </div>
