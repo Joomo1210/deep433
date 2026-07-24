@@ -238,29 +238,29 @@ export default function LandingPage({ onGetStarted }) {
 
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
             {[
-              { id: "scorers", label: "Scorers" },
-              { id: "assists", label: "Assists" },
-              { id: "cleanSheets", label: "Clean Sheets" },
-              { id: "topGoals", label: "Top Goals" },
-              { id: "wins", label: "Wins" },
-              { id: "goalsConceded", label: "Fewest Conceded" },
-              { id: "plRecordSignings", label: "PL Record Fees" },
-              { id: "plTopScorers2526", label: "PL Scorers 25/26" },
-              { id: "mvp", label: "Most Valuable" },
-              { id: "youngMvp", label: "Most Valuable U21" },
-              { id: "ballonDor", label: "Ballon d'Or" },
+              { id: "scorers", label: "Scorers", emoji: "🥇", color: "#fbbf24" },
+              { id: "assists", label: "Assists", emoji: "🎯", color: "#a855f7" },
+              { id: "cleanSheets", label: "Clean Sheets", emoji: "🧤", color: "#60a5fa" },
+              { id: "topGoals", label: "Top Goals", emoji: "⚽", color: "#4ade80" },
+              { id: "wins", label: "Wins", emoji: "🏆", color: "#fbbf24" },
+              { id: "goalsConceded", label: "Fewest Conceded", emoji: "🛡️", color: "#4ade80" },
+              { id: "plRecordSignings", label: "PL Record Fees", emoji: "💰", color: "#4ade80" },
+              { id: "plTopScorers2526", label: "PL Scorers 25/26", emoji: "⚡", color: "#4ade80" },
+              { id: "mvp", label: "Most Valuable", emoji: "💎", color: "#60a5fa" },
+              { id: "youngMvp", label: "Most Valuable U21", emoji: "🌟", color: "#a855f7" },
+              { id: "ballonDor", label: "Ballon d'Or", emoji: "🏆", color: "#fbbf24" },
             ].map(btn => (
               <button
                 key={btn.id}
                 onClick={() => setStatsView(btn.id)}
                 style={{
-                  background: statsView === btn.id ? "#4ade8022" : "none",
-                  border: `1px solid ${statsView === btn.id ? "#4ade80" : "#2a1f4a"}`,
-                  borderRadius: 20, color: statsView === btn.id ? "#4ade80" : "#94a3b8",
+                  background: statsView === btn.id ? `${btn.color}22` : "none",
+                  border: `1px solid ${statsView === btn.id ? btn.color : "#2a1f4a"}`,
+                  borderRadius: 20, color: statsView === btn.id ? btn.color : "#94a3b8",
                   cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px",
                 }}
               >
-                {btn.label}
+                {btn.emoji} {btn.label}
               </button>
             ))}
           </div>
