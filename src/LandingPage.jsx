@@ -96,19 +96,23 @@ function useFixtures(leagueId) {
 export default function LandingPage({ onGetStarted }) {
 
   const [fixtureLeague, setFixtureLeague] = useState("pl");
+  const [cupsMenuOpen, setCupsMenuOpen] = useState(false);
   const { fixtures, loaded: fixturesLoaded } = useFixtures(fixtureLeague);
   const [statsView, setStatsView] = useState("scorers");
   const FIXTURE_LEAGUES = [
-    { id: "pl", label: "Premier League" },
-    { id: "laliga", label: "La Liga" },
-    { id: "seriea", label: "Serie A" },
-    { id: "bundesliga", label: "Bundesliga" },
-    { id: "ligue1", label: "Ligue 1" },
-    { id: "ucl", label: "Champions League" },
-    { id: "communityshield", label: "Community Shield" },
-    { id: "dflsupercup", label: "DFL-Supercup" },
-    { id: "tropheedeschampions", label: "Trophée des Champions" },
-    { id: "supercoppa", label: "Supercoppa Italiana" },
+    { id: "pl", label: "Premier League", emoji: "🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
+    { id: "laliga", label: "La Liga", emoji: "🇪🇸" },
+    { id: "seriea", label: "Serie A", emoji: "🇮🇹" },
+    { id: "bundesliga", label: "Bundesliga", emoji: "🇩🇪" },
+    { id: "ligue1", label: "Ligue 1", emoji: "🇫🇷" },
+    { id: "ucl", label: "Champions League", emoji: "🏆" },
+  ];
+
+  const FIXTURE_CUPS = [
+    { id: "communityshield", label: "Community Shield", emoji: "🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
+    { id: "dflsupercup", label: "DFL-Supercup", emoji: "🇩🇪" },
+    { id: "tropheedeschampions", label: "Trophée des Champions", emoji: "🇫🇷" },
+    { id: "supercoppa", label: "Supercoppa Italiana", emoji: "🇮🇹" },
   ];
 
   return (
@@ -161,11 +165,11 @@ export default function LandingPage({ onGetStarted }) {
           <div style={{ fontSize: 26, fontWeight: 900, color: "#f0f0f0" }}>Upcoming Fixtures</div>
         </div>
 
-        <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap", marginBottom: 24 }}>
+        <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap", marginBottom: 24, position: "relative" }}>
           {FIXTURE_LEAGUES.map(l => (
             <button
               key={l.id}
-              onClick={() => setFixtureLeague(l.id)}
+              onClick={() => { setFixtureLeague(l.id); setCupsMenuOpen(false); }}
               style={{
                 background: fixtureLeague === l.id ? "#4ade8022" : "none",
                 border: `1px solid ${fixtureLeague === l.id ? "#4ade80" : "#2a1f4a"}`,
@@ -173,9 +177,41 @@ export default function LandingPage({ onGetStarted }) {
                 cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "6px 14px",
               }}
             >
-              {l.label}
+              {l.emoji} {l.label}
             </button>
           ))}
+
+          {/* Cups folded into one dropdown */}
+          <div style={{ position: "relative" }}>
+            <button
+              onClick={() => setCupsMenuOpen(o => !o)}
+              style={{
+                background: FIXTURE_CUPS.some(c => c.id === fixtureLeague) ? "#4ade8022" : "none",
+                border: `1px solid ${FIXTURE_CUPS.some(c => c.id === fixtureLeague) ? "#4ade80" : "#2a1f4a"}`,
+                borderRadius: 20, color: FIXTURE_CUPS.some(c => c.id === fixtureLeague) ? "#4ade80" : "#888",
+                cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "6px 14px",
+              }}
+            >
+              🏆 Cups {cupsMenuOpen ? "▲" : "▼"}
+            </button>
+            {cupsMenuOpen && (
+              <div style={{ position: "absolute", top: "110%", left: "50%", transform: "translateX(-50%)", zIndex: 20, background: "#13102a", border: "1px solid #2a1f4a", borderRadius: 10, padding: 6, display: "flex", flexDirection: "column", gap: 4, minWidth: 200 }}>
+                {FIXTURE_CUPS.map(c => (
+                  <button
+                    key={c.id}
+                    onClick={() => { setFixtureLeague(c.id); setCupsMenuOpen(false); }}
+                    style={{
+                      background: fixtureLeague === c.id ? "#4ade8022" : "none",
+                      border: "none", borderRadius: 8, color: fixtureLeague === c.id ? "#4ade80" : "#f0f0f0",
+                      cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "8px 12px", textAlign: "left",
+                    }}
+                  >
+                    {c.emoji} {c.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {!fixturesLoaded && <div style={{ textAlign: "center", color: "#666", fontSize: 14 }}>Loading fixtures…</div>}
