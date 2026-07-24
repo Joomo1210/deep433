@@ -393,11 +393,7 @@ export default function LandingPage({ onGetStarted }) {
             {[
             { icon: "⚡", title: "Predict", desc: "Make your call before kickoff, compare against 433's AI prediction.", href: "/" },
             { icon: "🔴", title: "Live Scores", desc: "Real-time scores across every major league and tournament.", href: "/" },
-            { icon: "🏆", title: "Bracket", desc: "Follow knockout tournaments through to the final.", href: "/" },
-            { icon: "🎖", title: "Season Awards", desc: "End-of-season leaders across goals, assists, clean sheets and more.", href: "/" },
-            { icon: "📊", title: "Graphics", desc: "Build your own player and team comparison cards, free to use.", href: "/" },
             { icon: "🆚", title: "You vs AI", desc: "Track your prediction record against 433 all season long.", href: "/" },
-            { icon: "🏅", title: "Badges", desc: "Earn badges as you build your prediction history.", href: "/" },
             { icon: "📋", title: "History", desc: "Every prediction you've made, all in one place.", href: "/" },
             { icon: "📰", title: "Blog", desc: "Data-driven previews, recaps, and community-written takes.", href: "/blog" },
             { icon: "🏆", title: "Leaderboard", desc: "See how this round's Community Takes writers ranked.", href: "/leaderboard" },
