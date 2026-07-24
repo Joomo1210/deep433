@@ -23,7 +23,7 @@ const STATIC_STATS = {
     { name: "L. Messi", nationality: "Argentina", goals: 8 },
     { name: "J. Bellingham", nationality: "England", goals: 7 },
     { name: "E. Haaland", nationality: "Norway", goals: 7 },
-    { name: "O. Dembélé", nationality: "France", goals: 6 },
+    { name: "O. Dembélé, H. Kane", nationality: "", goals: 6 },
   ],
   assists: [
     { name: "Player Name", nationality: "Argentina", assists: 0 },
@@ -33,11 +33,11 @@ const STATIC_STATS = {
     { name: "Player Name", nationality: "Brazil", assists: 0 },
   ],
   cleanSheets: [
-    { team: "Team Name", logo: "", cleanSheets: 0 },
-    { team: "Team Name", logo: "", cleanSheets: 0 },
-    { team: "Team Name", logo: "", cleanSheets: 0 },
-    { team: "Team Name", logo: "", cleanSheets: 0 },
-    { team: "Team Name", logo: "", cleanSheets: 0 },
+    { team: "Arsenal", logo: "", cleanSheets: 19 },
+    { team: "Inter", logo: "", cleanSheets: 18 },
+    { team: "Paris Saint-Germain", logo: "", cleanSheets: 18 },
+    { team: "Manchester City", logo: "", cleanSheets: 16 },
+    { team: "Barcelona", logo: "", cleanSheets: 15 },
   ],
   topGoals: [
     { team: "Team Name", logo: "", goalsFor: 0 },
@@ -45,6 +45,20 @@ const STATIC_STATS = {
     { team: "Team Name", logo: "", goalsFor: 0 },
     { team: "Team Name", logo: "", goalsFor: 0 },
     { team: "Team Name", logo: "", goalsFor: 0 },
+  ],
+  wins: [
+    { team: "Barcelona", logo: "", wins: 31 },
+    { team: "Bayern München", logo: "", wins: 28 },
+    { team: "Real Madrid", logo: "", wins: 27 },
+    { team: "Inter", logo: "", wins: 27 },
+    { team: "Arsenal", logo: "", wins: 26 },
+  ],
+  goalsConceded: [
+    { team: "Arsenal", logo: "", goalsAgainst: 27 },
+    { team: "Paris Saint-Germain", logo: "", goalsAgainst: 29 },
+    { team: "Borussia Dortmund", logo: "", goalsAgainst: 34 },
+    { team: "Man City, Real Madrid, Inter, Lens", logo: "", goalsAgainst: 35 },
+    { team: "Barcelona, Napoli, Bayern München", logo: "", goalsAgainst: 36 },
   ],
 };
 
@@ -223,6 +237,8 @@ export default function LandingPage({ onGetStarted }) {
                 {statsView === "assists" && "World Cup Top Assists"}
                 {statsView === "cleanSheets" && "Best of Europe · Clean Sheets"}
                 {statsView === "topGoals" && "Best of Europe · Top Goals"}
+                {statsView === "wins" && "Best of Europe · Most Wins"}
+                {statsView === "goalsConceded" && "Best of Europe · Fewest Goals Conceded"}
               </div>
               <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>
                 {(statsView === "scorers" || statsView === "assists") ? "2026 Tournament" : "2025/2026 Season"}
@@ -237,6 +253,8 @@ export default function LandingPage({ onGetStarted }) {
               { id: "assists", label: "Assists" },
               { id: "cleanSheets", label: "Clean Sheets" },
               { id: "topGoals", label: "Top Goals" },
+              { id: "wins", label: "Wins" },
+              { id: "goalsConceded", label: "Fewest Conceded" },
             ].map(btn => (
               <button
                 key={btn.id}
@@ -295,6 +313,28 @@ export default function LandingPage({ onGetStarted }) {
                     {i + 1}. {t.team}
                   </span>
                   <span style={{ fontSize: 15, fontWeight: 800, color: "#4ade80" }}>{t.goalsFor}</span>
+                </div>
+              )
+            ))}
+            {(statsView === "wins" ? STATIC_STATS.wins : []).map((t, i) => (
+              statsView === "wins" && (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < 4 ? "1px solid #1e1830" : "none" }}>
+                  <span style={{ fontSize: 14, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 6 }}>
+                    {t.logo && <img src={t.logo} alt="" style={{ width: 16, height: 16, objectFit: "contain" }} />}
+                    {i + 1}. {t.team}
+                  </span>
+                  <span style={{ fontSize: 15, fontWeight: 800, color: "#fbbf24" }}>{t.wins}</span>
+                </div>
+              )
+            ))}
+            {(statsView === "goalsConceded" ? STATIC_STATS.goalsConceded : []).map((t, i) => (
+              statsView === "goalsConceded" && (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < 4 ? "1px solid #1e1830" : "none" }}>
+                  <span style={{ fontSize: 14, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 6 }}>
+                    {t.logo && <img src={t.logo} alt="" style={{ width: 16, height: 16, objectFit: "contain" }} />}
+                    {i + 1}. {t.team}
+                  </span>
+                  <span style={{ fontSize: 15, fontWeight: 800, color: "#f87171" }}>{t.goalsAgainst}</span>
                 </div>
               )
             ))}
