@@ -2006,52 +2006,75 @@ function MatchPitchViewGraphic() {
 
 function PlayerH2HGraphic() {
   const cardRef = useRef(null);
-  const [leagueId, setLeagueId] = useState("wc2026");
-  const [search1, setSearch1] = useState("");
-  const [search2, setSearch2] = useState("");
-  const [suggestions1, setSuggestions1] = useState([]);
-  const [suggestions2, setSuggestions2] = useState([]);
-  const [player1, setPlayer1] = useState(null);
-  const [player2, setPlayer2] = useState(null);
-  const [searching1, setSearching1] = useState(false);
-  const [searching2, setSearching2] = useState(false);
-  const [downloading, setDownloading] = useState(false);
-  const [statsMode, setStatsMode] = useState("competition"); // competition | season
-  const [seasonLoading, setSeasonLoading] = useState(false);
+  const [season, setSeason] = useState(2025);
 
-  const searchPlayer = async (query, slot) => {
+  const [search1, setSearch1] = useState("");
+  const [suggestions1, setSuggestions1] = useState([]);
+  const [team1, setTeam1] = useState(null);
+  const [searching1, setSearching1] = useState(false);
+  const [squad1, setSquad1] = useState([]);
+  const [playerId1, setPlayerId1] = useState("");
+  const [player1, setPlayer1] = useState(null);
+
+  const [search2, setSearch2] = useState("");
+  const [suggestions2, setSuggestions2] = useState([]);
+  const [team2, setTeam2] = useState(null);
+  const [searching2, setSearching2] = useState(false);
+  const [squad2, setSquad2] = useState([]);
+  const [playerId2, setPlayerId2] = useState("");
+  const [player2, setPlayer2] = useState(null);
+
+  const [loadingSquad, setLoadingSquad] = useState(false);
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const searchTeam = async (query, slot) => {
     if (query.length < 3) {
       slot === 1 ? setSuggestions1([]) : setSuggestions2([]);
       return;
     }
     slot === 1 ? setSearching1(true) : setSearching2(true);
     try {
-      const r = await fetch(`/api/team-stats?mode=playersearch&query=${encodeURIComponent(query)}&leagueId=${leagueId}`);
+      const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
       const d = await r.json();
-      slot === 1 ? setSuggestions1(d.players || []) : setSuggestions2(d.players || []);
+      slot === 1 ? setSuggestions1(d.teams || []) : setSuggestions2(d.teams || []);
     } catch {}
     slot === 1 ? setSearching1(false) : setSearching2(false);
   };
 
-  // Fetch season-aggregated stats when toggled to Season mode
-  const fetchSeasonStats = async (player, setPlayer) => {
-    if (!player?.id) return;
-    setSeasonLoading(true);
+  const selectTeam = async (t, slot) => {
+    setLoadingSquad(true);
+    if (slot === 1) { setTeam1(t); setSuggestions1([]); setSearch1(t.name); setPlayerId1(""); setPlayer1(null); setSquad1([]); }
+    else { setTeam2(t); setSuggestions2([]); setSearch2(t.name); setPlayerId2(""); setPlayer2(null); setSquad2([]); }
     try {
-      const season = leagueId === "wc2026" ? 2026 : 2025;
-      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${player.id}&season=${season}${season === 2026 ? '&onlyLeagueId=1' : ''}`);
+      const r = await fetch(`/api/team-stats?mode=teamsquad&teamId=${t.id}`);
       const d = await r.json();
-      if (d.available) setPlayer(prev => ({ ...prev, ...d, _seasonData: d }));
+      if (slot === 1) setSquad1(d.players || []);
+      else setSquad2(d.players || []);
     } catch {}
-    setSeasonLoading(false);
+    setLoadingSquad(false);
   };
 
-  const toggleStatsMode = async (newMode) => {
-    setStatsMode(newMode);
-    if (newMode === "season") {
-      if (player1 && !player1._seasonData) await fetchSeasonStats(player1, setPlayer1);
-      if (player2 && !player2._seasonData) await fetchSeasonStats(player2, setPlayer2);
+  const selectPlayer = async (playerId, slot) => {
+    if (slot === 1) setPlayerId1(playerId); else setPlayerId2(playerId);
+    const squad = slot === 1 ? squad1 : squad2;
+    const basePlayer = squad.find(p => String(p.id) === String(playerId));
+    if (!basePlayer) return;
+    const teamInfo = slot === 1 ? team1 : team2;
+
+    setLoadingStats(true);
+    try {
+      const wcFilter = season === 2026 ? "&onlyLeagueId=1" : "";
+      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${playerId}&season=${season}&teamId=${teamInfo?.id}${wcFilter}`);
+      const d = await r.json();
+      const enriched = d.available
+        ? { ...d, photo: basePlayer.photo, team: teamInfo?.name, teamLogo: teamInfo?.logo }
+        : { ...basePlayer, team: teamInfo?.name, teamLogo: teamInfo?.logo };
+      if (slot === 1) setPlayer1(enriched); else setPlayer2(enriched);
+    } catch {
+      if (slot === 1) setPlayer1(basePlayer); else setPlayer2(basePlayer);
     }
+    setLoadingStats(false);
   };
 
   const download = async (transparent = false) => {
@@ -2076,38 +2099,35 @@ function PlayerH2HGraphic() {
     );
   };
 
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        {LEAGUE_OPTIONS.slice(0, 7).map(l => (
-          <button key={l.id} onClick={() => { setLeagueId(l.id); setPlayer1(null); setPlayer2(null); setSearch1(""); setSearch2(""); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px" }}>
-            {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
-            {l.label}
-          </button>
-        ))}
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Compare any two players, any teams, any leagues worldwide.</div>
+
+      <div>
+        <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Season</div>
+        <div style={{ display: "flex", gap: 6 }}>
+          {[{ v: 2025, label: "2025-26 Season" }, { v: 2026, label: "2026 (World Cup)" }].map(s => (
+            <button key={s.v} onClick={() => setSeason(s.v)} style={{ background: season === s.v ? "#4ade8022" : "none", border: `1px solid ${season === s.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: season === s.v ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px" }}>
+              {s.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        <PlayerSearchBox label="Player 1" search={search1} setSearch={setSearch1} suggestions={suggestions1} setSuggestions={setSuggestions1} player={player1} setPlayer={setPlayer1} searching={searching1} slot={1} color="#4ade80" onSearch={searchPlayer} />
-        <PlayerSearchBox label="Player 2" search={search2} setSearch={setSearch2} suggestions={suggestions2} setSuggestions={setSuggestions2} player={player2} setPlayer={setPlayer2} searching={searching2} slot={2} color="#f59e0b" onSearch={searchPlayer} />
+        <TeamThenPlayerPicker label="🆚 Player 1" search={search1} setSearch={setSearch1} suggestions={suggestions1} team={team1} searching={searching1} slot={1} color="#4ade80" squad={squad1} playerId={playerId1} onSearchTeam={searchTeam} onSelectTeam={selectTeam} onSelectPlayer={selectPlayer} onClearTeam={() => setTeam1(null)} />
+        <TeamThenPlayerPicker label="🆚 Player 2" search={search2} setSearch={setSearch2} suggestions={suggestions2} team={team2} searching={searching2} slot={2} color="#f59e0b" squad={squad2} playerId={playerId2} onSearchTeam={searchTeam} onSelectTeam={selectTeam} onSelectPlayer={selectPlayer} onClearTeam={() => setTeam2(null)} />
       </div>
+
+      {(loadingSquad || loadingStats) && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 12 }}>Loading...</div>}
 
       {player1 && player2 && (
         <>
-          <div style={{ display: "flex", gap: 8 }}>
-            {["competition", "season"].map(m => (
-              <button key={m} onClick={() => toggleStatsMode(m)} disabled={seasonLoading} style={{ flex: 1, background: statsMode === m ? "#4ade8022" : "none", border: `1px solid ${statsMode === m ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: statsMode === m ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "8px", textTransform: "capitalize" }}>
-                {seasonLoading && m === "season" ? "Loading..." : m === "competition" ? "🏆 This Competition" : "📅 Full Season"}
-              </button>
-            ))}
-          </div>
-
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "22px 18px 18px" }}>
               <div style={{ textAlign: "center", marginBottom: 12 }}>
                 <span style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5 }}>
-                  {statsMode === "season" ? "📅 Full Season Comparison" : `🏆 ${LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label} Stats`}
+                  {season === 2026 ? "🌍 World Cup 2026" : "📅 2025/26 Season"}
                 </span>
               </div>
               {/* Player headers */}
@@ -2166,7 +2186,7 @@ function PlayerH2HGraphic() {
               </BentoBox>
             </div>
           </GraphicCard>
-          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
           </button>
           <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
