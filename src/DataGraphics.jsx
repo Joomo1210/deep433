@@ -4121,7 +4121,7 @@ function BackFourBattleGraphic() {
                 <span style={{ fontSize: 22, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5 }}>Dream Back 4</span>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 18 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 12 }}>
                 {SLOTS.map(slot => {
                   const p = state[slot].player;
                   return (
@@ -4138,14 +4138,14 @@ function BackFourBattleGraphic() {
                 const values = SLOTS.map(slot => parseFloat(state[slot].player[stat.key]) || 0);
                 const maxVal = Math.max(...values);
                 return (
-                  <div key={stat.key} style={{ marginBottom: 12 }}>
+                  <div key={stat.key} style={{ marginBottom: 8 }}>
                     <div style={{ fontSize: 11, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6, textAlign: "center" }}>{stat.label}</div>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
                       {SLOTS.map((slot, i) => {
                         const isBest = values[i] === maxVal && maxVal > 0;
                         return (
                           <div key={slot} style={{ textAlign: "center", background: "#13131f", borderRadius: 8, padding: "8px 4px" }}>
-                            <span style={{ fontSize: 18, fontWeight: 900, color: SLOT_COLORS[slot], opacity: isBest ? 1 : 0.55 }}>
+                            <span style={{ fontSize: 22, fontWeight: 900, color: SLOT_COLORS[slot], opacity: isBest ? 1 : 0.75 }}>
                               {state[slot].player[stat.key] ?? "—"}{stat.suffix || ""}
                             </span>
                           </div>
@@ -4337,7 +4337,7 @@ function TrioBattleGraphic() {
                 <span style={{ fontSize: 22, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5 }}>{posType === "midfield" ? "Dream Midfield" : "Dream Front 3"}</span>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 18 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 12 }}>
                 {SLOTS.map(slot => {
                   const p = state[slot].player;
                   return (
@@ -4354,14 +4354,14 @@ function TrioBattleGraphic() {
                 const values = SLOTS.map(slot => parseFloat(state[slot].player[stat.key]) || 0);
                 const maxVal = Math.max(...values);
                 return (
-                  <div key={stat.key} style={{ marginBottom: 12 }}>
+                  <div key={stat.key} style={{ marginBottom: 8 }}>
                     <div style={{ fontSize: 11, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6, textAlign: "center" }}>{stat.label}</div>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
                       {SLOTS.map((slot, i) => {
                         const isBest = values[i] === maxVal && maxVal > 0;
                         return (
                           <div key={slot} style={{ textAlign: "center", background: "#13131f", borderRadius: 8, padding: "10px 4px" }}>
-                            <span style={{ fontSize: 20, fontWeight: 900, color: SLOT_COLORS[slot], opacity: isBest ? 1 : 0.55 }}>
+                            <span style={{ fontSize: 24, fontWeight: 900, color: SLOT_COLORS[slot], opacity: isBest ? 1 : 0.75 }}>
                               {state[slot].player[stat.key] ?? "—"}{stat.suffix || ""}
                             </span>
                           </div>
