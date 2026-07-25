@@ -4099,6 +4099,7 @@ function BackFourBattleGraphic() {
                       {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: 48, height: 48, borderRadius: "50%", objectFit: "cover", border: `2px solid ${SLOT_COLORS[slot]}`, margin: "0 auto 6px" }} />}
                       <div style={{ fontSize: 12, fontWeight: 900, color: SLOT_COLORS[slot], lineHeight: 1.2 }}>{p.name}</div>
                       <div style={{ fontSize: 10, color: "#e2e8f0" }}>{p.team}</div>
+                      {p.appearances && <div style={{ fontSize: 9, color: "#666", marginTop: 1 }}>{p.appearances} apps</div>}
                     </div>
                   );
                 })}
@@ -4285,6 +4286,7 @@ function TrioBattleGraphic() {
                       {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: `2px solid ${SLOT_COLORS[slot]}`, margin: "0 auto 6px" }} />}
                       <div style={{ fontSize: 13, fontWeight: 900, color: SLOT_COLORS[slot], lineHeight: 1.2 }}>{p.name}</div>
                       <div style={{ fontSize: 10, color: "#e2e8f0" }}>{p.team}</div>
+                      {p.appearances && <div style={{ fontSize: 9, color: "#666", marginTop: 1 }}>{p.appearances} apps</div>}
                     </div>
                   );
                 })}
