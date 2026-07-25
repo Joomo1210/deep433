@@ -3971,6 +3971,360 @@ function BeyondScoresheetGraphic() {
   );
 }
 
+// ─── BACK FOUR BATTLE (4 individual defenders, any teams) ───────────────────
+function BackFourBattleGraphic() {
+  const cardRef = useRef(null);
+  const [season, setSeason] = useState(2025);
+  const SLOTS = ["d1", "d2", "d3", "d4"];
+  const SLOT_COLORS = { d1: "#4ade80", d2: "#a855f7", d3: "#60a5fa", d4: "#f59e0b" };
+
+  const [state, setState] = useState(() => {
+    const init = {};
+    SLOTS.forEach(s => { init[s] = { search: "", suggestions: [], team: null, searching: false, squad: [], playerId: "", player: null }; });
+    return init;
+  });
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const updateSlot = (slot, patch) => setState(prev => ({ ...prev, [slot]: { ...prev[slot], ...patch } }));
+
+  const searchTeam = async (query, slot) => {
+    if (query.length < 3) { updateSlot(slot, { suggestions: [] }); return; }
+    updateSlot(slot, { searching: true });
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
+      const d = await r.json();
+      updateSlot(slot, { suggestions: d.teams || [] });
+    } catch {}
+    updateSlot(slot, { searching: false });
+  };
+
+  const selectTeam = async (t, slot) => {
+    updateSlot(slot, { team: t, suggestions: [], search: t.name, playerId: "", player: null, squad: [] });
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsquad&teamId=${t.id}`);
+      const d = await r.json();
+      updateSlot(slot, { squad: d.players || [] });
+    } catch {}
+  };
+
+  const selectPlayer = async (playerId, slot) => {
+    updateSlot(slot, { playerId });
+    const squad = state[slot].squad;
+    const basePlayer = squad.find(p => String(p.id) === String(playerId));
+    if (!basePlayer) return;
+    const teamInfo = state[slot].team;
+    setLoadingStats(true);
+    try {
+      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${playerId}&season=${season}&teamId=${teamInfo?.id}`);
+      const d = await r.json();
+      const enriched = d.available
+        ? { ...d, photo: basePlayer.photo, team: teamInfo?.name, teamLogo: teamInfo?.logo }
+        : { ...basePlayer, team: teamInfo?.name, teamLogo: teamInfo?.logo };
+      updateSlot(slot, { player: enriched });
+    } catch {
+      updateSlot(slot, { player: basePlayer });
+    }
+    setLoadingStats(false);
+  };
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, `deep433-back-four-battle.png`, undefined, transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const allSelected = SLOTS.every(s => state[s].player);
+  const STATS = [
+    { key: "tackles", label: "Tackles" },
+    { key: "interceptions", label: "Interceptions" },
+    { key: "duelsWon", label: "Duels Won" },
+    { key: "passAccuracy", label: "Pass Accuracy", suffix: "%" },
+  ];
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Compare any 4 defenders, any teams — build your own Back Four Battle.</div>
+
+      <div>
+        <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Season</div>
+        <div style={{ display: "flex", gap: 6 }}>
+          {[{ v: 2025, label: "2025-26 Season" }, { v: 2026, label: "2026 (World Cup)" }].map(s => (
+            <button key={s.v} onClick={() => setSeason(s.v)} style={{ background: season === s.v ? "#4ade8022" : "none", border: `1px solid ${season === s.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: season === s.v ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px" }}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        {SLOTS.map((slot, i) => (
+          <TeamThenPlayerPicker
+            key={slot}
+            label={`🛡️ Defender ${i + 1}`}
+            search={state[slot].search}
+            setSearch={(v) => updateSlot(slot, { search: v })}
+            suggestions={state[slot].suggestions}
+            team={state[slot].team}
+            searching={state[slot].searching}
+            slot={slot}
+            color={SLOT_COLORS[slot]}
+            squad={state[slot].squad}
+            playerId={state[slot].playerId}
+            onSearchTeam={searchTeam}
+            onSelectTeam={selectTeam}
+            onSelectPlayer={selectPlayer}
+            onClearTeam={() => updateSlot(slot, { team: null })}
+          />
+        ))}
+      </div>
+
+      {loadingStats && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 12 }}>Loading...</div>}
+
+      {allSelected && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "24px 18px" }}>
+              <div style={{ textAlign: "center", marginBottom: 18 }}>
+                <span style={{ fontSize: 22, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5 }}>Back Four Battle</span>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 18 }}>
+                {SLOTS.map(slot => {
+                  const p = state[slot].player;
+                  return (
+                    <div key={slot} style={{ textAlign: "center" }}>
+                      {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: 48, height: 48, borderRadius: "50%", objectFit: "cover", border: `2px solid ${SLOT_COLORS[slot]}`, margin: "0 auto 6px" }} />}
+                      <div style={{ fontSize: 12, fontWeight: 900, color: SLOT_COLORS[slot], lineHeight: 1.2 }}>{p.name}</div>
+                      <div style={{ fontSize: 10, color: "#e2e8f0" }}>{p.team}</div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {STATS.map(stat => {
+                const values = SLOTS.map(slot => parseFloat(state[slot].player[stat.key]) || 0);
+                const maxVal = Math.max(...values);
+                return (
+                  <div key={stat.key} style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 11, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6, textAlign: "center" }}>{stat.label}</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+                      {SLOTS.map((slot, i) => {
+                        const isBest = values[i] === maxVal && maxVal > 0;
+                        return (
+                          <div key={slot} style={{ textAlign: "center", background: "#13131f", borderRadius: 8, padding: "8px 4px" }}>
+                            <span style={{ fontSize: 18, fontWeight: 900, color: SLOT_COLORS[slot], opacity: isBest ? 1 : 0.55 }}>
+                              {state[slot].player[stat.key] ?? "—"}{stat.suffix || ""}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </GraphicCard>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── TRIO BATTLE (3 players, Midfield or Attack, any teams) ─────────────────
+function TrioBattleGraphic() {
+  const cardRef = useRef(null);
+  const [season, setSeason] = useState(2025);
+  const [posType, setPosType] = useState("attack");
+  const SLOTS = ["p1", "p2", "p3"];
+  const SLOT_COLORS = { p1: "#4ade80", p2: "#a855f7", p3: "#f59e0b" };
+
+  const [state, setState] = useState(() => {
+    const init = {};
+    SLOTS.forEach(s => { init[s] = { search: "", suggestions: [], team: null, searching: false, squad: [], playerId: "", player: null }; });
+    return init;
+  });
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const updateSlot = (slot, patch) => setState(prev => ({ ...prev, [slot]: { ...prev[slot], ...patch } }));
+
+  const searchTeam = async (query, slot) => {
+    if (query.length < 3) { updateSlot(slot, { suggestions: [] }); return; }
+    updateSlot(slot, { searching: true });
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
+      const d = await r.json();
+      updateSlot(slot, { suggestions: d.teams || [] });
+    } catch {}
+    updateSlot(slot, { searching: false });
+  };
+
+  const selectTeam = async (t, slot) => {
+    updateSlot(slot, { team: t, suggestions: [], search: t.name, playerId: "", player: null, squad: [] });
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsquad&teamId=${t.id}`);
+      const d = await r.json();
+      updateSlot(slot, { squad: d.players || [] });
+    } catch {}
+  };
+
+  const selectPlayer = async (playerId, slot) => {
+    updateSlot(slot, { playerId });
+    const squad = state[slot].squad;
+    const basePlayer = squad.find(p => String(p.id) === String(playerId));
+    if (!basePlayer) return;
+    const teamInfo = state[slot].team;
+    setLoadingStats(true);
+    try {
+      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${playerId}&season=${season}&teamId=${teamInfo?.id}`);
+      const d = await r.json();
+      const enriched = d.available
+        ? { ...d, photo: basePlayer.photo, team: teamInfo?.name, teamLogo: teamInfo?.logo }
+        : { ...basePlayer, team: teamInfo?.name, teamLogo: teamInfo?.logo };
+      updateSlot(slot, { player: enriched });
+    } catch {
+      updateSlot(slot, { player: basePlayer });
+    }
+    setLoadingStats(false);
+  };
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, `deep433-trio-battle-${posType}.png`, undefined, transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const allSelected = SLOTS.every(s => state[s].player);
+  const STAT_SETS = {
+    midfield: [
+      { key: "keyPasses", label: "Key Passes" },
+      { key: "tackles", label: "Tackles" },
+      { key: "passAccuracy", label: "Pass Accuracy", suffix: "%" },
+      { key: "duelsWon", label: "Duels Won" },
+    ],
+    attack: [
+      { key: "goals", label: "Goals" },
+      { key: "assists", label: "Assists" },
+      { key: "dribbles", label: "Dribbles" },
+      { key: "shotsOnTarget", label: "Shots On Target" },
+    ],
+  };
+  const STATS = STAT_SETS[posType];
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Compare any 3 players, any teams — Midfield or Attack trio.</div>
+
+      <div style={{ display: "flex", gap: 6 }}>
+        {[{ v: "midfield", label: "🎨 Midfield" }, { v: "attack", label: "⚔️ Attack" }].map(p => (
+          <button key={p.v} onClick={() => setPosType(p.v)} style={{ background: posType === p.v ? "#4ade8022" : "none", border: `1px solid ${posType === p.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: posType === p.v ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "7px 14px" }}>
+            {p.label}
+          </button>
+        ))}
+      </div>
+
+      <div>
+        <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Season</div>
+        <div style={{ display: "flex", gap: 6 }}>
+          {[{ v: 2025, label: "2025-26 Season" }, { v: 2026, label: "2026 (World Cup)" }].map(s => (
+            <button key={s.v} onClick={() => setSeason(s.v)} style={{ background: season === s.v ? "#4ade8022" : "none", border: `1px solid ${season === s.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: season === s.v ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px" }}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        {SLOTS.map((slot, i) => (
+          <TeamThenPlayerPicker
+            key={slot}
+            label={`${posType === "midfield" ? "🎨" : "⚔️"} Player ${i + 1}`}
+            search={state[slot].search}
+            setSearch={(v) => updateSlot(slot, { search: v })}
+            suggestions={state[slot].suggestions}
+            team={state[slot].team}
+            searching={state[slot].searching}
+            slot={slot}
+            color={SLOT_COLORS[slot]}
+            squad={state[slot].squad}
+            playerId={state[slot].playerId}
+            onSearchTeam={searchTeam}
+            onSelectTeam={selectTeam}
+            onSelectPlayer={selectPlayer}
+            onClearTeam={() => updateSlot(slot, { team: null })}
+          />
+        ))}
+      </div>
+
+      {loadingStats && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 12 }}>Loading...</div>}
+
+      {allSelected && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "24px 18px" }}>
+              <div style={{ textAlign: "center", marginBottom: 18 }}>
+                <span style={{ fontSize: 22, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5 }}>{posType === "midfield" ? "Midfield Trio Battle" : "Attack Trio Battle"}</span>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 18 }}>
+                {SLOTS.map(slot => {
+                  const p = state[slot].player;
+                  return (
+                    <div key={slot} style={{ textAlign: "center" }}>
+                      {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: `2px solid ${SLOT_COLORS[slot]}`, margin: "0 auto 6px" }} />}
+                      <div style={{ fontSize: 13, fontWeight: 900, color: SLOT_COLORS[slot], lineHeight: 1.2 }}>{p.name}</div>
+                      <div style={{ fontSize: 10, color: "#e2e8f0" }}>{p.team}</div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {STATS.map(stat => {
+                const values = SLOTS.map(slot => parseFloat(state[slot].player[stat.key]) || 0);
+                const maxVal = Math.max(...values);
+                return (
+                  <div key={stat.key} style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 11, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6, textAlign: "center" }}>{stat.label}</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+                      {SLOTS.map((slot, i) => {
+                        const isBest = values[i] === maxVal && maxVal > 0;
+                        return (
+                          <div key={slot} style={{ textAlign: "center", background: "#13131f", borderRadius: 8, padding: "10px 4px" }}>
+                            <span style={{ fontSize: 20, fontWeight: 900, color: SLOT_COLORS[slot], opacity: isBest ? 1 : 0.55 }}>
+                              {state[slot].player[stat.key] ?? "—"}{stat.suffix || ""}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </GraphicCard>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function DataGraphics({ history = [], supabase }) {
   const [activeSection, setActiveSection] = useState("match");
   const [sectionMenuOpen, setSectionMenuOpen] = useState(false);
@@ -3993,6 +4347,8 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "zoneofinfluence", label: "⚔️ Zone of Influence" },
     { id: "quickvs", label: "⚡ Quick VS" },
     { id: "beyondscoresheet", label: "👁️ Beyond The Scoresheet" },
+    { id: "backfourbattle", label: "🛡️ Back Four Battle" },
+    { id: "triobattle", label: "⚔️ Midfield/Attack Trio" },
     { id: "recap",    label: "📋 Recap" },
     { id: "bracket",  label: "🏆 Bracket" },
   ];
@@ -4034,6 +4390,8 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "zoneofinfluence" && <ZoneOfInfluenceGraphic />}
       {activeSection === "quickvs" && <QuickVSGraphic />}
       {activeSection === "beyondscoresheet" && <BeyondScoresheetGraphic />}
+      {activeSection === "backfourbattle" && <BackFourBattleGraphic />}
+      {activeSection === "triobattle" && <TrioBattleGraphic />}
       {activeSection === "recap"    && <RecapGraphic history={history} />}
       {activeSection === "bracket"  && <BracketGraphic history={history} />}
     </div>
