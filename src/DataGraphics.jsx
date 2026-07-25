@@ -3984,9 +3984,26 @@ function BackFourBattleGraphic() {
     return init;
   });
   const [loadingStats, setLoadingStats] = useState(false);
+  const [debugData, setDebugData] = useState({});
+  const [debugLoading, setDebugLoading] = useState({});
   const [downloading, setDownloading] = useState(false);
 
   const updateSlot = (slot, patch) => setState(prev => ({ ...prev, [slot]: { ...prev[slot], ...patch } }));
+
+  const fetchDebug = async (slot) => {
+    const { playerId, team } = state[slot];
+    if (!playerId || !team) return;
+    setDebugLoading(prev => ({ ...prev, [slot]: true }));
+    setDebugData(prev => ({ ...prev, [slot]: null }));
+    try {
+      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${playerId}&season=${season}&teamId=${team.id}&debug=true`);
+      const d = await r.json();
+      setDebugData(prev => ({ ...prev, [slot]: d }));
+    } catch (e) {
+      setDebugData(prev => ({ ...prev, [slot]: { error: e.message } }));
+    }
+    setDebugLoading(prev => ({ ...prev, [slot]: false }));
+  };
 
   const searchTeam = async (query, slot) => {
     if (query.length < 3) { updateSlot(slot, { suggestions: [] }); return; }
@@ -4083,6 +4100,19 @@ function BackFourBattleGraphic() {
 
       {loadingStats && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 12 }}>Loading...</div>}
 
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {SLOTS.map((slot, i) => state[slot].player && (
+          <button key={slot} onClick={() => fetchDebug(slot)} disabled={debugLoading[slot]} style={{ background: "none", border: "1px dashed #444", borderRadius: 8, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 600, padding: "6px 10px" }}>
+            {debugLoading[slot] ? "Loading..." : `🐛 P${i + 1} Raw Data`}
+          </button>
+        ))}
+      </div>
+      {SLOTS.map(slot => debugData[slot] && (
+        <pre key={slot} style={{ background: "#0a0a0f", border: "1px solid #2a2a3a", borderRadius: 8, padding: 12, fontSize: 11, color: "#8f8", overflowX: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+          {JSON.stringify(debugData[slot], null, 2)}
+        </pre>
+      ))}
+
       {allSelected && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
@@ -4099,7 +4129,6 @@ function BackFourBattleGraphic() {
                       {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: 48, height: 48, borderRadius: "50%", objectFit: "cover", border: `2px solid ${SLOT_COLORS[slot]}`, margin: "0 auto 6px" }} />}
                       <div style={{ fontSize: 12, fontWeight: 900, color: SLOT_COLORS[slot], lineHeight: 1.2 }}>{p.name}</div>
                       <div style={{ fontSize: 10, color: "#e2e8f0" }}>{p.team}</div>
-                      {p.appearances && <div style={{ fontSize: 9, color: "#666", marginTop: 1 }}>{p.appearances} apps</div>}
                     </div>
                   );
                 })}
@@ -4154,9 +4183,26 @@ function TrioBattleGraphic() {
     return init;
   });
   const [loadingStats, setLoadingStats] = useState(false);
+  const [debugData, setDebugData] = useState({});
+  const [debugLoading, setDebugLoading] = useState({});
   const [downloading, setDownloading] = useState(false);
 
   const updateSlot = (slot, patch) => setState(prev => ({ ...prev, [slot]: { ...prev[slot], ...patch } }));
+
+  const fetchDebug = async (slot) => {
+    const { playerId, team } = state[slot];
+    if (!playerId || !team) return;
+    setDebugLoading(prev => ({ ...prev, [slot]: true }));
+    setDebugData(prev => ({ ...prev, [slot]: null }));
+    try {
+      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${playerId}&season=${season}&teamId=${team.id}&debug=true`);
+      const d = await r.json();
+      setDebugData(prev => ({ ...prev, [slot]: d }));
+    } catch (e) {
+      setDebugData(prev => ({ ...prev, [slot]: { error: e.message } }));
+    }
+    setDebugLoading(prev => ({ ...prev, [slot]: false }));
+  };
 
   const searchTeam = async (query, slot) => {
     if (query.length < 3) { updateSlot(slot, { suggestions: [] }); return; }
@@ -4270,6 +4316,19 @@ function TrioBattleGraphic() {
 
       {loadingStats && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 12 }}>Loading...</div>}
 
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {SLOTS.map((slot, i) => state[slot].player && (
+          <button key={slot} onClick={() => fetchDebug(slot)} disabled={debugLoading[slot]} style={{ background: "none", border: "1px dashed #444", borderRadius: 8, color: "#888", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 600, padding: "6px 10px" }}>
+            {debugLoading[slot] ? "Loading..." : `🐛 P${i + 1} Raw Data`}
+          </button>
+        ))}
+      </div>
+      {SLOTS.map(slot => debugData[slot] && (
+        <pre key={slot} style={{ background: "#0a0a0f", border: "1px solid #2a2a3a", borderRadius: 8, padding: 12, fontSize: 11, color: "#8f8", overflowX: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+          {JSON.stringify(debugData[slot], null, 2)}
+        </pre>
+      ))}
+
       {allSelected && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
@@ -4286,7 +4345,6 @@ function TrioBattleGraphic() {
                       {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: `2px solid ${SLOT_COLORS[slot]}`, margin: "0 auto 6px" }} />}
                       <div style={{ fontSize: 13, fontWeight: 900, color: SLOT_COLORS[slot], lineHeight: 1.2 }}>{p.name}</div>
                       <div style={{ fontSize: 10, color: "#e2e8f0" }}>{p.team}</div>
-                      {p.appearances && <div style={{ fontSize: 9, color: "#666", marginTop: 1 }}>{p.appearances} apps</div>}
                     </div>
                   );
                 })}
