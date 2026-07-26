@@ -64,12 +64,14 @@ export default async function handler(req, res) {
 
         // Top 20 assist providers combined — not a true league total
         let top20Assists = null;
+        let assistsPlayerCount = 0;
         try {
           const assistsR = await fetch(`https://v3.football.api-sports.io/players/topassists?league=${league.id}&season=${lastSeason}`, {
             headers: { "x-apisports-key": apiKey }
           });
           const assistsData = await assistsR.json();
           const players = assistsData.response || [];
+          assistsPlayerCount = players.length;
           top20Assists = players.reduce((sum, p) => sum + (p.statistics?.[0]?.goals?.assists || 0), 0);
         } catch {}
 
@@ -79,6 +81,7 @@ export default async function handler(req, res) {
           season: lastSeason,
           totalGoals,
           top20Assists,
+          assistsPlayerCount,
         });
       }
 
