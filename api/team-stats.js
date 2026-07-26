@@ -36,6 +36,58 @@ export default async function handler(req, res) {
     return null;
   }
 
+  // ── League-wide totals across the 5 major leagues ──
+  // Goals: true total, summed directly from standings (cheap, 1 call per league)
+  // Assists: NOT a true total (would need scanning every player, ~500+ calls per
+  // league) — instead sums the top 20 assist providers per league, clearly
+  // labeled as such rather than presented as a full league total.
+  if (mode === "leaguetotals") {
+    const BIG5 = ["pl", "laliga", "seriea", "bundesliga", "ligue1"];
+    const LEAGUE_LABELS = { pl: "Premier League", laliga: "La Liga", seriea: "Serie A", bundesliga: "Bundesliga", ligue1: "Ligue 1" };
+    try {
+      const results = [];
+
+      for (const leagueKey of BIG5) {
+        const league = LEAGUE_MAP[leagueKey];
+        const lastSeason = league.season - 1;
+
+        // Total goals — sum every team's goalsFor from standings
+        let totalGoals = null;
+        try {
+          const standingsR = await fetch(`https://v3.football.api-sports.io/standings?league=${league.id}&season=${lastSeason}`, {
+            headers: { "x-apisports-key": apiKey }
+          });
+          const standingsData = await standingsR.json();
+          const table = standingsData.response?.[0]?.league?.standings?.[0] || [];
+          totalGoals = table.reduce((sum, row) => sum + (row.all?.goals?.for || 0), 0);
+        } catch {}
+
+        // Top 20 assist providers combined — not a true league total
+        let top20Assists = null;
+        try {
+          const assistsR = await fetch(`https://v3.football.api-sports.io/players/topassists?league=${league.id}&season=${lastSeason}`, {
+            headers: { "x-apisports-key": apiKey }
+          });
+          const assistsData = await assistsR.json();
+          const players = assistsData.response || [];
+          top20Assists = players.reduce((sum, p) => sum + (p.statistics?.[0]?.goals?.assists || 0), 0);
+        } catch {}
+
+        results.push({
+          league: leagueKey,
+          leagueLabel: LEAGUE_LABELS[leagueKey],
+          season: lastSeason,
+          totalGoals,
+          top20Assists,
+        });
+      }
+
+      return res.status(200).json({ leagues: results });
+    } catch (err) {
+      return res.status(200).json({ leagues: [], error: err.message });
+    }
+  }
+
   if (mode === "eurotop10") {
     const BIG5 = ["pl", "laliga", "seriea", "bundesliga", "ligue1"];
     const debugInfo = [];
