@@ -4405,6 +4405,100 @@ function TrioBattleGraphic() {
   );
 }
 
+// ─── LEAGUE TOTALS (Total Goals + Top 20 Combined Assists, per league) ──────
+function LeagueTotalsGraphic() {
+  const cardRef = useRef(null);
+  const [leagues, setLeagues] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState("");
+  const [statView, setStatView] = useState("goals");
+
+  const load = async () => {
+    setLoading(true); setError(""); setLeagues(null);
+    try {
+      const r = await fetch(`/api/team-stats?mode=leaguetotals`);
+      const d = await r.json();
+      if (!d.leagues?.length) throw new Error("Could not load data");
+      setLeagues(d.leagues);
+    } catch (e) { setError(e.message); }
+    setLoading(false);
+  };
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, `deep433-league-totals-${statView}.png`, undefined, transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const key = statView === "goals" ? "totalGoals" : "top20Assists";
+  const color = statView === "goals" ? "#4ade80" : "#a855f7";
+  const sorted = leagues ? [...leagues].sort((a, b) => (b[key] || 0) - (a[key] || 0)) : [];
+  const maxVal = sorted.length ? Math.max(...sorted.map(l => l[key] || 0), 1) : 1;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Total goals scored per league (true total). Assists shown are the combined total of each league's top 20 assist providers, not every player.</div>
+
+      {!leagues && (
+        <button onClick={load} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
+          {loading ? "Loading all 5 leagues..." : "Load League Totals"}
+        </button>
+      )}
+      {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
+
+      {leagues && (
+        <>
+          <div style={{ display: "flex", gap: 6 }}>
+            {[{ v: "goals", label: "⚽ Total Goals" }, { v: "assists", label: "🎯 Top 20 Assists" }].map(s => (
+              <button key={s.v} onClick={() => setStatView(s.v)} style={{ background: statView === s.v ? `${color}22` : "none", border: `1px solid ${statView === s.v ? color : "#2a2a3a"}`, borderRadius: 8, color: statView === s.v ? color : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "7px 14px" }}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "22px 18px 18px" }}>
+              <div style={{ textAlign: "center", marginBottom: 4 }}>
+                <span style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>League Totals</span>
+              </div>
+              <div style={{ textAlign: "center", marginBottom: 18 }}>
+                <span style={{ fontSize: 11, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>
+                  {statView === "goals" ? "Total Goals Scored" : "Top 20 Combined Assists"}
+                </span>
+              </div>
+
+              {sorted.map((l, i) => (
+                <div key={i} style={{ marginBottom: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: "#f0f0f0" }}>{l.leagueLabel}</span>
+                    <span style={{ fontSize: 17, fontWeight: 900, color }}>{l[key] ?? "—"}</span>
+                  </div>
+                  <div style={{ height: 7, background: "#1a1a24", borderRadius: 4, overflow: "hidden" }}>
+                    <div style={{ width: `${Math.max(((l[key] || 0) / maxVal) * 100, 4)}%`, height: "100%", background: color, borderRadius: 4 }} />
+                  </div>
+                </div>
+              ))}
+
+              {statView === "assists" && (
+                <div style={{ fontSize: 9, color: "#666", textAlign: "center", marginTop: 8 }}>Combined total of each league's top 20 assist providers — not every player in the league.</div>
+              )}
+            </div>
+          </GraphicCard>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function DataGraphics({ history = [], supabase }) {
   const [activeSection, setActiveSection] = useState("match");
   const [sectionMenuOpen, setSectionMenuOpen] = useState(false);
@@ -4424,6 +4518,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "team",     label: "🛡 Team Stats" },
     { id: "teamcompare", label: "⚔️ Team Compare" },
     { id: "bestofeurope", label: "🏆 Best of Europe" },
+    { id: "leaguetotals", label: "📊 League Totals" },
     { id: "zoneofinfluence", label: "⚔️ Zone of Influence" },
     { id: "quickvs", label: "⚡ Quick VS" },
     { id: "beyondscoresheet", label: "👁️ Beyond The Scoresheet" },
@@ -4467,6 +4562,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "team"     && <TeamStatsGraphic />}
       {activeSection === "teamcompare" && <TeamStatsCompareGraphic />}
       {activeSection === "bestofeurope" && <BestOfEuropeGraphic />}
+      {activeSection === "leaguetotals" && <LeagueTotalsGraphic />}
       {activeSection === "zoneofinfluence" && <ZoneOfInfluenceGraphic />}
       {activeSection === "quickvs" && <QuickVSGraphic />}
       {activeSection === "beyondscoresheet" && <BeyondScoresheetGraphic />}
