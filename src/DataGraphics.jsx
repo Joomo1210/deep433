@@ -4083,7 +4083,7 @@ function BackFourBattleGraphic() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Compare any 4 defenders, any teams — build your own Defensive Combo.</div>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Compare any 4 defenders, any teams — build your own Side by Side.</div>
 
       <div>
         <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Season</div>
@@ -4138,7 +4138,7 @@ function BackFourBattleGraphic() {
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "24px 18px" }}>
               <div style={{ textAlign: "center", marginBottom: 18 }}>
-                <span style={{ fontSize: 22, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5 }}>Defensive Combo</span>
+                <span style={{ fontSize: 22, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5 }}>Side by Side</span>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 12 }}>
@@ -4601,7 +4601,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "zoneofinfluence", label: "⚔️ Zone of Influence" },
     { id: "quickvs", label: "⚡ The Battle" },
     { id: "beyondscoresheet", label: "👁️ Beyond The Scoresheet" },
-    { id: "backfourbattle", label: "🛡️ Defensive Combo" },
+    { id: "backfourbattle", label: "🛡️ Side by Side" },
     { id: "triobattle", label: "⚔️ Midfield/Attack Combo" },
     { id: "recap",    label: "📋 Recap" },
     { id: "bracket",  label: "🏆 Bracket" },
