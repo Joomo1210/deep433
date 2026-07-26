@@ -4599,7 +4599,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "leaguetotals", label: "📊 League Totals" },
     { id: "euroassists", label: "🎯 Europe Top Assists" },
     { id: "zoneofinfluence", label: "⚔️ Zone of Influence" },
-    { id: "quickvs", label: "⚡ Quick VS" },
+    { id: "quickvs", label: "⚡ The Battle" },
     { id: "beyondscoresheet", label: "👁️ Beyond The Scoresheet" },
     { id: "backfourbattle", label: "🛡️ Defensive Combo" },
     { id: "triobattle", label: "⚔️ Midfield/Attack Combo" },
