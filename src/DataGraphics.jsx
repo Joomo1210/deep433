@@ -4577,6 +4577,170 @@ function EuroAssistsGraphic() {
   );
 }
 
+// ─── PREDICTED LINEUP (Back 4 / Midfield / Front 3, names + photos only) ────
+function PredictedLineupGraphic() {
+  const cardRef = useRef(null);
+  const [opponent, setOpponent] = useState("");
+
+  const [teamSearch, setTeamSearch] = useState("");
+  const [teamSuggestions, setTeamSuggestions] = useState([]);
+  const [team, setTeam] = useState(null);
+  const [searchingTeam, setSearchingTeam] = useState(false);
+  const [squad, setSquad] = useState([]);
+  const [loadingSquad, setLoadingSquad] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const SLOT_GROUPS = [
+    { key: "back4", label: "🛡️ Back 4", slots: ["b1", "b2", "b3", "b4"] },
+    { key: "midfield", label: "🎨 Midfield", slots: ["m1", "m2", "m3"] },
+    { key: "front3", label: "⚔️ Front 3", slots: ["f1", "f2", "f3"] },
+  ];
+  const ALL_SLOTS = SLOT_GROUPS.flatMap(g => g.slots);
+
+  const [selected, setSelected] = useState(() => {
+    const init = {};
+    ALL_SLOTS.forEach(s => { init[s] = ""; });
+    return init;
+  });
+
+  const searchTeam = async (query) => {
+    if (query.length < 3) { setTeamSuggestions([]); return; }
+    setSearchingTeam(true);
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
+      const d = await r.json();
+      setTeamSuggestions(d.teams || []);
+    } catch {}
+    setSearchingTeam(false);
+  };
+
+  const selectTeam = async (t) => {
+    setLoadingSquad(true);
+    setTeam(t); setTeamSuggestions([]); setTeamSearch(t.name);
+    const resetSelected = {};
+    ALL_SLOTS.forEach(s => { resetSelected[s] = ""; });
+    setSelected(resetSelected);
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsquad&teamId=${t.id}`);
+      const d = await r.json();
+      setSquad(d.players || []);
+    } catch {}
+    setLoadingSquad(false);
+  };
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, `deep433-predicted-lineup-${team?.name}-vs-${opponent}.png`, undefined, transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const filledCount = ALL_SLOTS.filter(s => selected[s]).length;
+  const getPlayer = (slot) => squad.find(p => String(p.id) === String(selected[slot]));
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Build a predicted lineup — Back 4, Midfield, Front 3. Names and photos only.</div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <div>
+          <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Your Team</div>
+          <input
+            value={teamSearch}
+            onChange={e => { setTeamSearch(e.target.value); searchTeam(e.target.value); }}
+            placeholder="Search team..."
+            style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+          />
+          {teamSuggestions.length > 0 && (
+            <div style={{ background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, marginTop: 4, maxHeight: 160, overflowY: "auto" }}>
+              {teamSuggestions.map(t => (
+                <div key={t.id} onClick={() => selectTeam(t)} style={{ padding: "8px 12px", cursor: "pointer", fontSize: 13, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 8 }}>
+                  {t.logo && <img src={t.logo} alt="" style={{ width: 16, height: 16, objectFit: "contain" }} />}
+                  {t.name}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div>
+          <div style={{ fontSize: 10, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Opponent</div>
+          <input
+            value={opponent}
+            onChange={e => setOpponent(e.target.value)}
+            placeholder="e.g. Coventry"
+            style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+          />
+        </div>
+      </div>
+
+      {loadingSquad && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 12 }}>Loading squad...</div>}
+
+      {squad.length > 0 && SLOT_GROUPS.map(group => (
+        <div key={group.key}>
+          <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{group.label}</div>
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(${group.slots.length}, 1fr)`, gap: 6 }}>
+            {group.slots.map(slot => (
+              <select
+                key={slot}
+                value={selected[slot]}
+                onChange={e => setSelected(prev => ({ ...prev, [slot]: e.target.value }))}
+                style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 11, padding: "6px 4px", outline: "none", fontFamily: "inherit" }}
+              >
+                <option value="">—</option>
+                {squad.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            ))}
+          </div>
+        </div>
+      ))}
+
+      {filledCount > 0 && team && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "24px 18px" }}>
+              <div style={{ textAlign: "center", marginTop: 30, marginBottom: 4 }}>
+                <span style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>Predicted Lineup</span>
+              </div>
+              <div style={{ textAlign: "center", marginBottom: 20 }}>
+                <span style={{ fontSize: 13, color: "#a78bfa", fontWeight: 700 }}>{team.name} vs {opponent || "TBC"}</span>
+              </div>
+
+              {SLOT_GROUPS.map(group => {
+                const filledSlots = group.slots.filter(s => selected[s]);
+                if (filledSlots.length === 0) return null;
+                return (
+                  <div key={group.key} style={{ marginBottom: 18 }}>
+                    <div style={{ fontSize: 11, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10, textAlign: "center" }}>{group.label}</div>
+                    <div style={{ display: "grid", gridTemplateColumns: `repeat(${filledSlots.length}, 1fr)`, gap: 10 }}>
+                      {filledSlots.map(slot => {
+                        const p = getPlayer(slot);
+                        if (!p) return null;
+                        return (
+                          <div key={slot} style={{ textAlign: "center" }}>
+                            {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: 48, height: 48, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 6px" }} />}
+                            <div style={{ fontSize: 12, fontWeight: 800, color: "#f0f0f0", lineHeight: 1.2 }}>{p.name}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </GraphicCard>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function DataGraphics({ history = [], supabase }) {
   const [activeSection, setActiveSection] = useState("match");
   const [sectionMenuOpen, setSectionMenuOpen] = useState(false);
@@ -4598,6 +4762,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "bestofeurope", label: "🏆 Best of Europe" },
     { id: "leaguetotals", label: "📊 League Totals" },
     { id: "euroassists", label: "🎯 Europe Top Assists" },
+    { id: "predictedlineup", label: "📋 Predicted Lineup" },
     { id: "zoneofinfluence", label: "⚔️ Zone of Influence" },
     { id: "quickvs", label: "⚡ The Battle" },
     { id: "beyondscoresheet", label: "👁️ Beyond The Scoresheet" },
@@ -4643,6 +4808,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "bestofeurope" && <BestOfEuropeGraphic />}
       {activeSection === "leaguetotals" && <LeagueTotalsGraphic />}
       {activeSection === "euroassists" && <EuroAssistsGraphic />}
+      {activeSection === "predictedlineup" && <PredictedLineupGraphic />}
       {activeSection === "zoneofinfluence" && <ZoneOfInfluenceGraphic />}
       {activeSection === "quickvs" && <QuickVSGraphic />}
       {activeSection === "beyondscoresheet" && <BeyondScoresheetGraphic />}
