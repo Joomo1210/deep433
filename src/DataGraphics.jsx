@@ -4499,6 +4499,84 @@ function LeagueTotalsGraphic() {
   );
 }
 
+// ─── EURO TOP ASSISTS (individual players, combined across 5 leagues) ───────
+function EuroAssistsGraphic() {
+  const cardRef = useRef(null);
+  const [players, setPlayers] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState("");
+
+  const load = async () => {
+    setLoading(true); setError(""); setPlayers(null);
+    try {
+      const r = await fetch(`/api/team-stats?mode=euroassists`);
+      const d = await r.json();
+      if (!d.players?.length) throw new Error("Could not load data");
+      setPlayers(d.players);
+    } catch (e) { setError(e.message); }
+    setLoading(false);
+  };
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, `deep433-euro-top-assists.png`, undefined, transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const maxVal = players?.length ? Math.max(...players.map(p => p.assists || 0), 1) : 1;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Top individual assist providers, combined across the 5 major European leagues.</div>
+
+      {!players && (
+        <button onClick={load} disabled={loading} style={{ background: "#a855f7", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
+          {loading ? "Loading all 5 leagues..." : "Load Europe Top Assists"}
+        </button>
+      )}
+      {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
+
+      {players && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "22px 18px 18px" }}>
+              <div style={{ textAlign: "center", marginBottom: 4 }}>
+                <span style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>Europe's Top Assists</span>
+              </div>
+              <div style={{ textAlign: "center", marginBottom: 18 }}>
+                <span style={{ fontSize: 11, color: "#a855f7", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>Big 5 Leagues Combined</span>
+              </div>
+
+              {players.map((p, i) => (
+                <div key={i} style={{ marginBottom: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                    {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: 22, height: 22, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />}
+                    <span style={{ fontSize: 13, fontWeight: 800, color: "#f0f0f0", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
+                    <span style={{ fontSize: 10, color: "#e2e8f0" }}>{p.leagueLabel}</span>
+                    <span style={{ fontSize: 17, fontWeight: 900, color: "#a855f7", minWidth: 26, textAlign: "right" }}>{p.assists ?? "—"}</span>
+                  </div>
+                  <div style={{ height: 7, background: "#1a1a24", borderRadius: 4, overflow: "hidden" }}>
+                    <div style={{ width: `${Math.max(((p.assists || 0) / maxVal) * 100, 4)}%`, height: "100%", background: "#a855f7", borderRadius: 4 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </GraphicCard>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#a855f7,#7c3aed)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function DataGraphics({ history = [], supabase }) {
   const [activeSection, setActiveSection] = useState("match");
   const [sectionMenuOpen, setSectionMenuOpen] = useState(false);
@@ -4519,6 +4597,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "teamcompare", label: "⚔️ Team Compare" },
     { id: "bestofeurope", label: "🏆 Best of Europe" },
     { id: "leaguetotals", label: "📊 League Totals" },
+    { id: "euroassists", label: "🎯 Europe Top Assists" },
     { id: "zoneofinfluence", label: "⚔️ Zone of Influence" },
     { id: "quickvs", label: "⚡ Quick VS" },
     { id: "beyondscoresheet", label: "👁️ Beyond The Scoresheet" },
@@ -4563,6 +4642,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "teamcompare" && <TeamStatsCompareGraphic />}
       {activeSection === "bestofeurope" && <BestOfEuropeGraphic />}
       {activeSection === "leaguetotals" && <LeagueTotalsGraphic />}
+      {activeSection === "euroassists" && <EuroAssistsGraphic />}
       {activeSection === "zoneofinfluence" && <ZoneOfInfluenceGraphic />}
       {activeSection === "quickvs" && <QuickVSGraphic />}
       {activeSection === "beyondscoresheet" && <BeyondScoresheetGraphic />}
