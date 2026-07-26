@@ -41,6 +41,53 @@ export default async function handler(req, res) {
   // Assists: NOT a true total (would need scanning every player, ~500+ calls per
   // league) — instead sums the top 20 assist providers per league, clearly
   // labeled as such rather than presented as a full league total.
+  // ── Europe's top individual assist providers, combined across the 5 major leagues ──
+  if (mode === "euroassists") {
+    const BIG5 = ["pl", "laliga", "seriea", "bundesliga", "ligue1"];
+    const LEAGUE_LABELS = { pl: "Premier League", laliga: "La Liga", seriea: "Serie A", bundesliga: "Bundesliga", ligue1: "Ligue 1" };
+    try {
+      const allPlayers = [];
+
+      for (const leagueKey of BIG5) {
+        const league = LEAGUE_MAP[leagueKey];
+        const lastSeason = league.season - 1;
+
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            const r = await fetch(`https://v3.football.api-sports.io/players/topassists?league=${league.id}&season=${lastSeason}`, {
+              headers: { "x-apisports-key": apiKey }
+            });
+            const data = await r.json();
+            const players = data.response || [];
+            if (players.length > 0) {
+              players.forEach(p => {
+                allPlayers.push({
+                  name: p.player?.name,
+                  photo: p.player?.photo,
+                  nationality: p.player?.nationality,
+                  team: p.statistics?.[0]?.team?.name,
+                  teamLogo: p.statistics?.[0]?.team?.logo,
+                  league: leagueKey,
+                  leagueLabel: LEAGUE_LABELS[leagueKey],
+                  assists: p.statistics?.[0]?.goals?.assists || 0,
+                  appearances: p.statistics?.[0]?.games?.appearences,
+                });
+              });
+              break;
+            } else if (attempt === 0) {
+              await new Promise(res => setTimeout(res, 500));
+            }
+          } catch {}
+        }
+      }
+
+      const sorted = allPlayers.sort((a, b) => (b.assists || 0) - (a.assists || 0)).slice(0, 10);
+      return res.status(200).json({ players: sorted });
+    } catch (err) {
+      return res.status(200).json({ players: [], error: err.message });
+    }
+  }
+
   if (mode === "leaguetotals") {
     const BIG5 = ["pl", "laliga", "seriea", "bundesliga", "ligue1"];
     const LEAGUE_LABELS = { pl: "Premier League", laliga: "La Liga", seriea: "Serie A", bundesliga: "Bundesliga", ligue1: "Ligue 1" };
@@ -53,27 +100,39 @@ export default async function handler(req, res) {
 
         // Total goals — sum every team's goalsFor from standings
         let totalGoals = null;
-        try {
-          const standingsR = await fetch(`https://v3.football.api-sports.io/standings?league=${league.id}&season=${lastSeason}`, {
-            headers: { "x-apisports-key": apiKey }
-          });
-          const standingsData = await standingsR.json();
-          const table = standingsData.response?.[0]?.league?.standings?.[0] || [];
-          totalGoals = table.reduce((sum, row) => sum + (row.all?.goals?.for || 0), 0);
-        } catch {}
+        for (let attempt = 0; attempt < 2 && totalGoals === null; attempt++) {
+          try {
+            const standingsR = await fetch(`https://v3.football.api-sports.io/standings?league=${league.id}&season=${lastSeason}`, {
+              headers: { "x-apisports-key": apiKey }
+            });
+            const standingsData = await standingsR.json();
+            const table = standingsData.response?.[0]?.league?.standings?.[0] || [];
+            if (table.length > 0) {
+              totalGoals = table.reduce((sum, row) => sum + (row.all?.goals?.for || 0), 0);
+            } else if (attempt === 0) {
+              await new Promise(res => setTimeout(res, 500));
+            }
+          } catch {}
+        }
 
         // Top 20 assist providers combined — not a true league total
         let top20Assists = null;
         let assistsPlayerCount = 0;
-        try {
-          const assistsR = await fetch(`https://v3.football.api-sports.io/players/topassists?league=${league.id}&season=${lastSeason}`, {
-            headers: { "x-apisports-key": apiKey }
-          });
-          const assistsData = await assistsR.json();
-          const players = assistsData.response || [];
-          assistsPlayerCount = players.length;
-          top20Assists = players.reduce((sum, p) => sum + (p.statistics?.[0]?.goals?.assists || 0), 0);
-        } catch {}
+        for (let attempt = 0; attempt < 2 && assistsPlayerCount === 0; attempt++) {
+          try {
+            const assistsR = await fetch(`https://v3.football.api-sports.io/players/topassists?league=${league.id}&season=${lastSeason}`, {
+              headers: { "x-apisports-key": apiKey }
+            });
+            const assistsData = await assistsR.json();
+            const players = assistsData.response || [];
+            if (players.length > 0) {
+              assistsPlayerCount = players.length;
+              top20Assists = players.reduce((sum, p) => sum + (p.statistics?.[0]?.goals?.assists || 0), 0);
+            } else if (attempt === 0) {
+              await new Promise(res => setTimeout(res, 500));
+            }
+          } catch {}
+        }
 
         results.push({
           league: leagueKey,
