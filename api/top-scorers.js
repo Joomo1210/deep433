@@ -28,10 +28,26 @@ export default async function handler(req, res) {
   const endpoint = endpointMap[type] || "topscorers";
 
   try {
-    const r = await fetch(`https://v3.football.api-sports.io/players/${endpoint}?league=${league.id}&season=${league.season}`, {
+    let r = await fetch(`https://v3.football.api-sports.io/players/${endpoint}?league=${league.id}&season=${league.season}`, {
       headers: { "x-apisports-key": apiKey }
     });
-    const data = await r.json();
+    let data = await r.json();
+    let seasonUsed = league.season;
+
+    // If the current season has no data yet (hasn't kicked off), automatically
+    // fall back to the previous season instead of silently returning empty.
+    if (!data.response || data.response.length === 0) {
+      const prevSeason = league.season - 1;
+      const fallbackR = await fetch(`https://v3.football.api-sports.io/players/${endpoint}?league=${league.id}&season=${prevSeason}`, {
+        headers: { "x-apisports-key": apiKey }
+      });
+      const fallbackData = await fallbackR.json();
+      if (fallbackData.response?.length > 0) {
+        data = fallbackData;
+        seasonUsed = prevSeason;
+      }
+    }
+
     const players = (data.response || []).slice(0, 20).map(p => ({
       name: p.player?.name,
       photo: p.player?.photo,
@@ -52,7 +68,7 @@ export default async function handler(req, res) {
       .sort((a, b) => (b[sortKey] || 0) - (a[sortKey] || 0))
       .slice(0, 10);
 
-    res.status(200).json({ available: true, type, players: sorted });
+    res.status(200).json({ available: sorted.length > 0, type, seasonUsed, players: sorted });
   } catch (err) {
     res.status(200).json({ available: false, error: err.message });
   }
