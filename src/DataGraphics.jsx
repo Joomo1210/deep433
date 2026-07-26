@@ -4137,7 +4137,7 @@ function BackFourBattleGraphic() {
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "24px 18px" }}>
-              <div style={{ textAlign: "center", marginBottom: 18, paddingRight: 50 }}>
+              <div style={{ textAlign: "center", marginBottom: 18, paddingLeft: 30, paddingRight: 30 }}>
                 <span style={{ fontSize: 22, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5 }}>Side by Side</span>
               </div>
 
@@ -4353,7 +4353,7 @@ function TrioBattleGraphic() {
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "24px 18px" }}>
-              <div style={{ textAlign: "center", marginBottom: 18, paddingRight: 50 }}>
+              <div style={{ textAlign: "center", marginBottom: 18, paddingLeft: 30, paddingRight: 30 }}>
                 <span style={{ fontSize: 22, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5 }}>Side by Side</span>
               </div>
 
