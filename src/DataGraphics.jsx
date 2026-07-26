@@ -4354,7 +4354,7 @@ function TrioBattleGraphic() {
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "24px 18px" }}>
               <div style={{ textAlign: "center", marginBottom: 18 }}>
-                <span style={{ fontSize: 22, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5 }}>{posType === "midfield" ? "Midfield Combo" : "Attack Combo"}</span>
+                <span style={{ fontSize: 22, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5 }}>"Side by Side"</span>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 12 }}>
@@ -4602,7 +4602,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "quickvs", label: "⚡ The Battle" },
     { id: "beyondscoresheet", label: "👁️ Beyond The Scoresheet" },
     { id: "backfourbattle", label: "🛡️ Side by Side" },
-    { id: "triobattle", label: "⚔️ Midfield/Attack Combo" },
+    { id: "triobattle", label: "⚔️ Side by Side" },
     { id: "recap",    label: "📋 Recap" },
     { id: "bracket",  label: "🏆 Bracket" },
   ];
