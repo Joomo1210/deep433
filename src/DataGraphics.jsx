@@ -4579,17 +4579,17 @@ function EuroAssistsGraphic() {
 
 // ─── PREDICTED LINEUP (visual pitch, fixed positions, team-then-squad search) ─
 const FORMATION_POSITIONS = [
-  { key: "gk", label: "GK", x: 210, y: 630 },
-  { key: "lb", label: "LB", x: 60, y: 500 },
-  { key: "cb1", label: "CB", x: 150, y: 520 },
-  { key: "cb2", label: "CB", x: 270, y: 520 },
-  { key: "rb", label: "RB", x: 360, y: 500 },
-  { key: "dm", label: "DM", x: 210, y: 400 },
-  { key: "cm1", label: "CM", x: 130, y: 340 },
-  { key: "cm2", label: "CM", x: 290, y: 340 },
-  { key: "lw", label: "LW", x: 60, y: 180 },
+  { key: "gk", label: "GK", x: 210, y: 620 },
+  { key: "lb", label: "LB", x: 60, y: 480 },
+  { key: "cb1", label: "CB", x: 150, y: 500 },
+  { key: "cb2", label: "CB", x: 270, y: 500 },
+  { key: "rb", label: "RB", x: 360, y: 480 },
+  { key: "dm", label: "DM", x: 210, y: 370 },
+  { key: "cm1", label: "CM", x: 130, y: 290 },
+  { key: "cm2", label: "CM", x: 290, y: 290 },
+  { key: "lw", label: "LW", x: 60, y: 170 },
   { key: "st", label: "ST", x: 210, y: 130 },
-  { key: "rw", label: "RW", x: 360, y: 180 },
+  { key: "rw", label: "RW", x: 360, y: 170 },
 ];
 
 function PredictedLineupGraphic() {
@@ -4711,7 +4711,7 @@ function PredictedLineupGraphic() {
                 <span style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>Predicted Lineup</span>
               </div>
               <div style={{ textAlign: "center", marginBottom: 16 }}>
-                <span style={{ fontSize: 13, color: "#a78bfa", fontWeight: 700 }}>{team.name} vs {opponent || "TBC"}</span>
+                <span style={{ fontSize: 13, color: "#a78bfa", fontWeight: 700 }}>{opponent ? `${team.name} vs ${opponent}` : team.name}</span>
               </div>
 
               <div style={{ position: "relative", maxWidth: 320, margin: "0 auto" }}>
