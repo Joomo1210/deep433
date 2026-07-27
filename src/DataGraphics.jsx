@@ -4577,7 +4577,7 @@ function EuroAssistsGraphic() {
   );
 }
 
-// ─── PREDICTED LINEUP (visual pitch, fixed position slots) ──────────────────
+// ─── PREDICTED LINEUP (visual pitch, fixed positions, universal name search) ─
 const FORMATION_POSITIONS = [
   { key: "gk", label: "GK", x: 210, y: 630 },
   { key: "lb", label: "LB", x: 60, y: 500 },
@@ -4594,81 +4594,57 @@ const FORMATION_POSITIONS = [
 
 function PredictedLineupGraphic() {
   const cardRef = useRef(null);
+  const [teamLabel, setTeamLabel] = useState("");
   const [opponent, setOpponent] = useState("");
-
-  const [teamSearch, setTeamSearch] = useState("");
-  const [teamSuggestions, setTeamSuggestions] = useState([]);
-  const [team, setTeam] = useState(null);
-  const [searchingTeam, setSearchingTeam] = useState(false);
-  const [squad, setSquad] = useState([]);
-  const [loadingSquad, setLoadingSquad] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
-  const [selected, setSelected] = useState(() => {
+  const [slots, setSlots] = useState(() => {
     const init = {};
-    FORMATION_POSITIONS.forEach(p => { init[p.key] = ""; });
+    FORMATION_POSITIONS.forEach(p => { init[p.key] = { search: "", suggestions: [], searching: false, player: null }; });
     return init;
   });
 
-  const searchTeam = async (query) => {
-    if (query.length < 3) { setTeamSuggestions([]); return; }
-    setSearchingTeam(true);
+  const updateSlot = (key, patch) => setSlots(prev => ({ ...prev, [key]: { ...prev[key], ...patch } }));
+
+  const searchPlayer = async (query, key) => {
+    updateSlot(key, { search: query });
+    if (query.length < 3) { updateSlot(key, { suggestions: [] }); return; }
+    updateSlot(key, { searching: true });
     try {
-      const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
+      const r = await fetch(`/api/team-stats?mode=playersearch&query=${encodeURIComponent(query)}`);
       const d = await r.json();
-      setTeamSuggestions(d.teams || []);
+      updateSlot(key, { suggestions: d.players || [] });
     } catch {}
-    setSearchingTeam(false);
+    updateSlot(key, { searching: false });
   };
 
-  const selectTeam = async (t) => {
-    setLoadingSquad(true);
-    setTeam(t); setTeamSuggestions([]); setTeamSearch(t.name);
-    const resetSelected = {};
-    FORMATION_POSITIONS.forEach(p => { resetSelected[p.key] = ""; });
-    setSelected(resetSelected);
-    try {
-      const r = await fetch(`/api/team-stats?mode=teamsquad&teamId=${t.id}`);
-      const d = await r.json();
-      setSquad(d.players || []);
-    } catch {}
-    setLoadingSquad(false);
+  const selectPlayer = (key, p) => {
+    updateSlot(key, { player: p, suggestions: [], search: p.name });
   };
 
   const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-predicted-lineup-${team?.name}-vs-${opponent}.png`, "#0a3d1f", transparent);
+      await downloadCardImage(cardRef.current, `deep433-predicted-lineup-${teamLabel}-vs-${opponent}.png`, "#0a3d1f", transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
 
-  const filledCount = FORMATION_POSITIONS.filter(p => selected[p.key]).length;
-  const getPlayer = (key) => squad.find(p => String(p.id) === String(selected[key]));
+  const filledCount = FORMATION_POSITIONS.filter(p => slots[p.key].player).length;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Assign players to fixed formation positions on an actual pitch — GK, CB, DM, and more.</div>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Search any player by name for each position — works even if a recent transfer hasn't synced to squad lists yet.</div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
         <div>
-          <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Your Team</div>
+          <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Your Team (label only)</div>
           <input
-            value={teamSearch}
-            onChange={e => { setTeamSearch(e.target.value); searchTeam(e.target.value); }}
-            placeholder="Search team..."
+            value={teamLabel}
+            onChange={e => setTeamLabel(e.target.value)}
+            placeholder="e.g. Chelsea"
             style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
           />
-          {teamSuggestions.length > 0 && (
-            <div style={{ background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, marginTop: 4, maxHeight: 160, overflowY: "auto" }}>
-              {teamSuggestions.map(t => (
-                <div key={t.id} onClick={() => selectTeam(t)} style={{ padding: "8px 12px", cursor: "pointer", fontSize: 13, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 8 }}>
-                  {t.logo && <img src={t.logo} alt="" style={{ width: 16, height: 16, objectFit: "contain" }} />}
-                  {t.name}
-                </div>
-              ))}
-            </div>
-          )}
         </div>
         <div>
           <div style={{ fontSize: 10, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Opponent</div>
@@ -4681,27 +4657,31 @@ function PredictedLineupGraphic() {
         </div>
       </div>
 
-      {loadingSquad && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 12 }}>Loading squad...</div>}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        {FORMATION_POSITIONS.map(pos => (
+          <div key={pos.key} style={{ position: "relative" }}>
+            <div style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, marginBottom: 3 }}>{pos.label}</div>
+            <input
+              value={slots[pos.key].search}
+              onChange={e => searchPlayer(e.target.value, pos.key)}
+              placeholder="Search player..."
+              style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "7px 8px", outline: "none", fontFamily: "inherit" }}
+            />
+            {slots[pos.key].suggestions.length > 0 && (
+              <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 20, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 6, maxHeight: 160, overflowY: "auto" }}>
+                {slots[pos.key].suggestions.map(p => (
+                  <div key={p.id} onClick={() => selectPlayer(pos.key, p)} style={{ padding: "7px 10px", cursor: "pointer", fontSize: 12, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 6 }}>
+                    {p.photo && <img src={p.photo} alt="" style={{ width: 16, height: 16, borderRadius: "50%", objectFit: "cover" }} />}
+                    <span>{p.name} <span style={{ color: "#666" }}>· {p.team}</span></span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
 
-      {squad.length > 0 && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-          {FORMATION_POSITIONS.map(pos => (
-            <div key={pos.key}>
-              <div style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, marginBottom: 3 }}>{pos.label}</div>
-              <select
-                value={selected[pos.key]}
-                onChange={e => setSelected(prev => ({ ...prev, [pos.key]: e.target.value }))}
-                style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "6px 8px", outline: "none", fontFamily: "inherit" }}
-              >
-                <option value="">— Select —</option>
-                {squad.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {filledCount > 0 && team && (
+      {filledCount > 0 && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "20px 18px" }}>
@@ -4709,7 +4689,7 @@ function PredictedLineupGraphic() {
                 <span style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>Predicted Lineup</span>
               </div>
               <div style={{ textAlign: "center", marginBottom: 16 }}>
-                <span style={{ fontSize: 13, color: "#a78bfa", fontWeight: 700 }}>{team.name} vs {opponent || "TBC"}</span>
+                <span style={{ fontSize: 13, color: "#a78bfa", fontWeight: 700 }}>{teamLabel || "Team"} vs {opponent || "TBC"}</span>
               </div>
 
               <div style={{ position: "relative", maxWidth: 320, margin: "0 auto" }}>
@@ -4722,7 +4702,7 @@ function PredictedLineupGraphic() {
                 </svg>
 
                 {FORMATION_POSITIONS.map(pos => {
-                  const p = getPlayer(pos.key);
+                  const p = slots[pos.key].player;
                   const leftPct = (pos.x / 420) * 100;
                   const topPct = (pos.y / 680) * 100;
                   return (
