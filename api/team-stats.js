@@ -442,6 +442,10 @@ export default async function handler(req, res) {
       });
       let data = await r.json();
 
+      if (req.query.debug === "true") {
+        return res.status(200).json({ debug: true, apiUrl, rawResponseCount: data.response?.length || 0, apiErrors: data.errors, rawResponse: data.response?.slice(0, 3) });
+      }
+
       // If the league-scoped search comes back empty, the new season likely has no
       // registered player data yet — automatically retry with the previous season.
       // Once the new season's data exists, this naturally stops triggering.
