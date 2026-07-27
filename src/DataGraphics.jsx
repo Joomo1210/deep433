@@ -4756,6 +4756,214 @@ function PredictedLineupGraphic() {
 }
 
 
+// ─── TEAM OF THE WEEK (flexible formation, universal, any league) ───────────
+function TeamOfWeekGraphic() {
+  const cardRef = useRef(null);
+  const [gameweek, setGameweek] = useState("");
+  const [defCount, setDefCount] = useState(4);
+  const [midCount, setMidCount] = useState(3);
+  const [attCount, setAttCount] = useState(3);
+  const [downloading, setDownloading] = useState(false);
+
+  const buildSlotKeys = (defN, midN, attN) => {
+    const keys = ["gk"];
+    for (let i = 1; i <= defN; i++) keys.push(`d${i}`);
+    for (let i = 1; i <= midN; i++) keys.push(`m${i}`);
+    for (let i = 1; i <= attN; i++) keys.push(`a${i}`);
+    return keys;
+  };
+
+  const [slots, setSlots] = useState(() => {
+    const init = {};
+    buildSlotKeys(4, 3, 3).forEach(k => { init[k] = { search: "", suggestions: [], team: null, searching: false, squad: [], playerId: "", player: null }; });
+    return init;
+  });
+
+  const updateSlot = (key, patch) => setSlots(prev => ({ ...prev, [key]: { ...prev[key], ...patch } }));
+
+  const handleCountChange = (line, value) => {
+    const n = Math.max(1, Math.min(6, parseInt(value) || 1));
+    if (line === "def") setDefCount(n);
+    if (line === "mid") setMidCount(n);
+    if (line === "att") setAttCount(n);
+
+    const newDefN = line === "def" ? n : defCount;
+    const newMidN = line === "mid" ? n : midCount;
+    const newAttN = line === "att" ? n : attCount;
+    const newKeys = buildSlotKeys(newDefN, newMidN, newAttN);
+
+    setSlots(prev => {
+      const next = {};
+      newKeys.forEach(k => {
+        next[k] = prev[k] || { search: "", suggestions: [], team: null, searching: false, squad: [], playerId: "", player: null };
+      });
+      return next;
+    });
+  };
+
+  const searchTeam = async (query, key) => {
+    if (query.length < 3) { updateSlot(key, { suggestions: [] }); return; }
+    updateSlot(key, { searching: true });
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
+      const d = await r.json();
+      updateSlot(key, { suggestions: d.teams || [] });
+    } catch {}
+    updateSlot(key, { searching: false });
+  };
+
+  const selectTeam = async (t, key) => {
+    updateSlot(key, { team: t, suggestions: [], search: t.name, playerId: "", player: null, squad: [] });
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsquad&teamId=${t.id}`);
+      const d = await r.json();
+      updateSlot(key, { squad: d.players || [] });
+    } catch {}
+  };
+
+  const selectPlayer = (playerId, key) => {
+    updateSlot(key, { playerId });
+    const basePlayer = slots[key].squad.find(p => String(p.id) === String(playerId));
+    if (basePlayer) updateSlot(key, { player: { ...basePlayer, team: slots[key].team?.name } });
+  };
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, `deep433-team-of-the-week-${gameweek}.png`, "#0a3d1f", transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const slotKeys = buildSlotKeys(defCount, midCount, attCount);
+  const filledCount = slotKeys.filter(k => slots[k]?.player).length;
+
+  // Compute pitch coordinates dynamically based on how many are in each line
+  const getLineY = (line) => ({ gk: 620, def: 480, mid: 340, att: 150 }[line]);
+  const getLineX = (index, total) => {
+    if (total === 1) return 210;
+    const spacing = 320 / (total - 1);
+    return 50 + index * spacing;
+  };
+
+  const positions = {};
+  positions.gk = { x: 210, y: getLineY("gk") };
+  for (let i = 1; i <= defCount; i++) positions[`d${i}`] = { x: getLineX(i - 1, defCount), y: getLineY("def") };
+  for (let i = 1; i <= midCount; i++) positions[`m${i}`] = { x: getLineX(i - 1, midCount), y: getLineY("mid") };
+  for (let i = 1; i <= attCount; i++) positions[`a${i}`] = { x: getLineX(i - 1, attCount), y: getLineY("att") };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Build a Team of the Week — any league, any players, flexible formation.</div>
+
+      <div>
+        <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Gameweek / Round</div>
+        <input
+          value={gameweek}
+          onChange={e => setGameweek(e.target.value)}
+          placeholder="e.g. Gameweek 3"
+          style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+        />
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+        <div>
+          <div style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, marginBottom: 4 }}>Defenders</div>
+          <input type="number" min="1" max="6" value={defCount} onChange={e => handleCountChange("def", e.target.value)} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "7px 10px", outline: "none", fontFamily: "inherit" }} />
+        </div>
+        <div>
+          <div style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, marginBottom: 4 }}>Midfielders</div>
+          <input type="number" min="1" max="6" value={midCount} onChange={e => handleCountChange("mid", e.target.value)} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "7px 10px", outline: "none", fontFamily: "inherit" }} />
+        </div>
+        <div>
+          <div style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, marginBottom: 4 }}>Attackers</div>
+          <input type="number" min="1" max="6" value={attCount} onChange={e => handleCountChange("att", e.target.value)} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "7px 10px", outline: "none", fontFamily: "inherit" }} />
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        {slotKeys.map(key => {
+          const label = key === "gk" ? "GK" : key.startsWith("d") ? `DEF ${key.slice(1)}` : key.startsWith("m") ? `MID ${key.slice(1)}` : `ATT ${key.slice(1)}`;
+          const slot = slots[key] || { search: "", suggestions: [], team: null, searching: false, squad: [], playerId: "", player: null };
+          return (
+            <TeamThenPlayerPicker
+              key={key}
+              label={label}
+              search={slot.search}
+              setSearch={(v) => updateSlot(key, { search: v })}
+              suggestions={slot.suggestions}
+              team={slot.team}
+              searching={slot.searching}
+              slot={key}
+              color="#4ade80"
+              squad={slot.squad}
+              playerId={slot.playerId}
+              onSearchTeam={searchTeam}
+              onSelectTeam={selectTeam}
+              onSelectPlayer={selectPlayer}
+              onClearTeam={() => updateSlot(key, { team: null })}
+            />
+          );
+        })}
+      </div>
+
+      {filledCount > 0 && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "20px 18px" }}>
+              <div style={{ textAlign: "center", marginTop: 30, marginBottom: 4 }}>
+                <span style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>Team of the Week</span>
+              </div>
+              {gameweek && (
+                <div style={{ textAlign: "center", marginBottom: 16 }}>
+                  <span style={{ fontSize: 13, color: "#a78bfa", fontWeight: 700 }}>{gameweek}</span>
+                </div>
+              )}
+
+              <div style={{ position: "relative", maxWidth: 320, margin: "0 auto" }}>
+                <svg viewBox="0 0 420 680" xmlns="http://www.w3.org/2000/svg" style={{ display: "block", width: "100%" }}>
+                  <rect x="2" y="2" width="416" height="676" fill="#0d2818" stroke="#2a4a3a" strokeWidth="2" rx="4" />
+                  <line x1="2" y1="340" x2="418" y2="340" stroke="#2a4a3a" strokeWidth="2" />
+                  <circle cx="210" cy="340" r="60" fill="none" stroke="#2a4a3a" strokeWidth="2" />
+                  <rect x="110" y="20" width="200" height="90" fill="none" stroke="#2a4a3a" strokeWidth="2" />
+                  <rect x="110" y="570" width="200" height="90" fill="none" stroke="#2a4a3a" strokeWidth="2" />
+                </svg>
+
+                {slotKeys.map(key => {
+                  const p = slots[key]?.player;
+                  const pos = positions[key];
+                  if (!pos) return null;
+                  const leftPct = (pos.x / 420) * 100;
+                  const topPct = (pos.y / 680) * 100;
+                  return (
+                    <div key={key} style={{ position: "absolute", left: `${leftPct}%`, top: `${topPct}%`, transform: "translate(-50%, -50%)", textAlign: "center", width: 68 }}>
+                      {p ? (
+                        <>
+                          {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 2px", display: "block" }} />}
+                          <div style={{ fontSize: 9, fontWeight: 800, color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,0.8)", lineHeight: 1.1 }}>{p.name?.split(" ").slice(-1)[0]}</div>
+                          <div style={{ fontSize: 7, color: "#4ade80", textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>{p.team}</div>
+                        </>
+                      ) : (
+                        <div style={{ fontSize: 9, fontWeight: 700, color: "#4ade8088" }}>{key === "gk" ? "GK" : ""}</div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </GraphicCard>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function DataGraphics({ history = [], supabase }) {
   const [activeSection, setActiveSection] = useState("match");
   const [sectionMenuOpen, setSectionMenuOpen] = useState(false);
@@ -4778,6 +4986,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "leaguetotals", label: "📊 League Totals" },
     { id: "euroassists", label: "🎯 Europe Top Assists" },
     { id: "predictedlineup", label: "📋 Predicted Lineup" },
+    { id: "teamofweek", label: "⭐ Team of the Week" },
     { id: "zoneofinfluence", label: "⚔️ Zone of Influence" },
     { id: "quickvs", label: "⚡ The Battle" },
     { id: "beyondscoresheet", label: "👁️ Beyond The Scoresheet" },
@@ -4824,6 +5033,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "leaguetotals" && <LeagueTotalsGraphic />}
       {activeSection === "euroassists" && <EuroAssistsGraphic />}
       {activeSection === "predictedlineup" && <PredictedLineupGraphic />}
+      {activeSection === "teamofweek" && <TeamOfWeekGraphic />}
       {activeSection === "zoneofinfluence" && <ZoneOfInfluenceGraphic />}
       {activeSection === "quickvs" && <QuickVSGraphic />}
       {activeSection === "beyondscoresheet" && <BeyondScoresheetGraphic />}
