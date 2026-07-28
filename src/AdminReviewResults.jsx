@@ -6,6 +6,10 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY
 );
 
+// Keep this in sync with SubmitTake.jsx and CommunityLeaderboard.jsx's
+// CURRENT_ROUND — must match so this only shows this round's results.
+const CURRENT_ROUND = 3;
+
 export default function AdminReviewResults() {
   const [submissions, setSubmissions] = useState([]);
   const [status, setStatus] = useState('loading');
@@ -17,6 +21,7 @@ export default function AdminReviewResults() {
         .from('community_takes_submissions')
         .select('*')
         .eq('reviewed', true)
+        .eq('round', CURRENT_ROUND)
         .order('total_score', { ascending: false });
 
       if (error) {
