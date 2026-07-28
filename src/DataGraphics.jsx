@@ -5369,7 +5369,7 @@ function PasteStatsGraphic() {
               {displayed.map((row, i) => {
                 const maxVal = Math.max(...displayed.map(r => Math.abs(r[sortMetric])), 0.01);
                 const barPct = Math.max((Math.abs(row[sortMetric]) / maxVal) * 100, 4);
-                const isHighlighted = highlightName.trim().length > 0 && row.name.toLowerCase() === highlightName.trim().toLowerCase();
+                const isHighlighted = highlightName.trim().length > 0 && row.name.toLowerCase().includes(highlightName.trim().toLowerCase());
                 const barColor = isHighlighted ? "#fbbf24" : (sortMetric === "goalsVsXg" ? (row[sortMetric] >= 0 ? "#4ade80" : "#f87171") : "#4ade80");
 
                 // For Goals vs xG specifically, show actual vs expected as two mini bars
