@@ -83,7 +83,7 @@ export default function AdminReviewSubmissions() {
 
         {/* Match info — visible, not identifying */}
         <div style={{ fontSize: 13, color: '#7E9485', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>
-          {current.match_covered}
+          {current.match_covered} · Round {current.round ?? '—'}
         </div>
 
         {/* The take itself */}
