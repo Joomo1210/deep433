@@ -5145,6 +5145,34 @@ function PasteStatsGraphic() {
   const [sortDir, setSortDir] = useState("desc");
   const [topN, setTopN] = useState(10);
   const [downloading, setDownloading] = useState(false);
+  const [league, setLeague] = useState("pl");
+  const [photos, setPhotos] = useState({});
+  const [loadingPhotos, setLoadingPhotos] = useState(false);
+
+  const LEAGUES = [
+    { id: "pl", label: "Premier League" },
+    { id: "laliga", label: "La Liga" },
+    { id: "seriea", label: "Serie A" },
+    { id: "bundesliga", label: "Bundesliga" },
+    { id: "ligue1", label: "Ligue 1" },
+    { id: "ucl", label: "Champions League" },
+  ];
+
+  const fetchPhotos = async (names) => {
+    setLoadingPhotos(true);
+    const newPhotos = {};
+    for (const name of names) {
+      if (photos[name]) { newPhotos[name] = photos[name]; continue; }
+      try {
+        const r = await fetch(`/api/team-stats?mode=playersearch&query=${encodeURIComponent(name)}&leagueId=${league}`);
+        const d = await r.json();
+        const match = d.players?.find(p => p.name?.toLowerCase() === name.toLowerCase()) || d.players?.[0];
+        if (match?.photo) newPhotos[name] = match.photo;
+      } catch {}
+    }
+    setPhotos(prev => ({ ...prev, ...newPhotos }));
+    setLoadingPhotos(false);
+  };
 
   const METRICS = [
     { key: "goalsVsXg", label: "Goals vs xG (overperform/underperform)" },
@@ -5286,6 +5314,20 @@ function PasteStatsGraphic() {
             </div>
           </div>
 
+          <div>
+            <div style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, marginBottom: 4 }}>League (for photo matching)</div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+              {LEAGUES.map(l => (
+                <button key={l.id} onClick={() => setLeague(l.id)} style={{ background: league === l.id ? "#4ade8022" : "none", border: `1px solid ${league === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: league === l.id ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "5px 10px" }}>
+                  {l.label}
+                </button>
+              ))}
+            </div>
+            <button onClick={() => fetchPhotos(displayed.map(r => r.name))} disabled={loadingPhotos} style={{ width: "100%", background: "none", border: "1px dashed #4ade80", borderRadius: 8, color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "8px" }}>
+              {loadingPhotos ? "Fetching photos..." : "🖼️ Fetch Photos for Displayed Players"}
+            </button>
+          </div>
+
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "24px 18px" }}>
               <div style={{ textAlign: "center", marginTop: 30, marginBottom: 4 }}>
@@ -5302,7 +5344,10 @@ function PasteStatsGraphic() {
                 return (
                   <div key={i} style={{ marginBottom: 10 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: "#f0f0f0" }}>{i + 1}. {row.name}</span>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 6 }}>
+                        {photos[row.name] && <img src={photos[row.name]} alt="" crossOrigin="anonymous" style={{ width: 22, height: 22, borderRadius: "50%", objectFit: "cover" }} />}
+                        {i + 1}. {row.name}
+                      </span>
                       <span style={{ fontSize: 14, fontWeight: 900, color: barColor }}>{formatVal(row)}</span>
                     </div>
                     <div style={{ height: 6, background: "#1a1a24", borderRadius: 3, overflow: "hidden" }}>
