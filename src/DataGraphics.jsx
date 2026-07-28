@@ -5350,30 +5350,57 @@ function PasteStatsGraphic() {
           </div>
 
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "24px 18px" }}>
+            <div style={{ padding: "18px 16px" }}>
               <div style={{ textAlign: "center", marginTop: 30, marginBottom: 4 }}>
-                <span style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>{title || "Stat Leaders"}</span>
+                <span style={{ fontSize: 24, fontWeight: 900, color: "#f0f0f0" }}>{title || "Stat Leaders"}</span>
               </div>
-              <div style={{ textAlign: "center", marginBottom: 16 }}>
-                <span style={{ fontSize: 12, color: "#a78bfa", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{metricLabel}</span>
+              <div style={{ textAlign: "center", marginBottom: 14 }}>
+                <span style={{ fontSize: 14, color: "#a78bfa", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{metricLabel}</span>
               </div>
 
               {displayed.map((row, i) => {
                 const maxVal = Math.max(...displayed.map(r => Math.abs(r[sortMetric])), 0.01);
                 const barPct = Math.max((Math.abs(row[sortMetric]) / maxVal) * 100, 4);
                 const barColor = sortMetric === "goalsVsXg" ? (row[sortMetric] >= 0 ? "#4ade80" : "#f87171") : "#4ade80";
+
+                // For Goals vs xG specifically, show actual vs expected as two mini bars
+                const showDualBar = sortMetric === "goalsVsXg";
+                const dualMax = Math.max(...displayed.map(r => Math.max(r.goals, r.xg)), 0.01);
+                const goalsPct = Math.max((row.goals / dualMax) * 100, 3);
+                const xgPct = Math.max((row.xg / dualMax) * 100, 3);
+
                 return (
-                  <div key={i} style={{ marginBottom: 10 }}>
+                  <div key={i} style={{ marginBottom: 8 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 6 }}>
-                        {photos[row.name] && <img src={photos[row.name]} alt="" crossOrigin="anonymous" style={{ width: 22, height: 22, borderRadius: "50%", objectFit: "cover" }} />}
+                      <span style={{ fontSize: 16, fontWeight: 800, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 6 }}>
+                        {photos[row.name] && <img src={photos[row.name]} alt="" crossOrigin="anonymous" style={{ width: 26, height: 26, borderRadius: "50%", objectFit: "cover" }} />}
                         {i + 1}. {row.name}
                       </span>
-                      <span style={{ fontSize: 14, fontWeight: 900, color: barColor }}>{formatVal(row)}</span>
+                      <span style={{ fontSize: 17, fontWeight: 900, color: barColor }}>{formatVal(row)}</span>
                     </div>
-                    <div style={{ height: 6, background: "#1a1a24", borderRadius: 3, overflow: "hidden" }}>
-                      <div style={{ width: `${barPct}%`, height: "100%", background: barColor, borderRadius: 3 }} />
-                    </div>
+
+                    {showDualBar ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span style={{ fontSize: 10, color: "#4ade80", width: 34, fontWeight: 700 }}>Goals</span>
+                          <div style={{ flex: 1, height: 7, background: "#1a1a24", borderRadius: 3, overflow: "hidden" }}>
+                            <div style={{ width: `${goalsPct}%`, height: "100%", background: "#4ade80", borderRadius: 3 }} />
+                          </div>
+                          <span style={{ fontSize: 10, color: "#4ade80", width: 28, textAlign: "right" }}>{row.goals}</span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span style={{ fontSize: 10, color: "#94a3b8", width: 34, fontWeight: 700 }}>xG</span>
+                          <div style={{ flex: 1, height: 7, background: "#1a1a24", borderRadius: 3, overflow: "hidden" }}>
+                            <div style={{ width: `${xgPct}%`, height: "100%", background: "#94a3b8", borderRadius: 3 }} />
+                          </div>
+                          <span style={{ fontSize: 10, color: "#94a3b8", width: 28, textAlign: "right" }}>{row.xg.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ height: 8, background: "#1a1a24", borderRadius: 3, overflow: "hidden" }}>
+                        <div style={{ width: `${barPct}%`, height: "100%", background: barColor, borderRadius: 3 }} />
+                      </div>
+                    )}
                   </div>
                 );
               })}
