@@ -6,6 +6,10 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY
 );
 
+// Keep this in sync with SubmitTake.jsx's CURRENT_ROUND — must match so the
+// leaderboard only shows this round's submissions, not past winners.
+const CURRENT_ROUND = 3;
+
 export default function CommunityLeaderboard() {
   const [submissions, setSubmissions] = useState([]);
   const [status, setStatus] = useState('loading');
@@ -16,6 +20,7 @@ export default function CommunityLeaderboard() {
       const { data, error } = await supabase
         .from('public_community_takes')
         .select('*')
+        .eq('round', CURRENT_ROUND)
         .order('total_score', { ascending: false });
 
       if (error) {
