@@ -5364,6 +5364,31 @@ function PasteStatsGraphic() {
               <div style={{ textAlign: "center", marginTop: 30, marginBottom: 4 }}>
                 <span style={{ fontSize: 24, fontWeight: 900, color: "#f0f0f0" }}>{title || "Stat Leaders"}</span>
               </div>
+
+              {displayed.length === 1 ? (
+                <>
+                  <div style={{ textAlign: "center", marginBottom: 18 }}>
+                    {photos[displayed[0].name] && <img src={photos[displayed[0].name]} alt="" crossOrigin="anonymous" style={{ width: 64, height: 64, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 10px" }} />}
+                    <div style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>{displayed[0].name}</div>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                    {[
+                      { label: "Goals", value: displayed[0].goals, color: "#4ade80" },
+                      { label: "xG", value: displayed[0].xg.toFixed(2), color: "#60a5fa" },
+                      { label: "Goals vs xG", value: (displayed[0].goalsVsXg > 0 ? "+" : "") + displayed[0].goalsVsXg.toFixed(2), color: displayed[0].goalsVsXg >= 0 ? "#4ade80" : "#f87171" },
+                      { label: "Shots", value: displayed[0].shots, color: "#f0f0f0" },
+                      { label: "On Target", value: displayed[0].sot, color: "#f0f0f0" },
+                      { label: "Conv %", value: displayed[0].convPct.toFixed(2) + "%", color: "#fbbf24" },
+                    ].map((stat, i) => (
+                      <div key={i} style={{ background: "#13131f", borderRadius: 10, padding: "14px 8px", textAlign: "center" }}>
+                        <div style={{ fontSize: 22, fontWeight: 900, color: stat.color }}>{stat.value}</div>
+                        <div style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginTop: 4 }}>{stat.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
               <div style={{ textAlign: "center", marginBottom: 14 }}>
                 <span style={{ fontSize: 14, color: "#a78bfa", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{metricLabel}</span>
               </div>
@@ -5415,6 +5440,8 @@ function PasteStatsGraphic() {
                   </div>
                 );
               })}
+                </>
+              )}
             </div>
           </GraphicCard>
           <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
