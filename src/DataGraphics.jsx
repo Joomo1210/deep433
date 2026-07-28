@@ -5382,18 +5382,18 @@ function PasteStatsGraphic() {
                     {showDualBar ? (
                       <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <span style={{ fontSize: 10, color: "#4ade80", width: 34, fontWeight: 700 }}>Goals</span>
-                          <div style={{ flex: 1, height: 7, background: "#1a1a24", borderRadius: 3, overflow: "hidden" }}>
+                          <span style={{ fontSize: 16, color: "#4ade80", width: 50, fontWeight: 800 }}>Goals</span>
+                          <div style={{ flex: 1, height: 12, background: "#1a1a24", borderRadius: 3, overflow: "hidden" }}>
                             <div style={{ width: `${goalsPct}%`, height: "100%", background: "#4ade80", borderRadius: 3 }} />
                           </div>
-                          <span style={{ fontSize: 10, color: "#4ade80", width: 28, textAlign: "right" }}>{row.goals}</span>
+                          <span style={{ fontSize: 18, color: "#4ade80", width: 40, textAlign: "right", fontWeight: 800 }}>{row.goals}</span>
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <span style={{ fontSize: 10, color: "#60a5fa", width: 34, fontWeight: 700 }}>xG</span>
-                          <div style={{ flex: 1, height: 7, background: "#1a1a24", borderRadius: 3, overflow: "hidden" }}>
+                          <span style={{ fontSize: 16, color: "#60a5fa", width: 50, fontWeight: 800 }}>xG</span>
+                          <div style={{ flex: 1, height: 12, background: "#1a1a24", borderRadius: 3, overflow: "hidden" }}>
                             <div style={{ width: `${xgPct}%`, height: "100%", background: "#60a5fa", borderRadius: 3 }} />
                           </div>
-                          <span style={{ fontSize: 10, color: "#60a5fa", width: 28, textAlign: "right" }}>{row.xg.toFixed(2)}</span>
+                          <span style={{ fontSize: 18, color: "#60a5fa", width: 40, textAlign: "right", fontWeight: 800 }}>{row.xg.toFixed(2)}</span>
                         </div>
                       </div>
                     ) : (
