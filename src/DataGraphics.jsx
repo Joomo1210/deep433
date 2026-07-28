@@ -5502,6 +5502,284 @@ function PasteStatsGraphic() {
 }
 
 
+// ─── ADVANCED STATS PARSER (Passing / Goalkeeping / Defending) ──────────────
+// Kept separate from PasteStatsGraphic so a bug here can't take down the
+// already-stable Goals/xG and Carrying parser.
+function AdvancedStatsParserGraphic() {
+  const cardRef = useRef(null);
+  const [advType, setAdvType] = useState("passing"); // "passing" | "goalkeeping" | "defending"
+  const [rawText, setRawText] = useState("");
+  const [parsedRows, setParsedRows] = useState([]);
+  const [parseError, setParseError] = useState("");
+  const [title, setTitle] = useState("");
+  const [sortMetric, setSortMetric] = useState("openPlayPct");
+  const [sortDir, setSortDir] = useState("desc");
+  const [topN, setTopN] = useState(10);
+  const [downloading, setDownloading] = useState(false);
+
+  const METRICS_PASSING = [
+    { key: "openPlayPct", label: "Open Play Pass %" },
+    { key: "finalThirdPct", label: "Final Third Pass %" },
+    { key: "crossesPct", label: "Cross Accuracy %" },
+    { key: "openPlayTotal", label: "Open Play Passes (Total)" },
+    { key: "finalThirdTotal", label: "Final Third Passes (Total)" },
+    { key: "crossesTotal", label: "Crosses (Total)" },
+    { key: "throughBalls", label: "Through Balls" },
+  ];
+  const METRICS_GOALKEEPING = [
+    { key: "goalsPrevented", label: "Goals Prevented" },
+    { key: "gpRate", label: "GP Rate" },
+    { key: "savePct", label: "Save %" },
+    { key: "saves", label: "Saves Made" },
+    { key: "goalsConceded", label: "Goals Conceded" },
+    { key: "xgotConceded", label: "xGOT Conceded" },
+  ];
+  // PLACEHOLDER — not yet confirmed against a real pasted example
+  const METRICS_DEFENDING = [
+    { key: "tackles", label: "Tackles" },
+    { key: "tackleWinPct", label: "Tackles Won %" },
+    { key: "interceptions", label: "Interceptions" },
+    { key: "clearances", label: "Clearances" },
+    { key: "aerialWinPct", label: "Aerial Duels Won %" },
+  ];
+
+  const getMetrics = () => (advType === "passing" ? METRICS_PASSING : advType === "goalkeeping" ? METRICS_GOALKEEPING : METRICS_DEFENDING);
+
+  const parseData = () => {
+    setParseError("");
+    try {
+      const lines = rawText.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+      const rows = [];
+      let pendingName = null;
+      const minCols = advType === "passing" ? 12 : advType === "goalkeeping" ? 8 : 5;
+
+      for (const line of lines) {
+        if (/^name$/i.test(line) || /^apps$/i.test(line) || /^\d+ of \d+$/i.test(line) || /^<|^>/.test(line) || /^all carries/i.test(line)) continue;
+
+        const tabParts = line.split(/\t+/).map(p => p.trim());
+        const looksLikeStatsRow = tabParts.length >= minCols && !isNaN(parseFloat(tabParts[0]));
+
+        if (looksLikeStatsRow && pendingName) {
+          if (advType === "passing") {
+            const openPlayTotal = tabParts[2];
+            const openPlaySuccessful = tabParts[3];
+            const openPlayPct = tabParts[4];
+            const finalThirdTotal = tabParts[5];
+            const finalThirdSuccessful = tabParts[6];
+            const finalThirdPct = tabParts[7];
+            const crossesTotal = tabParts[8];
+            const crossesSuccessful = tabParts[9];
+            const crossesPct = tabParts[10];
+            const throughBalls = tabParts[11];
+            rows.push({
+              name: pendingName,
+              openPlayTotal: parseInt(openPlayTotal) || 0,
+              openPlaySuccessful: parseInt(openPlaySuccessful) || 0,
+              openPlayPct: parseFloat(openPlayPct) || 0,
+              finalThirdTotal: parseInt(finalThirdTotal) || 0,
+              finalThirdSuccessful: parseInt(finalThirdSuccessful) || 0,
+              finalThirdPct: parseFloat(finalThirdPct) || 0,
+              crossesTotal: parseInt(crossesTotal) || 0,
+              crossesSuccessful: parseInt(crossesSuccessful) || 0,
+              crossesPct: parseFloat(crossesPct) || 0,
+              throughBalls: parseInt(throughBalls) || 0,
+            });
+          } else if (advType === "goalkeeping") {
+            const goalsConceded = tabParts[2];
+            const saves = tabParts[3];
+            const savePct = tabParts[4];
+            const xgotConceded = tabParts[5];
+            const goalsPrevented = tabParts[6];
+            const gpRate = tabParts[7];
+            rows.push({
+              name: pendingName,
+              goalsConceded: parseInt(goalsConceded) || 0,
+              saves: parseInt(saves) || 0,
+              savePct: parseFloat(savePct) || 0,
+              xgotConceded: parseFloat(xgotConceded) || 0,
+              goalsPrevented: parseFloat(goalsPrevented) || 0,
+              gpRate: parseFloat(gpRate) || 0,
+            });
+          } else {
+            const tackles = tabParts[2];
+            const tackleWinPct = tabParts[3];
+            const interceptions = tabParts[4];
+            const clearances = tabParts[5];
+            const aerialWinPct = tabParts[6];
+            rows.push({
+              name: pendingName,
+              tackles: parseInt(tackles) || 0,
+              tackleWinPct: parseFloat(tackleWinPct) || 0,
+              interceptions: parseInt(interceptions) || 0,
+              clearances: parseInt(clearances) || 0,
+              aerialWinPct: parseFloat(aerialWinPct) || 0,
+            });
+          }
+          pendingName = null;
+        } else if (!looksLikeStatsRow) {
+          pendingName = line.replace(/^team ?logo/i, "").trim();
+        }
+      }
+
+      if (rows.length === 0) {
+        setParseError("Couldn't parse any valid rows. Check the format matches the selected data type.");
+        setParsedRows([]);
+        return;
+      }
+
+      setParsedRows(rows);
+    } catch (e) {
+      setParseError("Parse error: " + e.message);
+      setParsedRows([]);
+    }
+  };
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, `deep433-advanced-stats-${advType}.png`, undefined, transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const sorted = [...parsedRows].sort((a, b) => sortDir === "desc" ? b[sortMetric] - a[sortMetric] : a[sortMetric] - b[sortMetric]);
+  const displayed = sorted.slice(0, topN);
+  const currentMetrics = getMetrics();
+  const metricLabel = currentMetrics.find(m => m.key === sortMetric)?.label || sortMetric;
+
+  const formatVal = (row) => {
+    const v = row[sortMetric];
+    if (typeof v !== "number") return v;
+    if (sortMetric.toLowerCase().includes("pct")) return `${v.toFixed(1)}%`;
+    return v;
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Paste Passing, Goalkeeping, or Defending stat data and generate a clean ranked card.</div>
+
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {[
+          { v: "passing", label: "🎯 Passing" },
+          { v: "goalkeeping", label: "🧤 Goalkeeping" },
+          { v: "defending", label: "🛡️ Defending" },
+        ].map(t => (
+          <button
+            key={t.v}
+            onClick={() => {
+              setAdvType(t.v);
+              const defaultMetric = t.v === "passing" ? "openPlayPct" : t.v === "goalkeeping" ? "goalsPrevented" : "tackles";
+              setSortMetric(defaultMetric);
+              setParsedRows([]);
+              setParseError("");
+            }}
+            style={{ background: advType === t.v ? "#4ade8022" : "none", border: `1px solid ${advType === t.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: advType === t.v ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "7px 14px" }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {advType === "defending" && (
+        <div style={{ fontSize: 10, color: "#f59e0b", background: "#f59e0b15", border: "1px solid #f59e0b40", borderRadius: 8, padding: "8px 12px" }}>
+          ⚠️ This format is a placeholder — paste a real example first so the exact columns can be confirmed.
+        </div>
+      )}
+
+      <div>
+        <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Card Title</div>
+        <input
+          value={title}
+          onChange={e => setTitle(e.target.value)}
+          placeholder="e.g. Best Passers in the League"
+          style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+        />
+      </div>
+
+      <div>
+        <div style={{ fontSize: 10, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Paste Raw Data</div>
+        <textarea
+          value={rawText}
+          onChange={e => setRawText(e.target.value)}
+          placeholder="Paste tab-separated stat rows here..."
+          rows={6}
+          style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 12, padding: "9px 12px", outline: "none", fontFamily: "monospace", resize: "vertical" }}
+        />
+      </div>
+
+      <button onClick={parseData} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
+        Parse Data
+      </button>
+
+      {parseError && <div style={{ color: "#f87171", fontSize: 12 }}>{parseError}</div>}
+      {parsedRows.length > 0 && !parseError && (
+        <div style={{ fontSize: 12, color: "#4ade80" }}>✓ Parsed {parsedRows.length} players successfully</div>
+      )}
+
+      {parsedRows.length > 0 && (
+        <>
+          <div>
+            <div style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, marginBottom: 6 }}>Sort By</div>
+            <select
+              value={sortMetric}
+              onChange={e => setSortMetric(e.target.value)}
+              style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+            >
+              {currentMetrics.map(m => <option key={m.key} value={m.key}>{m.label}</option>)}
+            </select>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <div>
+              <div style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, marginBottom: 4 }}>Order</div>
+              <div style={{ display: "flex", gap: 6 }}>
+                <button onClick={() => setSortDir("desc")} style={{ flex: 1, background: sortDir === "desc" ? "#4ade8022" : "none", border: `1px solid ${sortDir === "desc" ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: sortDir === "desc" ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "7px" }}>Highest First</button>
+                <button onClick={() => setSortDir("asc")} style={{ flex: 1, background: sortDir === "asc" ? "#4ade8022" : "none", border: `1px solid ${sortDir === "asc" ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: sortDir === "asc" ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "7px" }}>Lowest First</button>
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, marginBottom: 4 }}>Show Top</div>
+              <input type="number" min="3" max="20" value={topN} onChange={e => setTopN(Math.max(3, Math.min(20, parseInt(e.target.value) || 10)))} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "7px 10px", outline: "none", fontFamily: "inherit" }} />
+            </div>
+          </div>
+
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "18px 16px" }}>
+              <div style={{ textAlign: "center", marginTop: 30, marginBottom: 4 }}>
+                <span style={{ fontSize: 24, fontWeight: 900, color: "#f0f0f0" }}>{title || "Stat Leaders"}</span>
+              </div>
+              <div style={{ textAlign: "center", marginBottom: 14 }}>
+                <span style={{ fontSize: 14, color: "#a78bfa", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{metricLabel}</span>
+              </div>
+
+              {displayed.map((row, i) => {
+                const maxVal = Math.max(...displayed.map(r => Math.abs(r[sortMetric]) || 0), 0.01);
+                const barPct = Math.max((Math.abs(row[sortMetric] || 0) / maxVal) * 100, 4);
+                return (
+                  <div key={i} style={{ marginBottom: 8 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
+                      <span style={{ fontSize: 16, fontWeight: 800, color: "#f0f0f0" }}>{i + 1}. {row.name}</span>
+                      <span style={{ fontSize: 17, fontWeight: 900, color: "#4ade80" }}>{formatVal(row)}</span>
+                    </div>
+                    <div style={{ height: 8, background: "#1a1a24", borderRadius: 3, overflow: "hidden" }}>
+                      <div style={{ width: `${barPct}%`, height: "100%", background: "#4ade80", borderRadius: 3 }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </GraphicCard>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function DataGraphics({ history = [], supabase }) {
   const [activeSection, setActiveSection] = useState("match");
   const [sectionMenuOpen, setSectionMenuOpen] = useState(false);
@@ -5527,6 +5805,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "teamofweek", label: "⭐ Team of the Week" },
     { id: "playertrajectory", label: "📈 Player Trajectory" },
     { id: "pastestats", label: "📋 Paste Stats" },
+    { id: "advancedstats", label: "🎯 Passing / GK / Defending" },
     { id: "zoneofinfluence", label: "⚔️ Zone of Influence" },
     { id: "quickvs", label: "⚡ The Battle" },
     { id: "beyondscoresheet", label: "👁️ Beyond The Scoresheet" },
@@ -5576,6 +5855,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "teamofweek" && <TeamOfWeekGraphic />}
       {activeSection === "playertrajectory" && <PlayerTrajectoryGraphic />}
       {activeSection === "pastestats" && <PasteStatsGraphic />}
+      {activeSection === "advancedstats" && <AdvancedStatsParserGraphic />}
       {activeSection === "zoneofinfluence" && <ZoneOfInfluenceGraphic />}
       {activeSection === "quickvs" && <QuickVSGraphic />}
       {activeSection === "beyondscoresheet" && <BeyondScoresheetGraphic />}
