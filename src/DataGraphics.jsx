@@ -5747,6 +5747,22 @@ function AdvancedStatsParserGraphic() {
               <div style={{ textAlign: "center", marginTop: 30, marginBottom: 4 }}>
                 <span style={{ fontSize: 24, fontWeight: 900, color: "#f0f0f0" }}>{title || "Stat Leaders"}</span>
               </div>
+
+              {displayed.length === 1 ? (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                  {currentMetrics.map((m, i) => {
+                    const v = displayed[0][m.key];
+                    const isPct = m.key.toLowerCase().includes("pct");
+                    return (
+                      <div key={i} style={{ background: "#13131f", borderRadius: 10, padding: "14px 8px", textAlign: "center" }}>
+                        <div style={{ fontSize: 22, fontWeight: 900, color: "#4ade80" }}>{typeof v === "number" && isPct ? v.toFixed(1) + "%" : v}</div>
+                        <div style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginTop: 4 }}>{m.label}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <>
               <div style={{ textAlign: "center", marginBottom: 14 }}>
                 <span style={{ fontSize: 14, color: "#a78bfa", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{metricLabel}</span>
               </div>
@@ -5766,6 +5782,8 @@ function AdvancedStatsParserGraphic() {
                   </div>
                 );
               })}
+                </>
+              )}
             </div>
           </GraphicCard>
           <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
