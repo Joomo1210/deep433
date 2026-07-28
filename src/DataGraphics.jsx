@@ -5148,6 +5148,7 @@ function PasteStatsGraphic() {
   const [league, setLeague] = useState("pl");
   const [photos, setPhotos] = useState({});
   const [loadingPhotos, setLoadingPhotos] = useState(false);
+  const [highlightName, setHighlightName] = useState("");
 
   const LEAGUES = [
     { id: "pl", label: "Premier League" },
@@ -5329,6 +5330,13 @@ function PasteStatsGraphic() {
           </div>
 
           <div>
+            <div style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, marginBottom: 4 }}>Highlight Player (gives them a distinct bar color)</div>
+            <input
+              value={highlightName}
+              onChange={e => setHighlightName(e.target.value)}
+              placeholder="e.g. Julián Alvarez"
+              style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit", marginBottom: 12 }}
+            />
             <div style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, marginBottom: 4 }}>League (for photo matching)</div>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
               {LEAGUES.map(l => (
@@ -5361,7 +5369,8 @@ function PasteStatsGraphic() {
               {displayed.map((row, i) => {
                 const maxVal = Math.max(...displayed.map(r => Math.abs(r[sortMetric])), 0.01);
                 const barPct = Math.max((Math.abs(row[sortMetric]) / maxVal) * 100, 4);
-                const barColor = sortMetric === "goalsVsXg" ? (row[sortMetric] >= 0 ? "#4ade80" : "#f87171") : "#4ade80";
+                const isHighlighted = highlightName.trim().length > 0 && row.name.toLowerCase() === highlightName.trim().toLowerCase();
+                const barColor = isHighlighted ? "#fbbf24" : (sortMetric === "goalsVsXg" ? (row[sortMetric] >= 0 ? "#4ade80" : "#f87171") : "#4ade80");
 
                 // For Goals vs xG specifically, show actual vs expected as two mini bars
                 const showDualBar = sortMetric === "goalsVsXg";
@@ -5372,7 +5381,7 @@ function PasteStatsGraphic() {
                 return (
                   <div key={i} style={{ marginBottom: 8 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
-                      <span style={{ fontSize: 16, fontWeight: 800, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontSize: 16, fontWeight: 800, color: isHighlighted ? "#fbbf24" : "#f0f0f0", display: "flex", alignItems: "center", gap: 6 }}>
                         {photos[row.name] && <img src={photos[row.name]} alt="" crossOrigin="anonymous" style={{ width: 26, height: 26, borderRadius: "50%", objectFit: "cover" }} />}
                         {i + 1}. {row.name}
                       </span>
