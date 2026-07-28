@@ -5158,19 +5158,33 @@ function PasteStatsGraphic() {
     { id: "ucl", label: "Champions League" },
   ];
 
+  const [photoDebug, setPhotoDebug] = useState([]);
+
   const fetchPhotos = async (names) => {
     setLoadingPhotos(true);
     const newPhotos = {};
+    const debugLog = [];
     for (const name of names) {
       if (photos[name]) { newPhotos[name] = photos[name]; continue; }
       try {
         const r = await fetch(`/api/team-stats?mode=playersearch&query=${encodeURIComponent(name)}&leagueId=${league}`);
         const d = await r.json();
+        const resultCount = d.players?.length || 0;
         const match = d.players?.find(p => p.name?.toLowerCase() === name.toLowerCase()) || d.players?.[0];
-        if (match?.photo) newPhotos[name] = match.photo;
-      } catch {}
+        if (match?.photo) {
+          newPhotos[name] = match.photo;
+          debugLog.push(`✓ ${name} → matched "${match.name}", photo found`);
+        } else if (match) {
+          debugLog.push(`⚠ ${name} → matched "${match.name}", but no photo field`);
+        } else {
+          debugLog.push(`✗ ${name} → 0 results from API (searched: ${resultCount} found)`);
+        }
+      } catch (e) {
+        debugLog.push(`✗ ${name} → fetch error: ${e.message}`);
+      }
     }
     setPhotos(prev => ({ ...prev, ...newPhotos }));
+    setPhotoDebug(debugLog);
     setLoadingPhotos(false);
   };
 
@@ -5326,6 +5340,13 @@ function PasteStatsGraphic() {
             <button onClick={() => fetchPhotos(displayed.map(r => r.name))} disabled={loadingPhotos} style={{ width: "100%", background: "none", border: "1px dashed #4ade80", borderRadius: 8, color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "8px" }}>
               {loadingPhotos ? "Fetching photos..." : "🖼️ Fetch Photos for Displayed Players"}
             </button>
+            {photoDebug.length > 0 && (
+              <div style={{ marginTop: 8, background: "#0a0a0f", border: "1px solid #2a2a3a", borderRadius: 8, padding: 10, fontSize: 11, fontFamily: "monospace" }}>
+                {photoDebug.map((line, i) => (
+                  <div key={i} style={{ color: line.startsWith("✓") ? "#4ade80" : line.startsWith("⚠") ? "#f59e0b" : "#f87171", marginBottom: 3 }}>{line}</div>
+                ))}
+              </div>
+            )}
           </div>
 
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
