@@ -5137,6 +5137,7 @@ function PlayerTrajectoryGraphic() {
 // ─── PASTE STATS (parse raw tabular data into a visual card) ────────────────
 function PasteStatsGraphic() {
   const cardRef = useRef(null);
+  const [dataType, setDataType] = useState("goalsxg"); // "goalsxg" | "carrying"
   const [rawText, setRawText] = useState("");
   const [parsedRows, setParsedRows] = useState([]);
   const [parseError, setParseError] = useState("");
@@ -5149,6 +5150,25 @@ function PasteStatsGraphic() {
   const [photos, setPhotos] = useState({});
   const [loadingPhotos, setLoadingPhotos] = useState(false);
   const [highlightName, setHighlightName] = useState("");
+
+  const METRICS_GOALSXG = [
+    { key: "goalsVsXg", label: "Goals vs xG (overperform/underperform)" },
+    { key: "goals", label: "Goals" },
+    { key: "xg", label: "xG" },
+    { key: "shots", label: "Shots" },
+    { key: "sot", label: "Shots On Target" },
+    { key: "convPct", label: "Conversion %" },
+    { key: "xgPerShot", label: "xG per Shot" },
+  ];
+  const METRICS_CARRYING = [
+    { key: "totalCarries", label: "Total Carries" },
+    { key: "progCarries", label: "Progressive Carries" },
+    { key: "endedShot", label: "Ended With Shot" },
+    { key: "endedGoal", label: "Ended With Goal" },
+    { key: "endedChance", label: "Ended With Chance" },
+    { key: "endedAssist", label: "Ended With Assist" },
+    { key: "avgDistance", label: "Avg Carry Distance (m)" },
+  ];
 
   const LEAGUES = [
     { id: "pl", label: "Premier League" },
@@ -5189,54 +5209,65 @@ function PasteStatsGraphic() {
     setLoadingPhotos(false);
   };
 
-  const METRICS = [
-    { key: "goalsVsXg", label: "Goals vs xG (overperform/underperform)" },
-    { key: "goals", label: "Goals" },
-    { key: "xg", label: "xG" },
-    { key: "shots", label: "Shots" },
-    { key: "sot", label: "Shots On Target" },
-    { key: "convPct", label: "Conversion %" },
-    { key: "xgPerShot", label: "xG per Shot" },
-  ];
-
   const parseData = () => {
     setParseError("");
     try {
       const lines = rawText.split("\n").map(l => l.trim()).filter(l => l.length > 0);
       const rows = [];
       let pendingName = null;
+      const minCols = dataType === "carrying" ? 12 : 9;
 
       for (const line of lines) {
-        // Skip header/label lines (e.g. "name", "apps", "Conv % includes...", pagination markers)
-        if (/^name$/i.test(line) || /^apps$/i.test(line) || /includes blocked/i.test(line) || /^\d+ of \d+$/i.test(line) || /^<|^>/.test(line)) continue;
+        // Skip header/label lines (e.g. "name", "apps", column headers, pagination markers)
+        if (/^name$/i.test(line) || /^apps$/i.test(line) || /includes blocked/i.test(line) || /^\d+ of \d+$/i.test(line) || /^<|^>/.test(line) || /^all carries/i.test(line)) continue;
 
-        // A line with tabs and mostly numbers is a stats row
         const tabParts = line.split(/\t+/).map(p => p.trim());
-        const looksLikeStatsRow = tabParts.length >= 9 && !isNaN(parseFloat(tabParts[0]));
+        const looksLikeStatsRow = tabParts.length >= minCols && !isNaN(parseFloat(tabParts[0]));
 
         if (looksLikeStatsRow && pendingName) {
-          const [apps, mins, goals, xg, goalsVsXg, shots, sot, convPct, xgPerShot] = tabParts;
-          rows.push({
-            name: pendingName,
-            apps: parseInt(apps) || 0,
-            mins: parseInt(mins) || 0,
-            goals: parseFloat(goals) || 0,
-            xg: parseFloat(xg) || 0,
-            goalsVsXg: parseFloat(goalsVsXg) || 0,
-            shots: parseInt(shots) || 0,
-            sot: parseInt(sot) || 0,
-            convPct: parseFloat((convPct || "0").replace("%", "")) || 0,
-            xgPerShot: parseFloat(xgPerShot) || 0,
-          });
+          if (dataType === "carrying") {
+            const [apps, mins, totalCarries, totalDist, totalAvg, progCarries, progDist, progAvg, endedShot, endedGoal, endedChance, endedAssist] = tabParts;
+            rows.push({
+              name: pendingName,
+              apps: parseInt(apps) || 0,
+              mins: parseInt(mins) || 0,
+              totalCarries: parseInt(totalCarries) || 0,
+              totalDistance: parseFloat(totalDist) || 0,
+              avgDistance: parseFloat(totalAvg) || 0,
+              progCarries: parseInt(progCarries) || 0,
+              progDistance: parseFloat(progDist) || 0,
+              progAvgDistance: parseFloat(progAvg) || 0,
+              endedShot: parseInt(endedShot) || 0,
+              endedGoal: parseInt(endedGoal) || 0,
+              endedChance: parseInt(endedChance) || 0,
+              endedAssist: parseInt(endedAssist) || 0,
+            });
+          } else {
+            const [apps, mins, goals, xg, goalsVsXg, shots, sot, convPct, xgPerShot] = tabParts;
+            rows.push({
+              name: pendingName,
+              apps: parseInt(apps) || 0,
+              mins: parseInt(mins) || 0,
+              goals: parseFloat(goals) || 0,
+              xg: parseFloat(xg) || 0,
+              goalsVsXg: parseFloat(goalsVsXg) || 0,
+              shots: parseInt(shots) || 0,
+              sot: parseInt(sot) || 0,
+              convPct: parseFloat((convPct || "0").replace("%", "")) || 0,
+              xgPerShot: parseFloat(xgPerShot) || 0,
+            });
+          }
           pendingName = null;
         } else if (!looksLikeStatsRow) {
-          // This is a name line — strip "team logo" prefix if present
           pendingName = line.replace(/^team ?logo/i, "").trim();
         }
       }
 
       if (rows.length === 0) {
-        setParseError("Couldn't parse any valid rows. Expected format: a name line (optionally prefixed 'team logo'), followed by a tab-separated line of apps, mins, goals, xg, goals vs xg, shots, sot, conv%, xG per shot.");
+        const expected = dataType === "carrying"
+          ? "a name line, followed by a tab-separated line of apps, mins, total carries, distance, avg, progressive carries, progressive distance, progressive avg, ended-in-shot, ended-in-goal, ended-in-chance, ended-in-assist."
+          : "a name line, followed by a tab-separated line of apps, mins, goals, xg, goals vs xg, shots, sot, conv%, xG per shot.";
+        setParseError("Couldn't parse any valid rows. Expected format: " + expected);
         setParsedRows([]);
         return;
       }
@@ -5258,19 +5289,32 @@ function PasteStatsGraphic() {
 
   const sorted = [...parsedRows].sort((a, b) => sortDir === "desc" ? b[sortMetric] - a[sortMetric] : a[sortMetric] - b[sortMetric]);
   const displayed = sorted.slice(0, topN);
-  const metricLabel = METRICS.find(m => m.key === sortMetric)?.label || sortMetric;
+  const metricLabel = (dataType === "carrying" ? METRICS_CARRYING : METRICS_GOALSXG).find(m => m.key === sortMetric)?.label || sortMetric;
 
   const formatVal = (row) => {
     const v = row[sortMetric];
     if (sortMetric === "convPct") return `${v.toFixed(2)}%`;
     if (sortMetric === "goalsVsXg") return (v > 0 ? "+" : "") + v.toFixed(2);
     if (sortMetric === "xg" || sortMetric === "xgPerShot") return v.toFixed(2);
+    if (sortMetric === "avgDistance") return v.toFixed(1) + "m";
     return v;
   };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ fontSize: 11, color: "#e2e8f0" }}>Paste raw tabular stat data (like an Opta/xG export) and generate a clean ranked card from it.</div>
+
+      <div style={{ display: "flex", gap: 6 }}>
+        {[{ v: "goalsxg", label: "⚽ Goals / xG" }, { v: "carrying", label: "🏃 Carrying" }].map(t => (
+          <button
+            key={t.v}
+            onClick={() => { setDataType(t.v); setSortMetric(t.v === "carrying" ? "totalCarries" : "goalsVsXg"); setParsedRows([]); setParseError(""); }}
+            style={{ background: dataType === t.v ? "#4ade8022" : "none", border: `1px solid ${dataType === t.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: dataType === t.v ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "7px 14px" }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
       <div>
         <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Card Title</div>
@@ -5311,7 +5355,7 @@ function PasteStatsGraphic() {
               onChange={e => setSortMetric(e.target.value)}
               style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
             >
-              {METRICS.map(m => <option key={m.key} value={m.key}>{m.label}</option>)}
+              {(dataType === "carrying" ? METRICS_CARRYING : METRICS_GOALSXG).map(m => <option key={m.key} value={m.key}>{m.label}</option>)}
             </select>
           </div>
 
@@ -5372,14 +5416,21 @@ function PasteStatsGraphic() {
                     <div style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>{displayed[0].name}</div>
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-                    {[
+                    {(dataType === "carrying" ? [
+                      { label: "Total Carries", value: displayed[0].totalCarries, color: "#4ade80" },
+                      { label: "Prog. Carries", value: displayed[0].progCarries, color: "#60a5fa" },
+                      { label: "Avg Distance", value: displayed[0].avgDistance.toFixed(1) + "m", color: "#f0f0f0" },
+                      { label: "Ended in Shot", value: displayed[0].endedShot, color: "#fbbf24" },
+                      { label: "Ended in Goal", value: displayed[0].endedGoal, color: "#4ade80" },
+                      { label: "Ended in Chance", value: displayed[0].endedChance, color: "#a855f7" },
+                    ] : [
                       { label: "Goals", value: displayed[0].goals, color: "#4ade80" },
                       { label: "xG", value: displayed[0].xg.toFixed(2), color: "#60a5fa" },
                       { label: "Goals vs xG", value: (displayed[0].goalsVsXg > 0 ? "+" : "") + displayed[0].goalsVsXg.toFixed(2), color: displayed[0].goalsVsXg >= 0 ? "#4ade80" : "#f87171" },
                       { label: "Shots", value: displayed[0].shots, color: "#f0f0f0" },
                       { label: "On Target", value: displayed[0].sot, color: "#f0f0f0" },
                       { label: "Conv %", value: displayed[0].convPct.toFixed(2) + "%", color: "#fbbf24" },
-                    ].map((stat, i) => (
+                    ]).map((stat, i) => (
                       <div key={i} style={{ background: "#13131f", borderRadius: 10, padding: "14px 8px", textAlign: "center" }}>
                         <div style={{ fontSize: 22, fontWeight: 900, color: stat.color }}>{stat.value}</div>
                         <div style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginTop: 4 }}>{stat.label}</div>
