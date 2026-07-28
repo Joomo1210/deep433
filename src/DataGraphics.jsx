@@ -4165,7 +4165,7 @@ function BackFourBattleGraphic() {
                         const isBest = values[i] === maxVal && maxVal > 0;
                         return (
                           <div key={slot} style={{ textAlign: "center", background: "#13131f", borderRadius: 8, padding: "8px 4px" }}>
-                            <span style={{ fontSize: 22, fontWeight: 900, color: SLOT_COLORS[slot], opacity: isBest ? 1 : 0.75 }}>
+                            <span style={{ fontSize: 22, fontWeight: 900, color: SLOT_COLORS[slot] }}>
                               {state[slot].player[stat.key] ?? "—"}{stat.suffix || ""}
                             </span>
                           </div>
@@ -4381,7 +4381,7 @@ function TrioBattleGraphic() {
                         const isBest = values[i] === maxVal && maxVal > 0;
                         return (
                           <div key={slot} style={{ textAlign: "center", background: "#13131f", borderRadius: 8, padding: "10px 4px" }}>
-                            <span style={{ fontSize: 24, fontWeight: 900, color: SLOT_COLORS[slot], opacity: isBest ? 1 : 0.75 }}>
+                            <span style={{ fontSize: 24, fontWeight: 900, color: SLOT_COLORS[slot] }}>
                               {state[slot].player[stat.key] ?? "—"}{stat.suffix || ""}
                             </span>
                           </div>
@@ -5389,11 +5389,11 @@ function PasteStatsGraphic() {
                           <span style={{ fontSize: 10, color: "#4ade80", width: 28, textAlign: "right" }}>{row.goals}</span>
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <span style={{ fontSize: 10, color: "#94a3b8", width: 34, fontWeight: 700 }}>xG</span>
+                          <span style={{ fontSize: 10, color: "#60a5fa", width: 34, fontWeight: 700 }}>xG</span>
                           <div style={{ flex: 1, height: 7, background: "#1a1a24", borderRadius: 3, overflow: "hidden" }}>
-                            <div style={{ width: `${xgPct}%`, height: "100%", background: "#94a3b8", borderRadius: 3 }} />
+                            <div style={{ width: `${xgPct}%`, height: "100%", background: "#60a5fa", borderRadius: 3 }} />
                           </div>
-                          <span style={{ fontSize: 10, color: "#94a3b8", width: 28, textAlign: "right" }}>{row.xg.toFixed(2)}</span>
+                          <span style={{ fontSize: 10, color: "#60a5fa", width: 28, textAlign: "right" }}>{row.xg.toFixed(2)}</span>
                         </div>
                       </div>
                     ) : (
