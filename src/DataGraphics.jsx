@@ -5180,14 +5180,14 @@ function PasteStatsGraphic() {
     { key: "crossesTotal", label: "Crosses (Total)" },
     { key: "throughBalls", label: "Through Balls" },
   ];
-  // PLACEHOLDER column guess — not yet confirmed against a real pasted
-  // example. Verify actual column order/count before relying on this.
+  // Confirmed real format
   const METRICS_GOALKEEPING = [
-    { key: "saves", label: "Saves" },
+    { key: "goalsPrevented", label: "Goals Prevented" },
+    { key: "gpRate", label: "GP Rate" },
     { key: "savePct", label: "Save %" },
-    { key: "cleanSheets", label: "Clean Sheets" },
+    { key: "saves", label: "Saves Made" },
     { key: "goalsConceded", label: "Goals Conceded" },
-    { key: "goalsPrevented", label: "Goals Prevented (PSxG)" },
+    { key: "xgotConceded", label: "xGOT Conceded" },
   ];
   // PLACEHOLDER column guess — not yet confirmed against a real pasted
   // example. Verify actual column order/count before relying on this.
@@ -5244,7 +5244,7 @@ function PasteStatsGraphic() {
       const lines = rawText.split("\n").map(l => l.trim()).filter(l => l.length > 0);
       const rows = [];
       let pendingName = null;
-      const minCols = (dataType === "carrying" || dataType === "passing") ? 12 : dataType === "goalsxg" ? 9 : 5;
+      const minCols = (dataType === "carrying" || dataType === "passing") ? 12 : dataType === "goalsxg" ? 9 : dataType === "goalkeeping" ? 8 : 5;
 
       for (const line of lines) {
         // Skip header/label lines (e.g. "name", "apps", column headers, pagination markers)
@@ -5289,17 +5289,19 @@ function PasteStatsGraphic() {
               throughBalls: parseInt(throughBalls) || 0,
             });
           } else if (dataType === "goalkeeping") {
-            // PLACEHOLDER mapping — confirm against a real pasted example
-            const [apps, mins, saves, savePct, cleanSheets, goalsConceded, goalsPrevented] = tabParts;
+            // Confirmed real format: apps, mins, goals conceded, saves made,
+            // save %, xGOT conceded, goals prevented, GP rate
+            const [apps, mins, goalsConceded, saves, savePct, xgotConceded, goalsPrevented, gpRate] = tabParts;
             rows.push({
               name: pendingName,
               apps: parseInt(apps) || 0,
               mins: parseInt(mins) || 0,
-              saves: parseInt(saves) || 0,
-              savePct: parseFloat((savePct || "0").replace("%", "")) || 0,
-              cleanSheets: parseInt(cleanSheets) || 0,
               goalsConceded: parseInt(goalsConceded) || 0,
+              saves: parseInt(saves) || 0,
+              savePct: parseFloat(savePct) || 0,
+              xgotConceded: parseFloat(xgotConceded) || 0,
               goalsPrevented: parseFloat(goalsPrevented) || 0,
+              gpRate: parseFloat(gpRate) || 0,
             });
           } else if (dataType === "defending") {
             // PLACEHOLDER mapping — confirm against a real pasted example
@@ -5397,7 +5399,7 @@ function PasteStatsGraphic() {
             key={t.v}
             onClick={() => {
               setDataType(t.v);
-              const defaultMetric = { goalsxg: "goalsVsXg", carrying: "totalCarries", passing: "openPlayPct", goalkeeping: "saves", defending: "tackles" }[t.v];
+              const defaultMetric = { goalsxg: "goalsVsXg", carrying: "totalCarries", passing: "openPlayPct", goalkeeping: "goalsPrevented", defending: "tackles" }[t.v];
               setSortMetric(defaultMetric);
               setParsedRows([]);
               setParseError("");
@@ -5408,7 +5410,7 @@ function PasteStatsGraphic() {
           </button>
         ))}
       </div>
-      {(dataType === "goalkeeping" || dataType === "defending") && (
+      {dataType === "defending" && (
         <div style={{ fontSize: 10, color: "#f59e0b", background: "#f59e0b15", border: "1px solid #f59e0b40", borderRadius: 8, padding: "8px 12px" }}>
           ⚠️ This format is a placeholder — paste a real example and I'll confirm/adjust the exact column mapping before you rely on it.
         </div>
@@ -5527,7 +5529,14 @@ function PasteStatsGraphic() {
                       { label: "Open Play (Total)", value: displayed[0].openPlayTotal, color: "#f0f0f0" },
                       { label: "Crosses (Total)", value: displayed[0].crossesTotal, color: "#f0f0f0" },
                       { label: "Through Balls", value: displayed[0].throughBalls, color: "#a855f7" },
-                    ] : (dataType === "goalkeeping" || dataType === "defending") ? getMetricsList().map(m => ({
+                    ] : dataType === "goalkeeping" ? [
+                      { label: "Goals Prevented", value: (displayed[0].goalsPrevented > 0 ? "+" : "") + displayed[0].goalsPrevented.toFixed(1), color: displayed[0].goalsPrevented >= 0 ? "#4ade80" : "#f87171" },
+                      { label: "GP Rate", value: displayed[0].gpRate.toFixed(1), color: "#60a5fa" },
+                      { label: "Save %", value: displayed[0].savePct.toFixed(1) + "%", color: "#fbbf24" },
+                      { label: "Saves Made", value: displayed[0].saves, color: "#f0f0f0" },
+                      { label: "Goals Conceded", value: displayed[0].goalsConceded, color: "#f0f0f0" },
+                      { label: "xGOT Conceded", value: displayed[0].xgotConceded.toFixed(1), color: "#a855f7" },
+                    ] : dataType === "defending" ? getMetricsList().map(m => ({
                       label: m.label,
                       value: typeof displayed[0][m.key] === "number" && m.key.toLowerCase().includes("pct") ? displayed[0][m.key].toFixed(1) + "%" : displayed[0][m.key],
                       color: "#f0f0f0",
