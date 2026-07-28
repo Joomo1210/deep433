@@ -4964,6 +4964,367 @@ function TeamOfWeekGraphic() {
   );
 }
 
+// ─── PLAYER TRAJECTORY (one player, multiple past seasons) ──────────────────
+function PlayerTrajectoryGraphic() {
+  const cardRef = useRef(null);
+  const [teamSearch, setTeamSearch] = useState("");
+  const [teamSuggestions, setTeamSuggestions] = useState([]);
+  const [team, setTeam] = useState(null);
+  const [searchingTeam, setSearchingTeam] = useState(false);
+  const [squad, setSquad] = useState([]);
+  const [loadingSquad, setLoadingSquad] = useState(false);
+  const [playerId, setPlayerId] = useState("");
+  const [basePlayer, setBasePlayer] = useState(null);
+  const [seasons, setSeasons] = useState(null);
+  const [loadingSeasons, setLoadingSeasons] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const YEARS_BACK = 4; // current season + 4 prior = 5 seasons shown
+
+  const searchTeam = async (query) => {
+    setTeamSearch(query);
+    if (query.length < 3) { setTeamSuggestions([]); return; }
+    setSearchingTeam(true);
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
+      const d = await r.json();
+      setTeamSuggestions(d.teams || []);
+    } catch {}
+    setSearchingTeam(false);
+  };
+
+  const selectTeam = async (t) => {
+    setLoadingSquad(true);
+    setTeam(t); setTeamSuggestions([]); setTeamSearch(t.name);
+    setPlayerId(""); setBasePlayer(null); setSeasons(null);
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsquad&teamId=${t.id}`);
+      const d = await r.json();
+      setSquad(d.players || []);
+    } catch {}
+    setLoadingSquad(false);
+  };
+
+  const loadTrajectory = async (pid) => {
+    setPlayerId(pid);
+    const p = squad.find(sp => String(sp.id) === String(pid));
+    setBasePlayer(p);
+    if (!p) return;
+
+    setLoadingSeasons(true);
+    setSeasons(null);
+    const currentSeason = 2025;
+    const results = [];
+    for (let i = 0; i <= YEARS_BACK; i++) {
+      const season = currentSeason - i;
+      try {
+        const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${pid}&season=${season}`);
+        const d = await r.json();
+        if (d.available) {
+          results.push({
+            season: `${season}-${String(season + 1).slice(-2)}`,
+            team: d.team,
+            goals: d.goals,
+            assists: d.assists,
+            appearances: d.appearances,
+            rating: d.rating,
+          });
+        } else {
+          results.push({ season: `${season}-${String(season + 1).slice(-2)}`, team: null, goals: null, assists: null, appearances: null, rating: null });
+        }
+      } catch {
+        results.push({ season: `${season}-${String(season + 1).slice(-2)}`, team: null, goals: null, assists: null, appearances: null, rating: null });
+      }
+    }
+    setSeasons(results.reverse()); // oldest to newest
+    setLoadingSeasons(false);
+  };
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, `deep433-trajectory-${basePlayer?.name}.png`, undefined, transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const validSeasons = seasons?.filter(s => s.goals !== null) || [];
+  const maxGoals = validSeasons.length ? Math.max(...validSeasons.map(s => s.goals || 0), 1) : 1;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>See a player's goals, assists, and appearances across the last {YEARS_BACK + 1} seasons — spot trends before predicting next season.</div>
+
+      <div style={{ position: "relative" }}>
+        <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Current Team</div>
+        <input
+          value={teamSearch}
+          onChange={e => searchTeam(e.target.value)}
+          placeholder="Search team..."
+          style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+        />
+        {teamSuggestions.length > 0 && (
+          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 20, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, marginTop: 4, maxHeight: 160, overflowY: "auto" }}>
+            {teamSuggestions.map(t => (
+              <div key={t.id} onClick={() => selectTeam(t)} style={{ padding: "8px 12px", cursor: "pointer", fontSize: 13, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 8 }}>
+                {t.logo && <img src={t.logo} alt="" style={{ width: 16, height: 16, objectFit: "contain" }} />}
+                {t.name}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {loadingSquad && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 12 }}>Loading squad...</div>}
+
+      {squad.length > 0 && (
+        <select
+          value={playerId}
+          onChange={e => loadTrajectory(e.target.value)}
+          style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+        >
+          <option value="">— Select player —</option>
+          {squad.map(p => <option key={p.id} value={p.id}>{p.name} ({p.position})</option>)}
+        </select>
+      )}
+
+      {loadingSeasons && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 12 }}>Loading {YEARS_BACK + 1} seasons of history...</div>}
+
+      {seasons && basePlayer && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "22px 18px" }}>
+              <div style={{ textAlign: "center", marginTop: 30, marginBottom: 6 }}>
+                {basePlayer.photo && <img src={basePlayer.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 8px" }} />}
+                <div style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>{basePlayer.name}</div>
+                <div style={{ fontSize: 12, color: "#a78bfa", fontWeight: 700, marginTop: 2 }}>Season by Season</div>
+              </div>
+
+              {seasons.map((s, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", padding: "10px 0", borderBottom: i < seasons.length - 1 ? "1px solid #1e1830" : "none", gap: 10 }}>
+                  <div style={{ width: 60, fontSize: 12, fontWeight: 800, color: "#e2e8f0" }}>{s.season}</div>
+                  {s.goals !== null ? (
+                    <>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 10, color: "#666", marginBottom: 2 }}>{s.team}</div>
+                        <div style={{ height: 6, background: "#1a1a24", borderRadius: 3, overflow: "hidden" }}>
+                          <div style={{ width: `${Math.max((s.goals / maxGoals) * 100, 4)}%`, height: "100%", background: "#4ade80", borderRadius: 3 }} />
+                        </div>
+                      </div>
+                      <div style={{ width: 100, fontSize: 11, color: "#e2e8f0", textAlign: "right" }}>
+                        <span style={{ color: "#4ade80", fontWeight: 800 }}>{s.goals}G</span> <span style={{ color: "#a855f7", fontWeight: 800 }}>{s.assists}A</span> · {s.appearances} apps
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ flex: 1, fontSize: 11, color: "#555", fontStyle: "italic" }}>No data available</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </GraphicCard>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── PASTE STATS (parse raw tabular data into a visual card) ────────────────
+function PasteStatsGraphic() {
+  const cardRef = useRef(null);
+  const [rawText, setRawText] = useState("");
+  const [parsedRows, setParsedRows] = useState([]);
+  const [parseError, setParseError] = useState("");
+  const [title, setTitle] = useState("");
+  const [sortMetric, setSortMetric] = useState("goalsVsXg");
+  const [sortDir, setSortDir] = useState("desc");
+  const [topN, setTopN] = useState(10);
+  const [downloading, setDownloading] = useState(false);
+
+  const METRICS = [
+    { key: "goalsVsXg", label: "Goals vs xG (overperform/underperform)" },
+    { key: "goals", label: "Goals" },
+    { key: "xg", label: "xG" },
+    { key: "shots", label: "Shots" },
+    { key: "sot", label: "Shots On Target" },
+    { key: "convPct", label: "Conversion %" },
+    { key: "xgPerShot", label: "xG per Shot" },
+  ];
+
+  const parseData = () => {
+    setParseError("");
+    try {
+      const lines = rawText.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+      const rows = [];
+      let pendingName = null;
+
+      for (const line of lines) {
+        // Skip header/label lines (e.g. "name", "apps", "Conv % includes...", pagination markers)
+        if (/^name$/i.test(line) || /^apps$/i.test(line) || /includes blocked/i.test(line) || /^\d+ of \d+$/i.test(line) || /^<|^>/.test(line)) continue;
+
+        // A line with tabs and mostly numbers is a stats row
+        const tabParts = line.split(/\t+/).map(p => p.trim());
+        const looksLikeStatsRow = tabParts.length >= 9 && !isNaN(parseFloat(tabParts[0]));
+
+        if (looksLikeStatsRow && pendingName) {
+          const [apps, mins, goals, xg, goalsVsXg, shots, sot, convPct, xgPerShot] = tabParts;
+          rows.push({
+            name: pendingName,
+            apps: parseInt(apps) || 0,
+            mins: parseInt(mins) || 0,
+            goals: parseFloat(goals) || 0,
+            xg: parseFloat(xg) || 0,
+            goalsVsXg: parseFloat(goalsVsXg) || 0,
+            shots: parseInt(shots) || 0,
+            sot: parseInt(sot) || 0,
+            convPct: parseFloat((convPct || "0").replace("%", "")) || 0,
+            xgPerShot: parseFloat(xgPerShot) || 0,
+          });
+          pendingName = null;
+        } else if (!looksLikeStatsRow) {
+          // This is a name line — strip "team logo" prefix if present
+          pendingName = line.replace(/^team ?logo/i, "").trim();
+        }
+      }
+
+      if (rows.length === 0) {
+        setParseError("Couldn't parse any valid rows. Expected format: a name line (optionally prefixed 'team logo'), followed by a tab-separated line of apps, mins, goals, xg, goals vs xg, shots, sot, conv%, xG per shot.");
+        setParsedRows([]);
+        return;
+      }
+
+      setParsedRows(rows);
+    } catch (e) {
+      setParseError("Parse error: " + e.message);
+      setParsedRows([]);
+    }
+  };
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, `deep433-paste-stats-${sortMetric}.png`, undefined, transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const sorted = [...parsedRows].sort((a, b) => sortDir === "desc" ? b[sortMetric] - a[sortMetric] : a[sortMetric] - b[sortMetric]);
+  const displayed = sorted.slice(0, topN);
+  const metricLabel = METRICS.find(m => m.key === sortMetric)?.label || sortMetric;
+
+  const formatVal = (row) => {
+    const v = row[sortMetric];
+    if (sortMetric === "convPct") return `${v.toFixed(2)}%`;
+    if (sortMetric === "goalsVsXg") return (v > 0 ? "+" : "") + v.toFixed(2);
+    if (sortMetric === "xg" || sortMetric === "xgPerShot") return v.toFixed(2);
+    return v;
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Paste raw tabular stat data (like an Opta/xG export) and generate a clean ranked card from it.</div>
+
+      <div>
+        <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Card Title</div>
+        <input
+          value={title}
+          onChange={e => setTitle(e.target.value)}
+          placeholder="e.g. Premier League xG Overperformers"
+          style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+        />
+      </div>
+
+      <div>
+        <div style={{ fontSize: 10, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Paste Raw Data</div>
+        <textarea
+          value={rawText}
+          onChange={e => setRawText(e.target.value)}
+          placeholder="Paste tab-separated stat rows here..."
+          rows={6}
+          style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 12, padding: "9px 12px", outline: "none", fontFamily: "monospace", resize: "vertical" }}
+        />
+      </div>
+
+      <button onClick={parseData} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
+        Parse Data
+      </button>
+
+      {parseError && <div style={{ color: "#f87171", fontSize: 12 }}>{parseError}</div>}
+      {parsedRows.length > 0 && !parseError && (
+        <div style={{ fontSize: 12, color: "#4ade80" }}>✓ Parsed {parsedRows.length} players successfully</div>
+      )}
+
+      {parsedRows.length > 0 && (
+        <>
+          <div>
+            <div style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, marginBottom: 6 }}>Sort By</div>
+            <select
+              value={sortMetric}
+              onChange={e => setSortMetric(e.target.value)}
+              style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+            >
+              {METRICS.map(m => <option key={m.key} value={m.key}>{m.label}</option>)}
+            </select>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <div>
+              <div style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, marginBottom: 4 }}>Order</div>
+              <div style={{ display: "flex", gap: 6 }}>
+                <button onClick={() => setSortDir("desc")} style={{ flex: 1, background: sortDir === "desc" ? "#4ade8022" : "none", border: `1px solid ${sortDir === "desc" ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: sortDir === "desc" ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "7px" }}>Highest First</button>
+                <button onClick={() => setSortDir("asc")} style={{ flex: 1, background: sortDir === "asc" ? "#4ade8022" : "none", border: `1px solid ${sortDir === "asc" ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: sortDir === "asc" ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "7px" }}>Lowest First</button>
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, marginBottom: 4 }}>Show Top</div>
+              <input type="number" min="3" max="20" value={topN} onChange={e => setTopN(Math.max(3, Math.min(20, parseInt(e.target.value) || 10)))} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "7px 10px", outline: "none", fontFamily: "inherit" }} />
+            </div>
+          </div>
+
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "24px 18px" }}>
+              <div style={{ textAlign: "center", marginTop: 30, marginBottom: 4 }}>
+                <span style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>{title || "Stat Leaders"}</span>
+              </div>
+              <div style={{ textAlign: "center", marginBottom: 16 }}>
+                <span style={{ fontSize: 12, color: "#a78bfa", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{metricLabel}</span>
+              </div>
+
+              {displayed.map((row, i) => {
+                const maxVal = Math.max(...displayed.map(r => Math.abs(r[sortMetric])), 0.01);
+                const barPct = Math.max((Math.abs(row[sortMetric]) / maxVal) * 100, 4);
+                const barColor = sortMetric === "goalsVsXg" ? (row[sortMetric] >= 0 ? "#4ade80" : "#f87171") : "#4ade80";
+                return (
+                  <div key={i} style={{ marginBottom: 10 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: "#f0f0f0" }}>{i + 1}. {row.name}</span>
+                      <span style={{ fontSize: 14, fontWeight: 900, color: barColor }}>{formatVal(row)}</span>
+                    </div>
+                    <div style={{ height: 6, background: "#1a1a24", borderRadius: 3, overflow: "hidden" }}>
+                      <div style={{ width: `${barPct}%`, height: "100%", background: barColor, borderRadius: 3 }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </GraphicCard>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function DataGraphics({ history = [], supabase }) {
   const [activeSection, setActiveSection] = useState("match");
   const [sectionMenuOpen, setSectionMenuOpen] = useState(false);
@@ -4987,6 +5348,8 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "euroassists", label: "🎯 Europe Top Assists" },
     { id: "predictedlineup", label: "📋 Predicted Lineup" },
     { id: "teamofweek", label: "⭐ Team of the Week" },
+    { id: "playertrajectory", label: "📈 Player Trajectory" },
+    { id: "pastestats", label: "📋 Paste Stats" },
     { id: "zoneofinfluence", label: "⚔️ Zone of Influence" },
     { id: "quickvs", label: "⚡ The Battle" },
     { id: "beyondscoresheet", label: "👁️ Beyond The Scoresheet" },
@@ -5034,6 +5397,8 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "euroassists" && <EuroAssistsGraphic />}
       {activeSection === "predictedlineup" && <PredictedLineupGraphic />}
       {activeSection === "teamofweek" && <TeamOfWeekGraphic />}
+      {activeSection === "playertrajectory" && <PlayerTrajectoryGraphic />}
+      {activeSection === "pastestats" && <PasteStatsGraphic />}
       {activeSection === "zoneofinfluence" && <ZoneOfInfluenceGraphic />}
       {activeSection === "quickvs" && <QuickVSGraphic />}
       {activeSection === "beyondscoresheet" && <BeyondScoresheetGraphic />}
