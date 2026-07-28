@@ -5331,12 +5331,14 @@ function PasteStatsGraphic() {
 
           <div>
             <div style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, marginBottom: 4 }}>Highlight Player (gives them a distinct bar color)</div>
-            <input
+            <select
               value={highlightName}
               onChange={e => setHighlightName(e.target.value)}
-              placeholder="e.g. Julián Alvarez"
               style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit", marginBottom: 12 }}
-            />
+            >
+              <option value="">— None —</option>
+              {parsedRows.map((r, i) => <option key={i} value={r.name}>{r.name}</option>)}
+            </select>
             <div style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, marginBottom: 4 }}>League (for photo matching)</div>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
               {LEAGUES.map(l => (
@@ -5369,7 +5371,7 @@ function PasteStatsGraphic() {
               {displayed.map((row, i) => {
                 const maxVal = Math.max(...displayed.map(r => Math.abs(r[sortMetric])), 0.01);
                 const barPct = Math.max((Math.abs(row[sortMetric]) / maxVal) * 100, 4);
-                const isHighlighted = highlightName.trim().length > 0 && row.name.toLowerCase().includes(highlightName.trim().toLowerCase());
+                const isHighlighted = highlightName.length > 0 && row.name === highlightName;
                 const barColor = isHighlighted ? "#fbbf24" : (sortMetric === "goalsVsXg" ? (row[sortMetric] >= 0 ? "#4ade80" : "#f87171") : "#4ade80");
 
                 // For Goals vs xG specifically, show actual vs expected as two mini bars
