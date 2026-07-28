@@ -54,20 +54,27 @@ export default function CommunityLeaderboard() {
           <p style={{ color: '#7E9485' }}>No results published yet. Check back soon.</p>
         )}
 
-        {submissions.map((sub, i) => (
-          <div key={sub.id} style={{ border: '1px solid #173A28', borderRadius: 10, padding: 20, marginBottom: 14, background: i === 0 ? '#173A2833' : '#0E2419' }}>
+        {submissions.map((sub, i) => {
+          const topScore = submissions[0]?.total_score;
+          const isTiedForFirst = sub.total_score === topScore;
+          // For 2nd/3rd place medals, rank by distinct score values seen so far,
+          // not raw array index, so ties don't wrongly skip or double up medals.
+          const distinctScoresAbove = new Set(submissions.slice(0, i).map(s => s.total_score)).size;
+
+          return (
+          <div key={sub.id} style={{ border: '1px solid #173A28', borderRadius: 10, padding: 20, marginBottom: 14, background: isTiedForFirst ? '#173A2833' : '#0E2419' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  {i === 0 && <span style={{ fontSize: 20 }}>🥇</span>}
-                  {i === 1 && <span style={{ fontSize: 20 }}>🥈</span>}
-                  {i === 2 && <span style={{ fontSize: 20 }}>🥉</span>}
+                  {isTiedForFirst && <span style={{ fontSize: 20 }}>🥇</span>}
+                  {!isTiedForFirst && distinctScoresAbove === 1 && <span style={{ fontSize: 20 }}>🥈</span>}
+                  {!isTiedForFirst && distinctScoresAbove === 2 && <span style={{ fontSize: 20 }}>🥉</span>}
                   <span style={{ fontSize: 18, fontWeight: 800 }}>{sub.name}</span>
                   <span style={{ fontSize: 14, color: '#7E9485' }}>{sub.x_handle}</span>
                 </div>
                 <div style={{ fontSize: 13, color: '#9CA89C', marginTop: 4 }}>{sub.match_covered}</div>
               </div>
-              {i === 0 && (
+              {isTiedForFirst && (
                 <div style={{ background: '#C8FF4D22', border: '1px solid #C8FF4D', color: '#C8FF4D', fontSize: 11, fontWeight: 800, padding: '4px 10px', borderRadius: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
                   Winner
                 </div>
@@ -87,7 +94,8 @@ export default function CommunityLeaderboard() {
               </div>
             )}
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
