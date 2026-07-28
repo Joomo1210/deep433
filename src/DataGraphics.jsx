@@ -5412,8 +5412,7 @@ function PasteStatsGraphic() {
               {displayed.length === 1 ? (
                 <>
                   <div style={{ textAlign: "center", marginBottom: 18 }}>
-                    {photos[displayed[0].name] && <img src={photos[displayed[0].name]} alt="" crossOrigin="anonymous" style={{ width: 64, height: 64, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 10px" }} />}
-                    <div style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>{displayed[0].name}</div>
+                    {photos[displayed[0].name] && <img src={photos[displayed[0].name]} alt="" crossOrigin="anonymous" style={{ width: 64, height: 64, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto" }} />}
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
                     {(dataType === "carrying" ? [
