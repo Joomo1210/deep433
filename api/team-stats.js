@@ -441,10 +441,7 @@ export default async function handler(req, res) {
         headers: { "x-apisports-key": apiKey }
       });
       let data = await r.json();
-
-      if (req.query.debug === "true") {
-        return res.status(200).json({ debug: true, apiUrl, rawResponseCount: data.response?.length || 0, apiErrors: data.errors, rawResponse: data.response?.slice(0, 3) });
-      }
+      let usedFallback = false;
 
       // If the league-scoped search comes back empty, the new season likely has no
       // registered player data yet — automatically retry with the previous season.
@@ -454,6 +451,11 @@ export default async function handler(req, res) {
         const prevUrl = `https://v3.football.api-sports.io/players?search=${encodeURIComponent(query)}&league=${league.id}&season=${league.season - 1}`;
         r = await fetch(prevUrl, { headers: { "x-apisports-key": apiKey } });
         data = await r.json();
+        usedFallback = true;
+      }
+
+      if (req.query.debug === "true") {
+        return res.status(200).json({ debug: true, apiUrl, usedFallback, finalResponseCount: data.response?.length || 0, apiErrors: data.errors, rawResponse: data.response?.slice(0, 3) });
       }
 
       const players = (data.response || []).slice(0, 8).map(p => ({
