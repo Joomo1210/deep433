@@ -5379,7 +5379,17 @@ function PasteStatsGraphic() {
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "18px 16px" }}>
               <div style={{ textAlign: "center", marginTop: 30, marginBottom: 4 }}>
-                <span style={{ fontSize: 24, fontWeight: 900, color: "#f0f0f0" }}>{title || "Stat Leaders"}</span>
+                <span style={{
+                  fontSize: 30,
+                  fontWeight: 900,
+                  letterSpacing: -0.5,
+                  lineHeight: 1.15,
+                  background: "linear-gradient(90deg, #ffffff 0%, #e2e8f0 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                  textShadow: "0 2px 12px rgba(74,222,128,0.15)",
+                }}>{title || "Stat Leaders"}</span>
               </div>
 
               {displayed.length === 1 ? (
@@ -5722,7 +5732,17 @@ function AdvancedStatsParserGraphic() {
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "18px 16px" }}>
               <div style={{ textAlign: "center", marginTop: 30, marginBottom: 4 }}>
-                <span style={{ fontSize: 24, fontWeight: 900, color: "#f0f0f0" }}>{title || "Stat Leaders"}</span>
+                <span style={{
+                  fontSize: 30,
+                  fontWeight: 900,
+                  letterSpacing: -0.5,
+                  lineHeight: 1.15,
+                  background: "linear-gradient(90deg, #ffffff 0%, #e2e8f0 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                  textShadow: "0 2px 12px rgba(74,222,128,0.15)",
+                }}>{title || "Stat Leaders"}</span>
               </div>
 
               {displayed.length === 1 ? (
