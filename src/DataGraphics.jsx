@@ -5379,17 +5379,7 @@ function PasteStatsGraphic() {
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "18px 16px" }}>
               <div style={{ textAlign: "center", marginTop: 30, marginBottom: 4 }}>
-                <span style={{
-                  fontSize: 30,
-                  fontWeight: 900,
-                  letterSpacing: -0.5,
-                  lineHeight: 1.15,
-                  background: "linear-gradient(90deg, #ffffff 0%, #e2e8f0 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                  textShadow: "0 2px 12px rgba(74,222,128,0.15)",
-                }}>{title || "Stat Leaders"}</span>
+                <span style={{ fontSize: 30, fontWeight: 900, letterSpacing: -0.5, color: "#ffffff" }}>{title || "Stat Leaders"}</span>
               </div>
 
               {displayed.length === 1 ? (
@@ -5414,8 +5404,8 @@ function PasteStatsGraphic() {
                       { label: "Conv %", value: displayed[0].convPct.toFixed(2) + "%", color: "#fbbf24" },
                     ]).map((stat, i) => (
                       <div key={i} style={{ background: "#13131f", borderRadius: 10, padding: "14px 8px", textAlign: "center" }}>
-                        <div style={{ fontSize: 22, fontWeight: 900, color: stat.color }}>{stat.value}</div>
-                        <div style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginTop: 4 }}>{stat.label}</div>
+                        <div style={{ fontSize: 34, fontWeight: 900, color: stat.color, letterSpacing: -0.5, textShadow: `0 0 20px ${stat.color}55` }}>{stat.value}</div>
+                        <div style={{ fontSize: 11, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginTop: 6 }}>{stat.label}</div>
                       </div>
                     ))}
                   </div>
@@ -5444,7 +5434,7 @@ function PasteStatsGraphic() {
                         {photos[row.name] && <img src={photos[row.name]} alt="" crossOrigin="anonymous" style={{ width: 26, height: 26, borderRadius: "50%", objectFit: "cover" }} />}
                         {i + 1}. {row.name}
                       </span>
-                      <span style={{ fontSize: 17, fontWeight: 900, color: barColor }}>{formatVal(row)}</span>
+                      <span style={{ fontSize: 24, fontWeight: 900, color: barColor, letterSpacing: -0.5, textShadow: `0 0 16px ${barColor}55` }}>{formatVal(row)}</span>
                     </div>
 
                     {showDualBar ? (
@@ -5732,17 +5722,7 @@ function AdvancedStatsParserGraphic() {
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "18px 16px" }}>
               <div style={{ textAlign: "center", marginTop: 30, marginBottom: 4 }}>
-                <span style={{
-                  fontSize: 30,
-                  fontWeight: 900,
-                  letterSpacing: -0.5,
-                  lineHeight: 1.15,
-                  background: "linear-gradient(90deg, #ffffff 0%, #e2e8f0 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                  textShadow: "0 2px 12px rgba(74,222,128,0.15)",
-                }}>{title || "Stat Leaders"}</span>
+                <span style={{ fontSize: 30, fontWeight: 900, letterSpacing: -0.5, color: "#ffffff" }}>{title || "Stat Leaders"}</span>
               </div>
 
               {displayed.length === 1 ? (
@@ -5753,7 +5733,7 @@ function AdvancedStatsParserGraphic() {
                     return (
                       <div key={i} style={{ background: "#13131f", borderRadius: 10, padding: "14px 8px", textAlign: "center" }}>
                         <div style={{ fontSize: 22, fontWeight: 900, color: "#4ade80" }}>{typeof v === "number" && isPct ? v.toFixed(1) + "%" : v}</div>
-                        <div style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginTop: 4 }}>{m.label}</div>
+                        <div style={{ fontSize: 11, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginTop: 6 }}>{m.label}</div>
                       </div>
                     );
                   })}
