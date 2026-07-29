@@ -5378,9 +5378,7 @@ function PasteStatsGraphic() {
 
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "18px 16px" }}>
-              <div style={{ textAlign: "center", marginTop: 30, marginBottom: 4 }}>
-                <span style={{ fontSize: 30, fontWeight: 900, letterSpacing: -0.5, color: "#ffffff" }}>{title || "Stat Leaders"}</span>
-              </div>
+              <div style={{ marginTop: 8 }} />
 
               {displayed.length === 1 ? (
                 <>
@@ -5721,9 +5719,7 @@ function AdvancedStatsParserGraphic() {
 
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "18px 16px" }}>
-              <div style={{ textAlign: "center", marginTop: 30, marginBottom: 4 }}>
-                <span style={{ fontSize: 30, fontWeight: 900, letterSpacing: -0.5, color: "#ffffff" }}>{title || "Stat Leaders"}</span>
-              </div>
+              <div style={{ marginTop: 8 }} />
 
               {displayed.length === 1 ? (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
