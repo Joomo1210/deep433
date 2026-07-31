@@ -6131,7 +6131,7 @@ function PercentileRadarGraphic() {
                       return (
                         <div key={i} style={{ position: "absolute", left: `${leftPct}%`, top: `${topPct}%`, transform: "translate(-50%, -50%)", textAlign: "center", width: 80 }}>
                           <div style={{ fontSize: 11, fontWeight: 700, color: "#e2e8f0" }}>{axis.label}</div>
-                          <div style={{ fontSize: 16, fontWeight: 900, color: "#4ade80" }}>{formatRawValue(axis.key, percentiles[i]?.rawValue)}{player2 && <span style={{ color: "#a855f7" }}> / {formatRawValue(axis.key, percentiles2[i]?.rawValue)}</span>}{player3 && <span style={{ color: "#f59e0b" }}> / {formatRawValue(axis.key, percentiles3[i]?.rawValue)}</span>}</div>
+
                         </div>
                       );
                     })}
