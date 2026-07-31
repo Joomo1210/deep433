@@ -222,18 +222,6 @@ function GraphicCard({ children, cardRef, label, light = false }) {
       >
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
         {/* Centre background watermark */}
-        <div style={{
-          position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
-          pointerEvents: "none", zIndex: 0,
-        }}>
-          <div style={{
-            fontSize: 72, fontWeight: 900, color: light ? "#a855f7" : "#4ade80", opacity: light ? 0.05 : 0.04,
-            letterSpacing: 6, textTransform: "uppercase", userSelect: "none",
-            transform: "rotate(-15deg)", whiteSpace: "nowrap",
-          }}>
-            DEEP433
-          </div>
-        </div>
         <div style={{ position: "relative", zIndex: 1 }}>
           {children}
         </div>
@@ -6121,8 +6109,8 @@ function PercentileRadarGraphic() {
                           key={i}
                           points={buildRadarPoints(axes.map(() => pct), 75, 150, 150)}
                           fill="none"
-                          stroke="#2a2a3a"
-                          strokeWidth="1"
+                          stroke={pct === 100 ? "#ffffff" : "#2a2a3a"}
+                          strokeWidth={pct === 100 ? "2" : "1"}
                         />
                       ))}
                       {/* Axis lines */}
@@ -6532,7 +6520,7 @@ function PositionRadarGraphic() {
                         </marker>
                       </defs>
                       {[20, 40, 60, 80, 100].map((pct, i) => (
-                        <polygon key={i} points={buildRadarPoints(config.axes.map(() => pct), 75, 150, 150)} fill="none" stroke="#2a2a3a" strokeWidth="1" />
+                        <polygon key={i} points={buildRadarPoints(config.axes.map(() => pct), 75, 150, 150)} fill="none" stroke={pct === 100 ? "#ffffff" : "#2a2a3a"} strokeWidth={pct === 100 ? "2" : "1"} />
                       ))}
                       {config.axes.map((axis, i) => {
                         const pos = buildAxisLabelPos(i, config.axes.length, 75, 150, 150);
