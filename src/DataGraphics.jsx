@@ -6094,9 +6094,9 @@ function PercentileRadarGraphic() {
                   <div style={{ textAlign: "center", marginTop: 8, marginBottom: contextLine ? 4 : 60 }}>
                     {player2 ? (
                       <div style={{ display: "flex", justifyContent: "center", gap: 20, flexWrap: "nowrap", whiteSpace: "nowrap", overflowX: "auto" }}>
-                        <span style={{ fontSize: 16, fontWeight: 900, color: "#4ade80" }}>● {player.name}</span>
-                        <span style={{ fontSize: 16, fontWeight: 900, color: "#a855f7" }}>● {player2.name}</span>
-                        {player3 && <span style={{ fontSize: 16, fontWeight: 900, color: "#f59e0b" }}>● {player3.name}</span>}
+                        <span style={{ fontSize: 12, fontWeight: 900, color: "#4ade80" }}>● {player.name}</span>
+                        <span style={{ fontSize: 12, fontWeight: 900, color: "#a855f7" }}>● {player2.name}</span>
+                        {player3 && <span style={{ fontSize: 12, fontWeight: 900, color: "#f59e0b" }}>● {player3.name}</span>}
                       </div>
                     ) : (
                       <span style={{ fontSize: 22, fontWeight: 900, color: "#ffffff" }}>{player.name}</span>
@@ -6110,6 +6110,11 @@ function PercentileRadarGraphic() {
 
                   <div style={{ position: "relative", width: "100%", maxWidth: 320, margin: "0 auto" }}>
                     <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" style={{ display: "block", width: "100%" }}>
+                      <defs>
+                        <marker id="dartHead" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+                          <path d="M0,0 L8,4 L0,8 L2,4 Z" fill="#5a5a6a" />
+                        </marker>
+                      </defs>
                       {/* Background rings */}
                       {[20, 40, 60, 80, 100].map((pct, i) => (
                         <polygon
@@ -6123,7 +6128,7 @@ function PercentileRadarGraphic() {
                       {/* Axis lines */}
                       {axes.map((axis, i) => {
                         const pos = buildAxisLabelPos(i, axes.length, 100, 150, 150);
-                        return <line key={i} x1="150" y1="150" x2={pos.x} y2={pos.y} stroke="#2a2a3a" strokeWidth="1" />;
+                        return <line key={i} x1="150" y1="150" x2={pos.x} y2={pos.y} stroke="#5a5a6a" strokeWidth="1.5" markerEnd="url(#dartHead)" />;
                       })}
                       {/* Data polygon — player 1 */}
                       <polygon
@@ -6510,9 +6515,9 @@ function PositionRadarGraphic() {
                   <div style={{ textAlign: "center", marginTop: 8, marginBottom: 60 }}>
                     {player2Percentiles ? (
                       <div style={{ display: "flex", justifyContent: "center", gap: 20, flexWrap: "nowrap", whiteSpace: "nowrap", overflowX: "auto" }}>
-                        <span style={{ fontSize: 16, fontWeight: 900, color: "#4ade80" }}>● {selectedPlayer}</span>
-                        <span style={{ fontSize: 16, fontWeight: 900, color: "#a855f7" }}>● {comparePlayer}</span>
-                        {player3Percentiles && <span style={{ fontSize: 16, fontWeight: 900, color: "#f59e0b" }}>● {comparePlayer3}</span>}
+                        <span style={{ fontSize: 12, fontWeight: 900, color: "#4ade80" }}>● {selectedPlayer}</span>
+                        <span style={{ fontSize: 12, fontWeight: 900, color: "#a855f7" }}>● {comparePlayer}</span>
+                        {player3Percentiles && <span style={{ fontSize: 12, fontWeight: 900, color: "#f59e0b" }}>● {comparePlayer3}</span>}
                       </div>
                     ) : (
                       <span style={{ fontSize: 22, fontWeight: 900, color: "#ffffff" }}>{selectedPlayer}</span>
@@ -6521,12 +6526,17 @@ function PositionRadarGraphic() {
 
                   <div style={{ position: "relative", width: "100%", maxWidth: 320, margin: "0 auto" }}>
                     <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" style={{ display: "block", width: "100%" }}>
+                      <defs>
+                        <marker id="dartHead" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+                          <path d="M0,0 L8,4 L0,8 L2,4 Z" fill="#5a5a6a" />
+                        </marker>
+                      </defs>
                       {[20, 40, 60, 80, 100].map((pct, i) => (
                         <polygon key={i} points={buildRadarPoints(config.axes.map(() => pct), 100, 150, 150)} fill="none" stroke="#2a2a3a" strokeWidth="1" />
                       ))}
                       {config.axes.map((axis, i) => {
                         const pos = buildAxisLabelPos(i, config.axes.length, 100, 150, 150);
-                        return <line key={i} x1="150" y1="150" x2={pos.x} y2={pos.y} stroke="#2a2a3a" strokeWidth="1" />;
+                        return <line key={i} x1="150" y1="150" x2={pos.x} y2={pos.y} stroke="#5a5a6a" strokeWidth="1.5" markerEnd="url(#dartHead)" />;
                       })}
                       <polygon points={buildRadarPoints(player1Percentiles.map(p => p.scaled), 100, 150, 150)} fill="#4ade8015" stroke="#4ade80" strokeWidth="2.5" />
                       {player2Percentiles && <polygon points={buildRadarPoints(player2Percentiles.map(p => p.scaled), 100, 150, 150)} fill="#a855f715" stroke="#a855f7" strokeWidth="2.5" strokeDasharray="6,3" />}
