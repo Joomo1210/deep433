@@ -5804,13 +5804,13 @@ function PercentileRadarGraphic() {
       { key: "openPlayPct", label: "Passing Accuracy", higherBetter: true },
       { key: "finalThirdPct", label: "Final Third Passing", higherBetter: true },
       { key: "crossesPct", label: "Cross Accuracy", higherBetter: true },
-      { key: "throughBalls", label: "Incisiveness", higherBetter: true },
+      { key: "throughBalls", label: "Through Balls", higherBetter: true },
       { key: "crossesTotal", label: "Delivery Volume", higherBetter: true },
     ],
     // Confirmed real format from earlier session data
     goalkeeping: [
       { key: "goalsPrevented", label: "Goals Prevented", higherBetter: true },
-      { key: "gpRate", label: "GP Rate", higherBetter: true },
+      { key: "gpRate", label: "GK Rating", higherBetter: true },
       { key: "savePct", label: "Save %", higherBetter: true },
       { key: "saves", label: "Saves Made", higherBetter: true },
       { key: "xgotConceded", label: "xGOT Faced", higherBetter: true },
@@ -6162,7 +6162,7 @@ function PercentileRadarGraphic() {
                       return (
                         <div key={i} style={{ position: "absolute", left: `${leftPct}%`, top: `${topPct}%`, transform: "translate(-50%, -50%)", textAlign: "center", width: 80 }}>
                           <div style={{ fontSize: 11, fontWeight: 700, color: "#e2e8f0" }}>{axis.label}</div>
-
+                          <div style={{ fontSize: 16, fontWeight: 900, color: "#4ade80" }}>{percentiles[i]?.scaled}th{player2 && <span style={{ color: "#a855f7" }}> / {percentiles2[i]?.scaled}th</span>}{player3 && <span style={{ color: "#f59e0b" }}> / {percentiles3[i]?.scaled}th</span>}</div>
                         </div>
                       );
                     })}
