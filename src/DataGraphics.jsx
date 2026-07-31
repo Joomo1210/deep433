@@ -5779,6 +5779,7 @@ function PercentileRadarGraphic() {
   const [parsedRows, setParsedRows] = useState([]);
   const [parseError, setParseError] = useState("");
   const [selectedPlayer, setSelectedPlayer] = useState("");
+  const [comparePlayer, setComparePlayer] = useState(""); // "" means no comparison, single-player mode
   const [downloading, setDownloading] = useState(false);
 
   // Axes definitions per dataset type — each maps a stat key to whether
@@ -5884,10 +5885,15 @@ function PercentileRadarGraphic() {
   const calculatePercentile = (value, allValues) => {
     const sorted = [...allValues].sort((a, b) => a - b);
     const rank = sorted.filter(v => v <= value).length;
-    return Math.round((rank / sorted.length) * 100);
+    const raw = Math.round((rank / sorted.length) * 100);
+    // Defensive clamp — guarantees this can never fall outside 0-100,
+    // regardless of any future change to the calculation above or
+    // malformed/edge-case input data.
+    return Math.max(0, Math.min(100, raw));
   };
 
   const player = parsedRows.find(r => r.name === selectedPlayer);
+  const player2 = comparePlayer ? parsedRows.find(r => r.name === comparePlayer) : null;
   const axes = AXES[radarType];
 
   const percentiles = player ? axes.map(axis => ({
@@ -5895,12 +5901,20 @@ function PercentileRadarGraphic() {
     percentile: calculatePercentile(player[axis.key], parsedRows.map(r => r[axis.key])),
   })) : [];
 
-  // Build radar polygon points (SVG), 5 axes evenly spaced around a circle
+  const percentiles2 = player2 ? axes.map(axis => ({
+    label: axis.label,
+    percentile: calculatePercentile(player2[axis.key], parsedRows.map(r => r[axis.key])),
+  })) : [];
+
+  // Build radar polygon points (SVG), 5 axes evenly spaced around a circle.
+  // Every value is clamped to 0-100 before scaling, so no point can ever
+  // render outside the defined radius, regardless of the input value.
   const buildRadarPoints = (values, radius, centerX, centerY) => {
     const angleStep = (2 * Math.PI) / values.length;
     return values.map((v, i) => {
+      const clampedV = Math.max(0, Math.min(100, v));
       const angle = i * angleStep - Math.PI / 2;
-      const r = (v / 100) * radius;
+      const r = (clampedV / 100) * radius;
       const x = centerX + r * Math.cos(angle);
       const y = centerY + r * Math.sin(angle);
       return `${x},${y}`;
@@ -5963,12 +5977,31 @@ function PercentileRadarGraphic() {
             </select>
           </div>
 
+          <div>
+            <div style={{ fontSize: 10, color: "#a855f7", fontWeight: 700, marginBottom: 6 }}>Compare Against (optional)</div>
+            <select
+              value={comparePlayer}
+              onChange={e => setComparePlayer(e.target.value)}
+              style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+            >
+              <option value="">— None —</option>
+              {parsedRows.map((r, i) => <option key={i} value={r.name}>{r.name}</option>)}
+            </select>
+          </div>
+
           {player && (
             <>
               <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
                 <div style={{ padding: "18px 16px" }}>
                   <div style={{ textAlign: "center", marginTop: 8, marginBottom: 20 }}>
-                    <span style={{ fontSize: 22, fontWeight: 900, color: "#ffffff" }}>{player.name}</span>
+                    {player2 ? (
+                      <div style={{ display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 16, fontWeight: 900, color: "#4ade80" }}>● {player.name}</span>
+                        <span style={{ fontSize: 16, fontWeight: 900, color: "#a855f7" }}>● {player2.name}</span>
+                      </div>
+                    ) : (
+                      <span style={{ fontSize: 22, fontWeight: 900, color: "#ffffff" }}>{player.name}</span>
+                    )}
                   </div>
 
                   <div style={{ position: "relative", width: "100%", maxWidth: 320, margin: "0 auto" }}>
@@ -5988,21 +6021,39 @@ function PercentileRadarGraphic() {
                         const pos = buildAxisLabelPos(i, axes.length, 100, 150, 150);
                         return <line key={i} x1="150" y1="150" x2={pos.x} y2={pos.y} stroke="#2a2a3a" strokeWidth="1" />;
                       })}
-                      {/* Data polygon */}
+                      {/* Data polygon — player 1 */}
                       <polygon
                         points={buildRadarPoints(percentiles.map(p => p.percentile), 100, 150, 150)}
                         fill="#4ade8044"
                         stroke="#4ade80"
                         strokeWidth="2"
                       />
-                      {/* Data points */}
+                      {/* Data polygon — player 2 (comparison, if selected) */}
+                      {player2 && (
+                        <polygon
+                          points={buildRadarPoints(percentiles2.map(p => p.percentile), 100, 150, 150)}
+                          fill="#a855f744"
+                          stroke="#a855f7"
+                          strokeWidth="2"
+                        />
+                      )}
+                      {/* Data points — player 1 */}
                       {percentiles.map((p, i) => {
                         const angleStep = (2 * Math.PI) / percentiles.length;
                         const angle = i * angleStep - Math.PI / 2;
-                        const r = (p.percentile / 100) * 100;
+                        const r = (Math.max(0, Math.min(100, p.percentile)) / 100) * 100;
                         const x = 150 + r * Math.cos(angle);
                         const y = 150 + r * Math.sin(angle);
                         return <circle key={i} cx={x} cy={y} r="4" fill="#4ade80" />;
+                      })}
+                      {/* Data points — player 2 (comparison, if selected) */}
+                      {player2 && percentiles2.map((p, i) => {
+                        const angleStep = (2 * Math.PI) / percentiles2.length;
+                        const angle = i * angleStep - Math.PI / 2;
+                        const r = (Math.max(0, Math.min(100, p.percentile)) / 100) * 100;
+                        const x = 150 + r * Math.cos(angle);
+                        const y = 150 + r * Math.sin(angle);
+                        return <circle key={`p2-${i}`} cx={x} cy={y} r="4" fill="#a855f7" />;
                       })}
                     </svg>
 
@@ -6013,7 +6064,7 @@ function PercentileRadarGraphic() {
                       return (
                         <div key={i} style={{ position: "absolute", left: `${leftPct}%`, top: `${topPct}%`, transform: "translate(-50%, -50%)", textAlign: "center", width: 80 }}>
                           <div style={{ fontSize: 11, fontWeight: 700, color: "#e2e8f0" }}>{axis.label}</div>
-                          <div style={{ fontSize: 16, fontWeight: 900, color: "#4ade80" }}>{percentiles[i]?.percentile}th</div>
+                          <div style={{ fontSize: 16, fontWeight: 900, color: "#4ade80" }}>{percentiles[i]?.percentile}th{player2 && <span style={{ color: "#a855f7" }}> / {percentiles2[i]?.percentile}th</span>}</div>
                         </div>
                       );
                     })}
