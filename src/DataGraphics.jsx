@@ -5774,7 +5774,7 @@ function AdvancedStatsParserGraphic() {
 // ─── PERCENTILE RADAR (single dataset, calculates percentiles, spider chart) ─
 function PercentileRadarGraphic() {
   const cardRef = useRef(null);
-  const [radarType, setRadarType] = useState("goalsxg"); // "goalsxg" | "carrying" | "passing"
+  const [radarType, setRadarType] = useState("goalsxg"); // "goalsxg" | "carrying" | "passing" | "goalkeeping" | "defending"
   const [rawText, setRawText] = useState("");
   const [parsedRows, setParsedRows] = useState([]);
   const [parseError, setParseError] = useState("");
@@ -5807,6 +5807,22 @@ function PercentileRadarGraphic() {
       { key: "throughBalls", label: "Incisiveness", higherBetter: true },
       { key: "crossesTotal", label: "Delivery Volume", higherBetter: true },
     ],
+    // Confirmed real format from earlier session data
+    goalkeeping: [
+      { key: "goalsPrevented", label: "Goals Prevented", higherBetter: true },
+      { key: "gpRate", label: "GP Rate", higherBetter: true },
+      { key: "savePct", label: "Save %", higherBetter: true },
+      { key: "saves", label: "Saves Made", higherBetter: true },
+      { key: "xgotConceded", label: "xGOT Faced", higherBetter: true },
+    ],
+    // PLACEHOLDER — not yet confirmed against a real pasted example
+    defending: [
+      { key: "tackles", label: "Tackles", higherBetter: true },
+      { key: "tackleWinPct", label: "Tackles Won %", higherBetter: true },
+      { key: "interceptions", label: "Interceptions", higherBetter: true },
+      { key: "duelsWon", label: "Duels Won", higherBetter: true },
+      { key: "clearances", label: "Clearances", higherBetter: true },
+    ],
   };
 
   const parseData = () => {
@@ -5815,7 +5831,7 @@ function PercentileRadarGraphic() {
       const lines = rawText.split("\n").map(l => l.trim()).filter(l => l.length > 0);
       const rows = [];
       let pendingName = null;
-      const minCols = radarType === "goalsxg" ? 9 : 12;
+      const minCols = radarType === "goalsxg" ? 9 : radarType === "goalkeeping" ? 8 : radarType === "defending" ? 5 : 12;
 
       for (const line of lines) {
         if (/^name$/i.test(line) || /^apps$/i.test(line) || /includes blocked/i.test(line) || /^\d+ of \d+$/i.test(line) || /^<|^>/.test(line) || /^all carries/i.test(line)) continue;
@@ -5844,7 +5860,7 @@ function PercentileRadarGraphic() {
               endedShot: parseInt(endedShot) || 0,
               endedChance: parseInt(endedChance) || 0,
             });
-          } else {
+          } else if (radarType === "passing") {
             const [apps, mins, openPlayTotal, openPlaySuccessful, openPlayPct, finalThirdTotal, finalThirdSuccessful, finalThirdPct, crossesTotal, crossesSuccessful, crossesPct, throughBalls] = tabParts;
             rows.push({
               name: pendingName,
@@ -5853,6 +5869,30 @@ function PercentileRadarGraphic() {
               crossesPct: parseFloat(crossesPct) || 0,
               throughBalls: parseInt(throughBalls) || 0,
               crossesTotal: parseInt(crossesTotal) || 0,
+            });
+          } else if (radarType === "goalkeeping") {
+            // Confirmed real format: apps, mins, goals conceded, saves made,
+            // save %, xGOT conceded, goals prevented, GP rate
+            const [apps, mins, goalsConceded, saves, savePct, xgotConceded, goalsPrevented, gpRate] = tabParts;
+            rows.push({
+              name: pendingName,
+              goalsPrevented: parseFloat(goalsPrevented) || 0,
+              gpRate: parseFloat(gpRate) || 0,
+              savePct: parseFloat(savePct) || 0,
+              saves: parseInt(saves) || 0,
+              xgotConceded: parseFloat(xgotConceded) || 0,
+            });
+          } else {
+            // Defending — PLACEHOLDER mapping, not yet confirmed against a
+            // real pasted example
+            const [apps, mins, tackles, tackleWinPct, interceptions, duelsWon, clearances] = tabParts;
+            rows.push({
+              name: pendingName,
+              tackles: parseInt(tackles) || 0,
+              tackleWinPct: parseFloat(tackleWinPct) || 0,
+              interceptions: parseInt(interceptions) || 0,
+              duelsWon: parseInt(duelsWon) || 0,
+              clearances: parseInt(clearances) || 0,
             });
           }
           pendingName = null;
@@ -5947,17 +5987,28 @@ function PercentileRadarGraphic() {
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ fontSize: 11, color: "#e2e8f0" }}>Paste the full league dataset (50-150+ players) to calculate real percentiles, then select up to 3 players below to display and compare on the radar.</div>
 
-      <div style={{ display: "flex", gap: 6 }}>
-        {[{ v: "goalsxg", label: "⚽ Goals / xG" }, { v: "carrying", label: "🏃 Carrying" }, { v: "passing", label: "🎯 Passing" }].map(t => (
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {[
+          { v: "goalsxg", label: "⚽ Goals / xG" },
+          { v: "carrying", label: "🏃 Carrying" },
+          { v: "passing", label: "🎯 Passing" },
+          { v: "goalkeeping", label: "🧤 Goalkeeping" },
+          { v: "defending", label: "🛡️ Defending" },
+        ].map(t => (
           <button
             key={t.v}
-            onClick={() => { setRadarType(t.v); setParsedRows([]); setParseError(""); setSelectedPlayer(""); }}
+            onClick={() => { setRadarType(t.v); setParsedRows([]); setParseError(""); setSelectedPlayer(""); setComparePlayer(""); setComparePlayer3(""); }}
             style={{ background: radarType === t.v ? "#4ade8022" : "none", border: `1px solid ${radarType === t.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: radarType === t.v ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "7px 14px" }}
           >
             {t.label}
           </button>
         ))}
       </div>
+      {radarType === "defending" && (
+        <div style={{ fontSize: 10, color: "#f59e0b", background: "#f59e0b15", border: "1px solid #f59e0b40", borderRadius: 8, padding: "8px 12px" }}>
+          ⚠️ This format is a placeholder — paste a real example first so the exact columns can be confirmed.
+        </div>
+      )}
 
       <div>
         <div style={{ fontSize: 10, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Paste Full League Dataset</div>
