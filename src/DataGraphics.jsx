@@ -5892,6 +5892,14 @@ function PercentileRadarGraphic() {
     return Math.max(0, Math.min(100, raw));
   };
 
+  // Converts a percentile (higher = better) into "Top X%" phrasing, since
+  // "88th percentile" can misread as worse than "41st" — smaller-number-is-
+  // better "Top X%" framing avoids that ambiguity entirely.
+  const formatAsTopPct = (percentile) => {
+    const topPct = 100 - percentile;
+    return `Top ${Math.max(1, topPct)}%`;
+  };
+
   const player = parsedRows.find(r => r.name === selectedPlayer);
   const player2 = comparePlayer ? parsedRows.find(r => r.name === comparePlayer) : null;
   const axes = AXES[radarType];
@@ -6064,7 +6072,7 @@ function PercentileRadarGraphic() {
                       return (
                         <div key={i} style={{ position: "absolute", left: `${leftPct}%`, top: `${topPct}%`, transform: "translate(-50%, -50%)", textAlign: "center", width: 80 }}>
                           <div style={{ fontSize: 11, fontWeight: 700, color: "#e2e8f0" }}>{axis.label}</div>
-                          <div style={{ fontSize: 16, fontWeight: 900, color: "#4ade80" }}>{percentiles[i]?.percentile}th{player2 && <span style={{ color: "#a855f7" }}> / {percentiles2[i]?.percentile}th</span>}</div>
+                          <div style={{ fontSize: 16, fontWeight: 900, color: "#4ade80" }}>{formatAsTopPct(percentiles[i]?.percentile)}{player2 && <span style={{ color: "#a855f7" }}> / {formatAsTopPct(percentiles2[i]?.percentile)}</span>}</div>
                         </div>
                       );
                     })}
