@@ -6181,7 +6181,9 @@ function PercentileRadarGraphic() {
                       return (
                         <div key={i} style={{ position: "absolute", left: `${leftPct}%`, top: `${topPct}%`, transform: "translate(-50%, -50%)", textAlign: "center", width: 90, background: "rgba(30,30,40,0.55)", borderRadius: 8, padding: "4px 6px" }}>
                           <div style={{ fontSize: 11, fontWeight: 700, color: "#e2e8f0" }}>{axis.label}</div>
-                          <div style={{ fontSize: 15, fontWeight: 900, color: "#4ade80", letterSpacing: 0.5, lineHeight: 1.4 }}>{formatAsTopPct(percentiles[i]?.scaled)}{player2 && <span style={{ color: "#a855f7" }}> / {formatAsTopPct(percentiles2[i]?.scaled)}</span>}{player3 && <span style={{ color: "#f59e0b" }}> / {formatAsTopPct(percentiles3[i]?.scaled)}</span>}</div>
+                          <div style={{ fontSize: 13, fontWeight: 900, color: "#4ade80", letterSpacing: 0.5, lineHeight: 1.3 }}>{formatAsTopPct(percentiles[i]?.scaled)}</div>
+                          {player2 && <div style={{ fontSize: 13, fontWeight: 900, color: "#a855f7", letterSpacing: 0.5, lineHeight: 1.3 }}>{formatAsTopPct(percentiles2[i]?.scaled)}</div>}
+                          {player3 && <div style={{ fontSize: 13, fontWeight: 900, color: "#f59e0b", letterSpacing: 0.5, lineHeight: 1.3 }}>{formatAsTopPct(percentiles3[i]?.scaled)}</div>}
                         </div>
                       );
                     })}
@@ -6537,7 +6539,9 @@ function PositionRadarGraphic() {
                       return (
                         <div key={i} style={{ position: "absolute", left: `${leftPct}%`, top: `${topPct}%`, transform: "translate(-50%, -50%)", textAlign: "center", width: 90, background: "rgba(30,30,40,0.55)", borderRadius: 8, padding: "4px 6px" }}>
                           <div style={{ fontSize: 11, fontWeight: 700, color: "#e2e8f0" }}>{axis.label}</div>
-                          <div style={{ fontSize: 15, fontWeight: 900, color: "#4ade80", letterSpacing: 0.5, lineHeight: 1.4 }}>{formatAsTopPct(player1Percentiles[i]?.scaled)}{player2Percentiles && <span style={{ color: "#a855f7" }}> / {formatAsTopPct(player2Percentiles[i]?.scaled)}</span>}{player3Percentiles && <span style={{ color: "#f59e0b" }}> / {formatAsTopPct(player3Percentiles[i]?.scaled)}</span>}</div>
+                          <div style={{ fontSize: 13, fontWeight: 900, color: "#4ade80", letterSpacing: 0.5, lineHeight: 1.3 }}>{formatAsTopPct(player1Percentiles[i]?.scaled)}</div>
+                          {player2Percentiles && <div style={{ fontSize: 13, fontWeight: 900, color: "#a855f7", letterSpacing: 0.5, lineHeight: 1.3 }}>{formatAsTopPct(player2Percentiles[i]?.scaled)}</div>}
+                          {player3Percentiles && <div style={{ fontSize: 13, fontWeight: 900, color: "#f59e0b", letterSpacing: 0.5, lineHeight: 1.3 }}>{formatAsTopPct(player3Percentiles[i]?.scaled)}</div>}
                         </div>
                       );
                     })}
