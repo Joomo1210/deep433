@@ -6090,10 +6090,10 @@ function PercentileRadarGraphic() {
           {player && (
             <>
               <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-                <div style={{ padding: "52px 48px" }}>
+                <div style={{ padding: "16px 48px 52px" }}>
                   <div style={{ textAlign: "center", marginTop: 8, marginBottom: contextLine ? 4 : 60 }}>
                     {player2 ? (
-                      <div style={{ display: "flex", justifyContent: "center", gap: 20, flexWrap: "nowrap", whiteSpace: "nowrap", overflowX: "auto" }}>
+                      <div style={{ display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap" }}>
                         <span style={{ fontSize: 12, fontWeight: 900, color: "#4ade80" }}>● {player.name}</span>
                         <span style={{ fontSize: 12, fontWeight: 900, color: "#a855f7" }}>● {player2.name}</span>
                         {player3 && <span style={{ fontSize: 12, fontWeight: 900, color: "#f59e0b" }}>● {player3.name}</span>}
@@ -6511,10 +6511,10 @@ function PositionRadarGraphic() {
           {player1Percentiles && (
             <>
               <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-                <div style={{ padding: "52px 48px" }}>
+                <div style={{ padding: "16px 48px 52px" }}>
                   <div style={{ textAlign: "center", marginTop: 8, marginBottom: 60 }}>
                     {player2Percentiles ? (
-                      <div style={{ display: "flex", justifyContent: "center", gap: 20, flexWrap: "nowrap", whiteSpace: "nowrap", overflowX: "auto" }}>
+                      <div style={{ display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap" }}>
                         <span style={{ fontSize: 12, fontWeight: 900, color: "#4ade80" }}>● {selectedPlayer}</span>
                         <span style={{ fontSize: 12, fontWeight: 900, color: "#a855f7" }}>● {comparePlayer}</span>
                         {player3Percentiles && <span style={{ fontSize: 12, fontWeight: 900, color: "#f59e0b" }}>● {comparePlayer3}</span>}
