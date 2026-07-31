@@ -5988,7 +5988,7 @@ function PercentileRadarGraphic() {
   const buildAxisLabelPos = (index, total, radius, centerX, centerY) => {
     const angleStep = (2 * Math.PI) / total;
     const angle = index * angleStep - Math.PI / 2;
-    const r = radius + 30;
+    const r = radius + 40;
     return { x: centerX + r * Math.cos(angle), y: centerY + r * Math.sin(angle) };
   };
 
