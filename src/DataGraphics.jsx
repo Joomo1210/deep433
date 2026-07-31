@@ -6091,7 +6091,7 @@ function PercentileRadarGraphic() {
             <>
               <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
                 <div style={{ padding: "52px 48px" }}>
-                  <div style={{ textAlign: "center", marginTop: 8, marginBottom: contextLine ? 4 : 20 }}>
+                  <div style={{ textAlign: "center", marginTop: 8, marginBottom: contextLine ? 4 : 60 }}>
                     {player2 ? (
                       <div style={{ display: "flex", justifyContent: "center", gap: 20, flexWrap: "nowrap", whiteSpace: "nowrap", overflowX: "auto" }}>
                         <span style={{ fontSize: 16, fontWeight: 900, color: "#4ade80" }}>● {player.name}</span>
@@ -6507,7 +6507,7 @@ function PositionRadarGraphic() {
             <>
               <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
                 <div style={{ padding: "52px 48px" }}>
-                  <div style={{ textAlign: "center", marginTop: 8, marginBottom: 20 }}>
+                  <div style={{ textAlign: "center", marginTop: 8, marginBottom: 60 }}>
                     {player2Percentiles ? (
                       <div style={{ display: "flex", justifyContent: "center", gap: 20, flexWrap: "nowrap", whiteSpace: "nowrap", overflowX: "auto" }}>
                         <span style={{ fontSize: 16, fontWeight: 900, color: "#4ade80" }}>● {selectedPlayer}</span>
