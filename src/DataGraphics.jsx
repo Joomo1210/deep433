@@ -5573,6 +5573,7 @@ function AdvancedStatsParserGraphic() {
             const aerialWinPct = tabParts[6];
             rows.push({
               name: pendingName,
+              mins: parseInt(mins) || 0,
               tackles: parseInt(tackles) || 0,
               tackleWinPct: parseFloat(tackleWinPct) || 0,
               interceptions: parseInt(interceptions) || 0,
@@ -5845,6 +5846,7 @@ function PercentileRadarGraphic() {
             const [apps, mins, goals, xg, goalsVsXg, shots, sot, convPct, xgPerShot] = tabParts;
             rows.push({
               name: pendingName,
+              mins: parseInt(mins) || 0,
               goals: parseFloat(goals) || 0,
               xg: parseFloat(xg) || 0,
               goalsVsXg: parseFloat(goalsVsXg) || 0,
@@ -5857,6 +5859,7 @@ function PercentileRadarGraphic() {
             const [apps, mins, totalCarries, totalDist, avgDist, progCarries, progDist, progAvg, endedShot, endedGoal, endedChance, endedAssist] = tabParts;
             rows.push({
               name: pendingName,
+              mins: parseInt(mins) || 0,
               totalCarries: parseInt(totalCarries) || 0,
               progCarries: parseInt(progCarries) || 0,
               avgDistance: parseFloat(avgDist) || 0,
@@ -5869,6 +5872,7 @@ function PercentileRadarGraphic() {
             const [apps, mins, openPlayTotal, openPlaySuccessful, openPlayPct, finalThirdTotal, finalThirdSuccessful, finalThirdPct, crossesTotal, crossesSuccessful, crossesPct, throughBalls] = tabParts;
             rows.push({
               name: pendingName,
+              mins: parseInt(mins) || 0,
               openPlayPct: parseFloat(openPlayPct) || 0,
               finalThirdPct: parseFloat(finalThirdPct) || 0,
               crossesPct: parseFloat(crossesPct) || 0,
@@ -5883,6 +5887,7 @@ function PercentileRadarGraphic() {
             const [apps, mins, goalsConceded, saves, savePct, xgotConceded, goalsPrevented, gpRate] = tabParts;
             rows.push({
               name: pendingName,
+              mins: parseInt(mins) || 0,
               goalsPrevented: parseFloat(goalsPrevented) || 0,
               gpRate: parseFloat(gpRate) || 0,
               savePct: parseFloat(savePct) || 0,
@@ -5896,6 +5901,7 @@ function PercentileRadarGraphic() {
             const [apps, mins, tackles, tackleWinPct, interceptions, duelsWon, clearances] = tabParts;
             rows.push({
               name: pendingName,
+              mins: parseInt(mins) || 0,
               tackles: parseInt(tackles) || 0,
               tackleWinPct: parseFloat(tackleWinPct) || 0,
               interceptions: parseInt(interceptions) || 0,
@@ -6112,12 +6118,26 @@ function PercentileRadarGraphic() {
                   <div style={{ textAlign: "center", marginTop: 8, marginBottom: contextLine ? 4 : 60 }}>
                     {player2 ? (
                       <div style={{ display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap" }}>
-                        <span style={{ fontSize: 12, fontWeight: 900, color: "#4ade80" }}>● {player.name}</span>
-                        <span style={{ fontSize: 12, fontWeight: 900, color: "#a855f7" }}>● {player2.name}</span>
-                        {player3 && <span style={{ fontSize: 12, fontWeight: 900, color: "#f59e0b" }}>● {player3.name}</span>}
+                        <div>
+                          <div style={{ fontSize: 12, fontWeight: 900, color: "#4ade80" }}>● {player.name}</div>
+                          <div style={{ fontSize: 9, color: "#7E9485", fontWeight: 600 }}>{player.mins} mins</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 12, fontWeight: 900, color: "#a855f7" }}>● {player2.name}</div>
+                          <div style={{ fontSize: 9, color: "#7E9485", fontWeight: 600 }}>{player2.mins} mins</div>
+                        </div>
+                        {player3 && (
+                          <div>
+                            <div style={{ fontSize: 12, fontWeight: 900, color: "#f59e0b" }}>● {player3.name}</div>
+                            <div style={{ fontSize: 9, color: "#7E9485", fontWeight: 600 }}>{player3.mins} mins</div>
+                          </div>
+                        )}
                       </div>
                     ) : (
-                      <span style={{ fontSize: 22, fontWeight: 900, color: "#ffffff" }}>{player.name}</span>
+                      <>
+                        <span style={{ fontSize: 22, fontWeight: 900, color: "#ffffff" }}>{player.name}</span>
+                        <div style={{ fontSize: 11, color: "#7E9485", fontWeight: 600, marginTop: 2 }}>{player.mins} mins</div>
+                      </>
                     )}
                   </div>
                   {contextLine && (
@@ -6352,19 +6372,19 @@ function PositionRadarGraphic() {
       if (looksLikeStatsRow && pendingName) {
         if (datasetType === "goalsxg") {
           const [apps, mins, goals, xg, goalsVsXg, shots, sot, convPct, xgPerShot] = tabParts;
-          rows.push({ name: pendingName, goals: parseFloat(goals) || 0, xg: parseFloat(xg) || 0, goalsVsXg: parseFloat(goalsVsXg) || 0, convPct: parseFloat((convPct || "0").replace("%", "")) || 0, xgPerShot: parseFloat(xgPerShot) || 0, shots: parseInt(shots) || 0, sot: parseInt(sot) || 0 });
+          rows.push({ name: pendingName, mins: parseInt(mins) || 0, goals: parseFloat(goals) || 0, xg: parseFloat(xg) || 0, goalsVsXg: parseFloat(goalsVsXg) || 0, convPct: parseFloat((convPct || "0").replace("%", "")) || 0, xgPerShot: parseFloat(xgPerShot) || 0, shots: parseInt(shots) || 0, sot: parseInt(sot) || 0 });
         } else if (datasetType === "carrying") {
           const [apps, mins, totalCarries, totalDist, avgDist, progCarries, progDist, progAvg, endedShot, endedGoal, endedChance, endedAssist] = tabParts;
-          rows.push({ name: pendingName, totalCarries: parseInt(totalCarries) || 0, progCarries: parseInt(progCarries) || 0, avgDistance: parseFloat(avgDist) || 0, endedShot: parseInt(endedShot) || 0, endedChance: parseInt(endedChance) || 0, endedGoal: parseInt(endedGoal) || 0, endedAssist: parseInt(endedAssist) || 0 });
+          rows.push({ name: pendingName, mins: parseInt(mins) || 0, totalCarries: parseInt(totalCarries) || 0, progCarries: parseInt(progCarries) || 0, avgDistance: parseFloat(avgDist) || 0, endedShot: parseInt(endedShot) || 0, endedChance: parseInt(endedChance) || 0, endedGoal: parseInt(endedGoal) || 0, endedAssist: parseInt(endedAssist) || 0 });
         } else if (datasetType === "passing") {
           const [apps, mins, openPlayTotal, openPlaySuccessful, openPlayPct, finalThirdTotal, finalThirdSuccessful, finalThirdPct, crossesTotal, crossesSuccessful, crossesPct, throughBalls] = tabParts;
-          rows.push({ name: pendingName, openPlayPct: parseFloat(openPlayPct) || 0, finalThirdPct: parseFloat(finalThirdPct) || 0, crossesPct: parseFloat(crossesPct) || 0, throughBalls: parseInt(throughBalls) || 0, crossesTotal: parseInt(crossesTotal) || 0, openPlayTotal: parseInt(openPlayTotal) || 0, finalThirdTotal: parseInt(finalThirdTotal) || 0 });
+          rows.push({ name: pendingName, mins: parseInt(mins) || 0, openPlayPct: parseFloat(openPlayPct) || 0, finalThirdPct: parseFloat(finalThirdPct) || 0, crossesPct: parseFloat(crossesPct) || 0, throughBalls: parseInt(throughBalls) || 0, crossesTotal: parseInt(crossesTotal) || 0, openPlayTotal: parseInt(openPlayTotal) || 0, finalThirdTotal: parseInt(finalThirdTotal) || 0 });
         } else if (datasetType === "goalkeeping") {
           const [apps, mins, goalsConceded, saves, savePct, xgotConceded, goalsPrevented, gpRate] = tabParts;
-          rows.push({ name: pendingName, goalsPrevented: parseFloat(goalsPrevented) || 0, gpRate: parseFloat(gpRate) || 0, savePct: parseFloat(savePct) || 0, saves: parseInt(saves) || 0, xgotConceded: parseFloat(xgotConceded) || 0, goalsConceded: parseInt(goalsConceded) || 0 });
+          rows.push({ name: pendingName, mins: parseInt(mins) || 0, goalsPrevented: parseFloat(goalsPrevented) || 0, gpRate: parseFloat(gpRate) || 0, savePct: parseFloat(savePct) || 0, saves: parseInt(saves) || 0, xgotConceded: parseFloat(xgotConceded) || 0, goalsConceded: parseInt(goalsConceded) || 0 });
         } else {
           const [apps, mins, tackles, tackleWinPct, interceptions, duelsWon, clearances] = tabParts;
-          rows.push({ name: pendingName, tackles: parseInt(tackles) || 0, tackleWinPct: parseFloat(tackleWinPct) || 0, interceptions: parseInt(interceptions) || 0, duelsWon: parseInt(duelsWon) || 0, clearances: parseInt(clearances) || 0 });
+          rows.push({ name: pendingName, mins: parseInt(mins) || 0, tackles: parseInt(tackles) || 0, tackleWinPct: parseFloat(tackleWinPct) || 0, interceptions: parseInt(interceptions) || 0, duelsWon: parseInt(duelsWon) || 0, clearances: parseInt(clearances) || 0 });
         }
         pendingName = null;
       } else if (!looksLikeStatsRow) {
@@ -6549,12 +6569,26 @@ function PositionRadarGraphic() {
                   <div style={{ textAlign: "center", marginTop: 8, marginBottom: 60 }}>
                     {player2Percentiles ? (
                       <div style={{ display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap" }}>
-                        <span style={{ fontSize: 12, fontWeight: 900, color: "#4ade80" }}>● {selectedPlayer}</span>
-                        <span style={{ fontSize: 12, fontWeight: 900, color: "#a855f7" }}>● {comparePlayer}</span>
-                        {player3Percentiles && <span style={{ fontSize: 12, fontWeight: 900, color: "#f59e0b" }}>● {comparePlayer3}</span>}
+                        <div>
+                          <div style={{ fontSize: 12, fontWeight: 900, color: "#4ade80" }}>● {selectedPlayer}</div>
+                          <div style={{ fontSize: 9, color: "#7E9485", fontWeight: 600 }}>{getPlayerData(selectedPlayer)?.mins} mins</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 12, fontWeight: 900, color: "#a855f7" }}>● {comparePlayer}</div>
+                          <div style={{ fontSize: 9, color: "#7E9485", fontWeight: 600 }}>{getPlayerData(comparePlayer)?.mins} mins</div>
+                        </div>
+                        {player3Percentiles && (
+                          <div>
+                            <div style={{ fontSize: 12, fontWeight: 900, color: "#f59e0b" }}>● {comparePlayer3}</div>
+                            <div style={{ fontSize: 9, color: "#7E9485", fontWeight: 600 }}>{getPlayerData(comparePlayer3)?.mins} mins</div>
+                          </div>
+                        )}
                       </div>
                     ) : (
-                      <span style={{ fontSize: 22, fontWeight: 900, color: "#ffffff" }}>{selectedPlayer}</span>
+                      <>
+                        <span style={{ fontSize: 22, fontWeight: 900, color: "#ffffff" }}>{selectedPlayer}</span>
+                        <div style={{ fontSize: 11, color: "#7E9485", fontWeight: 600, marginTop: 2 }}>{getPlayerData(selectedPlayer)?.mins} mins</div>
+                      </>
                     )}
                   </div>
 
