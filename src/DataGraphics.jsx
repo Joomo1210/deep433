@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import DeepInsightsPanel from "./DeepInsightsPanel"; 
+import DeepInsightsPanel from "./DeepInsightsPanel";
 
 // Country name -> ISO code, for flag images (flagcdn.com) — covers national teams
 const TEAM_FLAG_CODES = {
@@ -5723,7 +5723,7 @@ function AdvancedStatsParserGraphic() {
 
               {displayed.length === 1 ? (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-                  {currentMetrics.map((m, i) => {
+                  {currentMetrics.filter(m => m.key !== "throughBalls").slice(0, 6).map((m, i) => {
                     const v = displayed[0][m.key];
                     const isPct = m.key.toLowerCase().includes("pct");
                     return (
@@ -5771,6 +5771,269 @@ function AdvancedStatsParserGraphic() {
   );
 }
 
+// ─── PERCENTILE RADAR (single dataset, calculates percentiles, spider chart) ─
+function PercentileRadarGraphic() {
+  const cardRef = useRef(null);
+  const [radarType, setRadarType] = useState("goalsxg"); // "goalsxg" | "carrying" | "passing"
+  const [rawText, setRawText] = useState("");
+  const [parsedRows, setParsedRows] = useState([]);
+  const [parseError, setParseError] = useState("");
+  const [selectedPlayer, setSelectedPlayer] = useState("");
+  const [downloading, setDownloading] = useState(false);
+
+  // Axes definitions per dataset type — each maps a stat key to whether
+  // higher values are better (for percentile direction).
+  const AXES = {
+    goalsxg: [
+      { key: "goalsVsXg", label: "Finishing", higherBetter: true },
+      { key: "convPct", label: "Conversion", higherBetter: true },
+      { key: "xgPerShot", label: "Chance Quality", higherBetter: true },
+      { key: "shots", label: "Shot Volume", higherBetter: true },
+      { key: "sot", label: "Shot Accuracy", higherBetter: true },
+    ],
+    carrying: [
+      { key: "totalCarries", label: "Carry Volume", higherBetter: true },
+      { key: "progCarries", label: "Progression", higherBetter: true },
+      { key: "avgDistance", label: "Carry Distance", higherBetter: true },
+      { key: "endedShot", label: "Shot Creation", higherBetter: true },
+      { key: "endedChance", label: "Chance Creation", higherBetter: true },
+    ],
+    passing: [
+      { key: "openPlayPct", label: "Passing Accuracy", higherBetter: true },
+      { key: "finalThirdPct", label: "Final Third Passing", higherBetter: true },
+      { key: "crossesPct", label: "Cross Accuracy", higherBetter: true },
+      { key: "throughBalls", label: "Incisiveness", higherBetter: true },
+      { key: "crossesTotal", label: "Delivery Volume", higherBetter: true },
+    ],
+  };
+
+  const parseData = () => {
+    setParseError("");
+    try {
+      const lines = rawText.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+      const rows = [];
+      let pendingName = null;
+      const minCols = radarType === "goalsxg" ? 9 : 12;
+
+      for (const line of lines) {
+        if (/^name$/i.test(line) || /^apps$/i.test(line) || /includes blocked/i.test(line) || /^\d+ of \d+$/i.test(line) || /^<|^>/.test(line) || /^all carries/i.test(line)) continue;
+
+        const tabParts = line.split(/\t+/).map(p => p.trim());
+        const looksLikeStatsRow = tabParts.length >= minCols && !isNaN(parseFloat(tabParts[0]));
+
+        if (looksLikeStatsRow && pendingName) {
+          if (radarType === "goalsxg") {
+            const [apps, mins, goals, xg, goalsVsXg, shots, sot, convPct, xgPerShot] = tabParts;
+            rows.push({
+              name: pendingName,
+              goalsVsXg: parseFloat(goalsVsXg) || 0,
+              convPct: parseFloat((convPct || "0").replace("%", "")) || 0,
+              xgPerShot: parseFloat(xgPerShot) || 0,
+              shots: parseInt(shots) || 0,
+              sot: parseInt(sot) || 0,
+            });
+          } else if (radarType === "carrying") {
+            const [apps, mins, totalCarries, totalDist, avgDist, progCarries, progDist, progAvg, endedShot, endedGoal, endedChance, endedAssist] = tabParts;
+            rows.push({
+              name: pendingName,
+              totalCarries: parseInt(totalCarries) || 0,
+              progCarries: parseInt(progCarries) || 0,
+              avgDistance: parseFloat(avgDist) || 0,
+              endedShot: parseInt(endedShot) || 0,
+              endedChance: parseInt(endedChance) || 0,
+            });
+          } else {
+            const [apps, mins, openPlayTotal, openPlaySuccessful, openPlayPct, finalThirdTotal, finalThirdSuccessful, finalThirdPct, crossesTotal, crossesSuccessful, crossesPct, throughBalls] = tabParts;
+            rows.push({
+              name: pendingName,
+              openPlayPct: parseFloat(openPlayPct) || 0,
+              finalThirdPct: parseFloat(finalThirdPct) || 0,
+              crossesPct: parseFloat(crossesPct) || 0,
+              throughBalls: parseInt(throughBalls) || 0,
+              crossesTotal: parseInt(crossesTotal) || 0,
+            });
+          }
+          pendingName = null;
+        } else if (!looksLikeStatsRow) {
+          pendingName = line.replace(/^team ?logo/i, "").trim();
+        }
+      }
+
+      if (rows.length < 3) {
+        setParseError("Need at least 3 players in the dataset to calculate meaningful percentiles. Paste the full league table, not just one player.");
+        setParsedRows([]);
+        return;
+      }
+
+      setParsedRows(rows);
+      setSelectedPlayer(rows[0].name);
+    } catch (e) {
+      setParseError("Parse error: " + e.message);
+      setParsedRows([]);
+    }
+  };
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, `deep433-percentile-radar-${selectedPlayer}.png`, undefined, transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const calculatePercentile = (value, allValues) => {
+    const sorted = [...allValues].sort((a, b) => a - b);
+    const rank = sorted.filter(v => v <= value).length;
+    return Math.round((rank / sorted.length) * 100);
+  };
+
+  const player = parsedRows.find(r => r.name === selectedPlayer);
+  const axes = AXES[radarType];
+
+  const percentiles = player ? axes.map(axis => ({
+    label: axis.label,
+    percentile: calculatePercentile(player[axis.key], parsedRows.map(r => r[axis.key])),
+  })) : [];
+
+  // Build radar polygon points (SVG), 5 axes evenly spaced around a circle
+  const buildRadarPoints = (values, radius, centerX, centerY) => {
+    const angleStep = (2 * Math.PI) / values.length;
+    return values.map((v, i) => {
+      const angle = i * angleStep - Math.PI / 2;
+      const r = (v / 100) * radius;
+      const x = centerX + r * Math.cos(angle);
+      const y = centerY + r * Math.sin(angle);
+      return `${x},${y}`;
+    }).join(" ");
+  };
+
+  const buildAxisLabelPos = (index, total, radius, centerX, centerY) => {
+    const angleStep = (2 * Math.PI) / total;
+    const angle = index * angleStep - Math.PI / 2;
+    const r = radius + 30;
+    return { x: centerX + r * Math.cos(angle), y: centerY + r * Math.sin(angle) };
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Paste a full league dataset (100+ players) to calculate percentile ranks and render a radar chart for any player.</div>
+
+      <div style={{ display: "flex", gap: 6 }}>
+        {[{ v: "goalsxg", label: "⚽ Goals / xG" }, { v: "carrying", label: "🏃 Carrying" }, { v: "passing", label: "🎯 Passing" }].map(t => (
+          <button
+            key={t.v}
+            onClick={() => { setRadarType(t.v); setParsedRows([]); setParseError(""); setSelectedPlayer(""); }}
+            style={{ background: radarType === t.v ? "#4ade8022" : "none", border: `1px solid ${radarType === t.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: radarType === t.v ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "7px 14px" }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      <div>
+        <div style={{ fontSize: 10, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Paste Full League Dataset</div>
+        <textarea
+          value={rawText}
+          onChange={e => setRawText(e.target.value)}
+          placeholder="Paste the full 100+ player dataset here..."
+          rows={6}
+          style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 12, padding: "9px 12px", outline: "none", fontFamily: "monospace", resize: "vertical" }}
+        />
+      </div>
+
+      <button onClick={parseData} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
+        Parse Data
+      </button>
+
+      {parseError && <div style={{ color: "#f87171", fontSize: 12 }}>{parseError}</div>}
+      {parsedRows.length > 0 && !parseError && (
+        <div style={{ fontSize: 12, color: "#4ade80" }}>✓ Parsed {parsedRows.length} players, ready to calculate percentiles</div>
+      )}
+
+      {parsedRows.length > 0 && (
+        <>
+          <div>
+            <div style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, marginBottom: 6 }}>Select Player</div>
+            <select
+              value={selectedPlayer}
+              onChange={e => setSelectedPlayer(e.target.value)}
+              style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+            >
+              {parsedRows.map((r, i) => <option key={i} value={r.name}>{r.name}</option>)}
+            </select>
+          </div>
+
+          {player && (
+            <>
+              <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+                <div style={{ padding: "18px 16px" }}>
+                  <div style={{ textAlign: "center", marginTop: 8, marginBottom: 20 }}>
+                    <span style={{ fontSize: 22, fontWeight: 900, color: "#ffffff" }}>{player.name}</span>
+                  </div>
+
+                  <div style={{ position: "relative", width: "100%", maxWidth: 320, margin: "0 auto" }}>
+                    <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" style={{ display: "block", width: "100%" }}>
+                      {/* Background rings */}
+                      {[20, 40, 60, 80, 100].map((pct, i) => (
+                        <polygon
+                          key={i}
+                          points={buildRadarPoints(axes.map(() => pct), 100, 150, 150)}
+                          fill="none"
+                          stroke="#2a2a3a"
+                          strokeWidth="1"
+                        />
+                      ))}
+                      {/* Axis lines */}
+                      {axes.map((axis, i) => {
+                        const pos = buildAxisLabelPos(i, axes.length, 100, 150, 150);
+                        return <line key={i} x1="150" y1="150" x2={pos.x} y2={pos.y} stroke="#2a2a3a" strokeWidth="1" />;
+                      })}
+                      {/* Data polygon */}
+                      <polygon
+                        points={buildRadarPoints(percentiles.map(p => p.percentile), 100, 150, 150)}
+                        fill="#4ade8044"
+                        stroke="#4ade80"
+                        strokeWidth="2"
+                      />
+                      {/* Data points */}
+                      {percentiles.map((p, i) => {
+                        const angleStep = (2 * Math.PI) / percentiles.length;
+                        const angle = i * angleStep - Math.PI / 2;
+                        const r = (p.percentile / 100) * 100;
+                        const x = 150 + r * Math.cos(angle);
+                        const y = 150 + r * Math.sin(angle);
+                        return <circle key={i} cx={x} cy={y} r="4" fill="#4ade80" />;
+                      })}
+                    </svg>
+
+                    {axes.map((axis, i) => {
+                      const pos = buildAxisLabelPos(i, axes.length, 100, 150, 150);
+                      const leftPct = (pos.x / 300) * 100;
+                      const topPct = (pos.y / 300) * 100;
+                      return (
+                        <div key={i} style={{ position: "absolute", left: `${leftPct}%`, top: `${topPct}%`, transform: "translate(-50%, -50%)", textAlign: "center", width: 80 }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: "#e2e8f0" }}>{axis.label}</div>
+                          <div style={{ fontSize: 16, fontWeight: 900, color: "#4ade80" }}>{percentiles[i]?.percentile}th</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </GraphicCard>
+              <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+                {downloading ? "Generating..." : "⬇ Download PNG"}
+              </button>
+              <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+                {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+              </button>
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function DataGraphics({ history = [], supabase }) {
   const [activeSection, setActiveSection] = useState("match");
   const [sectionMenuOpen, setSectionMenuOpen] = useState(false);
@@ -5797,6 +6060,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "playertrajectory", label: "📈 Player Trajectory" },
     { id: "pastestats", label: "📋 Paste Stats" },
     { id: "advancedstats", label: "🎯 Passing / GK / Defending" },
+    { id: "percentileradar", label: "🕸️ Percentile Radar" },
     { id: "zoneofinfluence", label: "⚔️ Zone of Influence" },
     { id: "quickvs", label: "⚡ The Battle" },
     { id: "beyondscoresheet", label: "👁️ Beyond The Scoresheet" },
@@ -5847,6 +6111,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "playertrajectory" && <PlayerTrajectoryGraphic />}
       {activeSection === "pastestats" && <PasteStatsGraphic />}
       {activeSection === "advancedstats" && <AdvancedStatsParserGraphic />}
+      {activeSection === "percentileradar" && <PercentileRadarGraphic />}
       {activeSection === "zoneofinfluence" && <ZoneOfInfluenceGraphic />}
       {activeSection === "quickvs" && <QuickVSGraphic />}
       {activeSection === "beyondscoresheet" && <BeyondScoresheetGraphic />}
