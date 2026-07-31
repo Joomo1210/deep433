@@ -5781,6 +5781,8 @@ function PercentileRadarGraphic() {
       { key: "xgPerShot", label: "Chance Quality", higherBetter: true },
       { key: "shots", label: "Shot Volume", higherBetter: true },
       { key: "sot", label: "Shot Accuracy", higherBetter: true },
+      { key: "goals", label: "Goals", higherBetter: true },
+      { key: "xg", label: "xG", higherBetter: true },
     ],
     carrying: [
       { key: "totalCarries", label: "Carry Volume", higherBetter: true },
@@ -5788,6 +5790,8 @@ function PercentileRadarGraphic() {
       { key: "avgDistance", label: "Carry Distance", higherBetter: true },
       { key: "endedShot", label: "Shot Creation", higherBetter: true },
       { key: "endedChance", label: "Chance Creation", higherBetter: true },
+      { key: "endedGoal", label: "Goal Creation", higherBetter: true },
+      { key: "endedAssist", label: "Assist Creation", higherBetter: true },
     ],
     passing: [
       { key: "openPlayPct", label: "Passing Accuracy", higherBetter: true },
@@ -5795,16 +5799,22 @@ function PercentileRadarGraphic() {
       { key: "crossesPct", label: "Cross Accuracy", higherBetter: true },
       { key: "throughBalls", label: "Through Balls", higherBetter: true },
       { key: "crossesTotal", label: "Delivery Volume", higherBetter: true },
+      { key: "openPlayTotal", label: "Open Play Volume", higherBetter: true },
+      { key: "finalThirdTotal", label: "Final Third Volume", higherBetter: true },
     ],
-    // Confirmed real format from earlier session data
+    // Confirmed real format from earlier session data. Capped at 6 axes —
+    // the real 8-column format only has 6 usable stat fields total, so a
+    // 7th genuine metric isn't available without a richer data source.
     goalkeeping: [
       { key: "goalsPrevented", label: "Goals Prevented", higherBetter: true },
       { key: "gpRate", label: "GK Rating", higherBetter: true },
       { key: "savePct", label: "Save %", higherBetter: true },
       { key: "saves", label: "Saves Made", higherBetter: true },
       { key: "xgotConceded", label: "xGOT Faced", higherBetter: true },
+      { key: "goalsConceded", label: "Goals Conceded", higherBetter: false },
     ],
-    // PLACEHOLDER — not yet confirmed against a real pasted example
+    // PLACEHOLDER — not yet confirmed against a real pasted example.
+    // Kept at 5 axes until real data justifies expanding further.
     defending: [
       { key: "tackles", label: "Tackles", higherBetter: true },
       { key: "tackleWinPct", label: "Tackles Won %", higherBetter: true },
@@ -5833,6 +5843,8 @@ function PercentileRadarGraphic() {
             const [apps, mins, goals, xg, goalsVsXg, shots, sot, convPct, xgPerShot] = tabParts;
             rows.push({
               name: pendingName,
+              goals: parseFloat(goals) || 0,
+              xg: parseFloat(xg) || 0,
               goalsVsXg: parseFloat(goalsVsXg) || 0,
               convPct: parseFloat((convPct || "0").replace("%", "")) || 0,
               xgPerShot: parseFloat(xgPerShot) || 0,
@@ -5848,6 +5860,8 @@ function PercentileRadarGraphic() {
               avgDistance: parseFloat(avgDist) || 0,
               endedShot: parseInt(endedShot) || 0,
               endedChance: parseInt(endedChance) || 0,
+              endedGoal: parseInt(endedGoal) || 0,
+              endedAssist: parseInt(endedAssist) || 0,
             });
           } else if (radarType === "passing") {
             const [apps, mins, openPlayTotal, openPlaySuccessful, openPlayPct, finalThirdTotal, finalThirdSuccessful, finalThirdPct, crossesTotal, crossesSuccessful, crossesPct, throughBalls] = tabParts;
@@ -5858,6 +5872,8 @@ function PercentileRadarGraphic() {
               crossesPct: parseFloat(crossesPct) || 0,
               throughBalls: parseInt(throughBalls) || 0,
               crossesTotal: parseInt(crossesTotal) || 0,
+              openPlayTotal: parseInt(openPlayTotal) || 0,
+              finalThirdTotal: parseInt(finalThirdTotal) || 0,
             });
           } else if (radarType === "goalkeeping") {
             // Confirmed real format: apps, mins, goals conceded, saves made,
@@ -5870,6 +5886,7 @@ function PercentileRadarGraphic() {
               savePct: parseFloat(savePct) || 0,
               saves: parseInt(saves) || 0,
               xgotConceded: parseFloat(xgotConceded) || 0,
+              goalsConceded: parseInt(goalsConceded) || 0,
             });
           } else {
             // Defending — PLACEHOLDER mapping, not yet confirmed against a
@@ -6045,38 +6062,45 @@ function PercentileRadarGraphic() {
         <>
           <div>
             <div style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, marginBottom: 6 }}>Select Player</div>
-            <select
+            <input
+              list="pctRadarPlayerList1"
               value={selectedPlayer}
               onChange={e => setSelectedPlayer(e.target.value)}
+              placeholder="Type to search..."
               style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
-            >
-              {parsedRows.map((r, i) => <option key={i} value={r.name}>{r.name}</option>)}
-            </select>
+            />
+            <datalist id="pctRadarPlayerList1">
+              {parsedRows.map((r, i) => <option key={i} value={r.name} />)}
+            </datalist>
           </div>
 
           <div>
             <div style={{ fontSize: 10, color: "#a855f7", fontWeight: 700, marginBottom: 6 }}>Compare Against (optional)</div>
-            <select
+            <input
+              list="pctRadarPlayerList2"
               value={comparePlayer}
               onChange={e => setComparePlayer(e.target.value)}
+              placeholder="Type to search, or leave blank..."
               style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
-            >
-              <option value="">— None —</option>
-              {parsedRows.map((r, i) => <option key={i} value={r.name}>{r.name}</option>)}
-            </select>
+            />
+            <datalist id="pctRadarPlayerList2">
+              {parsedRows.map((r, i) => <option key={i} value={r.name} />)}
+            </datalist>
           </div>
 
           <div>
             <div style={{ fontSize: 10, color: "#f59e0b", fontWeight: 700, marginBottom: 6 }}>3rd Player (optional, max 3 total)</div>
-            <select
+            <input
+              list="pctRadarPlayerList3"
               value={comparePlayer3}
               onChange={e => setComparePlayer3(e.target.value)}
               disabled={!comparePlayer}
+              placeholder="Type to search, or leave blank..."
               style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: comparePlayer ? "#f0f0f0" : "#555", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
-            >
-              <option value="">— None —</option>
-              {parsedRows.map((r, i) => <option key={i} value={r.name}>{r.name}</option>)}
-            </select>
+            />
+            <datalist id="pctRadarPlayerList3">
+              {parsedRows.map((r, i) => <option key={i} value={r.name} />)}
+            </datalist>
           </div>
 
           {player && (
@@ -6235,6 +6259,8 @@ function PositionRadarGraphic() {
         { source: 1, key: "xgPerShot", label: "Chance Quality" },
         { source: 1, key: "shots", label: "Shot Volume" },
         { source: 1, key: "sot", label: "Shot Accuracy" },
+        { source: 1, key: "goals", label: "Goals" },
+        { source: 1, key: "xg", label: "xG" },
       ],
     },
     winger: {
@@ -6246,6 +6272,8 @@ function PositionRadarGraphic() {
         { source: 2, key: "goalsVsXg", label: "Finishing" },
         { source: 2, key: "shots", label: "Shot Volume" },
         { source: 1, key: "endedShot", label: "Shot Creation" },
+        { source: 1, key: "endedGoal", label: "Goal Creation" },
+        { source: 2, key: "convPct", label: "Conversion" },
       ],
     },
     midfielder: {
@@ -6257,6 +6285,8 @@ function PositionRadarGraphic() {
         { source: 2, key: "totalCarries", label: "Carry Volume" },
         { source: 2, key: "progCarries", label: "Progression" },
         { source: 2, key: "endedChance", label: "Chance Creation" },
+        { source: 1, key: "finalThirdPct", label: "Final Third Passing" },
+        { source: 2, key: "endedShot", label: "Shot Creation" },
       ],
     },
     defender: {
@@ -6268,6 +6298,8 @@ function PositionRadarGraphic() {
         { source: 2, key: "tackles", label: "Tackles" },
         { source: 2, key: "interceptions", label: "Interceptions" },
         { source: 2, key: "duelsWon", label: "Duels Won" },
+        { source: 1, key: "crossesPct", label: "Cross Accuracy" },
+        { source: 2, key: "tackleWinPct", label: "Tackles Won %" },
       ],
     },
     fullback: {
@@ -6279,10 +6311,14 @@ function PositionRadarGraphic() {
         { source: 2, key: "crossesTotal", label: "Delivery Volume" },
         { source: 2, key: "crossesPct", label: "Cross Accuracy" },
         { source: 2, key: "openPlayPct", label: "Passing Accuracy" },
+        { source: 1, key: "endedChance", label: "Chance Creation" },
+        { source: 2, key: "finalThirdPct", label: "Final Third Passing" },
       ],
     },
     goalkeeper: {
       label: "🧤 Goalkeeper",
+      // Capped at 6 axes — the confirmed real 8-column format only has 6
+      // usable stat fields total, so a 7th genuine metric isn't available.
       datasets: [{ type: "goalkeeping", label: "Goalkeeping Data" }],
       axes: [
         { source: 1, key: "goalsPrevented", label: "Goals Prevented" },
@@ -6290,6 +6326,7 @@ function PositionRadarGraphic() {
         { source: 1, key: "savePct", label: "Save %" },
         { source: 1, key: "saves", label: "Saves Made" },
         { source: 1, key: "xgotConceded", label: "xGOT Faced" },
+        { source: 1, key: "goalsConceded", label: "Goals Conceded" },
       ],
     },
   };
@@ -6313,16 +6350,16 @@ function PositionRadarGraphic() {
       if (looksLikeStatsRow && pendingName) {
         if (datasetType === "goalsxg") {
           const [apps, mins, goals, xg, goalsVsXg, shots, sot, convPct, xgPerShot] = tabParts;
-          rows.push({ name: pendingName, goalsVsXg: parseFloat(goalsVsXg) || 0, convPct: parseFloat((convPct || "0").replace("%", "")) || 0, xgPerShot: parseFloat(xgPerShot) || 0, shots: parseInt(shots) || 0, sot: parseInt(sot) || 0 });
+          rows.push({ name: pendingName, goals: parseFloat(goals) || 0, xg: parseFloat(xg) || 0, goalsVsXg: parseFloat(goalsVsXg) || 0, convPct: parseFloat((convPct || "0").replace("%", "")) || 0, xgPerShot: parseFloat(xgPerShot) || 0, shots: parseInt(shots) || 0, sot: parseInt(sot) || 0 });
         } else if (datasetType === "carrying") {
           const [apps, mins, totalCarries, totalDist, avgDist, progCarries, progDist, progAvg, endedShot, endedGoal, endedChance, endedAssist] = tabParts;
-          rows.push({ name: pendingName, totalCarries: parseInt(totalCarries) || 0, progCarries: parseInt(progCarries) || 0, avgDistance: parseFloat(avgDist) || 0, endedShot: parseInt(endedShot) || 0, endedChance: parseInt(endedChance) || 0 });
+          rows.push({ name: pendingName, totalCarries: parseInt(totalCarries) || 0, progCarries: parseInt(progCarries) || 0, avgDistance: parseFloat(avgDist) || 0, endedShot: parseInt(endedShot) || 0, endedChance: parseInt(endedChance) || 0, endedGoal: parseInt(endedGoal) || 0, endedAssist: parseInt(endedAssist) || 0 });
         } else if (datasetType === "passing") {
           const [apps, mins, openPlayTotal, openPlaySuccessful, openPlayPct, finalThirdTotal, finalThirdSuccessful, finalThirdPct, crossesTotal, crossesSuccessful, crossesPct, throughBalls] = tabParts;
-          rows.push({ name: pendingName, openPlayPct: parseFloat(openPlayPct) || 0, finalThirdPct: parseFloat(finalThirdPct) || 0, crossesPct: parseFloat(crossesPct) || 0, throughBalls: parseInt(throughBalls) || 0, crossesTotal: parseInt(crossesTotal) || 0 });
+          rows.push({ name: pendingName, openPlayPct: parseFloat(openPlayPct) || 0, finalThirdPct: parseFloat(finalThirdPct) || 0, crossesPct: parseFloat(crossesPct) || 0, throughBalls: parseInt(throughBalls) || 0, crossesTotal: parseInt(crossesTotal) || 0, openPlayTotal: parseInt(openPlayTotal) || 0, finalThirdTotal: parseInt(finalThirdTotal) || 0 });
         } else if (datasetType === "goalkeeping") {
           const [apps, mins, goalsConceded, saves, savePct, xgotConceded, goalsPrevented, gpRate] = tabParts;
-          rows.push({ name: pendingName, goalsPrevented: parseFloat(goalsPrevented) || 0, gpRate: parseFloat(gpRate) || 0, savePct: parseFloat(savePct) || 0, saves: parseInt(saves) || 0, xgotConceded: parseFloat(xgotConceded) || 0 });
+          rows.push({ name: pendingName, goalsPrevented: parseFloat(goalsPrevented) || 0, gpRate: parseFloat(gpRate) || 0, savePct: parseFloat(savePct) || 0, saves: parseInt(saves) || 0, xgotConceded: parseFloat(xgotConceded) || 0, goalsConceded: parseInt(goalsConceded) || 0 });
         } else {
           const [apps, mins, tackles, tackleWinPct, interceptions, duelsWon, clearances] = tabParts;
           rows.push({ name: pendingName, tackles: parseInt(tackles) || 0, tackleWinPct: parseFloat(tackleWinPct) || 0, interceptions: parseInt(interceptions) || 0, duelsWon: parseInt(duelsWon) || 0, clearances: parseInt(clearances) || 0 });
@@ -6483,23 +6520,24 @@ function PositionRadarGraphic() {
         <>
           <div>
             <div style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, marginBottom: 6 }}>Select Player</div>
-            <select value={selectedPlayer} onChange={e => setSelectedPlayer(e.target.value)} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}>
-              {allPlayerNames.map((name, i) => <option key={i} value={name}>{name}</option>)}
-            </select>
+            <input list="posRadarPlayerList1" value={selectedPlayer} onChange={e => setSelectedPlayer(e.target.value)} placeholder="Type to search..." style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+            <datalist id="posRadarPlayerList1">
+              {allPlayerNames.map((name, i) => <option key={i} value={name} />)}
+            </datalist>
           </div>
           <div>
             <div style={{ fontSize: 10, color: "#a855f7", fontWeight: 700, marginBottom: 6 }}>Compare Against (optional)</div>
-            <select value={comparePlayer} onChange={e => setComparePlayer(e.target.value)} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}>
-              <option value="">— None —</option>
-              {allPlayerNames.map((name, i) => <option key={i} value={name}>{name}</option>)}
-            </select>
+            <input list="posRadarPlayerList2" value={comparePlayer} onChange={e => setComparePlayer(e.target.value)} placeholder="Type to search, or leave blank..." style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+            <datalist id="posRadarPlayerList2">
+              {allPlayerNames.map((name, i) => <option key={i} value={name} />)}
+            </datalist>
           </div>
           <div>
             <div style={{ fontSize: 10, color: "#f59e0b", fontWeight: 700, marginBottom: 6 }}>3rd Player (optional, max 3 total)</div>
-            <select value={comparePlayer3} onChange={e => setComparePlayer3(e.target.value)} disabled={!comparePlayer} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: comparePlayer ? "#f0f0f0" : "#555", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}>
-              <option value="">— None —</option>
-              {allPlayerNames.map((name, i) => <option key={i} value={name}>{name}</option>)}
-            </select>
+            <input list="posRadarPlayerList3" value={comparePlayer3} onChange={e => setComparePlayer3(e.target.value)} disabled={!comparePlayer} placeholder="Type to search, or leave blank..." style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: comparePlayer ? "#f0f0f0" : "#555", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+            <datalist id="posRadarPlayerList3">
+              {allPlayerNames.map((name, i) => <option key={i} value={name} />)}
+            </datalist>
           </div>
 
           {player1Percentiles && (
