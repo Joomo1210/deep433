@@ -5941,6 +5941,14 @@ function PercentileRadarGraphic() {
     return Math.max(0, Math.min(100, raw));
   };
 
+  // "Top X%" reads more clearly than raw ordinal percentile for a general
+  // audience — smaller number always means better, matching how people
+  // already read things like "top 1% of earners."
+  const formatAsTopPct = (percentile) => {
+    const topPct = 100 - percentile;
+    return `Top ${Math.max(1, topPct)}%`;
+  };
+
   const player = parsedRows.find(r => r.name === selectedPlayer);
   const player2 = comparePlayer ? parsedRows.find(r => r.name === comparePlayer) : null;
   const player3 = comparePlayer3 ? parsedRows.find(r => r.name === comparePlayer3) : null;
@@ -6162,7 +6170,7 @@ function PercentileRadarGraphic() {
                       return (
                         <div key={i} style={{ position: "absolute", left: `${leftPct}%`, top: `${topPct}%`, transform: "translate(-50%, -50%)", textAlign: "center", width: 80 }}>
                           <div style={{ fontSize: 11, fontWeight: 700, color: "#e2e8f0" }}>{axis.label}</div>
-                          <div style={{ fontSize: 16, fontWeight: 900, color: "#4ade80" }}>{percentiles[i]?.scaled}th{player2 && <span style={{ color: "#a855f7" }}> / {percentiles2[i]?.scaled}th</span>}{player3 && <span style={{ color: "#f59e0b" }}> / {percentiles3[i]?.scaled}th</span>}</div>
+                          <div style={{ fontSize: 16, fontWeight: 900, color: "#4ade80" }}>{formatAsTopPct(percentiles[i]?.scaled)}{player2 && <span style={{ color: "#a855f7" }}> / {formatAsTopPct(percentiles2[i]?.scaled)}</span>}{player3 && <span style={{ color: "#f59e0b" }}> / {formatAsTopPct(percentiles3[i]?.scaled)}</span>}</div>
                         </div>
                       );
                     })}
