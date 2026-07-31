@@ -5988,7 +5988,7 @@ function PercentileRadarGraphic() {
   const buildAxisLabelPos = (index, total, radius, centerX, centerY) => {
     const angleStep = (2 * Math.PI) / total;
     const angle = index * angleStep - Math.PI / 2;
-    const r = radius + 40;
+    const r = radius + 60;
     return { x: centerX + r * Math.cos(angle), y: centerY + r * Math.sin(angle) };
   };
 
@@ -6090,7 +6090,7 @@ function PercentileRadarGraphic() {
           {player && (
             <>
               <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-                <div style={{ padding: "18px 16px" }}>
+                <div style={{ padding: "34px 32px" }}>
                   <div style={{ textAlign: "center", marginTop: 8, marginBottom: contextLine ? 4 : 20 }}>
                     {player2 ? (
                       <div style={{ display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap" }}>
@@ -6128,26 +6128,28 @@ function PercentileRadarGraphic() {
                       {/* Data polygon — player 1 */}
                       <polygon
                         points={buildRadarPoints(percentiles.map(p => p.scaled), 100, 150, 150)}
-                        fill="#4ade8022"
+                        fill="#4ade8015"
                         stroke="#4ade80"
-                        strokeWidth="2"
+                        strokeWidth="2.5"
                       />
                       {/* Data polygon — player 2 (comparison, if selected) */}
                       {player2 && (
                         <polygon
                           points={buildRadarPoints(percentiles2.map(p => p.scaled), 100, 150, 150)}
-                          fill="#a855f722"
+                          fill="#a855f715"
                           stroke="#a855f7"
-                          strokeWidth="2"
+                          strokeWidth="2.5"
+                          strokeDasharray="6,3"
                         />
                       )}
                       {/* Data polygon — player 3 (comparison, if selected) */}
                       {player3 && (
                         <polygon
                           points={buildRadarPoints(percentiles3.map(p => p.scaled), 100, 150, 150)}
-                          fill="#f59e0b22"
+                          fill="#f59e0b15"
                           stroke="#f59e0b"
-                          strokeWidth="2"
+                          strokeWidth="2.5"
+                          strokeDasharray="2,2"
                         />
                       )}
                       {/* Data points — player 1 */}
