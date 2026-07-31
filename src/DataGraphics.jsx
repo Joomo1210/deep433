@@ -5780,6 +5780,7 @@ function PercentileRadarGraphic() {
   const [parseError, setParseError] = useState("");
   const [selectedPlayer, setSelectedPlayer] = useState("");
   const [comparePlayer, setComparePlayer] = useState(""); // "" means no comparison, single-player mode
+  const [comparePlayer3, setComparePlayer3] = useState(""); // optional 3rd player, max 3 total
   const [downloading, setDownloading] = useState(false);
 
   // Axes definitions per dataset type — each maps a stat key to whether
@@ -5860,8 +5861,13 @@ function PercentileRadarGraphic() {
         }
       }
 
-      if (rows.length < 3) {
-        setParseError("Need at least 3 players in the dataset to calculate meaningful percentiles. Paste the full league table, not just one player.");
+      if (rows.length < 2) {
+        setParseError("Need at least 2 players to compare. Paste stat lines for 2 or 3 players.");
+        setParsedRows([]);
+        return;
+      }
+      if (rows.length > 3) {
+        setParseError(`Found ${rows.length} players, but this tool compares a maximum of 3 at a time. Please paste only the 2-3 players you want to compare.`);
         setParsedRows([]);
         return;
       }
@@ -5902,16 +5908,27 @@ function PercentileRadarGraphic() {
 
   const player = parsedRows.find(r => r.name === selectedPlayer);
   const player2 = comparePlayer ? parsedRows.find(r => r.name === comparePlayer) : null;
+  const player3 = comparePlayer3 ? parsedRows.find(r => r.name === comparePlayer3) : null;
   const axes = AXES[radarType];
+
+  // Percentiles are calculated ONLY relative to the subjects actually being
+  // compared (up to 3), not the full pasted dataset. This avoids implying
+  // a wider league-wide ranking than what's genuinely being shown.
+  const comparisonSubjects = [player, player2, player3].filter(Boolean);
 
   const percentiles = player ? axes.map(axis => ({
     label: axis.label,
-    percentile: calculatePercentile(player[axis.key], parsedRows.map(r => r[axis.key])),
+    percentile: calculatePercentile(player[axis.key], comparisonSubjects.map(r => r[axis.key])),
   })) : [];
 
   const percentiles2 = player2 ? axes.map(axis => ({
     label: axis.label,
-    percentile: calculatePercentile(player2[axis.key], parsedRows.map(r => r[axis.key])),
+    percentile: calculatePercentile(player2[axis.key], comparisonSubjects.map(r => r[axis.key])),
+  })) : [];
+
+  const percentiles3 = player3 ? axes.map(axis => ({
+    label: axis.label,
+    percentile: calculatePercentile(player3[axis.key], comparisonSubjects.map(r => r[axis.key])),
   })) : [];
 
   // Build radar polygon points (SVG), 5 axes evenly spaced around a circle.
@@ -5938,7 +5955,7 @@ function PercentileRadarGraphic() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Paste a full league dataset (100+ players) to calculate percentile ranks and render a radar chart for any player.</div>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Paste stat lines for up to 3 players to compare. Percentiles are calculated only among the players being compared, not the wider league.</div>
 
       <div style={{ display: "flex", gap: 6 }}>
         {[{ v: "goalsxg", label: "⚽ Goals / xG" }, { v: "carrying", label: "🏃 Carrying" }, { v: "passing", label: "🎯 Passing" }].map(t => (
@@ -5997,6 +6014,19 @@ function PercentileRadarGraphic() {
             </select>
           </div>
 
+          <div>
+            <div style={{ fontSize: 10, color: "#f59e0b", fontWeight: 700, marginBottom: 6 }}>3rd Player (optional, max 3 total)</div>
+            <select
+              value={comparePlayer3}
+              onChange={e => setComparePlayer3(e.target.value)}
+              disabled={!comparePlayer}
+              style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: comparePlayer ? "#f0f0f0" : "#555", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+            >
+              <option value="">— None —</option>
+              {parsedRows.map((r, i) => <option key={i} value={r.name}>{r.name}</option>)}
+            </select>
+          </div>
+
           {player && (
             <>
               <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
@@ -6006,6 +6036,7 @@ function PercentileRadarGraphic() {
                       <div style={{ display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap" }}>
                         <span style={{ fontSize: 16, fontWeight: 900, color: "#4ade80" }}>● {player.name}</span>
                         <span style={{ fontSize: 16, fontWeight: 900, color: "#a855f7" }}>● {player2.name}</span>
+                        {player3 && <span style={{ fontSize: 16, fontWeight: 900, color: "#f59e0b" }}>● {player3.name}</span>}
                       </div>
                     ) : (
                       <span style={{ fontSize: 22, fontWeight: 900, color: "#ffffff" }}>{player.name}</span>
@@ -6045,6 +6076,15 @@ function PercentileRadarGraphic() {
                           strokeWidth="2"
                         />
                       )}
+                      {/* Data polygon — player 3 (comparison, if selected) */}
+                      {player3 && (
+                        <polygon
+                          points={buildRadarPoints(percentiles3.map(p => p.percentile), 100, 150, 150)}
+                          fill="#f59e0b44"
+                          stroke="#f59e0b"
+                          strokeWidth="2"
+                        />
+                      )}
                       {/* Data points — player 1 */}
                       {percentiles.map((p, i) => {
                         const angleStep = (2 * Math.PI) / percentiles.length;
@@ -6063,6 +6103,15 @@ function PercentileRadarGraphic() {
                         const y = 150 + r * Math.sin(angle);
                         return <circle key={`p2-${i}`} cx={x} cy={y} r="4" fill="#a855f7" />;
                       })}
+                      {/* Data points — player 3 (comparison, if selected) */}
+                      {player3 && percentiles3.map((p, i) => {
+                        const angleStep = (2 * Math.PI) / percentiles3.length;
+                        const angle = i * angleStep - Math.PI / 2;
+                        const r = (Math.max(0, Math.min(100, p.percentile)) / 100) * 100;
+                        const x = 150 + r * Math.cos(angle);
+                        const y = 150 + r * Math.sin(angle);
+                        return <circle key={`p3-${i}`} cx={x} cy={y} r="4" fill="#f59e0b" />;
+                      })}
                     </svg>
 
                     {axes.map((axis, i) => {
@@ -6072,7 +6121,7 @@ function PercentileRadarGraphic() {
                       return (
                         <div key={i} style={{ position: "absolute", left: `${leftPct}%`, top: `${topPct}%`, transform: "translate(-50%, -50%)", textAlign: "center", width: 80 }}>
                           <div style={{ fontSize: 11, fontWeight: 700, color: "#e2e8f0" }}>{axis.label}</div>
-                          <div style={{ fontSize: 16, fontWeight: 900, color: "#4ade80" }}>{formatAsTopPct(percentiles[i]?.percentile)}{player2 && <span style={{ color: "#a855f7" }}> / {formatAsTopPct(percentiles2[i]?.percentile)}</span>}</div>
+                          <div style={{ fontSize: 16, fontWeight: 900, color: "#4ade80" }}>{formatAsTopPct(percentiles[i]?.percentile)}{player2 && <span style={{ color: "#a855f7" }}> / {formatAsTopPct(percentiles2[i]?.percentile)}</span>}{player3 && <span style={{ color: "#f59e0b" }}> / {formatAsTopPct(percentiles3[i]?.percentile)}</span>}</div>
                         </div>
                       );
                     })}
