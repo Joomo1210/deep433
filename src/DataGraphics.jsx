@@ -5861,13 +5861,8 @@ function PercentileRadarGraphic() {
         }
       }
 
-      if (rows.length < 2) {
-        setParseError("Need at least 2 players to compare. Paste stat lines for 2 or 3 players.");
-        setParsedRows([]);
-        return;
-      }
-      if (rows.length > 3) {
-        setParseError(`Found ${rows.length} players, but this tool compares a maximum of 3 at a time. Please paste only the 2-3 players you want to compare.`);
+      if (rows.length < 10) {
+        setParseError(`Only found ${rows.length} players. Paste the full league dataset (ideally 50-150+ players) for meaningful percentiles — you'll still only select 2-3 of them to display on the radar afterward.`);
         setParsedRows([]);
         return;
       }
@@ -5894,22 +5889,16 @@ function PercentileRadarGraphic() {
   // percentile rank nor simple 1st/2nd/3rd ranking can convey. Handles
   // negative values (like Goals vs xG) correctly since it's based on the
   // actual min/max range, not a fixed 0-100 assumption.
-  const calculateScaledValue = (value, allValues) => {
-    const min = Math.min(...allValues);
-    const max = Math.max(...allValues);
-    if (max === min) return 100; // all subjects equal on this axis — show full width for all
-    const raw = ((value - min) / (max - min)) * 100;
-    return Math.max(0, Math.min(100, Math.round(raw)));
-  };
-
-  // Formats the actual raw stat value for display, since we're now showing
-  // real numbers on the radar rather than percentile rank.
-  const formatRawValue = (key, value) => {
-    if (typeof value !== "number") return value;
-    if (key.toLowerCase().includes("pct")) return `${value.toFixed(1)}%`;
-    if (key === "goalsVsXg") return (value > 0 ? "+" : "") + value.toFixed(2);
-    if (key === "xgPerShot" || key === "avgDistance") return value.toFixed(2);
-    return value;
+  // Percentile against the FULL pasted dataset (not just the 2-3 selected
+  // players). This needs a genuinely large sample (100+ players ideally)
+  // so intermediate values are possible — comparing against only 2 players
+  // mathematically forces every axis to hit exactly 0 or 100, since with
+  // only 2 data points, one is always the min and the other always the max.
+  const calculatePercentile = (value, allValues) => {
+    const sorted = [...allValues].sort((a, b) => a - b);
+    const rank = sorted.filter(v => v <= value).length;
+    const raw = Math.round((rank / sorted.length) * 100);
+    return Math.max(0, Math.min(100, raw));
   };
 
   const player = parsedRows.find(r => r.name === selectedPlayer);
@@ -5917,28 +5906,19 @@ function PercentileRadarGraphic() {
   const player3 = comparePlayer3 ? parsedRows.find(r => r.name === comparePlayer3) : null;
   const axes = AXES[radarType];
 
-  // Values are scaled relative to the subjects actually being compared
-  // (up to 3), not the full pasted dataset. The highest value on each axis
-  // maps to the outer ring, the lowest to the center — showing both who's
-  // ahead and by how much, rather than a percentile rank.
-  const comparisonSubjects = [player, player2, player3].filter(Boolean);
-
   const percentiles = player ? axes.map(axis => ({
     label: axis.label,
-    scaled: calculateScaledValue(player[axis.key], comparisonSubjects.map(r => r[axis.key])),
-    rawValue: player[axis.key],
+    scaled: calculatePercentile(player[axis.key], parsedRows.map(r => r[axis.key])),
   })) : [];
 
   const percentiles2 = player2 ? axes.map(axis => ({
     label: axis.label,
-    scaled: calculateScaledValue(player2[axis.key], comparisonSubjects.map(r => r[axis.key])),
-    rawValue: player2[axis.key],
+    scaled: calculatePercentile(player2[axis.key], parsedRows.map(r => r[axis.key])),
   })) : [];
 
   const percentiles3 = player3 ? axes.map(axis => ({
     label: axis.label,
-    scaled: calculateScaledValue(player3[axis.key], comparisonSubjects.map(r => r[axis.key])),
-    rawValue: player3[axis.key],
+    scaled: calculatePercentile(player3[axis.key], parsedRows.map(r => r[axis.key])),
   })) : [];
 
   // Build radar polygon points (SVG), 5 axes evenly spaced around a circle.
@@ -5965,7 +5945,7 @@ function PercentileRadarGraphic() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Paste stat lines for up to 3 players to compare. Percentiles are calculated only among the players being compared, not the wider league.</div>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Paste the full league dataset (50-150+ players) to calculate real percentiles, then select up to 3 players below to display and compare on the radar.</div>
 
       <div style={{ display: "flex", gap: 6 }}>
         {[{ v: "goalsxg", label: "⚽ Goals / xG" }, { v: "carrying", label: "🏃 Carrying" }, { v: "passing", label: "🎯 Passing" }].map(t => (
