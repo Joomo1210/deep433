@@ -5961,12 +5961,16 @@ function PercentileRadarGraphic() {
   // Build radar polygon points (SVG), 5 axes evenly spaced around a circle.
   // Every value is clamped to 0-100 before scaling, so no point can ever
   // render outside the defined radius, regardless of the input value.
-  const buildRadarPoints = (values, radius, centerX, centerY) => {
+  // nudge: a tiny fixed radius offset (in px) applied to every point for
+  // this specific player. Prevents overlapping players' lines from sitting
+  // exactly on top of each other when their values happen to tie, without
+  // meaningfully distorting genuine differences (the nudge is small).
+  const buildRadarPoints = (values, radius, centerX, centerY, nudge = 0) => {
     const angleStep = (2 * Math.PI) / values.length;
     return values.map((v, i) => {
       const clampedV = Math.max(0, Math.min(100, v));
       const angle = i * angleStep - Math.PI / 2;
-      const r = (clampedV / 100) * radius;
+      const r = (clampedV / 100) * radius + nudge;
       const x = centerX + r * Math.cos(angle);
       const y = centerY + r * Math.sin(angle);
       return `${x},${y}`;
@@ -6128,7 +6132,7 @@ function PercentileRadarGraphic() {
                       {/* Data polygon — player 2 (comparison, if selected) */}
                       {player2 && (
                         <polygon
-                          points={buildRadarPoints(percentiles2.map(p => p.scaled), 63, 150, 150)}
+                          points={buildRadarPoints(percentiles2.map(p => p.scaled), 63, 150, 150, 2)}
                           fill="#a855f715"
                           stroke="#a855f7"
                           strokeWidth="2.5"
@@ -6138,7 +6142,7 @@ function PercentileRadarGraphic() {
                       {/* Data polygon — player 3 (comparison, if selected) */}
                       {player3 && (
                         <polygon
-                          points={buildRadarPoints(percentiles3.map(p => p.scaled), 63, 150, 150)}
+                          points={buildRadarPoints(percentiles3.map(p => p.scaled), 63, 150, 150, 4)}
                           fill="#f59e0b15"
                           stroke="#f59e0b"
                           strokeWidth="2.5"
@@ -6158,7 +6162,7 @@ function PercentileRadarGraphic() {
                       {player2 && percentiles2.map((p, i) => {
                         const angleStep = (2 * Math.PI) / percentiles2.length;
                         const angle = i * angleStep - Math.PI / 2;
-                        const r = (Math.max(0, Math.min(100, p.scaled)) / 100) * 63;
+                        const r = (Math.max(0, Math.min(100, p.scaled)) / 100) * 63 + 2;
                         const x = 150 + r * Math.cos(angle);
                         const y = 150 + r * Math.sin(angle);
                         return <circle key={`p2-${i}`} cx={x} cy={y} r="4" fill="#a855f7" />;
@@ -6167,7 +6171,7 @@ function PercentileRadarGraphic() {
                       {player3 && percentiles3.map((p, i) => {
                         const angleStep = (2 * Math.PI) / percentiles3.length;
                         const angle = i * angleStep - Math.PI / 2;
-                        const r = (Math.max(0, Math.min(100, p.scaled)) / 100) * 63;
+                        const r = (Math.max(0, Math.min(100, p.scaled)) / 100) * 63 + 4;
                         const x = 150 + r * Math.cos(angle);
                         const y = 150 + r * Math.sin(angle);
                         return <circle key={`p3-${i}`} cx={x} cy={y} r="4" fill="#f59e0b" />;
@@ -6392,12 +6396,12 @@ function PositionRadarGraphic() {
   const player2Percentiles = comparePlayer ? buildPercentilesFor(comparePlayer) : null;
   const player3Percentiles = comparePlayer3 ? buildPercentilesFor(comparePlayer3) : null;
 
-  const buildRadarPoints = (values, radius, centerX, centerY) => {
+  const buildRadarPoints = (values, radius, centerX, centerY, nudge = 0) => {
     const angleStep = (2 * Math.PI) / values.length;
     return values.map((v, i) => {
       const clampedV = Math.max(0, Math.min(100, v));
       const angle = i * angleStep - Math.PI / 2;
-      const r = (clampedV / 100) * radius;
+      const r = (clampedV / 100) * radius + nudge;
       return `${centerX + r * Math.cos(angle)},${centerY + r * Math.sin(angle)}`;
     }).join(" ");
   };
@@ -6529,8 +6533,8 @@ function PositionRadarGraphic() {
                         return <line key={i} x1="150" y1="150" x2={pos.x} y2={pos.y} stroke="#5a5a6a" strokeWidth="1.5" markerEnd="url(#dartHead)" />;
                       })}
                       <polygon points={buildRadarPoints(player1Percentiles.map(p => p.scaled), 63, 150, 150)} fill="#4ade8015" stroke="#4ade80" strokeWidth="2.5" />
-                      {player2Percentiles && <polygon points={buildRadarPoints(player2Percentiles.map(p => p.scaled), 63, 150, 150)} fill="#a855f715" stroke="#a855f7" strokeWidth="2.5" strokeDasharray="6,3" />}
-                      {player3Percentiles && <polygon points={buildRadarPoints(player3Percentiles.map(p => p.scaled), 63, 150, 150)} fill="#f59e0b15" stroke="#f59e0b" strokeWidth="2.5" strokeDasharray="2,2" />}
+                      {player2Percentiles && <polygon points={buildRadarPoints(player2Percentiles.map(p => p.scaled), 63, 150, 150, 2)} fill="#a855f715" stroke="#a855f7" strokeWidth="2.5" strokeDasharray="6,3" />}
+                      {player3Percentiles && <polygon points={buildRadarPoints(player3Percentiles.map(p => p.scaled), 63, 150, 150, 4)} fill="#f59e0b15" stroke="#f59e0b" strokeWidth="2.5" strokeDasharray="2,2" />}
                     </svg>
                     {config.axes.map((axis, i) => {
                       const pos = buildAxisLabelPos(i, config.axes.length, 75, 150, 150);
