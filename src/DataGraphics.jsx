@@ -5775,6 +5775,7 @@ function AdvancedStatsParserGraphic() {
 function PercentileRadarGraphic() {
   const cardRef = useRef(null);
   const [radarType, setRadarType] = useState("goalsxg"); // "goalsxg" | "carrying" | "passing" | "goalkeeping" | "defending"
+  const [contextLine, setContextLine] = useState(""); // e.g. "Premier League, 2025-26 season"
   const [rawText, setRawText] = useState("");
   const [parsedRows, setParsedRows] = useState([]);
   const [parseError, setParseError] = useState("");
@@ -6029,6 +6030,16 @@ function PercentileRadarGraphic() {
         />
       </div>
 
+      <div>
+        <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Context Line (optional, shows on card)</div>
+        <input
+          value={contextLine}
+          onChange={e => setContextLine(e.target.value)}
+          placeholder="e.g. Premier League, 2025-26 season"
+          style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+        />
+      </div>
+
       <button onClick={parseData} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
         Parse Data
       </button>
@@ -6080,7 +6091,7 @@ function PercentileRadarGraphic() {
             <>
               <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
                 <div style={{ padding: "18px 16px" }}>
-                  <div style={{ textAlign: "center", marginTop: 8, marginBottom: 20 }}>
+                  <div style={{ textAlign: "center", marginTop: 8, marginBottom: contextLine ? 4 : 20 }}>
                     {player2 ? (
                       <div style={{ display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap" }}>
                         <span style={{ fontSize: 16, fontWeight: 900, color: "#4ade80" }}>● {player.name}</span>
@@ -6091,6 +6102,11 @@ function PercentileRadarGraphic() {
                       <span style={{ fontSize: 22, fontWeight: 900, color: "#ffffff" }}>{player.name}</span>
                     )}
                   </div>
+                  {contextLine && (
+                    <div style={{ textAlign: "center", marginBottom: 16 }}>
+                      <span style={{ fontSize: 11, color: "#7E9485", fontWeight: 600 }}>{contextLine}</span>
+                    </div>
+                  )}
 
                   <div style={{ position: "relative", width: "100%", maxWidth: 320, margin: "0 auto" }}>
                     <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" style={{ display: "block", width: "100%" }}>
@@ -6112,7 +6128,7 @@ function PercentileRadarGraphic() {
                       {/* Data polygon — player 1 */}
                       <polygon
                         points={buildRadarPoints(percentiles.map(p => p.scaled), 100, 150, 150)}
-                        fill="#4ade8044"
+                        fill="#4ade8022"
                         stroke="#4ade80"
                         strokeWidth="2"
                       />
@@ -6120,7 +6136,7 @@ function PercentileRadarGraphic() {
                       {player2 && (
                         <polygon
                           points={buildRadarPoints(percentiles2.map(p => p.scaled), 100, 150, 150)}
-                          fill="#a855f744"
+                          fill="#a855f722"
                           stroke="#a855f7"
                           strokeWidth="2"
                         />
@@ -6129,7 +6145,7 @@ function PercentileRadarGraphic() {
                       {player3 && (
                         <polygon
                           points={buildRadarPoints(percentiles3.map(p => p.scaled), 100, 150, 150)}
-                          fill="#f59e0b44"
+                          fill="#f59e0b22"
                           stroke="#f59e0b"
                           strokeWidth="2"
                         />
