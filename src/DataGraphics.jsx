@@ -5888,22 +5888,28 @@ function PercentileRadarGraphic() {
     setDownloading(false);
   };
 
-  const calculatePercentile = (value, allValues) => {
-    const sorted = [...allValues].sort((a, b) => a - b);
-    const rank = sorted.filter(v => v <= value).length;
-    const raw = Math.round((rank / sorted.length) * 100);
-    // Defensive clamp — guarantees this can never fall outside 0-100,
-    // regardless of any future change to the calculation above or
-    // malformed/edge-case input data.
-    return Math.max(0, Math.min(100, raw));
+  // Scales a value relative to the other compared subjects: the highest
+  // value among them maps to 100 (outer ring), the lowest maps to 0
+  // (center). This shows both who's ahead AND by how much, which neither
+  // percentile rank nor simple 1st/2nd/3rd ranking can convey. Handles
+  // negative values (like Goals vs xG) correctly since it's based on the
+  // actual min/max range, not a fixed 0-100 assumption.
+  const calculateScaledValue = (value, allValues) => {
+    const min = Math.min(...allValues);
+    const max = Math.max(...allValues);
+    if (max === min) return 100; // all subjects equal on this axis — show full width for all
+    const raw = ((value - min) / (max - min)) * 100;
+    return Math.max(0, Math.min(100, Math.round(raw)));
   };
 
-  // Converts a percentile (higher = better) into "Top X%" phrasing, since
-  // "88th percentile" can misread as worse than "41st" — smaller-number-is-
-  // better "Top X%" framing avoids that ambiguity entirely.
-  const formatAsTopPct = (percentile) => {
-    const topPct = 100 - percentile;
-    return `Top ${Math.max(1, topPct)}%`;
+  // Formats the actual raw stat value for display, since we're now showing
+  // real numbers on the radar rather than percentile rank.
+  const formatRawValue = (key, value) => {
+    if (typeof value !== "number") return value;
+    if (key.toLowerCase().includes("pct")) return `${value.toFixed(1)}%`;
+    if (key === "goalsVsXg") return (value > 0 ? "+" : "") + value.toFixed(2);
+    if (key === "xgPerShot" || key === "avgDistance") return value.toFixed(2);
+    return value;
   };
 
   const player = parsedRows.find(r => r.name === selectedPlayer);
@@ -5911,24 +5917,28 @@ function PercentileRadarGraphic() {
   const player3 = comparePlayer3 ? parsedRows.find(r => r.name === comparePlayer3) : null;
   const axes = AXES[radarType];
 
-  // Percentiles are calculated ONLY relative to the subjects actually being
-  // compared (up to 3), not the full pasted dataset. This avoids implying
-  // a wider league-wide ranking than what's genuinely being shown.
+  // Values are scaled relative to the subjects actually being compared
+  // (up to 3), not the full pasted dataset. The highest value on each axis
+  // maps to the outer ring, the lowest to the center — showing both who's
+  // ahead and by how much, rather than a percentile rank.
   const comparisonSubjects = [player, player2, player3].filter(Boolean);
 
   const percentiles = player ? axes.map(axis => ({
     label: axis.label,
-    percentile: calculatePercentile(player[axis.key], comparisonSubjects.map(r => r[axis.key])),
+    scaled: calculateScaledValue(player[axis.key], comparisonSubjects.map(r => r[axis.key])),
+    rawValue: player[axis.key],
   })) : [];
 
   const percentiles2 = player2 ? axes.map(axis => ({
     label: axis.label,
-    percentile: calculatePercentile(player2[axis.key], comparisonSubjects.map(r => r[axis.key])),
+    scaled: calculateScaledValue(player2[axis.key], comparisonSubjects.map(r => r[axis.key])),
+    rawValue: player2[axis.key],
   })) : [];
 
   const percentiles3 = player3 ? axes.map(axis => ({
     label: axis.label,
-    percentile: calculatePercentile(player3[axis.key], comparisonSubjects.map(r => r[axis.key])),
+    scaled: calculateScaledValue(player3[axis.key], comparisonSubjects.map(r => r[axis.key])),
+    rawValue: player3[axis.key],
   })) : [];
 
   // Build radar polygon points (SVG), 5 axes evenly spaced around a circle.
@@ -6062,7 +6072,7 @@ function PercentileRadarGraphic() {
                       })}
                       {/* Data polygon — player 1 */}
                       <polygon
-                        points={buildRadarPoints(percentiles.map(p => p.percentile), 100, 150, 150)}
+                        points={buildRadarPoints(percentiles.map(p => p.scaled), 100, 150, 150)}
                         fill="#4ade8044"
                         stroke="#4ade80"
                         strokeWidth="2"
@@ -6070,7 +6080,7 @@ function PercentileRadarGraphic() {
                       {/* Data polygon — player 2 (comparison, if selected) */}
                       {player2 && (
                         <polygon
-                          points={buildRadarPoints(percentiles2.map(p => p.percentile), 100, 150, 150)}
+                          points={buildRadarPoints(percentiles2.map(p => p.scaled), 100, 150, 150)}
                           fill="#a855f744"
                           stroke="#a855f7"
                           strokeWidth="2"
@@ -6079,7 +6089,7 @@ function PercentileRadarGraphic() {
                       {/* Data polygon — player 3 (comparison, if selected) */}
                       {player3 && (
                         <polygon
-                          points={buildRadarPoints(percentiles3.map(p => p.percentile), 100, 150, 150)}
+                          points={buildRadarPoints(percentiles3.map(p => p.scaled), 100, 150, 150)}
                           fill="#f59e0b44"
                           stroke="#f59e0b"
                           strokeWidth="2"
@@ -6089,7 +6099,7 @@ function PercentileRadarGraphic() {
                       {percentiles.map((p, i) => {
                         const angleStep = (2 * Math.PI) / percentiles.length;
                         const angle = i * angleStep - Math.PI / 2;
-                        const r = (Math.max(0, Math.min(100, p.percentile)) / 100) * 100;
+                        const r = (Math.max(0, Math.min(100, p.scaled)) / 100) * 100;
                         const x = 150 + r * Math.cos(angle);
                         const y = 150 + r * Math.sin(angle);
                         return <circle key={i} cx={x} cy={y} r="4" fill="#4ade80" />;
@@ -6098,7 +6108,7 @@ function PercentileRadarGraphic() {
                       {player2 && percentiles2.map((p, i) => {
                         const angleStep = (2 * Math.PI) / percentiles2.length;
                         const angle = i * angleStep - Math.PI / 2;
-                        const r = (Math.max(0, Math.min(100, p.percentile)) / 100) * 100;
+                        const r = (Math.max(0, Math.min(100, p.scaled)) / 100) * 100;
                         const x = 150 + r * Math.cos(angle);
                         const y = 150 + r * Math.sin(angle);
                         return <circle key={`p2-${i}`} cx={x} cy={y} r="4" fill="#a855f7" />;
@@ -6107,7 +6117,7 @@ function PercentileRadarGraphic() {
                       {player3 && percentiles3.map((p, i) => {
                         const angleStep = (2 * Math.PI) / percentiles3.length;
                         const angle = i * angleStep - Math.PI / 2;
-                        const r = (Math.max(0, Math.min(100, p.percentile)) / 100) * 100;
+                        const r = (Math.max(0, Math.min(100, p.scaled)) / 100) * 100;
                         const x = 150 + r * Math.cos(angle);
                         const y = 150 + r * Math.sin(angle);
                         return <circle key={`p3-${i}`} cx={x} cy={y} r="4" fill="#f59e0b" />;
@@ -6121,7 +6131,7 @@ function PercentileRadarGraphic() {
                       return (
                         <div key={i} style={{ position: "absolute", left: `${leftPct}%`, top: `${topPct}%`, transform: "translate(-50%, -50%)", textAlign: "center", width: 80 }}>
                           <div style={{ fontSize: 11, fontWeight: 700, color: "#e2e8f0" }}>{axis.label}</div>
-                          <div style={{ fontSize: 16, fontWeight: 900, color: "#4ade80" }}>{formatAsTopPct(percentiles[i]?.percentile)}{player2 && <span style={{ color: "#a855f7" }}> / {formatAsTopPct(percentiles2[i]?.percentile)}</span>}{player3 && <span style={{ color: "#f59e0b" }}> / {formatAsTopPct(percentiles3[i]?.percentile)}</span>}</div>
+                          <div style={{ fontSize: 16, fontWeight: 900, color: "#4ade80" }}>{formatRawValue(axis.key, percentiles[i]?.rawValue)}{player2 && <span style={{ color: "#a855f7" }}> / {formatRawValue(axis.key, percentiles2[i]?.rawValue)}</span>}{player3 && <span style={{ color: "#f59e0b" }}> / {formatRawValue(axis.key, percentiles3[i]?.rawValue)}</span>}</div>
                         </div>
                       );
                     })}
