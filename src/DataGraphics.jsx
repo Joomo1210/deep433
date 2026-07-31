@@ -6120,7 +6120,7 @@ function PercentileRadarGraphic() {
                       })}
                       {/* Data polygon — player 1 */}
                       <polygon
-                        points={buildRadarPoints(percentiles.map(p => p.scaled), 75, 150, 150)}
+                        points={buildRadarPoints(percentiles.map(p => p.scaled), 63, 150, 150)}
                         fill="#4ade8015"
                         stroke="#4ade80"
                         strokeWidth="2.5"
@@ -6128,7 +6128,7 @@ function PercentileRadarGraphic() {
                       {/* Data polygon — player 2 (comparison, if selected) */}
                       {player2 && (
                         <polygon
-                          points={buildRadarPoints(percentiles2.map(p => p.scaled), 75, 150, 150)}
+                          points={buildRadarPoints(percentiles2.map(p => p.scaled), 63, 150, 150)}
                           fill="#a855f715"
                           stroke="#a855f7"
                           strokeWidth="2.5"
@@ -6138,7 +6138,7 @@ function PercentileRadarGraphic() {
                       {/* Data polygon — player 3 (comparison, if selected) */}
                       {player3 && (
                         <polygon
-                          points={buildRadarPoints(percentiles3.map(p => p.scaled), 75, 150, 150)}
+                          points={buildRadarPoints(percentiles3.map(p => p.scaled), 63, 150, 150)}
                           fill="#f59e0b15"
                           stroke="#f59e0b"
                           strokeWidth="2.5"
@@ -6149,7 +6149,7 @@ function PercentileRadarGraphic() {
                       {percentiles.map((p, i) => {
                         const angleStep = (2 * Math.PI) / percentiles.length;
                         const angle = i * angleStep - Math.PI / 2;
-                        const r = (Math.max(0, Math.min(100, p.scaled)) / 100) * 100;
+                        const r = (Math.max(0, Math.min(100, p.scaled)) / 100) * 63;
                         const x = 150 + r * Math.cos(angle);
                         const y = 150 + r * Math.sin(angle);
                         return <circle key={i} cx={x} cy={y} r="4" fill="#4ade80" />;
@@ -6158,7 +6158,7 @@ function PercentileRadarGraphic() {
                       {player2 && percentiles2.map((p, i) => {
                         const angleStep = (2 * Math.PI) / percentiles2.length;
                         const angle = i * angleStep - Math.PI / 2;
-                        const r = (Math.max(0, Math.min(100, p.scaled)) / 100) * 100;
+                        const r = (Math.max(0, Math.min(100, p.scaled)) / 100) * 63;
                         const x = 150 + r * Math.cos(angle);
                         const y = 150 + r * Math.sin(angle);
                         return <circle key={`p2-${i}`} cx={x} cy={y} r="4" fill="#a855f7" />;
@@ -6167,7 +6167,7 @@ function PercentileRadarGraphic() {
                       {player3 && percentiles3.map((p, i) => {
                         const angleStep = (2 * Math.PI) / percentiles3.length;
                         const angle = i * angleStep - Math.PI / 2;
-                        const r = (Math.max(0, Math.min(100, p.scaled)) / 100) * 100;
+                        const r = (Math.max(0, Math.min(100, p.scaled)) / 100) * 63;
                         const x = 150 + r * Math.cos(angle);
                         const y = 150 + r * Math.sin(angle);
                         return <circle key={`p3-${i}`} cx={x} cy={y} r="4" fill="#f59e0b" />;
@@ -6528,9 +6528,9 @@ function PositionRadarGraphic() {
                         const pos = buildAxisLabelPos(i, config.axes.length, 75, 150, 150);
                         return <line key={i} x1="150" y1="150" x2={pos.x} y2={pos.y} stroke="#5a5a6a" strokeWidth="1.5" markerEnd="url(#dartHead)" />;
                       })}
-                      <polygon points={buildRadarPoints(player1Percentiles.map(p => p.scaled), 75, 150, 150)} fill="#4ade8015" stroke="#4ade80" strokeWidth="2.5" />
-                      {player2Percentiles && <polygon points={buildRadarPoints(player2Percentiles.map(p => p.scaled), 75, 150, 150)} fill="#a855f715" stroke="#a855f7" strokeWidth="2.5" strokeDasharray="6,3" />}
-                      {player3Percentiles && <polygon points={buildRadarPoints(player3Percentiles.map(p => p.scaled), 75, 150, 150)} fill="#f59e0b15" stroke="#f59e0b" strokeWidth="2.5" strokeDasharray="2,2" />}
+                      <polygon points={buildRadarPoints(player1Percentiles.map(p => p.scaled), 63, 150, 150)} fill="#4ade8015" stroke="#4ade80" strokeWidth="2.5" />
+                      {player2Percentiles && <polygon points={buildRadarPoints(player2Percentiles.map(p => p.scaled), 63, 150, 150)} fill="#a855f715" stroke="#a855f7" strokeWidth="2.5" strokeDasharray="6,3" />}
+                      {player3Percentiles && <polygon points={buildRadarPoints(player3Percentiles.map(p => p.scaled), 63, 150, 150)} fill="#f59e0b15" stroke="#f59e0b" strokeWidth="2.5" strokeDasharray="2,2" />}
                     </svg>
                     {config.axes.map((axis, i) => {
                       const pos = buildAxisLabelPos(i, config.axes.length, 75, 150, 150);
