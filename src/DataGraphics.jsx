@@ -5988,7 +5988,7 @@ function PercentileRadarGraphic() {
   const buildAxisLabelPos = (index, total, radius, centerX, centerY) => {
     const angleStep = (2 * Math.PI) / total;
     const angle = index * angleStep - Math.PI / 2;
-    const r = radius + 60;
+    const r = radius + 85;
     return { x: centerX + r * Math.cos(angle), y: centerY + r * Math.sin(angle) };
   };
 
@@ -6090,10 +6090,10 @@ function PercentileRadarGraphic() {
           {player && (
             <>
               <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-                <div style={{ padding: "34px 32px" }}>
+                <div style={{ padding: "52px 48px" }}>
                   <div style={{ textAlign: "center", marginTop: 8, marginBottom: contextLine ? 4 : 20 }}>
                     {player2 ? (
-                      <div style={{ display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", justifyContent: "center", gap: 20, flexWrap: "nowrap", whiteSpace: "nowrap", overflowX: "auto" }}>
                         <span style={{ fontSize: 16, fontWeight: 900, color: "#4ade80" }}>● {player.name}</span>
                         <span style={{ fontSize: 16, fontWeight: 900, color: "#a855f7" }}>● {player2.name}</span>
                         {player3 && <span style={{ fontSize: 16, fontWeight: 900, color: "#f59e0b" }}>● {player3.name}</span>}
@@ -6186,9 +6186,9 @@ function PercentileRadarGraphic() {
                       const leftPct = (pos.x / 300) * 100;
                       const topPct = (pos.y / 300) * 100;
                       return (
-                        <div key={i} style={{ position: "absolute", left: `${leftPct}%`, top: `${topPct}%`, transform: "translate(-50%, -50%)", textAlign: "center", width: 80 }}>
+                        <div key={i} style={{ position: "absolute", left: `${leftPct}%`, top: `${topPct}%`, transform: "translate(-50%, -50%)", textAlign: "center", width: 90, background: "rgba(30,30,40,0.55)", borderRadius: 8, padding: "4px 6px" }}>
                           <div style={{ fontSize: 11, fontWeight: 700, color: "#e2e8f0" }}>{axis.label}</div>
-                          <div style={{ fontSize: 16, fontWeight: 900, color: "#4ade80" }}>{formatAsTopPct(percentiles[i]?.scaled)}{player2 && <span style={{ color: "#a855f7" }}> / {formatAsTopPct(percentiles2[i]?.scaled)}</span>}{player3 && <span style={{ color: "#f59e0b" }}> / {formatAsTopPct(percentiles3[i]?.scaled)}</span>}</div>
+                          <div style={{ fontSize: 15, fontWeight: 900, color: "#4ade80", letterSpacing: 0.5, lineHeight: 1.4 }}>{formatAsTopPct(percentiles[i]?.scaled)}{player2 && <span style={{ color: "#a855f7" }}> / {formatAsTopPct(percentiles2[i]?.scaled)}</span>}{player3 && <span style={{ color: "#f59e0b" }}> / {formatAsTopPct(percentiles3[i]?.scaled)}</span>}</div>
                         </div>
                       );
                     })}
@@ -6410,7 +6410,7 @@ function PositionRadarGraphic() {
   const buildAxisLabelPos = (index, total, radius, centerX, centerY) => {
     const angleStep = (2 * Math.PI) / total;
     const angle = index * angleStep - Math.PI / 2;
-    const r = radius + 60;
+    const r = radius + 85;
     return { x: centerX + r * Math.cos(angle), y: centerY + r * Math.sin(angle) };
   };
 
@@ -6506,10 +6506,10 @@ function PositionRadarGraphic() {
           {player1Percentiles && (
             <>
               <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-                <div style={{ padding: "34px 32px" }}>
+                <div style={{ padding: "52px 48px" }}>
                   <div style={{ textAlign: "center", marginTop: 8, marginBottom: 20 }}>
                     {player2Percentiles ? (
-                      <div style={{ display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", justifyContent: "center", gap: 20, flexWrap: "nowrap", whiteSpace: "nowrap", overflowX: "auto" }}>
                         <span style={{ fontSize: 16, fontWeight: 900, color: "#4ade80" }}>● {selectedPlayer}</span>
                         <span style={{ fontSize: 16, fontWeight: 900, color: "#a855f7" }}>● {comparePlayer}</span>
                         {player3Percentiles && <span style={{ fontSize: 16, fontWeight: 900, color: "#f59e0b" }}>● {comparePlayer3}</span>}
@@ -6537,9 +6537,9 @@ function PositionRadarGraphic() {
                       const leftPct = (pos.x / 300) * 100;
                       const topPct = (pos.y / 300) * 100;
                       return (
-                        <div key={i} style={{ position: "absolute", left: `${leftPct}%`, top: `${topPct}%`, transform: "translate(-50%, -50%)", textAlign: "center", width: 80 }}>
+                        <div key={i} style={{ position: "absolute", left: `${leftPct}%`, top: `${topPct}%`, transform: "translate(-50%, -50%)", textAlign: "center", width: 90, background: "rgba(30,30,40,0.55)", borderRadius: 8, padding: "4px 6px" }}>
                           <div style={{ fontSize: 11, fontWeight: 700, color: "#e2e8f0" }}>{axis.label}</div>
-                          <div style={{ fontSize: 16, fontWeight: 900, color: "#4ade80" }}>{formatAsTopPct(player1Percentiles[i]?.scaled)}{player2Percentiles && <span style={{ color: "#a855f7" }}> / {formatAsTopPct(player2Percentiles[i]?.scaled)}</span>}{player3Percentiles && <span style={{ color: "#f59e0b" }}> / {formatAsTopPct(player3Percentiles[i]?.scaled)}</span>}</div>
+                          <div style={{ fontSize: 15, fontWeight: 900, color: "#4ade80", letterSpacing: 0.5, lineHeight: 1.4 }}>{formatAsTopPct(player1Percentiles[i]?.scaled)}{player2Percentiles && <span style={{ color: "#a855f7" }}> / {formatAsTopPct(player2Percentiles[i]?.scaled)}</span>}{player3Percentiles && <span style={{ color: "#f59e0b" }}> / {formatAsTopPct(player3Percentiles[i]?.scaled)}</span>}</div>
                         </div>
                       );
                     })}
