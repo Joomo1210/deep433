@@ -221,7 +221,9 @@ function GraphicCard({ children, cardRef, label, light = false }) {
         }}
       >
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
-        {/* Centre background watermark */}
+        <div style={{ position: "absolute", top: 10, left: 10, zIndex: 2 }}>
+          <img src="/deep433.jpg" alt="Deep433" crossOrigin="anonymous" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }} />
+        </div>
         <div style={{ position: "relative", zIndex: 1 }}>
           {children}
         </div>
