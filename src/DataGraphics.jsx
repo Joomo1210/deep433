@@ -5816,14 +5816,16 @@ function PercentileRadarGraphic() {
       { key: "xgotConceded", label: "xGOT Faced", higherBetter: true },
       { key: "goalsConceded", label: "Goals Conceded", higherBetter: false },
     ],
-    // PLACEHOLDER — not yet confirmed against a real pasted example.
-    // Kept at 5 axes until real data justifies expanding further.
+    // Confirmed real format (7 axes: Tackles, Interceptions, Possession
+    // Won, Blocks, Clearances, Ground Duel %, Aerial Duel %)
     defending: [
       { key: "tackles", label: "Tackles", higherBetter: true },
-      { key: "tackleWinPct", label: "Tackles Won %", higherBetter: true },
       { key: "interceptions", label: "Interceptions", higherBetter: true },
-      { key: "duelsWon", label: "Duels Won", higherBetter: true },
+      { key: "posWon", label: "Possession Won", higherBetter: true },
+      { key: "blocks", label: "Blocks", higherBetter: true },
       { key: "clearances", label: "Clearances", higherBetter: true },
+      { key: "groundDuelPct", label: "Ground Duel %", higherBetter: true },
+      { key: "aerialDuelPct", label: "Aerial Duel %", higherBetter: true },
     ],
   };
 
@@ -5833,7 +5835,7 @@ function PercentileRadarGraphic() {
       const lines = rawText.split("\n").map(l => l.trim()).filter(l => l.length > 0);
       const rows = [];
       let pendingName = null;
-      const minCols = radarType === "goalsxg" ? 9 : radarType === "goalkeeping" ? 8 : radarType === "defending" ? 5 : 12;
+      const minCols = radarType === "goalsxg" ? 9 : radarType === "goalkeeping" ? 8 : radarType === "defending" ? 13 : 12;
 
       for (const line of lines) {
         if (/^name$/i.test(line) || /^apps$/i.test(line) || /includes blocked/i.test(line) || /^\d+ of \d+$/i.test(line) || /^<|^>/.test(line) || /^all carries/i.test(line)) continue;
@@ -5896,17 +5898,20 @@ function PercentileRadarGraphic() {
               goalsConceded: parseInt(goalsConceded) || 0,
             });
           } else {
-            // Defending — PLACEHOLDER mapping, not yet confirmed against a
-            // real pasted example
-            const [apps, mins, tackles, tackleWinPct, interceptions, duelsWon, clearances] = tabParts;
+            // Confirmed real format: apps, mins, tackles, ints, pos won,
+            // blocks, clearances, [ground duels: total, won, %],
+            // [aerial duels: total, won, %]
+            const [apps, mins, tackles, ints, posWon, blocks, clearances, groundTotal, groundWon, groundPct, aerialTotal, aerialWon, aerialPct] = tabParts;
             rows.push({
               name: pendingName,
               mins: parseInt(mins) || 0,
               tackles: parseInt(tackles) || 0,
-              tackleWinPct: parseFloat(tackleWinPct) || 0,
-              interceptions: parseInt(interceptions) || 0,
-              duelsWon: parseInt(duelsWon) || 0,
+              interceptions: parseInt(ints) || 0,
+              posWon: parseInt(posWon) || 0,
+              blocks: parseInt(blocks) || 0,
               clearances: parseInt(clearances) || 0,
+              groundDuelPct: parseFloat(groundPct) || 0,
+              aerialDuelPct: parseFloat(aerialPct) || 0,
             });
           }
           pendingName = null;
@@ -6030,11 +6035,6 @@ function PercentileRadarGraphic() {
           </button>
         ))}
       </div>
-      {radarType === "defending" && (
-        <div style={{ fontSize: 10, color: "#f59e0b", background: "#f59e0b15", border: "1px solid #f59e0b40", borderRadius: 8, padding: "8px 12px" }}>
-          ⚠️ This format is a placeholder — paste a real example first so the exact columns can be confirmed.
-        </div>
-      )}
 
       <div>
         <div style={{ fontSize: 10, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Paste Full League Dataset</div>
@@ -6313,15 +6313,15 @@ function PositionRadarGraphic() {
     },
     defender: {
       label: "🛡️ Defender",
-      datasets: [{ type: "passing", label: "Passing Data" }, { type: "defending", label: "Defending Data (placeholder format)" }],
+      datasets: [{ type: "passing", label: "Passing Data" }, { type: "defending", label: "Defending Data" }],
       axes: [
         { source: 1, key: "openPlayPct", label: "Passing Accuracy" },
         { source: 1, key: "finalThirdPct", label: "Final Third Passing" },
         { source: 2, key: "tackles", label: "Tackles" },
         { source: 2, key: "interceptions", label: "Interceptions" },
-        { source: 2, key: "duelsWon", label: "Duels Won" },
+        { source: 2, key: "groundDuelPct", label: "Ground Duel %" },
         { source: 1, key: "crossesPct", label: "Cross Accuracy" },
-        { source: 2, key: "tackleWinPct", label: "Tackles Won %" },
+        { source: 2, key: "aerialDuelPct", label: "Aerial Duel %" },
       ],
     },
     fullback: {
@@ -6361,7 +6361,7 @@ function PositionRadarGraphic() {
     const lines = rawText.split("\n").map(l => l.trim()).filter(l => l.length > 0);
     const rows = [];
     let pendingName = null;
-    const minCols = datasetType === "goalsxg" ? 9 : datasetType === "goalkeeping" ? 8 : datasetType === "defending" ? 5 : 12;
+    const minCols = datasetType === "goalsxg" ? 9 : datasetType === "goalkeeping" ? 8 : datasetType === "defending" ? 13 : 12;
 
     for (const line of lines) {
       if (/^name$/i.test(line) || /^apps$/i.test(line) || /includes blocked/i.test(line) || /^\d+ of \d+$/i.test(line) || /^<|^>/.test(line) || /^all carries/i.test(line)) continue;
@@ -6383,8 +6383,8 @@ function PositionRadarGraphic() {
           const [apps, mins, goalsConceded, saves, savePct, xgotConceded, goalsPrevented, gpRate] = tabParts;
           rows.push({ name: pendingName, mins: parseInt(mins) || 0, goalsPrevented: parseFloat(goalsPrevented) || 0, gpRate: parseFloat(gpRate) || 0, savePct: parseFloat(savePct) || 0, saves: parseInt(saves) || 0, xgotConceded: parseFloat(xgotConceded) || 0, goalsConceded: parseInt(goalsConceded) || 0 });
         } else {
-          const [apps, mins, tackles, tackleWinPct, interceptions, duelsWon, clearances] = tabParts;
-          rows.push({ name: pendingName, mins: parseInt(mins) || 0, tackles: parseInt(tackles) || 0, tackleWinPct: parseFloat(tackleWinPct) || 0, interceptions: parseInt(interceptions) || 0, duelsWon: parseInt(duelsWon) || 0, clearances: parseInt(clearances) || 0 });
+          const [apps, mins, tackles, ints, posWon, blocks, clearances, groundTotal, groundWon, groundPct, aerialTotal, aerialWon, aerialPct] = tabParts;
+          rows.push({ name: pendingName, mins: parseInt(mins) || 0, tackles: parseInt(tackles) || 0, interceptions: parseInt(ints) || 0, posWon: parseInt(posWon) || 0, blocks: parseInt(blocks) || 0, clearances: parseInt(clearances) || 0, groundDuelPct: parseFloat(groundPct) || 0, aerialDuelPct: parseFloat(aerialPct) || 0 });
         }
         pendingName = null;
       } else if (!looksLikeStatsRow) {
