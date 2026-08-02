@@ -5067,26 +5067,47 @@ function PlayerTrajectoryGraphic() {
                 <div style={{ fontSize: 12, color: "#a78bfa", fontWeight: 700, marginTop: 2 }}>Season by Season</div>
               </div>
 
-              {seasons.map((s, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", padding: "10px 0", borderBottom: i < seasons.length - 1 ? "1px solid #1e1830" : "none", gap: 10 }}>
-                  <div style={{ width: 60, fontSize: 12, fontWeight: 800, color: "#e2e8f0" }}>{s.season}</div>
-                  {s.goals !== null ? (
-                    <>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 10, color: "#666", marginBottom: 2 }}>{s.team}</div>
-                        <div style={{ height: 6, background: "#1a1a24", borderRadius: 3, overflow: "hidden" }}>
-                          <div style={{ width: `${Math.max((s.goals / maxGoals) * 100, 4)}%`, height: "100%", background: "#4ade80", borderRadius: 3 }} />
-                        </div>
-                      </div>
-                      <div style={{ width: 100, fontSize: 11, color: "#e2e8f0", textAlign: "right" }}>
-                        <span style={{ color: "#4ade80", fontWeight: 800 }}>{s.goals}G</span> <span style={{ color: "#a855f7", fontWeight: 800 }}>{s.assists}A</span> · {s.appearances} apps
-                      </div>
-                    </>
-                  ) : (
-                    <div style={{ flex: 1, fontSize: 11, color: "#555", fontStyle: "italic" }}>No data available</div>
-                  )}
-                </div>
-              ))}
+              {(() => {
+                const chartW = 320, chartH = 180, padL = 30, padR = 10, padT = 10, padB = 24;
+                const plotW = chartW - padL - padR, plotH = chartH - padT - padB;
+                const maxAssists = validSeasons.length ? Math.max(...validSeasons.map(s => s.assists || 0), 1) : 1;
+                const maxVal = Math.max(maxGoals, maxAssists, 1);
+                const n = seasons.length;
+                const xFor = (i) => padL + (n > 1 ? (i / (n - 1)) * plotW : plotW / 2);
+                const yFor = (val) => padT + plotH - (Math.max(val, 0) / maxVal) * plotH;
+
+                const goalsPoints = seasons.map((s, i) => s.goals !== null ? `${xFor(i)},${yFor(s.goals)}` : null).filter(Boolean).join(" ");
+                const assistsPoints = seasons.map((s, i) => s.goals !== null ? `${xFor(i)},${yFor(s.assists)}` : null).filter(Boolean).join(" ");
+
+                return (
+                  <div style={{ marginTop: 4 }}>
+                    <svg viewBox={`0 0 ${chartW} ${chartH}`} xmlns="http://www.w3.org/2000/svg" style={{ display: "block", width: "100%" }}>
+                      {/* Horizontal gridlines */}
+                      {[0, 0.25, 0.5, 0.75, 1].map((f, gi) => (
+                        <line key={gi} x1={padL} y1={padT + plotH * (1 - f)} x2={chartW - padR} y2={padT + plotH * (1 - f)} stroke="#1e1e30" strokeWidth="1" />
+                      ))}
+                      {/* Assists line (purple) */}
+                      <polyline points={assistsPoints} fill="none" stroke="#a855f7" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+                      {/* Goals line (green) */}
+                      <polyline points={goalsPoints} fill="none" stroke="#4ade80" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+                      {/* Data points + value labels */}
+                      {seasons.map((s, i) => s.goals !== null && (
+                        <g key={i}>
+                          <circle cx={xFor(i)} cy={yFor(s.goals)} r="4" fill="#4ade80" />
+                          <circle cx={xFor(i)} cy={yFor(s.assists)} r="4" fill="#a855f7" />
+                          <text x={xFor(i)} y={yFor(s.goals) - 8} fill="#4ade80" fontSize="10" fontWeight="900" textAnchor="middle">{s.goals}</text>
+                          <text x={xFor(i)} y={yFor(s.assists) + 16} fill="#a855f7" fontSize="10" fontWeight="900" textAnchor="middle">{s.assists}</text>
+                          <text x={xFor(i)} y={chartH - 4} fill="#e2e8f0" fontSize="9" fontWeight="700" textAnchor="middle">{s.season}</text>
+                        </g>
+                      ))}
+                    </svg>
+                    <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 6 }}>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: "#4ade80" }}>● Goals</span>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: "#a855f7" }}>● Assists</span>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </GraphicCard>
           <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
