@@ -5963,9 +5963,15 @@ function PercentileRadarGraphic() {
   // "Top X%" reads more clearly than raw ordinal percentile for a general
   // audience — smaller number always means better, matching how people
   // already read things like "top 1% of earners."
+  // Standard ordinal percentile wording (e.g. "40th percentile"), rather
+  // than "Top X%" framing.
   const formatAsTopPct = (percentile) => {
-    const topPct = 100 - percentile;
-    return `Top ${Math.max(1, topPct)}%`;
+    const p = Math.max(0, Math.min(100, percentile));
+    const suffix = (p % 10 === 1 && p % 100 !== 11) ? "st"
+      : (p % 10 === 2 && p % 100 !== 12) ? "nd"
+      : (p % 10 === 3 && p % 100 !== 13) ? "rd"
+      : "th";
+    return `${p}${suffix} percentile`;
   };
 
   const player = parsedRows.find(r => r.name === selectedPlayer);
@@ -6426,9 +6432,15 @@ function PositionRadarGraphic() {
     return Math.max(0, Math.min(100, Math.round((rank / sorted.length) * 100)));
   };
 
+  // Standard ordinal percentile wording (e.g. "40th percentile"), rather
+  // than "Top X%" framing.
   const formatAsTopPct = (percentile) => {
-    const topPct = 100 - percentile;
-    return `Top ${Math.max(1, topPct)}%`;
+    const p = Math.max(0, Math.min(100, percentile));
+    const suffix = (p % 10 === 1 && p % 100 !== 11) ? "st"
+      : (p % 10 === 2 && p % 100 !== 12) ? "nd"
+      : (p % 10 === 3 && p % 100 !== 13) ? "rd"
+      : "th";
+    return `${p}${suffix} percentile`;
   };
 
   // Finds a player's combined data by matching name across both datasets
