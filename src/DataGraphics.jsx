@@ -5014,9 +5014,6 @@ function PlayerTrajectoryGraphic() {
     // use the first active player's season list as the shared x-axis.
     const seasonLabels = activePlayers[0].seasons.map(s => s.season);
     const colors = ["#4ade80", "#a855f7", "#f59e0b"];
-    // The most recent season (last in the array) is flagged as potentially
-    // partial, since it's the current season and likely mid-collection.
-    const lastSeasonIndex = seasonLabels.length - 1;
 
     const maxGoals = Math.max(
       ...activePlayers.flatMap(p => p.seasons.map(s => s.goals || 0)),
@@ -5026,7 +5023,7 @@ function PlayerTrajectoryGraphic() {
     const axisMax = Math.max(Math.ceil(maxGoals / 10) * 10, 10);
 
     // Extra bottom padding to fit: season label, assists row, partial flag
-    const chartW = 360, chartH = 200, padL = 26, padR = 10, padT = 18, padB = 38;
+    const chartW = 360, chartH = 190, padL = 26, padR = 10, padT = 18, padB = 32;
     const plotW = chartW - padL - padR, plotH = chartH - padT - padB;
     // Wider gap between season groups (groupGapFrac reserves space between
     // groups, separate from the bars themselves) for clearer separation.
@@ -5058,7 +5055,6 @@ function PlayerTrajectoryGraphic() {
           const groupCenter = groupX + groupW / 2;
           const totalBarsWidth = activePlayers.length * barW + (activePlayers.length - 1) * barGap;
           const startX = groupCenter - totalBarsWidth / 2;
-          const isPartial = si === lastSeasonIndex;
 
           return (
             <g key={si}>
@@ -5090,9 +5086,7 @@ function PlayerTrajectoryGraphic() {
                   );
                 })}
               </text>
-              {isPartial && (
-                <text x={groupCenter} y={padT + plotH + 34} fill="#f59e0b" fontSize="6" fontWeight="700" textAnchor="middle">(partial)</text>
-              )}
+
             </g>
           );
         })}
