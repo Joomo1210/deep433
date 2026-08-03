@@ -4943,6 +4943,7 @@ function PlayerTrajectoryGraphic() {
   const [slots, setSlots] = useState([emptySlot(), emptySlot(), emptySlot()]);
   const [activeSlots, setActiveSlots] = useState(1); // how many slots are visible (1-3)
   const [downloading, setDownloading] = useState(false);
+  const [metricMode, setMetricMode] = useState("attacking"); // "attacking" | "defensive"
 
   const updateSlot = (index, patch) => {
     setSlots(prev => prev.map((s, i) => i === index ? { ...s, ...patch } : s));
@@ -4986,12 +4987,12 @@ function PlayerTrajectoryGraphic() {
         const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${pid}&season=${season}`);
         const d = await r.json();
         if (d.available) {
-          results.push({ season: `${season}-${String(season + 1).slice(-2)}`, team: d.team, goals: d.goals, assists: d.assists, appearances: d.appearances, rating: d.rating });
+          results.push({ season: `${season}-${String(season + 1).slice(-2)}`, team: d.team, goals: d.goals, assists: d.assists, appearances: d.appearances, rating: d.rating, tackles: d.tackles, interceptions: d.interceptions });
         } else {
-          results.push({ season: `${season}-${String(season + 1).slice(-2)}`, team: null, goals: null, assists: null, appearances: null, rating: null });
+          results.push({ season: `${season}-${String(season + 1).slice(-2)}`, team: null, goals: null, assists: null, appearances: null, rating: null, tackles: null, interceptions: null });
         }
       } catch {
-        results.push({ season: `${season}-${String(season + 1).slice(-2)}`, team: null, goals: null, assists: null, appearances: null, rating: null });
+        results.push({ season: `${season}-${String(season + 1).slice(-2)}`, team: null, goals: null, assists: null, appearances: null, rating: null, tackles: null, interceptions: null });
       }
     }
     updateSlot(index, { seasons: results.reverse(), loadingSeasons: false });
@@ -5010,19 +5011,22 @@ function PlayerTrajectoryGraphic() {
     const activePlayers = slots.slice(0, activeSlots).filter(s => s.seasons && s.basePlayer);
     if (activePlayers.length === 0) return null;
 
+    const primaryKey = metricMode === "defensive" ? "tackles" : "goals";
+    const secondaryKey = metricMode === "defensive" ? "interceptions" : "assists";
+
     // All players share the same season labels (same YEARS_BACK loop), so
     // use the first active player's season list as the shared x-axis.
     const seasonLabels = activePlayers[0].seasons.map(s => s.season);
     const colors = ["#4ade80", "#a855f7", "#f59e0b"];
 
-    const maxGoals = Math.max(
-      ...activePlayers.flatMap(p => p.seasons.map(s => s.goals || 0)),
+    const maxPrimary = Math.max(
+      ...activePlayers.flatMap(p => p.seasons.map(s => s[primaryKey] || 0)),
       1
     );
     // Round the axis max up to a clean multiple of 10 for readable gridline values
-    const axisMax = Math.max(Math.ceil(maxGoals / 10) * 10, 10);
+    const axisMax = Math.max(Math.ceil(maxPrimary / 10) * 10, 10);
 
-    // Extra bottom padding to fit: season label, assists row, partial flag
+    // Extra bottom padding to fit: season label, secondary-metric row
     const chartW = 360, chartH = 190, padL = 26, padR = 10, padT = 18, padB = 32;
     const plotW = chartW - padL - padR, plotH = chartH - padT - padB;
     // Wider gap between season groups (groupGapFrac reserves space between
@@ -5061,27 +5065,27 @@ function PlayerTrajectoryGraphic() {
               {activePlayers.map((p, pi) => {
                 const s = p.seasons[si];
                 const barX = startX + pi * (barW + barGap);
-                if (s.goals === null) return null;
-                const barH = Math.max((s.goals / axisMax) * plotH, 2);
+                if (s[primaryKey] === null) return null;
+                const barH = Math.max((s[primaryKey] / axisMax) * plotH, 2);
                 const barY = padT + plotH - barH;
                 return (
                   <g key={pi}>
                     <rect x={barX} y={barY} width={barW} height={barH} fill={colors[pi]} rx="2" />
-                    <text x={barX + barW / 2} y={barY - 4} fill={colors[pi]} fontSize="9" fontWeight="900" textAnchor="middle">{s.goals}</text>
+                    <text x={barX + barW / 2} y={barY - 4} fill={colors[pi]} fontSize="9" fontWeight="900" textAnchor="middle">{s[primaryKey]}</text>
                   </g>
                 );
               })}
               {/* Season label */}
               <text x={groupCenter} y={padT + plotH + 12} fill="#e2e8f0" fontSize="8" fontWeight="700" textAnchor="middle">{label}</text>
-              {/* Compact single-line assists row: colored numbers separated by middle dots */}
+              {/* Compact single-line secondary-metric row: colored numbers separated by middle dots */}
               <text x={groupCenter} y={padT + plotH + 24} fontSize="7.5" fontWeight="800" textAnchor="middle">
                 {activePlayers.map((p, pi) => {
                   const s = p.seasons[si];
-                  if (s.goals === null) return null;
+                  if (s[primaryKey] === null) return null;
                   return (
                     <tspan key={pi}>
                       {pi > 0 && <tspan fill="#5a5a6a"> · </tspan>}
-                      <tspan fill={colors[pi]}>{s.assists}</tspan>
+                      <tspan fill={colors[pi]}>{s[secondaryKey]}</tspan>
                     </tspan>
                   );
                 })}
@@ -5098,7 +5102,19 @@ function PlayerTrajectoryGraphic() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Compare up to 3 players' goals, assists, and appearances across the last {YEARS_BACK + 1} seasons.</div>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Compare up to 3 players' trajectory across the last {YEARS_BACK + 1} seasons.</div>
+
+      <div style={{ display: "flex", gap: 6 }}>
+        {[{ v: "attacking", label: "⚽ Goals & Assists" }, { v: "defensive", label: "🛡️ Tackles & Interceptions" }].map(t => (
+          <button
+            key={t.v}
+            onClick={() => setMetricMode(t.v)}
+            style={{ background: metricMode === t.v ? "#4ade8022" : "none", border: `1px solid ${metricMode === t.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: metricMode === t.v ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "7px 12px" }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
       {slots.slice(0, activeSlots).map((slot, index) => (
         <div key={index} style={{ border: "1px solid #2a2a3a", borderRadius: 8, padding: 10 }}>
