@@ -5026,7 +5026,7 @@ function PlayerTrajectoryGraphic() {
     const axisMax = Math.max(Math.ceil(maxGoals / 10) * 10, 10);
 
     // Extra bottom padding to fit: season label, assists row, partial flag
-    const chartW = 360, chartH = 230, padL = 26, padR = 10, padT = 18, padB = 48;
+    const chartW = 360, chartH = 200, padL = 26, padR = 10, padT = 18, padB = 38;
     const plotW = chartW - padL - padR, plotH = chartH - padT - padB;
     // Wider gap between season groups (groupGapFrac reserves space between
     // groups, separate from the bars themselves) for clearer separation.
@@ -5077,16 +5077,21 @@ function PlayerTrajectoryGraphic() {
               })}
               {/* Season label */}
               <text x={groupCenter} y={padT + plotH + 12} fill="#e2e8f0" fontSize="8" fontWeight="700" textAnchor="middle">{label}</text>
-              {/* Dedicated assists row, one line per player, never collides with bars */}
-              {activePlayers.map((p, pi) => {
-                const s = p.seasons[si];
-                if (s.goals === null) return null;
-                return (
-                  <text key={pi} x={groupCenter} y={padT + plotH + 22 + pi * 8} fill={colors[pi]} fontSize="6.5" fontWeight="700" textAnchor="middle">A: {s.assists}</text>
-                );
-              })}
+              {/* Compact single-line assists row: colored numbers separated by middle dots */}
+              <text x={groupCenter} y={padT + plotH + 24} fontSize="7.5" fontWeight="800" textAnchor="middle">
+                {activePlayers.map((p, pi) => {
+                  const s = p.seasons[si];
+                  if (s.goals === null) return null;
+                  return (
+                    <tspan key={pi}>
+                      {pi > 0 && <tspan fill="#5a5a6a"> · </tspan>}
+                      <tspan fill={colors[pi]}>{s.assists}</tspan>
+                    </tspan>
+                  );
+                })}
+              </text>
               {isPartial && (
-                <text x={groupCenter} y={padT + plotH + 22 + activePlayers.length * 8 + 2} fill="#f59e0b" fontSize="6" fontWeight="700" textAnchor="middle">(partial)</text>
+                <text x={groupCenter} y={padT + plotH + 34} fill="#f59e0b" fontSize="6" fontWeight="700" textAnchor="middle">(partial)</text>
               )}
             </g>
           );
@@ -5161,7 +5166,7 @@ function PlayerTrajectoryGraphic() {
                     );
                   })}
                 </div>
-                <div style={{ fontSize: 9, color: "#7E9485", fontWeight: 600, marginTop: 4 }}>Goals (Assists)</div>
+
               </div>
               {renderGroupedBarChart()}
             </div>
