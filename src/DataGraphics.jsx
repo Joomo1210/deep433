@@ -4944,6 +4944,7 @@ function PlayerTrajectoryGraphic() {
   const [activeSlots, setActiveSlots] = useState(1); // how many slots are visible (1-3)
   const [downloading, setDownloading] = useState(false);
   const [metricMode, setMetricMode] = useState("attacking"); // "attacking" | "defensive"
+  const [showRawData, setShowRawData] = useState(false);
 
   const updateSlot = (index, patch) => {
     setSlots(prev => prev.map((s, i) => i === index ? { ...s, ...patch } : s));
@@ -5187,6 +5188,52 @@ function PlayerTrajectoryGraphic() {
           <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
             {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
           </button>
+
+          <button onClick={() => setShowRawData(!showRawData)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "8px", width: "100%", marginTop: 6 }}>
+            {showRawData ? "▲ Hide Raw Data" : "▼ Show Raw Data"}
+          </button>
+
+          {showRawData && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {slots.slice(0, activeSlots).filter(s => s.seasons && s.basePlayer).map((slot, pi) => {
+                const statRows = [
+                  { key: "goals", label: "Goals" },
+                  { key: "assists", label: "Assists" },
+                  { key: "tackles", label: "Tackles" },
+                  { key: "interceptions", label: "Interceptions" },
+                  { key: "keyPasses", label: "Key Passes" },
+                  { key: "passAccuracy", label: "Pass Accuracy %" },
+                  { key: "appearances", label: "Appearances" },
+                  { key: "rating", label: "Rating" },
+                ];
+                return (
+                  <div key={pi} style={{ border: "1px solid #2a2a3a", borderRadius: 8, padding: 10, overflowX: "auto" }}>
+                    <div style={{ fontSize: 12, fontWeight: 900, color: ["#4ade80", "#a855f7", "#f59e0b"][pi], marginBottom: 8 }}>{slot.basePlayer.name}</div>
+                    <table style={{ borderCollapse: "collapse", fontSize: 10, width: "100%" }}>
+                      <thead>
+                        <tr>
+                          <th style={{ textAlign: "left", padding: "4px 8px", color: "#7E9485", fontWeight: 700 }}></th>
+                          {slot.seasons.map((s, si) => (
+                            <th key={si} style={{ textAlign: "right", padding: "4px 8px", color: "#e2e8f0", fontWeight: 700 }}>{s.season}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {statRows.map((row, ri) => (
+                          <tr key={ri} style={{ borderTop: "1px solid #1e1830" }}>
+                            <td style={{ padding: "4px 8px", color: "#7E9485", fontWeight: 700, whiteSpace: "nowrap" }}>{row.label}</td>
+                            {slot.seasons.map((s, si) => (
+                              <td key={si} style={{ textAlign: "right", padding: "4px 8px", color: "#e2e8f0" }}>{s[row.key] !== null && s[row.key] !== undefined ? s[row.key] : "—"}</td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </>
       )}
     </div>
