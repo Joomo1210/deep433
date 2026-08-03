@@ -4934,52 +4934,50 @@ function TeamOfWeekGraphic() {
 // ─── PLAYER TRAJECTORY (one player, multiple past seasons) ──────────────────
 function PlayerTrajectoryGraphic() {
   const cardRef = useRef(null);
-  const [teamSearch, setTeamSearch] = useState("");
-  const [teamSuggestions, setTeamSuggestions] = useState([]);
-  const [team, setTeam] = useState(null);
-  const [searchingTeam, setSearchingTeam] = useState(false);
-  const [squad, setSquad] = useState([]);
-  const [loadingSquad, setLoadingSquad] = useState(false);
-  const [playerId, setPlayerId] = useState("");
-  const [basePlayer, setBasePlayer] = useState(null);
-  const [seasons, setSeasons] = useState(null);
-  const [loadingSeasons, setLoadingSeasons] = useState(false);
+  const YEARS_BACK = 4; // current season + 4 prior = 5 seasons shown
+  const emptySlot = () => ({
+    teamSearch: "", teamSuggestions: [], team: null, searchingTeam: false,
+    squad: [], loadingSquad: false, playerId: "", basePlayer: null,
+    seasons: null, loadingSeasons: false,
+  });
+  const [slots, setSlots] = useState([emptySlot(), emptySlot(), emptySlot()]);
+  const [activeSlots, setActiveSlots] = useState(1); // how many slots are visible (1-3)
   const [downloading, setDownloading] = useState(false);
 
-  const YEARS_BACK = 4; // current season + 4 prior = 5 seasons shown
+  const updateSlot = (index, patch) => {
+    setSlots(prev => prev.map((s, i) => i === index ? { ...s, ...patch } : s));
+  };
 
-  const searchTeam = async (query) => {
-    setTeamSearch(query);
-    if (query.length < 3) { setTeamSuggestions([]); return; }
-    setSearchingTeam(true);
+  const searchTeam = async (index, query) => {
+    updateSlot(index, { teamSearch: query });
+    if (query.length < 3) { updateSlot(index, { teamSuggestions: [] }); return; }
+    updateSlot(index, { searchingTeam: true });
     try {
       const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
       const d = await r.json();
-      setTeamSuggestions(d.teams || []);
+      updateSlot(index, { teamSuggestions: d.teams || [] });
     } catch {}
-    setSearchingTeam(false);
+    updateSlot(index, { searchingTeam: false });
   };
 
-  const selectTeam = async (t) => {
-    setLoadingSquad(true);
-    setTeam(t); setTeamSuggestions([]); setTeamSearch(t.name);
-    setPlayerId(""); setBasePlayer(null); setSeasons(null);
+  const selectTeam = async (index, t) => {
+    updateSlot(index, { loadingSquad: true, team: t, teamSuggestions: [], teamSearch: t.name, playerId: "", basePlayer: null, seasons: null });
     try {
       const r = await fetch(`/api/team-stats?mode=teamsquad&teamId=${t.id}`);
       const d = await r.json();
-      setSquad(d.players || []);
+      updateSlot(index, { squad: d.players || [] });
     } catch {}
-    setLoadingSquad(false);
+    updateSlot(index, { loadingSquad: false });
   };
 
-  const loadTrajectory = async (pid) => {
-    setPlayerId(pid);
-    const p = squad.find(sp => String(sp.id) === String(pid));
-    setBasePlayer(p);
+  const loadTrajectory = async (index, pid) => {
+    const slot = slots[index];
+    updateSlot(index, { playerId: pid });
+    const p = slot.squad.find(sp => String(sp.id) === String(pid));
+    updateSlot(index, { basePlayer: p });
     if (!p) return;
 
-    setLoadingSeasons(true);
-    setSeasons(null);
+    updateSlot(index, { loadingSeasons: true, seasons: null });
     const currentSeason = 2025;
     const results = [];
     for (let i = 0; i <= YEARS_BACK; i++) {
@@ -4988,14 +4986,7 @@ function PlayerTrajectoryGraphic() {
         const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${pid}&season=${season}`);
         const d = await r.json();
         if (d.available) {
-          results.push({
-            season: `${season}-${String(season + 1).slice(-2)}`,
-            team: d.team,
-            goals: d.goals,
-            assists: d.assists,
-            appearances: d.appearances,
-            rating: d.rating,
-          });
+          results.push({ season: `${season}-${String(season + 1).slice(-2)}`, team: d.team, goals: d.goals, assists: d.assists, appearances: d.appearances, rating: d.rating });
         } else {
           results.push({ season: `${season}-${String(season + 1).slice(-2)}`, team: null, goals: null, assists: null, appearances: null, rating: null });
         }
@@ -5003,90 +4994,119 @@ function PlayerTrajectoryGraphic() {
         results.push({ season: `${season}-${String(season + 1).slice(-2)}`, team: null, goals: null, assists: null, appearances: null, rating: null });
       }
     }
-    setSeasons(results.reverse()); // oldest to newest
-    setLoadingSeasons(false);
+    updateSlot(index, { seasons: results.reverse(), loadingSeasons: false });
   };
 
   const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-trajectory-${basePlayer?.name}.png`, undefined, transparent);
+      const names = slots.slice(0, activeSlots).filter(s => s.basePlayer).map(s => s.basePlayer.name).join("-");
+      await downloadCardImage(cardRef.current, `deep433-trajectory-${names || "players"}.png`, undefined, transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
 
-  const validSeasons = seasons?.filter(s => s.goals !== null) || [];
-  const maxGoals = validSeasons.length ? Math.max(...validSeasons.map(s => s.goals || 0), 1) : 1;
+  const renderMiniChart = (slot) => {
+    const validSeasons = slot.seasons?.filter(s => s.goals !== null) || [];
+    const maxGoals = validSeasons.length ? Math.max(...validSeasons.map(s => s.goals || 0), 1) : 1;
+    const maxAssists = validSeasons.length ? Math.max(...validSeasons.map(s => s.assists || 0), 1) : 1;
+    const maxVal = Math.max(maxGoals, maxAssists, 1);
+    const chartW = 320, chartH = 150, padL = 30, padR = 10, padT = 10, padB = 20;
+    const plotW = chartW - padL - padR, plotH = chartH - padT - padB;
+    const n = slot.seasons.length;
+    const xFor = (i) => padL + (n > 1 ? (i / (n - 1)) * plotW : plotW / 2);
+    const yFor = (val) => padT + plotH - (Math.max(val, 0) / maxVal) * plotH;
+    const goalsPoints = slot.seasons.map((s, i) => s.goals !== null ? `${xFor(i)},${yFor(s.goals)}` : null).filter(Boolean).join(" ");
+    const assistsPoints = slot.seasons.map((s, i) => s.goals !== null ? `${xFor(i)},${yFor(s.assists)}` : null).filter(Boolean).join(" ");
+
+    return (
+      <div style={{ marginBottom: 20, paddingBottom: 16, borderBottom: "1px solid #1e1830" }}>
+        <div style={{ textAlign: "center", marginBottom: 6 }}>
+          {slot.basePlayer.photo && <img src={slot.basePlayer.photo} alt="" crossOrigin="anonymous" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 4px" }} />}
+          <div style={{ fontSize: 15, fontWeight: 900, color: "#f0f0f0" }}>{slot.basePlayer.name}</div>
+        </div>
+        <svg viewBox={`0 0 ${chartW} ${chartH}`} xmlns="http://www.w3.org/2000/svg" style={{ display: "block", width: "100%" }}>
+          {[0, 0.25, 0.5, 0.75, 1].map((f, gi) => (
+            <line key={gi} x1={padL} y1={padT + plotH * (1 - f)} x2={chartW - padR} y2={padT + plotH * (1 - f)} stroke="#1e1e30" strokeWidth="1" />
+          ))}
+          <polyline points={assistsPoints} fill="none" stroke="#a855f7" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+          <polyline points={goalsPoints} fill="none" stroke="#4ade80" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+          {slot.seasons.map((s, i) => s.goals !== null && (
+            <g key={i}>
+              <circle cx={xFor(i)} cy={yFor(s.goals)} r="3.5" fill="#4ade80" />
+              <circle cx={xFor(i)} cy={yFor(s.assists)} r="3.5" fill="#a855f7" />
+              <text x={xFor(i)} y={yFor(s.goals) - 7} fill="#4ade80" fontSize="9" fontWeight="900" textAnchor="middle">{s.goals}</text>
+              <text x={xFor(i)} y={yFor(s.assists) + 14} fill="#a855f7" fontSize="9" fontWeight="900" textAnchor="middle">{s.assists}</text>
+              <text x={xFor(i)} y={chartH - 4} fill="#e2e8f0" fontSize="8" fontWeight="700" textAnchor="middle">{s.season}</text>
+            </g>
+          ))}
+        </svg>
+      </div>
+    );
+  };
+
+  const anyPlayerLoaded = slots.slice(0, activeSlots).some(s => s.seasons && s.basePlayer);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#e2e8f0" }}>See a player's goals, assists, and appearances across the last {YEARS_BACK + 1} seasons — spot trends before predicting next season.</div>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Compare up to 3 players' goals, assists, and appearances across the last {YEARS_BACK + 1} seasons.</div>
 
-      <div style={{ position: "relative" }}>
-        <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Current Team</div>
-        <input
-          value={teamSearch}
-          onChange={e => searchTeam(e.target.value)}
-          placeholder="Search team..."
-          style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
-        />
-        {teamSuggestions.length > 0 && (
-          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 20, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, marginTop: 4, maxHeight: 160, overflowY: "auto" }}>
-            {teamSuggestions.map(t => (
-              <div key={t.id} onClick={() => selectTeam(t)} style={{ padding: "8px 12px", cursor: "pointer", fontSize: 13, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 8 }}>
-                {t.logo && <img src={t.logo} alt="" style={{ width: 16, height: 16, objectFit: "contain" }} />}
-                {t.name}
+      {slots.slice(0, activeSlots).map((slot, index) => (
+        <div key={index} style={{ border: "1px solid #2a2a3a", borderRadius: 8, padding: 10 }}>
+          <div style={{ fontSize: 10, color: index === 0 ? "#4ade80" : index === 1 ? "#a855f7" : "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Player {index + 1}{index > 0 ? " (optional)" : ""}</div>
+          <div style={{ position: "relative" }}>
+            <input
+              value={slot.teamSearch}
+              onChange={e => searchTeam(index, e.target.value)}
+              placeholder="Search team..."
+              style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+            />
+            {slot.teamSuggestions.length > 0 && (
+              <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 20, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, marginTop: 4, maxHeight: 160, overflowY: "auto" }}>
+                {slot.teamSuggestions.map(t => (
+                  <div key={t.id} onClick={() => selectTeam(index, t)} style={{ padding: "8px 12px", cursor: "pointer", fontSize: 13, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 8 }}>
+                    {t.logo && <img src={t.logo} alt="" style={{ width: 16, height: 16, objectFit: "contain" }} />}
+                    {t.name}
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
-        )}
-      </div>
+          {slot.loadingSquad && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 12, marginTop: 6 }}>Loading squad...</div>}
+          {slot.squad.length > 0 && (
+            <select
+              value={slot.playerId}
+              onChange={e => loadTrajectory(index, e.target.value)}
+              style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit", marginTop: 6 }}
+            >
+              <option value="">— Select player —</option>
+              {slot.squad.map(p => <option key={p.id} value={p.id}>{p.name} ({p.position})</option>)}
+            </select>
+          )}
+          {slot.loadingSeasons && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 12, marginTop: 6 }}>Loading {YEARS_BACK + 1} seasons of history...</div>}
+        </div>
+      ))}
 
-      {loadingSquad && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 12 }}>Loading squad...</div>}
-
-      {squad.length > 0 && (
-        <select
-          value={playerId}
-          onChange={e => loadTrajectory(e.target.value)}
-          style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
-        >
-          <option value="">— Select player —</option>
-          {squad.map(p => <option key={p.id} value={p.id}>{p.name} ({p.position})</option>)}
-        </select>
+      {activeSlots < 3 && (
+        <button onClick={() => setActiveSlots(activeSlots + 1)} style={{ background: "none", border: "1px dashed #4ade80", borderRadius: 8, color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "8px" }}>
+          + Add Another Player ({activeSlots}/3)
+        </button>
       )}
 
-      {loadingSeasons && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 12 }}>Loading {YEARS_BACK + 1} seasons of history...</div>}
-
-      {seasons && basePlayer && (
+      {anyPlayerLoaded && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "22px 18px" }}>
-              <div style={{ textAlign: "center", marginTop: 30, marginBottom: 6 }}>
-                {basePlayer.photo && <img src={basePlayer.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 8px" }} />}
-                <div style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>{basePlayer.name}</div>
-                <div style={{ fontSize: 12, color: "#a78bfa", fontWeight: 700, marginTop: 2 }}>Season by Season</div>
+              <div style={{ textAlign: "center", marginTop: 8, marginBottom: 12 }}>
+                <div style={{ fontSize: 12, color: "#a78bfa", fontWeight: 700 }}>Season by Season</div>
               </div>
-
-              {seasons.map((s, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", padding: "10px 0", borderBottom: i < seasons.length - 1 ? "1px solid #1e1830" : "none", gap: 10 }}>
-                  <div style={{ width: 60, fontSize: 12, fontWeight: 800, color: "#e2e8f0" }}>{s.season}</div>
-                  {s.goals !== null ? (
-                    <>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 10, color: "#666", marginBottom: 2 }}>{s.team}</div>
-                        <div style={{ height: 6, background: "#1a1a24", borderRadius: 3, overflow: "hidden" }}>
-                          <div style={{ width: `${Math.max((s.goals / maxGoals) * 100, 4)}%`, height: "100%", background: "#4ade80", borderRadius: 3 }} />
-                        </div>
-                      </div>
-                      <div style={{ width: 100, fontSize: 11, color: "#e2e8f0", textAlign: "right" }}>
-                        <span style={{ color: "#4ade80", fontWeight: 800 }}>{s.goals}G</span> <span style={{ color: "#a855f7", fontWeight: 800 }}>{s.assists}A</span> · {s.appearances} apps
-                      </div>
-                    </>
-                  ) : (
-                    <div style={{ flex: 1, fontSize: 11, color: "#555", fontStyle: "italic" }}>No data available</div>
-                  )}
-                </div>
-              ))}
+              {slots.slice(0, activeSlots).map((slot, i) => slot.seasons && slot.basePlayer ? (
+                <div key={i}>{renderMiniChart(slot)}</div>
+              ) : null)}
+              <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 4 }}>
+                <span style={{ fontSize: 11, fontWeight: 800, color: "#4ade80" }}>● Goals</span>
+                <span style={{ fontSize: 11, fontWeight: 800, color: "#a855f7" }}>● Assists</span>
+              </div>
             </div>
           </GraphicCard>
           <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
@@ -5100,6 +5120,7 @@ function PlayerTrajectoryGraphic() {
     </div>
   );
 }
+
 
 // ─── PASTE STATS (parse raw tabular data into a visual card) ────────────────
 function PasteStatsGraphic() {
@@ -5963,6 +5984,10 @@ function PercentileRadarGraphic() {
   // "Top X%" reads more clearly than raw ordinal percentile for a general
   // audience — smaller number always means better, matching how people
   // already read things like "top 1% of earners."
+  // Standard ordinal percentile wording (e.g. "40th percentile"), rather
+  // than "Top X%" framing.
+  // "Top X%" wording — deliberately distinct from a standard percentile
+  // chart's typical "Nth percentile" framing.
   const formatAsTopPct = (percentile) => {
     const topPct = 100 - percentile;
     return `Top ${Math.max(1, topPct)}%`;
@@ -6426,6 +6451,10 @@ function PositionRadarGraphic() {
     return Math.max(0, Math.min(100, Math.round((rank / sorted.length) * 100)));
   };
 
+  // Standard ordinal percentile wording (e.g. "40th percentile"), rather
+  // than "Top X%" framing.
+  // "Top X%" wording — deliberately distinct from a standard percentile
+  // chart's typical "Nth percentile" framing.
   const formatAsTopPct = (percentile) => {
     const topPct = 100 - percentile;
     return `Top ${Math.max(1, topPct)}%`;
