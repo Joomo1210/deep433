@@ -5025,7 +5025,8 @@ function PlayerTrajectoryGraphic() {
     // Round the axis max up to a clean multiple of 10 for readable gridline values
     const axisMax = Math.max(Math.ceil(maxGoals / 10) * 10, 10);
 
-    const chartW = 360, chartH = 210, padL = 26, padR = 10, padT = 18, padB = 30;
+    // Extra bottom padding to fit: season label, assists row, partial flag
+    const chartW = 360, chartH = 230, padL = 26, padR = 10, padT = 18, padB = 48;
     const plotW = chartW - padL - padR, plotH = chartH - padT - padB;
     // Wider gap between season groups (groupGapFrac reserves space between
     // groups, separate from the bars themselves) for clearer separation.
@@ -5070,13 +5071,22 @@ function PlayerTrajectoryGraphic() {
                 return (
                   <g key={pi}>
                     <rect x={barX} y={barY} width={barW} height={barH} fill={colors[pi]} rx="2" />
-                    <text x={barX + barW / 2} y={barY - 4} fill={colors[pi]} fontSize="7.5" fontWeight="900" textAnchor="middle">{s.goals}({s.assists}a)</text>
+                    <text x={barX + barW / 2} y={barY - 4} fill={colors[pi]} fontSize="9" fontWeight="900" textAnchor="middle">{s.goals}</text>
                   </g>
                 );
               })}
-              <text x={groupCenter} y={chartH - 16} fill="#e2e8f0" fontSize="8" fontWeight="700" textAnchor="middle">{label}</text>
+              {/* Season label */}
+              <text x={groupCenter} y={padT + plotH + 12} fill="#e2e8f0" fontSize="8" fontWeight="700" textAnchor="middle">{label}</text>
+              {/* Dedicated assists row, one line per player, never collides with bars */}
+              {activePlayers.map((p, pi) => {
+                const s = p.seasons[si];
+                if (s.goals === null) return null;
+                return (
+                  <text key={pi} x={groupCenter} y={padT + plotH + 22 + pi * 8} fill={colors[pi]} fontSize="6.5" fontWeight="700" textAnchor="middle">A: {s.assists}</text>
+                );
+              })}
               {isPartial && (
-                <text x={groupCenter} y={chartH - 6} fill="#f59e0b" fontSize="6.5" fontWeight="700" textAnchor="middle">(partial)</text>
+                <text x={groupCenter} y={padT + plotH + 22 + activePlayers.length * 8 + 2} fill="#f59e0b" fontSize="6" fontWeight="700" textAnchor="middle">(partial)</text>
               )}
             </g>
           );
