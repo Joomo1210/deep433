@@ -4987,12 +4987,12 @@ function PlayerTrajectoryGraphic() {
         const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${pid}&season=${season}`);
         const d = await r.json();
         if (d.available) {
-          results.push({ season: `${season}-${String(season + 1).slice(-2)}`, team: d.team, goals: d.goals, assists: d.assists, appearances: d.appearances, rating: d.rating, tackles: d.tackles, interceptions: d.interceptions });
+          results.push({ season: `${season}-${String(season + 1).slice(-2)}`, team: d.team, goals: d.goals, assists: d.assists, appearances: d.appearances, rating: d.rating, tackles: d.tackles, interceptions: d.interceptions, keyPasses: d.keyPasses, passAccuracy: d.passAccuracy });
         } else {
-          results.push({ season: `${season}-${String(season + 1).slice(-2)}`, team: null, goals: null, assists: null, appearances: null, rating: null, tackles: null, interceptions: null });
+          results.push({ season: `${season}-${String(season + 1).slice(-2)}`, team: null, goals: null, assists: null, appearances: null, rating: null, tackles: null, interceptions: null, keyPasses: null, passAccuracy: null });
         }
       } catch {
-        results.push({ season: `${season}-${String(season + 1).slice(-2)}`, team: null, goals: null, assists: null, appearances: null, rating: null, tackles: null, interceptions: null });
+        results.push({ season: `${season}-${String(season + 1).slice(-2)}`, team: null, goals: null, assists: null, appearances: null, rating: null, tackles: null, interceptions: null, keyPasses: null, passAccuracy: null });
       }
     }
     updateSlot(index, { seasons: results.reverse(), loadingSeasons: false });
@@ -5011,8 +5011,8 @@ function PlayerTrajectoryGraphic() {
     const activePlayers = slots.slice(0, activeSlots).filter(s => s.seasons && s.basePlayer);
     if (activePlayers.length === 0) return null;
 
-    const primaryKey = metricMode === "defensive" ? "tackles" : "goals";
-    const secondaryKey = metricMode === "defensive" ? "interceptions" : "assists";
+    const primaryKey = metricMode === "defensive" ? "tackles" : metricMode === "creative" ? "keyPasses" : "goals";
+    const secondaryKey = metricMode === "defensive" ? "interceptions" : metricMode === "creative" ? "passAccuracy" : "assists";
 
     // All players share the same season labels (same YEARS_BACK loop), so
     // use the first active player's season list as the shared x-axis.
@@ -5104,8 +5104,8 @@ function PlayerTrajectoryGraphic() {
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ fontSize: 11, color: "#e2e8f0" }}>Compare up to 3 players' trajectory across the last {YEARS_BACK + 1} seasons.</div>
 
-      <div style={{ display: "flex", gap: 6 }}>
-        {[{ v: "attacking", label: "⚽ Goals & Assists" }, { v: "defensive", label: "🛡️ Tackles & Interceptions" }].map(t => (
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {[{ v: "attacking", label: "⚽ Goals & Assists" }, { v: "defensive", label: "🛡️ Tackles & Interceptions" }, { v: "creative", label: "🎨 Key Passes & Pass Accuracy" }].map(t => (
           <button
             key={t.v}
             onClick={() => setMetricMode(t.v)}
