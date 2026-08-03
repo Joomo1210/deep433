@@ -5014,28 +5014,50 @@ function PlayerTrajectoryGraphic() {
     // use the first active player's season list as the shared x-axis.
     const seasonLabels = activePlayers[0].seasons.map(s => s.season);
     const colors = ["#4ade80", "#a855f7", "#f59e0b"];
+    // The most recent season (last in the array) is flagged as potentially
+    // partial, since it's the current season and likely mid-collection.
+    const lastSeasonIndex = seasonLabels.length - 1;
 
     const maxGoals = Math.max(
       ...activePlayers.flatMap(p => p.seasons.map(s => s.goals || 0)),
       1
     );
+    // Round the axis max up to a clean multiple of 10 for readable gridline values
+    const axisMax = Math.max(Math.ceil(maxGoals / 10) * 10, 10);
 
-    const chartW = 340, chartH = 200, padL = 16, padR = 16, padT = 16, padB = 26;
+    const chartW = 360, chartH = 210, padL = 26, padR = 10, padT = 18, padB = 30;
     const plotW = chartW - padL - padR, plotH = chartH - padT - padB;
+    // Wider gap between season groups (groupGapFrac reserves space between
+    // groups, separate from the bars themselves) for clearer separation.
+    const groupGapFrac = 0.22;
     const groupW = plotW / seasonLabels.length;
-    const barW = Math.min(18, (groupW - 8) / activePlayers.length);
+    const usableGroupW = groupW * (1 - groupGapFrac);
+    const barW = Math.min(15, (usableGroupW - 6) / activePlayers.length);
     const barGap = 3;
+
+    // Fixed gridline values at clean intervals (e.g. 10, 20, 30...) rather
+    // than arbitrary fractions, per feedback for easier reading.
+    const gridStep = axisMax <= 30 ? 10 : axisMax <= 60 ? 20 : 30;
+    const gridValues = [];
+    for (let v = 0; v <= axisMax; v += gridStep) gridValues.push(v);
 
     return (
       <svg viewBox={`0 0 ${chartW} ${chartH}`} xmlns="http://www.w3.org/2000/svg" style={{ display: "block", width: "100%" }}>
-        {[0, 0.5, 1].map((f, gi) => (
-          <line key={gi} x1={padL} y1={padT + plotH * (1 - f)} x2={chartW - padR} y2={padT + plotH * (1 - f)} stroke="#1e1e30" strokeWidth="1" />
-        ))}
+        {gridValues.map((v, gi) => {
+          const y = padT + plotH - (v / axisMax) * plotH;
+          return (
+            <g key={gi}>
+              <line x1={padL} y1={y} x2={chartW - padR} y2={y} stroke="#1e1e30" strokeWidth="1" />
+              <text x={padL - 4} y={y + 3} fill="#5a5a6a" fontSize="7" fontWeight="600" textAnchor="end">{v}</text>
+            </g>
+          );
+        })}
         {seasonLabels.map((label, si) => {
           const groupX = padL + si * groupW;
           const groupCenter = groupX + groupW / 2;
           const totalBarsWidth = activePlayers.length * barW + (activePlayers.length - 1) * barGap;
           const startX = groupCenter - totalBarsWidth / 2;
+          const isPartial = si === lastSeasonIndex;
 
           return (
             <g key={si}>
@@ -5043,17 +5065,19 @@ function PlayerTrajectoryGraphic() {
                 const s = p.seasons[si];
                 const barX = startX + pi * (barW + barGap);
                 if (s.goals === null) return null;
-                const barH = Math.max((s.goals / maxGoals) * plotH, 2);
+                const barH = Math.max((s.goals / axisMax) * plotH, 2);
                 const barY = padT + plotH - barH;
                 return (
                   <g key={pi}>
                     <rect x={barX} y={barY} width={barW} height={barH} fill={colors[pi]} rx="2" />
-                    <text x={barX + barW / 2} y={barY - 4} fill={colors[pi]} fontSize="8" fontWeight="900" textAnchor="middle">{s.goals}</text>
-                    <text x={barX + barW / 2} y={padT + plotH + 9} fill={colors[pi]} fontSize="6.5" fontWeight="700" textAnchor="middle">{s.assists}a</text>
+                    <text x={barX + barW / 2} y={barY - 4} fill={colors[pi]} fontSize="7.5" fontWeight="900" textAnchor="middle">{s.goals}({s.assists}a)</text>
                   </g>
                 );
               })}
-              <text x={groupCenter} y={chartH - 4} fill="#e2e8f0" fontSize="8" fontWeight="700" textAnchor="middle">{label}</text>
+              <text x={groupCenter} y={chartH - 16} fill="#e2e8f0" fontSize="8" fontWeight="700" textAnchor="middle">{label}</text>
+              {isPartial && (
+                <text x={groupCenter} y={chartH - 6} fill="#f59e0b" fontSize="6.5" fontWeight="700" textAnchor="middle">(partial)</text>
+              )}
             </g>
           );
         })}
@@ -5127,6 +5151,7 @@ function PlayerTrajectoryGraphic() {
                     );
                   })}
                 </div>
+                <div style={{ fontSize: 9, color: "#7E9485", fontWeight: 600, marginTop: 4 }}>Goals (Assists)</div>
               </div>
               {renderGroupedBarChart()}
             </div>
