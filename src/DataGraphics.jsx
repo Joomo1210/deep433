@@ -5119,7 +5119,14 @@ function PlayerTrajectoryGraphic() {
                     <span key={i} style={{ fontSize: 12, fontWeight: 900, color: ["#4ade80", "#a855f7", "#f59e0b"][i] }}>● {s.basePlayer.name}</span>
                   ))}
                 </div>
-                <div style={{ fontSize: 11, color: "#a78bfa", fontWeight: 700, marginTop: 4 }}>Season by Season (Goals, assists shown below each bar)</div>
+                <div style={{ display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap", marginTop: 4 }}>
+                  {slots.slice(0, activeSlots).filter(s => s.basePlayer).map((s, i) => {
+                    const totalApps = (s.seasons || []).reduce((sum, season) => sum + (season.appearances || 0), 0);
+                    return (
+                      <span key={i} style={{ fontSize: 10, fontWeight: 700, color: ["#4ade80", "#a855f7", "#f59e0b"][i] }}>{totalApps} apps</span>
+                    );
+                  })}
+                </div>
               </div>
               {renderGroupedBarChart()}
             </div>
