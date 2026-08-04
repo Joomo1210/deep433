@@ -5033,8 +5033,10 @@ function PlayerTrajectoryGraphic() {
     // Round the axis max up to a clean multiple of 10 for readable gridline values
     const axisMax = Math.max(Math.ceil(maxBarValue / 10) * 10, 10);
 
-    // Extra bottom padding to fit: season label, secondary-metric row
-    const chartW = 360, chartH = 190, padL = 26, padR = 10, padT = 18, padB = 32;
+    // Extra bottom padding to fit: season label, plus one stacked split
+    // line per player (each on its own row, properly spaced, not crammed
+    // into one line — that's what made this cramped before).
+    const chartW = 360, chartH = 190 + (activePlayers.length - 1) * 10, padL = 26, padR = 10, padT = 18, padB = 32 + (activePlayers.length - 1) * 10;
     const plotW = chartW - padL - padR, plotH = chartH - padT - padB;
     // Wider gap between season groups (groupGapFrac reserves space between
     // groups, separate from the bars themselves) for clearer separation.
@@ -5085,19 +5087,17 @@ function PlayerTrajectoryGraphic() {
               })}
               {/* Season label */}
               <text x={groupCenter} y={padT + plotH + 12} fill="#e2e8f0" fontSize="8" fontWeight="700" textAnchor="middle">{label}</text>
-              {/* Compact single-line split row: shows the individual breakdown behind each combined total */}
-              <text x={groupCenter} y={padT + plotH + 24} fontSize="7" fontWeight="800" textAnchor="middle">
-                {activePlayers.map((p, pi) => {
-                  const s = p.seasons[si];
-                  if (s[primaryKey] === null) return null;
-                  return (
-                    <tspan key={pi}>
-                      {pi > 0 && <tspan fill="#5a5a6a"> · </tspan>}
-                      <tspan fill={colors[pi]}>{s[primaryKey]}{isCombinable ? "+" : ""}{isCombinable ? s[secondaryKey] : `${s[secondaryKey]}%`}</tspan>
-                    </tspan>
-                  );
-                })}
-              </text>
+              {/* Split breakdown, stacked one line per player with real spacing.
+                  Deliberately smaller and more muted than the main bar labels
+                  so the eye stays on the combined totals first. */}
+              {activePlayers.map((p, pi) => {
+                const s = p.seasons[si];
+                if (s[primaryKey] === null) return null;
+                const splitText = isCombinable ? `${s[primaryKey]}+${s[secondaryKey]}` : `${s[secondaryKey]}%`;
+                return (
+                  <text key={pi} x={groupCenter} y={padT + plotH + 23 + pi * 9} fill={colors[pi]} fillOpacity="0.7" fontSize="6.5" fontWeight="700" textAnchor="middle">{splitText}</text>
+                );
+              })}
 
             </g>
           );
