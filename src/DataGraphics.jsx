@@ -5012,13 +5012,14 @@ function PlayerTrajectoryGraphic() {
     const activePlayers = slots.slice(0, activeSlots).filter(s => s.seasons && s.basePlayer);
     if (activePlayers.length === 0) return null;
 
-    const primaryKey = metricMode === "defensive" ? "tackles" : metricMode === "creative" ? "keyPasses" : "goals";
-    const secondaryKey = metricMode === "defensive" ? "interceptions" : metricMode === "creative" ? "passAccuracy" : "assists";
+    const primaryKey = metricMode === "defensive" ? "tackles" : metricMode === "creative" ? "keyPasses" : metricMode === "overall" ? "appearances" : "goals";
+    const secondaryKey = metricMode === "defensive" ? "interceptions" : metricMode === "creative" ? "passAccuracy" : metricMode === "overall" ? "rating" : "assists";
     // Combining into one "total" bar only makes sense when both metrics are
     // counts (Goals+Assists, Tackles+Interceptions). Creative mode mixes a
-    // count (Key Passes) with a percentage (Pass Accuracy), so those can't
-    // be meaningfully added — bar stays primary-metric-only in that case.
-    const isCombinable = metricMode !== "creative";
+    // count (Key Passes) with a percentage (Pass Accuracy), and Overall mode
+    // mixes a count (Appearances) with a small decimal rating (6.5-8.5) — so
+    // those can't be meaningfully added; bar stays primary-metric-only.
+    const isCombinable = metricMode === "attacking" || metricMode === "defensive";
     const getBarValue = (s) => isCombinable ? (s[primaryKey] || 0) + (s[secondaryKey] || 0) : s[primaryKey];
 
     // All players share the same season labels (same YEARS_BACK loop), so
@@ -5080,7 +5081,7 @@ function PlayerTrajectoryGraphic() {
                 const barY = padT + plotH - barH;
                 return (
                   <g key={pi}>
-                    <rect x={barX} y={barY} width={barW} height={barH} fill={colors[pi]} rx={metricMode === "defensive" ? "0" : metricMode === "creative" ? "5" : "2"} />
+                    <rect x={barX} y={barY} width={barW} height={barH} fill={colors[pi]} rx={metricMode === "defensive" ? "0" : metricMode === "creative" ? "5" : metricMode === "overall" ? "1" : "2"} />
                     <text x={barX + barW / 2} y={barY - 4} fill={colors[pi]} fontSize="9" fontWeight="900" textAnchor="middle">{barValue}</text>
                   </g>
                 );
@@ -5093,7 +5094,7 @@ function PlayerTrajectoryGraphic() {
               {activePlayers.map((p, pi) => {
                 const s = p.seasons[si];
                 if (s[primaryKey] === null) return null;
-                const splitText = isCombinable ? `${s[primaryKey]}+${s[secondaryKey]}` : `${s[secondaryKey]}%`;
+                const splitText = isCombinable ? `${s[primaryKey]}+${s[secondaryKey]}` : metricMode === "overall" ? `${s[secondaryKey]} rtg` : `${s[secondaryKey]}%`;
                 return (
                   <text key={pi} x={groupCenter} y={padT + plotH + 23 + pi * 9} fill={colors[pi]} fillOpacity="0.7" fontSize="6.5" fontWeight="700" textAnchor="middle">{splitText}</text>
                 );
@@ -5113,7 +5114,7 @@ function PlayerTrajectoryGraphic() {
       <div style={{ fontSize: 11, color: "#e2e8f0" }}>Compare up to 3 players' trajectory across the last {YEARS_BACK + 1} seasons.</div>
 
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        {[{ v: "attacking", label: "⚽ Goals & Assists" }, { v: "defensive", label: "🛡️ Tackles & Interceptions" }, { v: "creative", label: "🎨 Key Passes & Pass Accuracy" }].map(t => (
+        {[{ v: "attacking", label: "⚽ Goals & Assists" }, { v: "defensive", label: "🛡️ Tackles & Interceptions" }, { v: "creative", label: "🎨 Key Passes & Pass Accuracy" }, { v: "overall", label: "📊 Appearances & Rating" }].map(t => (
           <button
             key={t.v}
             onClick={() => setMetricMode(t.v)}
@@ -5184,9 +5185,9 @@ function PlayerTrajectoryGraphic() {
                     );
                   })}
                 </div>
-                <div style={{ marginTop: 8, display: "inline-block", background: metricMode === "defensive" ? "#4ade8015" : metricMode === "creative" ? "#a855f715" : "#f59e0b15", border: `1px solid ${metricMode === "defensive" ? "#4ade8050" : metricMode === "creative" ? "#a855f750" : "#f59e0b50"}`, borderRadius: 6, padding: "4px 12px" }}>
+                <div style={{ marginTop: 8, display: "inline-block", background: metricMode === "defensive" ? "#4ade8015" : metricMode === "creative" ? "#a855f715" : metricMode === "overall" ? "#60a5fa15" : "#f59e0b15", border: `1px solid ${metricMode === "defensive" ? "#4ade8050" : metricMode === "creative" ? "#a855f750" : metricMode === "overall" ? "#60a5fa50" : "#f59e0b50"}`, borderRadius: 6, padding: "4px 12px" }}>
                   <span style={{ fontSize: 11, fontWeight: 800, color: "#f0f0f0" }}>
-                    {metricMode === "defensive" ? "🛡️ Tackles + Interceptions" : metricMode === "creative" ? "🎨 Key Passes & Pass Accuracy" : "⚽ Goals + Assists"}
+                    {metricMode === "defensive" ? "🛡️ Tackles + Interceptions" : metricMode === "creative" ? "🎨 Key Passes & Pass Accuracy" : metricMode === "overall" ? "📊 Appearances & Rating" : "⚽ Goals + Assists"}
                   </span>
                 </div>
               </div>
