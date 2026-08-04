@@ -5094,7 +5094,7 @@ function PlayerTrajectoryGraphic() {
               {activePlayers.map((p, pi) => {
                 const s = p.seasons[si];
                 if (s[primaryKey] === null) return null;
-                const splitText = isCombinable ? `${s[primaryKey]}+${s[secondaryKey]}` : metricMode === "overall" ? `${s[secondaryKey]} rtg` : `${s[secondaryKey]}%`;
+                const splitText = isCombinable ? `${s[primaryKey]}+${s[secondaryKey]}` : metricMode === "overall" ? `${Number(s[secondaryKey]).toFixed(1)} rtg` : `${s[secondaryKey]}%`;
                 return (
                   <text key={pi} x={groupCenter} y={padT + plotH + 23 + pi * 9} fill={colors[pi]} fillOpacity="0.7" fontSize="6.5" fontWeight="700" textAnchor="middle">{splitText}</text>
                 );
@@ -5235,7 +5235,7 @@ function PlayerTrajectoryGraphic() {
                           <tr key={ri} style={{ borderTop: "1px solid #1e1830" }}>
                             <td style={{ padding: "4px 8px", color: "#7E9485", fontWeight: 700, whiteSpace: "nowrap" }}>{row.label}</td>
                             {slot.seasons.map((s, si) => (
-                              <td key={si} style={{ textAlign: "right", padding: "4px 8px", color: "#e2e8f0" }}>{s[row.key] !== null && s[row.key] !== undefined ? s[row.key] : "—"}</td>
+                              <td key={si} style={{ textAlign: "right", padding: "4px 8px", color: "#e2e8f0" }}>{s[row.key] !== null && s[row.key] !== undefined ? (typeof s[row.key] === "number" && !Number.isInteger(s[row.key]) ? s[row.key].toFixed(1) : s[row.key]) : "—"}</td>
                             ))}
                           </tr>
                         ))}
