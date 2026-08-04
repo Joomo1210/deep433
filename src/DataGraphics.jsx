@@ -5014,18 +5014,24 @@ function PlayerTrajectoryGraphic() {
 
     const primaryKey = metricMode === "defensive" ? "tackles" : metricMode === "creative" ? "keyPasses" : "goals";
     const secondaryKey = metricMode === "defensive" ? "interceptions" : metricMode === "creative" ? "passAccuracy" : "assists";
+    // Combining into one "total" bar only makes sense when both metrics are
+    // counts (Goals+Assists, Tackles+Interceptions). Creative mode mixes a
+    // count (Key Passes) with a percentage (Pass Accuracy), so those can't
+    // be meaningfully added — bar stays primary-metric-only in that case.
+    const isCombinable = metricMode !== "creative";
+    const getBarValue = (s) => isCombinable ? (s[primaryKey] || 0) + (s[secondaryKey] || 0) : s[primaryKey];
 
     // All players share the same season labels (same YEARS_BACK loop), so
     // use the first active player's season list as the shared x-axis.
     const seasonLabels = activePlayers[0].seasons.map(s => s.season);
     const colors = ["#4ade80", "#a855f7", "#f59e0b"];
 
-    const maxPrimary = Math.max(
-      ...activePlayers.flatMap(p => p.seasons.map(s => s[primaryKey] || 0)),
+    const maxBarValue = Math.max(
+      ...activePlayers.flatMap(p => p.seasons.map(s => s[primaryKey] !== null ? getBarValue(s) : 0)),
       1
     );
     // Round the axis max up to a clean multiple of 10 for readable gridline values
-    const axisMax = Math.max(Math.ceil(maxPrimary / 10) * 10, 10);
+    const axisMax = Math.max(Math.ceil(maxBarValue / 10) * 10, 10);
 
     // Extra bottom padding to fit: season label, secondary-metric row
     const chartW = 360, chartH = 190, padL = 26, padR = 10, padT = 18, padB = 32;
@@ -5067,26 +5073,27 @@ function PlayerTrajectoryGraphic() {
                 const s = p.seasons[si];
                 const barX = startX + pi * (barW + barGap);
                 if (s[primaryKey] === null) return null;
-                const barH = Math.max((s[primaryKey] / axisMax) * plotH, 2);
+                const barValue = getBarValue(s);
+                const barH = Math.max((barValue / axisMax) * plotH, 2);
                 const barY = padT + plotH - barH;
                 return (
                   <g key={pi}>
-                    <rect x={barX} y={barY} width={barW} height={barH} fill={colors[pi]} rx="2" />
-                    <text x={barX + barW / 2} y={barY - 4} fill={colors[pi]} fontSize="9" fontWeight="900" textAnchor="middle">{s[primaryKey]}</text>
+                    <rect x={barX} y={barY} width={barW} height={barH} fill={colors[pi]} rx={metricMode === "defensive" ? "0" : metricMode === "creative" ? "5" : "2"} />
+                    <text x={barX + barW / 2} y={barY - 4} fill={colors[pi]} fontSize="9" fontWeight="900" textAnchor="middle">{barValue}</text>
                   </g>
                 );
               })}
               {/* Season label */}
               <text x={groupCenter} y={padT + plotH + 12} fill="#e2e8f0" fontSize="8" fontWeight="700" textAnchor="middle">{label}</text>
-              {/* Compact single-line secondary-metric row: colored numbers separated by middle dots */}
-              <text x={groupCenter} y={padT + plotH + 24} fontSize="7.5" fontWeight="800" textAnchor="middle">
+              {/* Compact single-line split row: shows the individual breakdown behind each combined total */}
+              <text x={groupCenter} y={padT + plotH + 24} fontSize="7" fontWeight="800" textAnchor="middle">
                 {activePlayers.map((p, pi) => {
                   const s = p.seasons[si];
                   if (s[primaryKey] === null) return null;
                   return (
                     <tspan key={pi}>
                       {pi > 0 && <tspan fill="#5a5a6a"> · </tspan>}
-                      <tspan fill={colors[pi]}>{s[secondaryKey]}</tspan>
+                      <tspan fill={colors[pi]}>{s[primaryKey]}{isCombinable ? "+" : ""}{isCombinable ? s[secondaryKey] : `${s[secondaryKey]}%`}</tspan>
                     </tspan>
                   );
                 })}
@@ -5177,7 +5184,11 @@ function PlayerTrajectoryGraphic() {
                     );
                   })}
                 </div>
-
+                <div style={{ marginTop: 8, display: "inline-block", background: metricMode === "defensive" ? "#4ade8015" : metricMode === "creative" ? "#a855f715" : "#f59e0b15", border: `1px solid ${metricMode === "defensive" ? "#4ade8050" : metricMode === "creative" ? "#a855f750" : "#f59e0b50"}`, borderRadius: 6, padding: "4px 12px" }}>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: "#f0f0f0" }}>
+                    {metricMode === "defensive" ? "🛡️ Tackles + Interceptions" : metricMode === "creative" ? "🎨 Key Passes & Pass Accuracy" : "⚽ Goals + Assists"}
+                  </span>
+                </div>
               </div>
               {renderGroupedBarChart()}
             </div>
