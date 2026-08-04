@@ -3347,19 +3347,19 @@ function TeamStatsCompareGraphic() {
 
       {loading && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 13 }}>Loading...</div>}
 
-      {data1 && data2 && (
+      {(data1 || data2) && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "16px 16px 14px" }}>
-              <TeamBlock data={data1} />
+            <div style={{ padding: "44px 16px 14px" }}>
+              {data1 ? <TeamBlock data={data1} /> : <div style={{ textAlign: "center", color: "#555", fontSize: 12, fontStyle: "italic", padding: "12px 0" }}>Team 1 not yet selected</div>}
               <div style={{ height: 1, background: "#1a1a2a", margin: "12px 0" }} />
-              <TeamBlock data={data2} />
+              {data2 ? <TeamBlock data={data2} /> : <div style={{ textAlign: "center", color: "#555", fontSize: 12, fontStyle: "italic", padding: "12px 0" }}>Team 2 not yet selected</div>}
             </div>
           </GraphicCard>
-          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
-            {downloading ? "Generating..." : "⬇ Download PNG"}
+          <button onClick={download} disabled={downloading || !data1 || !data2} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : !data1 || !data2 ? "Select both teams to download" : "⬇ Download PNG"}
           </button>
-          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+          <button onClick={() => download(true)} disabled={downloading || !data1 || !data2} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
             {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
           </button>
         </>
