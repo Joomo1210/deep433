@@ -3,6 +3,7 @@ import LandingPage from "./LandingPage";
 import DataGraphics from "./DataGraphics";
 import DeepInsightsPanel from "./DeepInsightsPanel";
 import { createClient } from "@supabase/supabase-js";
+import PublicTeamCompare from "./PublicTeamCompare";
 
 const supabase = createClient(
   "https://idisdztwpvedtnroiian.supabase.co",
