@@ -1084,10 +1084,19 @@ export default function FootballPredictor() {
     </div>
   );
 
-  if (!session && !guestMode) {
-    if (showLanding) return <LandingPage onGetStarted={() => setShowLanding(false)} />;
-    return <AuthScreen onGuestMode={() => setGuestMode(true)} />;
-  }
+if (showTeamCompare) {
+  return (
+    <PublicTeamCompare
+      onBack={() => setShowTeamCompare(false)}
+      onSignUp={() => { setShowTeamCompare(false); setShowLanding(false); }}
+    />
+  );
+}
+
+if (!session && !guestMode) {
+  if (showLanding) return <LandingPage onGetStarted={() => setShowLanding(false)} />;
+  return <AuthScreen onGuestMode={() => setGuestMode(true)} />;
+}
 
   return (
     <div style={{ minHeight: "100vh", background: "#0a0a0f", color: "#f0f0f0", fontFamily: "'Inter','Helvetica Neue',sans-serif" }}>
