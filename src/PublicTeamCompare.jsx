@@ -60,6 +60,10 @@ export default function PublicTeamCompare({ onBack, onSignUp }) {
   const [loading, setLoading] = useState(false);
 
   const searchTeam = async (query, slot) => {
+    // Update the input's own displayed text first — this was missing
+    // entirely before, which is why typing appeared to do nothing.
+    if (slot === 1) setSearch1(query); else setSearch2(query);
+
     if (query.length < 3) {
       slot === 1 ? setSuggest1([]) : setSuggest2([]);
       return;
