@@ -12,6 +12,17 @@ const LEAGUE_MAP = {
   bundesliga:  { id: 78,  season: 2026 },
   ligue1:      { id: 61,  season: 2026 },
   ucl:         { id: 2,   season: 2026 },
+  // Second-tier leagues — confirmed directly from API dashboard.
+  // Useful for pulling promoted teams' last-season (second-division)
+  // performance data before their top-flight numbers exist.
+  championship: { id: 40,  season: 2026 }, // England
+  ligue2:       { id: 62,  season: 2026 }, // France
+  bundesliga2:  { id: 79,  season: 2026 }, // Germany
+  serieb:       { id: 136, season: 2026 }, // Italy
+  // Bonus, not second-division but confirmed and potentially useful
+  npfl:         { id: 399, season: 2026 }, // Nigeria
+  scotprem:     { id: 179, season: 2026 }, // Scotland
+  segunda:      { id: 141, season: 2026 }, // Spain Segunda División
 };
 
 export default async function handler(req, res) {
