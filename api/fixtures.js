@@ -70,9 +70,13 @@ export default async function handler(req, res) {
 
   const now = new Date();
 
-  // Fetch yesterday through next 10 days to capture ongoing tournaments
+  // Fetch yesterday through next 25 days. Widened from the original 10-day
+  // window because league start dates vary considerably during pre-season
+  // (e.g. Premier League 2026-27 starts Aug 21, a week later than usual due
+  // to the World Cup — a 10-day window entirely missed it while La Liga's
+  // Aug 15 start just barely fit).
   const dates = [];
-  for (let i = -1; i <= 10; i++) {
+  for (let i = -1; i <= 25; i++) {
     const d = new Date(now.getTime() + i * 86400000);
     dates.push(d.toISOString().split("T")[0]);
   }
