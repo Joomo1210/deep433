@@ -59,6 +59,13 @@ const LEAGUE_OPTIONS = [
   { id: "bundesliga", label: "Bundesliga" },
   { id: "ligue1", label: "Ligue 1" },
   { id: "ucl",    label: "Champions League" },
+  { id: "championship", label: "Championship" },
+  { id: "segunda", label: "Segunda División" },
+  { id: "ligue2", label: "Ligue 2" },
+  { id: "bundesliga2", label: "2. Bundesliga" },
+  { id: "serieb", label: "Serie B" },
+  { id: "npfl", label: "NPFL" },
+  { id: "scotprem", label: "Scotland Premiership" },
 ];
 
 // ─── FIXTURE PICKER ──────────────────────────────────────────────────────────
@@ -632,7 +639,7 @@ function TopScorersGraphic() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        {LEAGUE_OPTIONS.slice(0, 7).map(l => (
+        {LEAGUE_OPTIONS.map(l => (
           <button key={l.id} onClick={() => setLeagueId(l.id)} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
             {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
             {l.label}
@@ -5278,6 +5285,13 @@ function PasteStatsGraphic() {
     { id: "bundesliga", label: "Bundesliga" },
     { id: "ligue1", label: "Ligue 1" },
     { id: "ucl", label: "Champions League" },
+    { id: "championship", label: "Championship" },
+    { id: "segunda", label: "Segunda División" },
+    { id: "ligue2", label: "Ligue 2" },
+    { id: "bundesliga2", label: "2. Bundesliga" },
+    { id: "serieb", label: "Serie B" },
+    { id: "npfl", label: "NPFL" },
+    { id: "scotprem", label: "Scotland Premiership" },
   ];
 
   const METRICS_GOALSXG = [
