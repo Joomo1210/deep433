@@ -1094,7 +1094,7 @@ if (showTeamCompare) {
 }
 
 if (!session && !guestMode) {
-  if (showLanding) return <LandingPage onGetStarted={() => setShowLanding(false)} />;
+ if (showLanding) return <LandingPage onGetStarted={() => setShowLanding(false)} onTeamCompare={() => setShowTeamCompare(true)} />;
   return <AuthScreen onGuestMode={() => setGuestMode(true)} />;
 }
 
