@@ -556,6 +556,7 @@ export default function FootballPredictor() {
   const [session, setSession] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [showLanding, setShowLanding] = useState(true);
+  const [showTeamCompare, setShowTeamCompare] = useState(false);
   const [guestMode, setGuestMode] = useState(false);
   const [tab, setTab] = useState("predict");
   const [homeTeam, setHomeTeam] = useState("");
