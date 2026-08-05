@@ -127,7 +127,7 @@ function useFixtures(leagueId) {
   return { fixtures, loaded };
 }
 
-export default function LandingPage({ onGetStarted }) {
+export default function LandingPage({ onGetStarted, onTeamCompare }) {
 
   const [fixtureLeague, setFixtureLeague] = useState("pl");
   const [cupsMenuOpen, setCupsMenuOpen] = useState(false);
