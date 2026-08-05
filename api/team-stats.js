@@ -501,7 +501,7 @@ export default async function handler(req, res) {
   // ── Default: team season statistics ──
   if (!teamId) return res.status(400).json({ error: "teamId required" });
 
-  const { apiLeagueId, season: rawSeason } = req.query;
+  const { apiLeagueId, season: rawSeason, noFallback } = req.query;
   let leagueApiId, leagueSeason;
 
   if (apiLeagueId && rawSeason) {
@@ -529,8 +529,11 @@ export default async function handler(req, res) {
     // If the current season has zero matches played, it likely hasn't kicked off yet —
     // automatically fall back to the previous season's completed stats instead.
     // Once real matches start being recorded, this will naturally switch back on its own.
+    // Skipped entirely when noFallback=true is passed (used by the Current Season
+    // tool, which should show live in-progress data — including zeros before
+    // kickoff — rather than silently substituting last season's numbers).
     const playedCount = s?.fixtures?.played?.total || 0;
-    if (playedCount === 0 && !apiLeagueId) {
+    if (playedCount === 0 && !apiLeagueId && noFallback !== "true") {
       const prevSeason = parseInt(leagueSeason) - 1;
       const fallbackR = await fetch(`https://v3.football.api-sports.io/teams/statistics?league=${leagueApiId}&season=${prevSeason}&team=${teamId}`, {
         headers: { "x-apisports-key": apiKey }
