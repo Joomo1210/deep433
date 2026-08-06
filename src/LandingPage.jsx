@@ -127,7 +127,7 @@ function useFixtures(leagueId) {
   return { fixtures, loaded };
 }
 
-export default function LandingPage({ onGetStarted, onTeamCompare }) {
+export default function LandingPage({ onGetStarted }) {
 
   const [fixtureLeague, setFixtureLeague] = useState("pl");
   const [cupsMenuOpen, setCupsMenuOpen] = useState(false);
@@ -199,7 +199,108 @@ export default function LandingPage({ onGetStarted, onTeamCompare }) {
         </p>
       </section>
 
-      {/* STATS WIDGET — single toggle-based card, static data (no API) */}
+      {/* FIXTURES — now the first section visitors see */}
+      <section style={{ maxWidth: 900, margin: "0 auto", padding: "20px 20px 40px" }}>
+        <div style={{ textAlign: "center", marginBottom: 20 }}>
+          <div style={{ fontSize: 26, fontWeight: 900, color: "#f0f0f0" }}>Upcoming Fixtures</div>
+        </div>
+
+        <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap", marginBottom: 24, position: "relative" }}>
+          {FIXTURE_LEAGUES.map(l => (
+            <button
+              key={l.id}
+              onClick={() => { setFixtureLeague(l.id); setCupsMenuOpen(false); }}
+              style={{
+                background: fixtureLeague === l.id ? "#4ade8022" : "none",
+                border: `1px solid ${fixtureLeague === l.id ? "#4ade80" : "#2a1f4a"}`,
+                borderRadius: 20, color: fixtureLeague === l.id ? "#4ade80" : "#94a3b8",
+                cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "6px 14px",
+              }}
+            >
+              {l.emoji} {l.label}
+            </button>
+          ))}
+
+          {/* Cups folded into one dropdown */}
+          <div style={{ position: "relative" }}>
+            <button
+              onClick={() => setCupsMenuOpen(o => !o)}
+              style={{
+                background: FIXTURE_CUPS.some(c => c.id === fixtureLeague) ? "#4ade8022" : "none",
+                border: `1px solid ${FIXTURE_CUPS.some(c => c.id === fixtureLeague) ? "#4ade80" : "#2a1f4a"}`,
+                borderRadius: 20, color: FIXTURE_CUPS.some(c => c.id === fixtureLeague) ? "#4ade80" : "#94a3b8",
+                cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "6px 14px",
+              }}
+            >
+              🏆 Cups {cupsMenuOpen ? "▲" : "▼"}
+            </button>
+            {cupsMenuOpen && (
+              <div style={{ position: "absolute", top: "110%", left: "50%", transform: "translateX(-50%)", zIndex: 20, background: "#13102a", border: "1px solid #2a1f4a", borderRadius: 10, padding: 6, display: "flex", flexDirection: "column", gap: 4, minWidth: 200 }}>
+                {FIXTURE_CUPS.map(c => (
+                  <button
+                    key={c.id}
+                    onClick={() => { setFixtureLeague(c.id); setCupsMenuOpen(false); }}
+                    style={{
+                      background: fixtureLeague === c.id ? "#4ade8022" : "none",
+                      border: "none", borderRadius: 8, color: fixtureLeague === c.id ? "#4ade80" : "#f0f0f0",
+                      cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "8px 12px", textAlign: "left",
+                    }}
+                  >
+                    {c.emoji} {c.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {!fixturesLoaded && <div style={{ textAlign: "center", color: "#94a3b8", fontSize: 14 }}>Loading fixtures…</div>}
+        {fixturesLoaded && fixtures.length === 0 && (
+          <div style={{ textAlign: "center", color: "#94a3b8", fontSize: 14 }}>No upcoming fixtures found for this competition right now.</div>
+        )}
+
+        {(() => {
+          const groups = {};
+          fixtures.forEach(f => {
+            if (!groups[f.date]) groups[f.date] = [];
+            groups[f.date].push(f);
+          });
+          const dateFormatter = (d) => new Date(d).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+          const timeFormatter = (iso) => iso ? new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "";
+
+          return Object.keys(groups).map(date => (
+            <div key={date} style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
+                {dateFormatter(date)}
+              </div>
+              <div style={{ display: "grid", gap: 10 }}>
+                {groups[date].map((f, i) => (
+                  <div key={i} style={{ background: "#13102a", border: "1px solid #2a1f4a", borderRadius: 12, padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0" }}>{f.home} <span style={{ color: "#94a3b8" }}>vs</span> {f.away}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <span style={{ fontSize: 13, color: "#94a3b8" }}>{timeFormatter(f.kickoff)}</span>
+                      {f.status === "finished" ? (
+                        <span style={{ fontSize: 14, fontWeight: 800, color: "#4ade80" }}>{f.fulltimeScore?.home}-{f.fulltimeScore?.away}</span>
+                      ) : (
+                        <button onClick={onGetStarted} style={{ background: "#4ade80", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 800, padding: "5px 12px" }}>Predict →</button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ));
+        })()}
+
+        <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginTop: 28 }}>
+          <button className="cta-btn" onClick={onGetStarted}>⚡ Predict a Match</button>
+          <a href="/blog" className="ghost-btn">📰 Read the Latest</a>
+          <a href="/leaderboard" className="ghost-btn">🏆 Community Leaderboard</a>
+          <a href="/submit" className="ghost-btn">✍️ Write & Get Paid</a>
+        </div>
+      </section>
+
+      {/* STATS WIDGET — now shown after Fixtures, single toggle-based card, static data (no API) */}
       <section style={{ maxWidth: 560, margin: "0 auto", padding: "10px 20px 40px" }}>
         <div style={{ background: "#13102a", border: "1px solid #2a1f4a", borderRadius: 16, padding: 22, position: "relative", overflow: "hidden" }}>
           <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
@@ -376,108 +477,6 @@ export default function LandingPage({ onGetStarted, onTeamCompare }) {
           <div style={{ textAlign: "center", marginTop: 16 }}>
             <button onClick={onGetStarted} style={{ background: "none", border: "none", fontSize: 13, color: "#4ade80", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>More Stats →</button>
           </div>
-        </div>
-      </section>
-
-      {/* FIXTURES — second priority after Records, since data is Deep433's core identity */}
-      <section style={{ maxWidth: 900, margin: "0 auto", padding: "20px 20px 40px" }}>
-        <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <div style={{ fontSize: 26, fontWeight: 900, color: "#f0f0f0" }}>Upcoming Fixtures</div>
-        </div>
-
-        <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap", marginBottom: 24, position: "relative" }}>
-          {FIXTURE_LEAGUES.map(l => (
-            <button
-              key={l.id}
-              onClick={() => { setFixtureLeague(l.id); setCupsMenuOpen(false); }}
-              style={{
-                background: fixtureLeague === l.id ? "#4ade8022" : "none",
-                border: `1px solid ${fixtureLeague === l.id ? "#4ade80" : "#2a1f4a"}`,
-                borderRadius: 20, color: fixtureLeague === l.id ? "#4ade80" : "#94a3b8",
-                cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "6px 14px",
-              }}
-            >
-              {l.emoji} {l.label}
-            </button>
-          ))}
-
-          {/* Cups folded into one dropdown */}
-          <div style={{ position: "relative" }}>
-            <button
-              onClick={() => setCupsMenuOpen(o => !o)}
-              style={{
-                background: FIXTURE_CUPS.some(c => c.id === fixtureLeague) ? "#4ade8022" : "none",
-                border: `1px solid ${FIXTURE_CUPS.some(c => c.id === fixtureLeague) ? "#4ade80" : "#2a1f4a"}`,
-                borderRadius: 20, color: FIXTURE_CUPS.some(c => c.id === fixtureLeague) ? "#4ade80" : "#94a3b8",
-                cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "6px 14px",
-              }}
-            >
-              🏆 Cups {cupsMenuOpen ? "▲" : "▼"}
-            </button>
-            {cupsMenuOpen && (
-              <div style={{ position: "absolute", top: "110%", left: "50%", transform: "translateX(-50%)", zIndex: 20, background: "#13102a", border: "1px solid #2a1f4a", borderRadius: 10, padding: 6, display: "flex", flexDirection: "column", gap: 4, minWidth: 200 }}>
-                {FIXTURE_CUPS.map(c => (
-                  <button
-                    key={c.id}
-                    onClick={() => { setFixtureLeague(c.id); setCupsMenuOpen(false); }}
-                    style={{
-                      background: fixtureLeague === c.id ? "#4ade8022" : "none",
-                      border: "none", borderRadius: 8, color: fixtureLeague === c.id ? "#4ade80" : "#f0f0f0",
-                      cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "8px 12px", textAlign: "left",
-                    }}
-                  >
-                    {c.emoji} {c.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {!fixturesLoaded && <div style={{ textAlign: "center", color: "#94a3b8", fontSize: 14 }}>Loading fixtures…</div>}
-        {fixturesLoaded && fixtures.length === 0 && (
-          <div style={{ textAlign: "center", color: "#94a3b8", fontSize: 14 }}>No upcoming fixtures found for this competition right now.</div>
-        )}
-
-        {(() => {
-          const groups = {};
-          fixtures.forEach(f => {
-            if (!groups[f.date]) groups[f.date] = [];
-            groups[f.date].push(f);
-          });
-          const dateFormatter = (d) => new Date(d).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
-          const timeFormatter = (iso) => iso ? new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "";
-
-          return Object.keys(groups).map(date => (
-            <div key={date} style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
-                {dateFormatter(date)}
-              </div>
-              <div style={{ display: "grid", gap: 10 }}>
-                {groups[date].map((f, i) => (
-                  <div key={i} style={{ background: "#13102a", border: "1px solid #2a1f4a", borderRadius: 12, padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0" }}>{f.home} <span style={{ color: "#94a3b8" }}>vs</span> {f.away}</div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <span style={{ fontSize: 13, color: "#94a3b8" }}>{timeFormatter(f.kickoff)}</span>
-                      {f.status === "finished" ? (
-                        <span style={{ fontSize: 14, fontWeight: 800, color: "#4ade80" }}>{f.fulltimeScore?.home}-{f.fulltimeScore?.away}</span>
-                      ) : (
-                        <button onClick={onGetStarted} style={{ background: "#4ade80", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 800, padding: "5px 12px" }}>Predict →</button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ));
-        })()}
-
-       <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginTop: 28 }}>
-          <button className="cta-btn" onClick={onGetStarted}>⚡ Predict a Match</button>
-          <button className="ghost-btn" onClick={onTeamCompare}>⚔️ Team Compare</button>
-          <a href="/blog" className="ghost-btn">📰 Read the Latest</a>
-          <a href="/leaderboard" className="ghost-btn">🏆 Community Leaderboard</a>
-          <a href="/submit" className="ghost-btn">✍️ Write & Get Paid</a>
         </div>
       </section>
 
