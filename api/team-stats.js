@@ -384,6 +384,15 @@ export default async function handler(req, res) {
             appearances: s.games?.appearences,
             goals: s.goals?.total,
             assists: s.goals?.assists,
+            // Richer stats added alongside goals/assists, so the raw
+            // per-competition breakdown supports "beyond the scoresheet"
+            // comparisons, not just goals and assists.
+            tackles: s.tackles?.total,
+            interceptions: s.tackles?.interceptions,
+            duelsWon: s.duels?.won,
+            keyPasses: s.passes?.key,
+            passAccuracy: s.passes?.accuracy,
+            rating: s.games?.rating,
           })),
         });
       }
