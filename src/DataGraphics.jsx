@@ -2001,6 +2001,9 @@ function PlayerH2HGraphic() {
   const [loadingSquad, setLoadingSquad] = useState(false);
   const [loadingStats, setLoadingStats] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [rawData1, setRawData1] = useState(null);
+  const [rawData2, setRawData2] = useState(null);
+  const [showRawData, setShowRawData] = useState(false);
 
   const searchTeam = async (query, slot) => {
     if (query.length < 3) {
@@ -2045,6 +2048,20 @@ function PlayerH2HGraphic() {
         ? { ...d, photo: basePlayer.photo, team: teamInfo?.name, teamLogo: teamInfo?.logo }
         : { ...basePlayer, team: teamInfo?.name, teamLogo: teamInfo?.logo };
       if (slot === 1) setPlayer1(enriched); else setPlayer2(enriched);
+
+      // Separately fetch the per-competition breakdown (debug mode), so the
+      // "Show Raw Data" section can show exactly what's being summed —
+      // useful for players who moved clubs mid-season or played across
+      // multiple competitions, where the single combined total can obscure
+      // the real picture.
+      try {
+        const rawR = await fetch(`/api/team-stats?mode=playerseason&playerId=${playerId}&season=${season}&teamId=${teamInfo?.id}${wcFilter}&debug=true`);
+        const rawD = await rawR.json();
+        if (slot === 1) setRawData1(rawD.entries || null);
+        else setRawData2(rawD.entries || null);
+      } catch {
+        if (slot === 1) setRawData1(null); else setRawData2(null);
+      }
     } catch {
       if (slot === 1) setPlayer1(basePlayer); else setPlayer2(basePlayer);
     }
@@ -2307,13 +2324,55 @@ function GoldenGloveGraphic() {
           <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
             {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
           </button>
+
+          <button onClick={() => setShowRawData(!showRawData)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "8px", width: "100%", marginTop: 6 }}>
+            {showRawData ? "▲ Hide Raw Data" : "▼ Show Raw Data"}
+          </button>
+
+          {showRawData && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {[{ player: player1, raw: rawData1, color: "#4ade80" }, { player: player2, raw: rawData2, color: "#f59e0b" }].map(({ player, raw, color }, pi) => {
+                if (!raw || !player) return null;
+                return (
+                  <div key={pi} style={{ border: "1px solid #2a2a3a", borderRadius: 8, padding: 10, overflowX: "auto" }}>
+                    <div style={{ fontSize: 12, fontWeight: 900, color, marginBottom: 8 }}>{player.name} — per competition</div>
+                    <table style={{ borderCollapse: "collapse", fontSize: 10, width: "100%" }}>
+                      <thead>
+                        <tr>
+                          <th style={{ textAlign: "left", padding: "4px 8px", color: "#7E9485", fontWeight: 700 }}>Competition</th>
+                          <th style={{ textAlign: "right", padding: "4px 8px", color: "#7E9485", fontWeight: 700 }}>Apps</th>
+                          <th style={{ textAlign: "right", padding: "4px 8px", color: "#7E9485", fontWeight: 700 }}>Goals</th>
+                          <th style={{ textAlign: "right", padding: "4px 8px", color: "#7E9485", fontWeight: 700 }}>Assists</th>
+                          <th style={{ textAlign: "right", padding: "4px 8px", color: "#7E9485", fontWeight: 700 }}>Tackles</th>
+                          <th style={{ textAlign: "right", padding: "4px 8px", color: "#7E9485", fontWeight: 700 }}>Key P.</th>
+                          <th style={{ textAlign: "right", padding: "4px 8px", color: "#7E9485", fontWeight: 700 }}>Duels</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {raw.map((entry, ei) => (
+                          <tr key={ei} style={{ borderTop: "1px solid #1e1830" }}>
+                            <td style={{ padding: "4px 8px", color: "#e2e8f0", whiteSpace: "nowrap" }}>{entry.league}</td>
+                            <td style={{ textAlign: "right", padding: "4px 8px", color: "#e2e8f0" }}>{entry.appearances ?? "—"}</td>
+                            <td style={{ textAlign: "right", padding: "4px 8px", color: "#e2e8f0" }}>{entry.goals ?? "—"}</td>
+                            <td style={{ textAlign: "right", padding: "4px 8px", color: "#e2e8f0" }}>{entry.assists ?? "—"}</td>
+                            <td style={{ textAlign: "right", padding: "4px 8px", color: "#e2e8f0" }}>{entry.tackles ?? "—"}</td>
+                            <td style={{ textAlign: "right", padding: "4px 8px", color: "#e2e8f0" }}>{entry.keyPasses ?? "—"}</td>
+                            <td style={{ textAlign: "right", padding: "4px 8px", color: "#e2e8f0" }}>{entry.duelsWon ?? "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </>
       )}
     </div>
   );
 }
 
-// ─── MAIN EXPORT ─────────────────────────────────────────────────────────────
 // ─── MATCH HEAD-TO-HEAD GRAPHIC ──────────────────────────────────────────────
 function MatchH2HGraphic() {
   const cardRef = useRef(null);
