@@ -3875,66 +3875,52 @@ function ZoneOfInfluenceGraphic() {
 function QuickVSGraphic() {
   const cardRef = useRef(null);
   const [season, setSeason] = useState(2025);
-
-  const [searchTargetTeam, setSearchTargetTeam] = useState("");
-  const [suggestTargetTeam, setSuggestTargetTeam] = useState([]);
-  const [targetTeam, setTargetTeam] = useState(null);
-  const [searchingTargetTeam, setSearchingTargetTeam] = useState(false);
-  const [targetSquad, setTargetSquad] = useState([]);
-  const [targetPlayerId, setTargetPlayerId] = useState("");
-  const [target, setTarget] = useState(null);
-
-  const [searchIncumbentTeam, setSearchIncumbentTeam] = useState("");
-  const [suggestIncumbentTeam, setSuggestIncumbentTeam] = useState([]);
-  const [incumbentTeam, setIncumbentTeam] = useState(null);
-  const [searchingIncumbentTeam, setSearchingIncumbentTeam] = useState(false);
-  const [incumbentSquad, setIncumbentSquad] = useState([]);
-  const [incumbentPlayerId, setIncumbentPlayerId] = useState("");
-  const [incumbent, setIncumbent] = useState(null);
+  const emptySlot = () => ({
+    search: "", suggestions: [], team: null, searching: false,
+    squad: [], playerId: "", player: null,
+  });
+  const [slots, setSlots] = useState([emptySlot(), emptySlot(), emptySlot(), emptySlot()]);
+  const [activeSlots, setActiveSlots] = useState(2); // flexible 2-4, starts at 2
 
   const [loadingSquad, setLoadingSquad] = useState(false);
   const [loadingStats, setLoadingStats] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
-  const searchTeam = async (query, slot) => {
-    if (query.length < 3) {
-      slot === "target" ? setSuggestTargetTeam([]) : setSuggestIncumbentTeam([]);
-      return;
-    }
-    slot === "target" ? setSearchingTargetTeam(true) : setSearchingIncumbentTeam(true);
+  const colors = ["#a855f7", "#4ade80", "#f59e0b", "#60a5fa"];
+
+  const updateSlot = (index, patch) => {
+    setSlots(prev => prev.map((s, i) => i === index ? { ...s, ...patch } : s));
+  };
+
+  const searchTeam = async (query, index) => {
+    updateSlot(index, { search: query });
+    if (query.length < 3) { updateSlot(index, { suggestions: [] }); return; }
+    updateSlot(index, { searching: true });
     try {
       const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
       const d = await r.json();
-      slot === "target" ? setSuggestTargetTeam(d.teams || []) : setSuggestIncumbentTeam(d.teams || []);
+      updateSlot(index, { suggestions: d.teams || [] });
     } catch {}
-    slot === "target" ? setSearchingTargetTeam(false) : setSearchingIncumbentTeam(false);
+    updateSlot(index, { searching: false });
   };
 
-  const selectTeam = async (t, slot) => {
+  const selectTeam = async (t, index) => {
     setLoadingSquad(true);
-    if (slot === "target") {
-      setTargetTeam(t); setSuggestTargetTeam([]); setSearchTargetTeam(t.name);
-      setTargetPlayerId(""); setTarget(null); setTargetSquad([]);
-    } else {
-      setIncumbentTeam(t); setSuggestIncumbentTeam([]); setSearchIncumbentTeam(t.name);
-      setIncumbentPlayerId(""); setIncumbent(null); setIncumbentSquad([]);
-    }
+    updateSlot(index, { team: t, suggestions: [], search: t.name, playerId: "", player: null, squad: [] });
     try {
       const r = await fetch(`/api/team-stats?mode=teamsquad&teamId=${t.id}`);
       const d = await r.json();
-      if (slot === "target") setTargetSquad(d.players || []);
-      else setIncumbentSquad(d.players || []);
+      updateSlot(index, { squad: d.players || [] });
     } catch {}
     setLoadingSquad(false);
   };
 
-  const selectPlayerFromSquad = async (playerId, slot) => {
-    if (slot === "target") setTargetPlayerId(playerId); else setIncumbentPlayerId(playerId);
-    const squad = slot === "target" ? targetSquad : incumbentSquad;
-    const basePlayer = squad.find(p => String(p.id) === String(playerId));
+  const selectPlayerFromSquad = async (playerId, index) => {
+    updateSlot(index, { playerId });
+    const slot = slots[index];
+    const basePlayer = slot.squad.find(p => String(p.id) === String(playerId));
     if (!basePlayer) return;
-
-    const teamInfo = slot === "target" ? targetTeam : incumbentTeam;
+    const teamInfo = slot.team;
 
     setLoadingStats(true);
     try {
@@ -3943,9 +3929,9 @@ function QuickVSGraphic() {
       const enriched = d.available
         ? { ...d, photo: basePlayer.photo, age: basePlayer.age, team: teamInfo?.name, teamLogo: teamInfo?.logo }
         : { ...basePlayer, team: teamInfo?.name, teamLogo: teamInfo?.logo };
-      if (slot === "target") setTarget(enriched); else setIncumbent(enriched);
+      updateSlot(index, { player: enriched });
     } catch {
-      if (slot === "target") setTarget(basePlayer); else setIncumbent(basePlayer);
+      updateSlot(index, { player: basePlayer });
     }
     setLoadingStats(false);
   };
@@ -3953,14 +3939,17 @@ function QuickVSGraphic() {
   const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-quickvs-${target?.name}-vs-${incumbent?.name}.png`, undefined, transparent);
+      const names = slots.slice(0, activeSlots).filter(s => s.player).map(s => s.player.name).join("-vs-");
+      await downloadCardImage(cardRef.current, `deep433-thebattle-${names || "players"}.png`, undefined, transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
 
+  const allLoaded = slots.slice(0, activeSlots).every(s => s.player);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Fast attacker-vs-defender narrative — Tackles & Dribbles only. Search any team worldwide.</div>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Fast head-to-head visual — up to 4 players, photos only, no stats. Search any team worldwide.</div>
 
       <div>
         <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Season</div>
@@ -3974,13 +3963,36 @@ function QuickVSGraphic() {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        <TeamThenPlayerPicker label="⚡ Player 1" search={searchTargetTeam} setSearch={setSearchTargetTeam} suggestions={suggestTargetTeam} team={targetTeam} searching={searchingTargetTeam} slot="target" color="#a855f7" squad={targetSquad} playerId={targetPlayerId} onSearchTeam={searchTeam} onSelectTeam={selectTeam} onSelectPlayer={selectPlayerFromSquad} onClearTeam={() => setTargetTeam(null)} />
-        <TeamThenPlayerPicker label="⚡ Player 2" search={searchIncumbentTeam} setSearch={setSearchIncumbentTeam} suggestions={suggestIncumbentTeam} team={incumbentTeam} searching={searchingIncumbentTeam} slot="incumbent" color="#4ade80" squad={incumbentSquad} playerId={incumbentPlayerId} onSearchTeam={searchTeam} onSelectTeam={selectTeam} onSelectPlayer={selectPlayerFromSquad} onClearTeam={() => setIncumbentTeam(null)} />
+        {slots.slice(0, activeSlots).map((slot, index) => (
+          <TeamThenPlayerPicker
+            key={index}
+            label={`⚡ Player ${index + 1}`}
+            search={slot.search}
+            setSearch={(v) => updateSlot(index, { search: v })}
+            suggestions={slot.suggestions}
+            team={slot.team}
+            searching={slot.searching}
+            slot={index}
+            color={colors[index]}
+            squad={slot.squad}
+            playerId={slot.playerId}
+            onSearchTeam={searchTeam}
+            onSelectTeam={selectTeam}
+            onSelectPlayer={selectPlayerFromSquad}
+            onClearTeam={() => updateSlot(index, { team: null })}
+          />
+        ))}
       </div>
+
+      {activeSlots < 4 && (
+        <button onClick={() => setActiveSlots(activeSlots + 1)} style={{ background: "none", border: "1px dashed #a855f7", borderRadius: 8, color: "#a855f7", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "8px" }}>
+          + Add Another Player ({activeSlots}/4)
+        </button>
+      )}
 
       {(loadingSquad || loadingStats) && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 12 }}>Loading...</div>}
 
-      {target && incumbent && (
+      {allLoaded && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "26px 18px" }}>
@@ -3988,26 +4000,24 @@ function QuickVSGraphic() {
                 <span style={{ fontSize: 24, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5 }}>THE BATTLE</span>
               </div>
 
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                <div style={{ textAlign: "center", flex: 1 }}>
-                  {target.photo && <img src={target.photo} alt="" crossOrigin="anonymous" style={{ width: 92, height: 92, borderRadius: "50%", objectFit: "cover", border: "3px solid #a855f7", margin: "0 auto 10px" }} />}
-                  <div style={{ fontSize: 19, fontWeight: 900, color: "#a855f7" }}>{target.name}</div>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 4 }}>
-                    {TEAM_FLAG_CODES[target.team] && <img src={`https://flagcdn.com/w40/${TEAM_FLAG_CODES[target.team]}.png`} alt="" style={{ width: 18, height: 13, objectFit: "cover", borderRadius: 2 }} />}
-                    <span style={{ fontSize: 13, color: "#e2e8f0" }}>{target.team}</span>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, flexWrap: "wrap" }}>
+                {slots.slice(0, activeSlots).map((slot, index) => (
+                  <div key={index} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <div style={{ textAlign: "center", minWidth: 90 }}>
+                      {slot.player.photo && <img src={slot.player.photo} alt="" crossOrigin="anonymous" style={{ width: activeSlots > 2 ? 70 : 92, height: activeSlots > 2 ? 70 : 92, borderRadius: "50%", objectFit: "cover", border: `3px solid ${colors[index]}`, margin: "0 auto 10px" }} />}
+                      <div style={{ fontSize: activeSlots > 2 ? 15 : 19, fontWeight: 900, color: colors[index] }}>{slot.player.name}</div>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 4 }}>
+                        {TEAM_FLAG_CODES[slot.player.team] && <img src={`https://flagcdn.com/w40/${TEAM_FLAG_CODES[slot.player.team]}.png`} alt="" style={{ width: 18, height: 13, objectFit: "cover", borderRadius: 2 }} />}
+                        <span style={{ fontSize: 12, color: "#e2e8f0" }}>{slot.player.team}</span>
+                      </div>
+                    </div>
+                    {index < activeSlots - 1 && (
+                      <div style={{ textAlign: "center", padding: "0 4px" }}>
+                        <div style={{ fontSize: activeSlots > 2 ? 15 : 20, fontWeight: 900, color: "#e2e8f0" }}>VS</div>
+                      </div>
+                    )}
                   </div>
-                </div>
-                <div style={{ textAlign: "center", padding: "0 4px" }}>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: "#e2e8f0" }}>VS</div>
-                </div>
-                <div style={{ textAlign: "center", flex: 1 }}>
-                  {incumbent.photo && <img src={incumbent.photo} alt="" crossOrigin="anonymous" style={{ width: 92, height: 92, borderRadius: "50%", objectFit: "cover", border: "3px solid #4ade80", margin: "0 auto 10px" }} />}
-                  <div style={{ fontSize: 19, fontWeight: 900, color: "#4ade80" }}>{incumbent.name}</div>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 4 }}>
-                    {TEAM_FLAG_CODES[incumbent.team] && <img src={`https://flagcdn.com/w40/${TEAM_FLAG_CODES[incumbent.team]}.png`} alt="" style={{ width: 18, height: 13, objectFit: "cover", borderRadius: 2 }} />}
-                    <span style={{ fontSize: 13, color: "#e2e8f0" }}>{incumbent.team}</span>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           </GraphicCard>
@@ -4022,6 +4032,7 @@ function QuickVSGraphic() {
     </div>
   );
 }
+
 
 // ─── BEYOND THE SCORESHEET (single player praise, non-scoresheet stats) ─────
 function BeyondScoresheetGraphic() {
