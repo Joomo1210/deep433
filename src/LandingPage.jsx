@@ -127,7 +127,7 @@ function useFixtures(leagueId) {
   return { fixtures, loaded };
 }
 
-export default function LandingPage({ onGetStarted }) {
+export default function LandingPage({ onGetStarted, onTeamCompare }) {
 
   const [fixtureLeague, setFixtureLeague] = useState("pl");
   const [cupsMenuOpen, setCupsMenuOpen] = useState(false);
@@ -158,6 +158,8 @@ export default function LandingPage({ onGetStarted }) {
         @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.5 } }
         .cta-btn { background: linear-gradient(135deg, #4ade80, #22c55e); border: none; border-radius: 12px; color: #060f06; cursor: pointer; font-family: inherit; font-size: 17px; font-weight: 800; padding: 16px 40px; transition: opacity 0.2s, transform 0.15s; text-decoration: none; display: inline-block; }
         .cta-btn:hover { opacity: 0.9; transform: translateY(-2px); }
+        .cta-btn-purple { background: linear-gradient(135deg, #a855f7, #7c3aed); border: none; border-radius: 12px; color: #fff; cursor: pointer; font-family: inherit; font-size: 17px; font-weight: 800; padding: 16px 40px; transition: opacity 0.2s, transform 0.15s; text-decoration: none; display: inline-block; }
+        .cta-btn-purple:hover { opacity: 0.9; transform: translateY(-2px); }
         .ghost-btn { background: none; border: 1.5px solid #3a2a5a; border-radius: 10px; color: #888; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 600; padding: 10px 24px; transition: all 0.2s; text-decoration: none; display: inline-block; }
         .ghost-btn:hover { border-color: #7c3aed; color: #a78bfa; }
         .nav-cta-btn { background: #4ade80; border: none; border-radius: 8px; color: #0a0f0a; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 800; padding: 8px 14px; white-space: nowrap; flex-shrink: 0; transition: background 0.2s; }
@@ -294,6 +296,7 @@ export default function LandingPage({ onGetStarted }) {
 
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginTop: 28 }}>
           <button className="cta-btn" onClick={onGetStarted}>⚡ Predict a Match</button>
+          <button className="cta-btn-purple" onClick={onTeamCompare}>⚔️ Team Compare</button>
           <a href="/blog" className="ghost-btn">📰 Read the Latest</a>
           <a href="/leaderboard" className="ghost-btn">🏆 Community Leaderboard</a>
           <a href="/submit" className="ghost-btn">✍️ Write & Get Paid</a>
