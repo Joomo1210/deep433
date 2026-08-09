@@ -517,7 +517,7 @@ export default function LandingPage({ onGetStarted }) {
       </section>
 
       {/* PREDICT STRIP */}
-      <section style={{ padding: "0 24px 100px", maxWidth: 1000, margin: "0 auto" }}>
+      <section style={{ padding: "0 24px 100px", maxWidth: 900, margin: "0 auto" }}>
         <div className="predict-strip">
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: "#4ade80", textTransform: "uppercase", marginBottom: 8 }}>Your Turn</div>
