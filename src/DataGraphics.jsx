@@ -3872,6 +3872,175 @@ function ZoneOfInfluenceGraphic() {
 }
 
 // ─── QUICK VS (Tackles + Dribbles only, fast narrative card) ────────────────
+// ─── GAMEWEEK PLAYER RATING GRAPHIC ──────────────────────────────────────────
+function GameweekRatingGraphic() {
+  const cardRef = useRef(null);
+  const [search, setSearch] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [team, setTeam] = useState(null);
+  const [searching, setSearching] = useState(false);
+  const [squad, setSquad] = useState([]);
+  const [playerId, setPlayerId] = useState("");
+  const [player, setPlayer] = useState(null);
+  const [loadingSquad, setLoadingSquad] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  // Manually entered fields — single-match data isn't available until the
+  // season actually starts, so these are typed in by the Deep433 panel
+  // rather than fetched.
+  const [week, setWeek] = useState("");
+  const [position, setPosition] = useState("");
+  const [matchResult, setMatchResult] = useState("");
+  const [goals, setGoals] = useState("");
+  const [assists, setAssists] = useState("");
+  const [keyPasses, setKeyPasses] = useState("");
+  const [duelsWon, setDuelsWon] = useState("");
+  const [duelsTotal, setDuelsTotal] = useState("");
+  const [rating, setRating] = useState("");
+
+  const searchTeam = async (query) => {
+    setSearch(query);
+    if (query.length < 3) { setSuggestions([]); return; }
+    setSearching(true);
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
+      const d = await r.json();
+      setSuggestions(d.teams || []);
+    } catch {}
+    setSearching(false);
+  };
+
+  const selectTeam = async (t) => {
+    setLoadingSquad(true);
+    setTeam(t); setSuggestions([]); setSearch(t.name); setPlayerId(""); setPlayer(null); setSquad([]);
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsquad&teamId=${t.id}`);
+      const d = await r.json();
+      setSquad(d.players || []);
+    } catch {}
+    setLoadingSquad(false);
+  };
+
+  const selectPlayerFromSquad = (pid) => {
+    setPlayerId(pid);
+    const basePlayer = squad.find(p => String(p.id) === String(pid));
+    if (basePlayer) {
+      setPlayer(basePlayer);
+      // Pre-fill position from squad data, but it stays editable since this
+      // card wants a compound label (e.g. "LW / AM"), not just one role.
+      setPosition(basePlayer.position || "");
+    }
+  };
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, `deep433-gameweek-rating-${player?.name || "player"}.png`, undefined, transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const ready = player && week && matchResult && rating;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Gameweek Player Rating — photo fetched automatically, everything else entered manually. Best used once the season is live and single-match stats are available.</div>
+
+      <TeamThenPlayerPicker
+        label="Player"
+        search={search}
+        setSearch={setSearch}
+        suggestions={suggestions}
+        team={team}
+        searching={searching}
+        slot={0}
+        color="#4ade80"
+        squad={squad}
+        playerId={playerId}
+        onSearchTeam={(q) => searchTeam(q)}
+        onSelectTeam={(t) => selectTeam(t)}
+        onSelectPlayer={(pid) => selectPlayerFromSquad(pid)}
+        onClearTeam={() => setTeam(null)}
+      />
+      {loadingSquad && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 12 }}>Loading squad...</div>}
+
+      {player && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, border: "1px solid #2a2a3a", borderRadius: 8, padding: 10 }}>
+          <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>Match Details (manual entry)</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <input value={week} onChange={e => setWeek(e.target.value)} placeholder="Week (e.g. Week 24)" style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+            <input value={position} onChange={e => setPosition(e.target.value)} placeholder="Position (e.g. LW / AM)" style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+          </div>
+          <input value={matchResult} onChange={e => setMatchResult(e.target.value)} placeholder="Match (e.g. Juventus 3-1 Inter)" style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+
+          <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginTop: 4 }}>Key Stats</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <input value={goals} onChange={e => setGoals(e.target.value)} placeholder="Goals" type="number" style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+            <input value={assists} onChange={e => setAssists(e.target.value)} placeholder="Assists" type="number" style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+            <input value={keyPasses} onChange={e => setKeyPasses(e.target.value)} placeholder="Key Passes" type="number" style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+            <div style={{ display: "flex", gap: 4 }}>
+              <input value={duelsWon} onChange={e => setDuelsWon(e.target.value)} placeholder="Duels Won" type="number" style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit", flex: 1 }} />
+              <input value={duelsTotal} onChange={e => setDuelsTotal(e.target.value)} placeholder="of Total" type="number" style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit", flex: 1 }} />
+            </div>
+          </div>
+
+          <div style={{ fontSize: 10, color: "#fbbf24", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginTop: 4 }}>Rating</div>
+          <input value={rating} onChange={e => setRating(e.target.value)} placeholder="e.g. 8.8" type="number" step="0.1" style={{ background: "#1a1a24", border: "1.5px solid #fbbf2440", borderRadius: 8, color: "#fbbf24", fontSize: 15, fontWeight: 800, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+        </div>
+      )}
+
+      {ready && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "20px 18px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                {player.teamLogo && <img src={player.teamLogo} alt="" crossOrigin="anonymous" style={{ width: 28, height: 28, objectFit: "contain" }} />}
+                <div style={{ fontSize: 12, fontWeight: 800, color: "#e2e8f0", textTransform: "uppercase", letterSpacing: 1 }}>European Player Ratings</div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: "#4ade80" }}>{week}</div>
+              </div>
+
+              <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+                <div style={{ textAlign: "center", flexShrink: 0 }}>
+                  {player.photo && <img src={player.photo} alt="" crossOrigin="anonymous" style={{ width: 90, height: 90, borderRadius: "50%", objectFit: "cover", border: "3px solid #4ade80" }} />}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: "#f0f0f0" }}>{player.name}</div>
+                  <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 8 }}>{team?.name}{position ? ` · ${position}` : ""}</div>
+                  <div style={{ fontSize: 12, color: "#e2e8f0", marginBottom: 10 }}>Match: {matchResult}</div>
+
+                  <div style={{ background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, padding: "8px 10px" }}>
+                    <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Key Stats</div>
+                    <div style={{ fontSize: 12, color: "#f0f0f0", lineHeight: 1.6 }}>
+                      • {goals} Goal{goals !== "1" ? "s" : ""} | {assists} Assist{assists !== "1" ? "s" : ""}<br />
+                      • {keyPasses} Key Passes<br />
+                      • {duelsWon}/{duelsTotal} Duels Won
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: 16 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: "#4ade80" }}>@Deep_433</div>
+                <div style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)", borderRadius: 8, padding: "8px 16px", textAlign: "center" }}>
+                  <div style={{ fontSize: 9, color: "#0a0f0a", fontWeight: 700, textTransform: "uppercase" }}>Rating</div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: "#0a0f0a" }}>{rating}</div>
+                </div>
+              </div>
+            </div>
+          </GraphicCard>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+
 function QuickVSGraphic() {
   const cardRef = useRef(null);
   const [season, setSeason] = useState(2025);
@@ -7082,6 +7251,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "positionradar", label: "⚽ Position Radar" },
     { id: "zoneofinfluence", label: "⚔️ Zone of Influence" },
     { id: "quickvs", label: "⚡ The Battle" },
+    { id: "gameweekrating", label: "🌟 Gameweek Rating" },
     { id: "beyondscoresheet", label: "👁️ Beyond The Scoresheet" },
     { id: "backfourbattle", label: "🛡️ Side by Side" },
     { id: "triobattle", label: "⚔️ Side by Side" },
@@ -7135,6 +7305,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "positionradar" && <PositionRadarGraphic />}
       {activeSection === "zoneofinfluence" && <ZoneOfInfluenceGraphic />}
       {activeSection === "quickvs" && <QuickVSGraphic />}
+      {activeSection === "gameweekrating" && <GameweekRatingGraphic />}
       {activeSection === "beyondscoresheet" && <BeyondScoresheetGraphic />}
       {activeSection === "backfourbattle" && <BackFourBattleGraphic />}
       {activeSection === "triobattle" && <TrioBattleGraphic />}
