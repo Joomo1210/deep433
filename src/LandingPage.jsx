@@ -296,7 +296,7 @@ export default function LandingPage({ onGetStarted, onTeamCompare }) {
 
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginTop: 28 }}>
           <button className="cta-btn" onClick={onGetStarted}>⚡ Predict a Match</button>
-          <button className="cta-btn-purple" onClick={onTeamCompare}>⚔️ Team Compare</button>
+          <button className="cta-btn-purple" onClick={onTeamCompare}>⚔️Compare Team </button>
           <a href="/blog" className="ghost-btn">📰 Read the Latest</a>
           <a href="/leaderboard" className="ghost-btn">🏆 Community Leaderboard</a>
           <a href="/submit" className="ghost-btn">✍️ Write & Get Paid</a>
