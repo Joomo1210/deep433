@@ -3873,6 +3873,190 @@ function ZoneOfInfluenceGraphic() {
 
 // ─── QUICK VS (Tackles + Dribbles only, fast narrative card) ────────────────
 // ─── GAMEWEEK PLAYER RATING GRAPHIC ──────────────────────────────────────────
+// ─── PLAYER VALUATION CARD ───────────────────────────────────────────────────
+function PlayerValuationGraphic() {
+  const cardRef = useRef(null);
+  const [search, setSearch] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [team, setTeam] = useState(null);
+  const [searching, setSearching] = useState(false);
+  const [squad, setSquad] = useState([]);
+  const [playerId, setPlayerId] = useState("");
+  const [player, setPlayer] = useState(null);
+  const [loadingSquad, setLoadingSquad] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  // Manual entry — market value, Deep433's own valuation, and the
+  // strengths/weaknesses/wildcard analysis are Joseph's own judgement,
+  // not something fetchable from any API.
+  const [nationality, setNationality] = useState("");
+  const [rating, setRating] = useState("");
+  const [marketValue, setMarketValue] = useState("");
+  const [deepValue, setDeepValue] = useState("");
+  const [strengths, setStrengths] = useState("");
+  const [weaknesses, setWeaknesses] = useState("");
+  const [wildcard, setWildcard] = useState("");
+
+  const searchTeam = async (query) => {
+    setSearch(query);
+    if (query.length < 3) { setSuggestions([]); return; }
+    setSearching(true);
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
+      const d = await r.json();
+      setSuggestions(d.teams || []);
+    } catch {}
+    setSearching(false);
+  };
+
+  const selectTeam = async (t) => {
+    setLoadingSquad(true);
+    setTeam(t); setSuggestions([]); setSearch(t.name); setPlayerId(""); setPlayer(null); setSquad([]);
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsquad&teamId=${t.id}`);
+      const d = await r.json();
+      setSquad(d.players || []);
+    } catch {}
+    setLoadingSquad(false);
+  };
+
+  const selectPlayerFromSquad = (pid) => {
+    setPlayerId(pid);
+    const basePlayer = squad.find(p => String(p.id) === String(pid));
+    if (basePlayer) setPlayer({ ...basePlayer, teamLogo: team?.logo });
+  };
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, `deep433-valuation-${player?.name || "player"}.png`, undefined, transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const ready = player && rating && marketValue && deepValue;
+
+  const strengthLines = strengths.split("\n").filter(l => l.trim());
+  const weaknessLines = weaknesses.split("\n").filter(l => l.trim());
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Player Valuation Card — photo, name, team, position and age fetched automatically. Valuation and analysis entered manually.</div>
+
+      <TeamThenPlayerPicker
+        label="Player"
+        search={search}
+        setSearch={setSearch}
+        suggestions={suggestions}
+        team={team}
+        searching={searching}
+        slot={0}
+        color="#4ade80"
+        squad={squad}
+        playerId={playerId}
+        onSearchTeam={(q) => searchTeam(q)}
+        onSelectTeam={(t) => selectTeam(t)}
+        onSelectPlayer={(pid) => selectPlayerFromSquad(pid)}
+        onClearTeam={() => setTeam(null)}
+      />
+      {loadingSquad && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 12 }}>Loading squad...</div>}
+
+      {player && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, border: "1px solid #2a2a3a", borderRadius: 8, padding: 10 }}>
+          <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>Player Details</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <input value={nationality} onChange={e => setNationality(e.target.value)} placeholder="Nationality" style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+            <input value={rating} onChange={e => setRating(e.target.value)} placeholder="Rating (e.g. 8.6)" type="number" step="0.1" style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+          </div>
+
+          <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginTop: 4 }}>Valuation Metrics</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <input value={marketValue} onChange={e => setMarketValue(e.target.value)} placeholder="Market Value (e.g. €45.0M)" style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+            <input value={deepValue} onChange={e => setDeepValue(e.target.value)} placeholder="Deep433 Value (e.g. €58.2M)" style={{ background: "#1a1a24", border: "1.5px solid #4ade8040", borderRadius: 8, color: "#4ade80", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+          </div>
+
+          <div style={{ fontSize: 10, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginTop: 4 }}>🟢 Strengths (one per line)</div>
+          <textarea value={strengths} onChange={e => setStrengths(e.target.value)} placeholder="High-volume progressive carrying&#10;Elite 1v1 ground duel win %" rows={2} style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit", resize: "vertical" }} />
+
+          <div style={{ fontSize: 10, color: "#f87171", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginTop: 4 }}>🔴 Weaknesses (one per line)</div>
+          <textarea value={weaknesses} onChange={e => setWeaknesses(e.target.value)} placeholder="Defensive aerial duel success (<40%)" rows={2} style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit", resize: "vertical" }} />
+
+          <div style={{ fontSize: 10, color: "#fbbf24", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginTop: 4 }}>🃏 Wildcard Factor</div>
+          <textarea value={wildcard} onChange={e => setWildcard(e.target.value)} placeholder="X-Factor: Generates 0.35 xA/90 when inverted into central midfield zones." rows={2} style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit", resize: "vertical" }} />
+        </div>
+      )}
+
+      {ready && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "20px 18px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4, paddingBottom: 10, borderBottom: "1px solid #1e1e30" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  {player.teamLogo && <img src={player.teamLogo} alt="" crossOrigin="anonymous" style={{ width: 26, height: 26, objectFit: "contain" }} />}
+                  <div>
+                    <div style={{ fontSize: 17, fontWeight: 900, color: "#f0f0f0" }}>{player.name}</div>
+                    <div style={{ fontSize: 11, color: "#94a3b8" }}>{player.position}{player.age ? ` · Age ${player.age}` : ""}{nationality ? ` · ${nationality}` : ""}</div>
+                  </div>
+                </div>
+                <div style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)", borderRadius: 8, padding: "6px 12px", textAlign: "center" }}>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: "#0a0f0a" }}>{rating}<span style={{ fontSize: 10 }}>/10</span></div>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: 14, marginTop: 14 }}>
+                <div style={{ textAlign: "center", flexShrink: 0 }}>
+                  {player.photo && <img src={player.photo} alt="" crossOrigin="anonymous" style={{ width: 90, height: 90, borderRadius: "50%", objectFit: "cover", border: "3px solid #4ade80" }} />}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Valuation Metrics</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 10 }}>
+                    <div style={{ background: "#13131f", borderRadius: 6, padding: "6px 8px", textAlign: "center" }}>
+                      <div style={{ fontSize: 9, color: "#94a3b8", textTransform: "uppercase" }}>Market Value</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: "#f0f0f0" }}>{marketValue}</div>
+                    </div>
+                    <div style={{ background: "#13131f", borderRadius: 6, padding: "6px 8px", textAlign: "center", border: "1px solid #4ade8040" }}>
+                      <div style={{ fontSize: 9, color: "#4ade80", textTransform: "uppercase" }}>Deep433 Value</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: "#4ade80" }}>{deepValue}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {strengthLines.length > 0 && (
+                <div style={{ marginTop: 10 }}>
+                  <div style={{ fontSize: 11, color: "#4ade80", fontWeight: 800, marginBottom: 4 }}>🟢 Strengths</div>
+                  {strengthLines.map((l, i) => <div key={i} style={{ fontSize: 12, color: "#e2e8f0", marginBottom: 2 }}>• {l}</div>)}
+                </div>
+              )}
+
+              {weaknessLines.length > 0 && (
+                <div style={{ marginTop: 10 }}>
+                  <div style={{ fontSize: 11, color: "#f87171", fontWeight: 800, marginBottom: 4 }}>🔴 Weaknesses</div>
+                  {weaknessLines.map((l, i) => <div key={i} style={{ fontSize: 12, color: "#e2e8f0", marginBottom: 2 }}>• {l}</div>)}
+                </div>
+              )}
+
+              {wildcard && (
+                <div style={{ marginTop: 10, background: "#13100a", border: "1px solid #f59e0b40", borderRadius: 8, padding: "8px 10px" }}>
+                  <div style={{ fontSize: 11, color: "#fbbf24", fontWeight: 800, marginBottom: 3 }}>🃏 Wildcard Factor</div>
+                  <div style={{ fontSize: 12, color: "#e2e8f0" }}>{wildcard}</div>
+                </div>
+              )}
+            </div>
+          </GraphicCard>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+
 function GameweekRatingGraphic() {
   const cardRef = useRef(null);
   const [search, setSearch] = useState("");
@@ -7252,6 +7436,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "zoneofinfluence", label: "⚔️ Zone of Influence" },
     { id: "quickvs", label: "⚡ The Battle" },
     { id: "gameweekrating", label: "🌟 Gameweek Rating" },
+    { id: "valuation", label: "💰 Player Valuation" },
     { id: "beyondscoresheet", label: "👁️ Beyond The Scoresheet" },
     { id: "backfourbattle", label: "🛡️ Side by Side" },
     { id: "triobattle", label: "⚔️ Side by Side" },
@@ -7306,6 +7491,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "zoneofinfluence" && <ZoneOfInfluenceGraphic />}
       {activeSection === "quickvs" && <QuickVSGraphic />}
       {activeSection === "gameweekrating" && <GameweekRatingGraphic />}
+      {activeSection === "valuation" && <PlayerValuationGraphic />}
       {activeSection === "beyondscoresheet" && <BeyondScoresheetGraphic />}
       {activeSection === "backfourbattle" && <BackFourBattleGraphic />}
       {activeSection === "triobattle" && <TrioBattleGraphic />}
