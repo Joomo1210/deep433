@@ -4083,12 +4083,36 @@ function GameweekRatingGraphic() {
   const [week, setWeek] = useState("");
   const [position, setPosition] = useState("");
   const [matchResult, setMatchResult] = useState("");
-  const [goals, setGoals] = useState("");
-  const [assists, setAssists] = useState("");
-  const [keyPasses, setKeyPasses] = useState("");
-  const [duelsWon, setDuelsWon] = useState("");
-  const [duelsTotal, setDuelsTotal] = useState("");
   const [rating, setRating] = useState("");
+
+  // Position mode determines which stat fields actually make sense for this
+  // player's performance — goals/assists mean little for a centre-back or
+  // keeper, same way tackles/aerials mean little for a winger's key moment.
+  const [posMode, setPosMode] = useState("attacker");
+  const [stats, setStats] = useState({
+    goals: "", assists: "", keyPasses: "", duelsWon: "", duelsTotal: "",
+    tackles: "", interceptions: "", clearances: "", aerialsWon: "", aerialsTotal: "",
+    saves: "", goalsConceded: "", cleanSheet: "",
+  });
+  const updateStat = (key, val) => setStats(prev => ({ ...prev, [key]: val }));
+
+  const STAT_FIELDS = {
+    attacker: [
+      { key: "goals", label: "Goals" }, { key: "assists", label: "Assists" },
+      { key: "keyPasses", label: "Key Passes" }, { key: "duelsWon", label: "Duels Won" }, { key: "duelsTotal", label: "of Total" },
+    ],
+    midfielder: [
+      { key: "keyPasses", label: "Key Passes" }, { key: "tackles", label: "Tackles" },
+      { key: "duelsWon", label: "Duels Won" }, { key: "duelsTotal", label: "of Total" },
+    ],
+    defender: [
+      { key: "tackles", label: "Tackles" }, { key: "interceptions", label: "Interceptions" },
+      { key: "clearances", label: "Clearances" }, { key: "aerialsWon", label: "Aerials Won" }, { key: "aerialsTotal", label: "of Total" },
+    ],
+    goalkeeper: [
+      { key: "saves", label: "Saves" }, { key: "goalsConceded", label: "Goals Conceded" }, { key: "cleanSheet", label: "Clean Sheet (Y/N)" },
+    ],
+  };
 
   const searchTeam = async (query) => {
     setSearch(query);
@@ -4165,15 +4189,20 @@ function GameweekRatingGraphic() {
           </div>
           <input value={matchResult} onChange={e => setMatchResult(e.target.value)} placeholder="Match (e.g. Juventus 3-1 Inter)" style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
 
+          <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginTop: 4 }}>Role — determines which stats show</div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {[{ v: "attacker", label: "⚽ Attacker" }, { v: "midfielder", label: "🎨 Midfielder" }, { v: "defender", label: "🛡️ Defender" }, { v: "goalkeeper", label: "🧤 Goalkeeper" }].map(m => (
+              <button key={m.v} onClick={() => setPosMode(m.v)} style={{ background: posMode === m.v ? "#4ade8022" : "none", border: `1px solid ${posMode === m.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: posMode === m.v ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "6px 10px" }}>
+                {m.label}
+              </button>
+            ))}
+          </div>
+
           <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginTop: 4 }}>Key Stats</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            <input value={goals} onChange={e => setGoals(e.target.value)} placeholder="Goals" type="number" style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
-            <input value={assists} onChange={e => setAssists(e.target.value)} placeholder="Assists" type="number" style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
-            <input value={keyPasses} onChange={e => setKeyPasses(e.target.value)} placeholder="Key Passes" type="number" style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
-            <div style={{ display: "flex", gap: 4 }}>
-              <input value={duelsWon} onChange={e => setDuelsWon(e.target.value)} placeholder="Duels Won" type="number" style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit", flex: 1 }} />
-              <input value={duelsTotal} onChange={e => setDuelsTotal(e.target.value)} placeholder="of Total" type="number" style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit", flex: 1 }} />
-            </div>
+            {STAT_FIELDS[posMode].map(f => (
+              <input key={f.key} value={stats[f.key]} onChange={e => updateStat(f.key, e.target.value)} placeholder={f.label} type={f.key === "cleanSheet" ? "text" : "number"} style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+            ))}
           </div>
 
           <div style={{ fontSize: 10, color: "#fbbf24", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginTop: 4 }}>Rating</div>
@@ -4203,9 +4232,34 @@ function GameweekRatingGraphic() {
                   <div style={{ background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, padding: "8px 10px" }}>
                     <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Key Stats</div>
                     <div style={{ fontSize: 12, color: "#f0f0f0", lineHeight: 1.6 }}>
-                      • {goals} Goal{goals !== "1" ? "s" : ""} | {assists} Assist{assists !== "1" ? "s" : ""}<br />
-                      • {keyPasses} Key Passes<br />
-                      • {duelsWon}/{duelsTotal} Duels Won
+                      {posMode === "attacker" && (
+                        <>
+                          • {stats.goals} Goal{stats.goals !== "1" ? "s" : ""} | {stats.assists} Assist{stats.assists !== "1" ? "s" : ""}<br />
+                          • {stats.keyPasses} Key Passes<br />
+                          • {stats.duelsWon}/{stats.duelsTotal} Duels Won
+                        </>
+                      )}
+                      {posMode === "midfielder" && (
+                        <>
+                          • {stats.keyPasses} Key Passes<br />
+                          • {stats.tackles} Tackles<br />
+                          • {stats.duelsWon}/{stats.duelsTotal} Duels Won
+                        </>
+                      )}
+                      {posMode === "defender" && (
+                        <>
+                          • {stats.tackles} Tackles | {stats.interceptions} Interceptions<br />
+                          • {stats.clearances} Clearances<br />
+                          • {stats.aerialsWon}/{stats.aerialsTotal} Aerials Won
+                        </>
+                      )}
+                      {posMode === "goalkeeper" && (
+                        <>
+                          • {stats.saves} Saves<br />
+                          • {stats.goalsConceded} Goals Conceded<br />
+                          • Clean Sheet: {stats.cleanSheet}
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
