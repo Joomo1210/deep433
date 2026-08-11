@@ -4024,15 +4024,23 @@ function PlayerValuationGraphic() {
 
               {strengthLines.length > 0 && (
                 <div style={{ marginTop: 10 }}>
-                  <div style={{ fontSize: 11, color: "#4ade80", fontWeight: 800, marginBottom: 4 }}>🟢 Strengths</div>
-                  {strengthLines.map((l, i) => <div key={i} style={{ fontSize: 12, color: "#e2e8f0", marginBottom: 2 }}>• {l}</div>)}
+                  <div style={{ fontSize: 11, color: "#4ade80", fontWeight: 800, marginBottom: 6 }}>🟢 Strengths</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {strengthLines.map((l, i) => (
+                      <div key={i} style={{ fontSize: 11, color: "#4ade80", background: "#4ade8015", border: "1px solid #4ade8040", borderRadius: 20, padding: "4px 10px" }}>{l}</div>
+                    ))}
+                  </div>
                 </div>
               )}
 
               {weaknessLines.length > 0 && (
                 <div style={{ marginTop: 10 }}>
-                  <div style={{ fontSize: 11, color: "#f87171", fontWeight: 800, marginBottom: 4 }}>🔴 Weaknesses</div>
-                  {weaknessLines.map((l, i) => <div key={i} style={{ fontSize: 12, color: "#e2e8f0", marginBottom: 2 }}>• {l}</div>)}
+                  <div style={{ fontSize: 11, color: "#f87171", fontWeight: 800, marginBottom: 6 }}>🔴 Weaknesses</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {weaknessLines.map((l, i) => (
+                      <div key={i} style={{ fontSize: 11, color: "#f87171", background: "#f8717115", border: "1px solid #f8717140", borderRadius: 20, padding: "4px 10px" }}>{l}</div>
+                    ))}
+                  </div>
                 </div>
               )}
 
