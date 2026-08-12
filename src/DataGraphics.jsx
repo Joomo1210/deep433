@@ -3874,6 +3874,127 @@ function ZoneOfInfluenceGraphic() {
 // ─── QUICK VS (Tackles + Dribbles only, fast narrative card) ────────────────
 // ─── GAMEWEEK PLAYER RATING GRAPHIC ──────────────────────────────────────────
 // ─── PLAYER VALUATION CARD ───────────────────────────────────────────────────
+// ─── TEAM STAT BATTLE ────────────────────────────────────────────────────────
+function TeamStatBattleGraphic() {
+  const cardRef = useRef(null);
+  const emptySlot = () => ({ search: "", suggestions: [], team: null, searching: false, statValue: "", statSubtext: "" });
+  const [slots, setSlots] = useState([emptySlot(), emptySlot(), emptySlot(), emptySlot()]);
+  const [activeSlots, setActiveSlots] = useState(2);
+  const [statLabel, setStatLabel] = useState("");
+  const [downloading, setDownloading] = useState(false);
+
+  const colors = ["#f87171", "#4ade80", "#f59e0b", "#60a5fa"];
+
+  const updateSlot = (index, patch) => {
+    setSlots(prev => prev.map((s, i) => i === index ? { ...s, ...patch } : s));
+  };
+
+  const searchTeam = async (query, index) => {
+    updateSlot(index, { search: query });
+    if (query.length < 3) { updateSlot(index, { suggestions: [] }); return; }
+    updateSlot(index, { searching: true });
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
+      const d = await r.json();
+      updateSlot(index, { suggestions: d.teams || [] });
+    } catch {}
+    updateSlot(index, { searching: false });
+  };
+
+  const selectTeam = (t, index) => {
+    updateSlot(index, { team: t, suggestions: [], search: t.name });
+  };
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      const names = slots.slice(0, activeSlots).filter(s => s.team).map(s => s.team.name).join("-vs-");
+      await downloadCardImage(cardRef.current, `deep433-team-battle-${names || "teams"}.png`, undefined, transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const allLoaded = slots.slice(0, activeSlots).every(s => s.team && s.statValue);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Team Stat Battle — crests fetched automatically, stat values entered manually (e.g. from Opta data). Up to 4 teams.</div>
+
+      <input value={statLabel} onChange={e => setStatLabel(e.target.value)} placeholder="Stat label (e.g. Goals vs xG)" style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        {slots.slice(0, activeSlots).map((slot, index) => (
+          <div key={index} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <TeamThenPlayerPicker
+              label={`Team ${index + 1}`}
+              search={slot.search}
+              setSearch={(v) => updateSlot(index, { search: v })}
+              suggestions={slot.suggestions}
+              team={slot.team}
+              searching={slot.searching}
+              slot={index}
+              color={colors[index]}
+              squad={[]}
+              playerId=""
+              onSearchTeam={(q) => searchTeam(q, index)}
+              onSelectTeam={(t) => selectTeam(t, index)}
+              onSelectPlayer={() => {}}
+              onClearTeam={() => updateSlot(index, { team: null })}
+            />
+            {slot.team && (
+              <>
+                <input value={slot.statValue} onChange={e => updateSlot(index, { statValue: e.target.value })} placeholder="Value (e.g. -17.18)" style={{ background: "#1a1a24", border: `1.5px solid ${colors[index]}40`, borderRadius: 8, color: colors[index], fontSize: 14, fontWeight: 800, padding: "8px 10px", outline: "none", fontFamily: "inherit" }} />
+                <input value={slot.statSubtext} onChange={e => updateSlot(index, { statSubtext: e.target.value })} placeholder="Subtext (e.g. 41 goals from 58.18 xG)" style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#e2e8f0", fontSize: 11, padding: "6px 10px", outline: "none", fontFamily: "inherit" }} />
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {activeSlots < 4 && (
+        <button onClick={() => setActiveSlots(activeSlots + 1)} style={{ background: "none", border: "1px dashed #a855f7", borderRadius: 8, color: "#a855f7", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "8px" }}>
+          + Add Another Team ({activeSlots}/4)
+        </button>
+      )}
+
+      {allLoaded && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "26px 18px" }}>
+              <div style={{ textAlign: "center", marginBottom: 22 }}>
+                <span style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5 }}>{statLabel || "STAT BATTLE"}</span>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, flexWrap: "wrap" }}>
+                {slots.slice(0, activeSlots).map((slot, index) => (
+                  <div key={index} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ textAlign: "center", minWidth: 110 }}>
+                      {slot.team.logo && <img src={slot.team.logo} alt="" crossOrigin="anonymous" style={{ width: 52, height: 52, objectFit: "contain", margin: "0 auto 8px" }} />}
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0", marginBottom: 6 }}>{slot.team.name}</div>
+                      <div style={{ fontSize: 28, fontWeight: 900, color: colors[index] }}>{slot.statValue}</div>
+                      {slot.statSubtext && <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>{slot.statSubtext}</div>}
+                    </div>
+                    {index < activeSlots - 1 && (
+                      <div style={{ fontSize: 16, fontWeight: 900, color: "#e2e8f0" }}>VS</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </GraphicCard>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#f87171,#ef4444)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+
 function PlayerValuationGraphic() {
   const cardRef = useRef(null);
   const [search, setSearch] = useState("");
@@ -7499,6 +7620,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "quickvs", label: "⚡ The Battle" },
     { id: "gameweekrating", label: "🌟 Gameweek Rating" },
     { id: "valuation", label: "💰 Player Valuation" },
+    { id: "teambattle", label: "🥊 Team Stat Battle" },
     { id: "beyondscoresheet", label: "👁️ Beyond The Scoresheet" },
     { id: "backfourbattle", label: "🛡️ Side by Side" },
     { id: "triobattle", label: "⚔️ Side by Side" },
@@ -7554,6 +7676,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "quickvs" && <QuickVSGraphic />}
       {activeSection === "gameweekrating" && <GameweekRatingGraphic />}
       {activeSection === "valuation" && <PlayerValuationGraphic />}
+      {activeSection === "teambattle" && <TeamStatBattleGraphic />}
       {activeSection === "beyondscoresheet" && <BeyondScoresheetGraphic />}
       {activeSection === "backfourbattle" && <BackFourBattleGraphic />}
       {activeSection === "triobattle" && <TrioBattleGraphic />}
