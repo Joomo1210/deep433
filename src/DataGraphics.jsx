@@ -3951,11 +3951,18 @@ function TeamStatBattleGraphic() {
         ))}
       </div>
 
-      {activeSlots < 4 && (
-        <button onClick={() => setActiveSlots(activeSlots + 1)} style={{ background: "none", border: "1px dashed #a855f7", borderRadius: 8, color: "#a855f7", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "8px" }}>
-          + Add Another Team ({activeSlots}/4)
-        </button>
-      )}
+      <div style={{ display: "flex", gap: 8 }}>
+        {activeSlots > 1 && (
+          <button onClick={() => setActiveSlots(activeSlots - 1)} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "8px", flex: 1 }}>
+            − Remove Team ({activeSlots})
+          </button>
+        )}
+        {activeSlots < 4 && (
+          <button onClick={() => setActiveSlots(activeSlots + 1)} style={{ background: "none", border: "1px dashed #a855f7", borderRadius: 8, color: "#a855f7", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "8px", flex: 1 }}>
+            + Add Another Team ({activeSlots}/4)
+          </button>
+        )}
+      </div>
 
       {allLoaded && (
         <>
