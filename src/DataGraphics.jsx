@@ -3979,7 +3979,7 @@ function TeamStatBattleGraphic() {
                       {slot.team.logo && <img src={slot.team.logo} alt="" crossOrigin="anonymous" style={{ width: 52, height: 52, objectFit: "contain", margin: "0 auto 8px" }} />}
                       <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0", marginBottom: 6 }}>{slot.team.name}</div>
                       <div style={{ fontSize: 28, fontWeight: 900, color: colors[index] }}>{slot.statValue}</div>
-                      {slot.statSubtext && <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>{slot.statSubtext}</div>}
+                      {slot.statSubtext && <div style={{ fontSize: 12, color: "#f0f0f0", fontWeight: 600, marginTop: 4 }}>{slot.statSubtext}</div>}
                     </div>
                     {index < activeSlots - 1 && (
                       <div style={{ fontSize: 16, fontWeight: 900, color: "#e2e8f0" }}>VS</div>
