@@ -4573,7 +4573,7 @@ function QuickVSGraphic() {
       {allLoaded && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "26px 18px" }}>
+            <div style={{ padding: "44px 18px 26px" }}>
               <div style={{ textAlign: "center", marginBottom: 22 }}>
                 <span style={{ fontSize: 24, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5 }}>THE BATTLE</span>
               </div>
