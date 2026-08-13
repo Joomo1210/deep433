@@ -3875,15 +3875,28 @@ function ZoneOfInfluenceGraphic() {
 // ─── GAMEWEEK PLAYER RATING GRAPHIC ──────────────────────────────────────────
 // ─── PLAYER VALUATION CARD ───────────────────────────────────────────────────
 // ─── TEAM STAT BATTLE ────────────────────────────────────────────────────────
+function TeamStatCell({ slot, color }) {
+  if (!slot || !slot.team) return null;
+  return (
+    <div style={{ textAlign: "center", minWidth: 110 }}>
+      {slot.team.logo && <img src={slot.team.logo} alt="" crossOrigin="anonymous" style={{ width: 52, height: 52, objectFit: "contain", margin: "0 auto 8px" }} />}
+      <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0", marginBottom: 6 }}>{slot.team.name}</div>
+      <div style={{ fontSize: 28, fontWeight: 900, color }}>{slot.statValue}</div>
+      {slot.statSubtext && <div style={{ fontSize: 12, color: "#f0f0f0", fontWeight: 600, marginTop: 4 }}>{slot.statSubtext}</div>}
+    </div>
+  );
+}
+
 function TeamStatBattleGraphic() {
   const cardRef = useRef(null);
+  const MAX_SLOTS = 10;
   const emptySlot = () => ({ search: "", suggestions: [], team: null, searching: false, statValue: "", statSubtext: "" });
-  const [slots, setSlots] = useState([emptySlot(), emptySlot(), emptySlot(), emptySlot()]);
+  const [slots, setSlots] = useState(Array.from({ length: MAX_SLOTS }, emptySlot));
   const [activeSlots, setActiveSlots] = useState(2);
   const [statLabel, setStatLabel] = useState("");
   const [downloading, setDownloading] = useState(false);
 
-  const colors = ["#f87171", "#4ade80", "#f59e0b", "#60a5fa"];
+  const colors = ["#f87171", "#4ade80", "#f59e0b", "#60a5fa", "#a855f7", "#ec4899", "#14b8a6", "#eab308", "#f97316", "#8b5cf6"];
 
   const updateSlot = (index, patch) => {
     setSlots(prev => prev.map((s, i) => i === index ? { ...s, ...patch } : s));
@@ -3908,17 +3921,21 @@ function TeamStatBattleGraphic() {
   const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      const names = slots.slice(0, activeSlots).filter(s => s.team).map(s => s.team.name).join("-vs-");
+      const names = slots.slice(0, activeSlots).filter(s => s.team).map(s => s.team.name).slice(0, 3).join("-vs-");
       await downloadCardImage(cardRef.current, `deep433-team-battle-${names || "teams"}.png`, undefined, transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
 
   const allLoaded = slots.slice(0, activeSlots).every(s => s.team && s.statValue);
+  // 2-4 teams use the head-to-head VS layout; 5+ switches to a ranked list,
+  // since cramming that many crests into one horizontal row stops being
+  // readable, especially on mobile.
+  const useRankedList = activeSlots >= 5;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Team Stat Battle — crests fetched automatically, stat values entered manually (e.g. from Opta data). Up to 4 teams.</div>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Team Stat Battle — crests fetched automatically, stat values entered manually (e.g. from Opta data). 1-4 teams use a head-to-head layout, 5+ switches to a ranked list.</div>
 
       <input value={statLabel} onChange={e => setStatLabel(e.target.value)} placeholder="Stat label (e.g. Goals vs xG)" style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
 
@@ -3957,9 +3974,9 @@ function TeamStatBattleGraphic() {
             − Remove Team ({activeSlots})
           </button>
         )}
-        {activeSlots < 4 && (
+        {activeSlots < MAX_SLOTS && (
           <button onClick={() => setActiveSlots(activeSlots + 1)} style={{ background: "none", border: "1px dashed #a855f7", borderRadius: 8, color: "#a855f7", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "8px", flex: 1 }}>
-            + Add Another Team ({activeSlots}/4)
+            + Add Another Team ({activeSlots}/{MAX_SLOTS})
           </button>
         )}
       </div>
@@ -3972,21 +3989,39 @@ function TeamStatBattleGraphic() {
                 <span style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5 }}>{statLabel || "STAT BATTLE"}</span>
               </div>
 
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, flexWrap: "wrap" }}>
-                {slots.slice(0, activeSlots).map((slot, index) => (
-                  <div key={index} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ textAlign: "center", minWidth: 110 }}>
-                      {slot.team.logo && <img src={slot.team.logo} alt="" crossOrigin="anonymous" style={{ width: 52, height: 52, objectFit: "contain", margin: "0 auto 8px" }} />}
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0", marginBottom: 6 }}>{slot.team.name}</div>
-                      <div style={{ fontSize: 28, fontWeight: 900, color: colors[index] }}>{slot.statValue}</div>
-                      {slot.statSubtext && <div style={{ fontSize: 12, color: "#f0f0f0", fontWeight: 600, marginTop: 4 }}>{slot.statSubtext}</div>}
+              {!useRankedList ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                  {Array.from({ length: Math.ceil(activeSlots / 2) }).map((_, rowIdx) => {
+                    const first = slots[rowIdx * 2];
+                    const second = slots[rowIdx * 2 + 1];
+                    return (
+                      <div key={rowIdx} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+                        <TeamStatCell slot={first} color={colors[rowIdx * 2]} />
+                        {second && (
+                          <>
+                            <div style={{ fontSize: 16, fontWeight: 900, color: "#e2e8f0" }}>VS</div>
+                            <TeamStatCell slot={second} color={colors[rowIdx * 2 + 1]} />
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {slots.slice(0, activeSlots).map((slot, index) => (
+                    <div key={index} style={{ display: "flex", alignItems: "center", gap: 12, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 10, padding: "10px 14px" }}>
+                      <div style={{ fontSize: 16, fontWeight: 900, color: "#666", minWidth: 24 }}>{index + 1}</div>
+                      {slot.team.logo && <img src={slot.team.logo} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain", flexShrink: 0 }} />}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "#e2e8f0" }}>{slot.team.name}</div>
+                        {slot.statSubtext && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 1 }}>{slot.statSubtext}</div>}
+                      </div>
+                      <div style={{ fontSize: 20, fontWeight: 900, color: colors[index], flexShrink: 0 }}>{slot.statValue}</div>
                     </div>
-                    {index < activeSlots - 1 && (
-                      <div style={{ fontSize: 16, fontWeight: 900, color: "#e2e8f0" }}>VS</div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </GraphicCard>
           <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#f87171,#ef4444)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
