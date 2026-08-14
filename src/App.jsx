@@ -32,14 +32,26 @@ const LEAGUE_LOGOS = {
   scotprem:     "https://media.api-sports.io/football/leagues/179.png",
 };
 
-{ id: "copamerica", label: "Copa America",        short: "Copa America" },
-  { id: "championship", label: "Championship",       short: "Championship" },
-  { id: "segunda",    label: "Segunda División",    short: "Segunda División" },
-  { id: "ligue2",     label: "Ligue 2",              short: "Ligue 2" },
-  { id: "bundesliga2",label: "2. Bundesliga",        short: "2. Bundesliga" },
-  { id: "serieb",     label: "Serie B",              short: "Serie B" },
-  { id: "npfl",       label: "NPFL",                 short: "NPFL" },
-  { id: "scotprem",   label: "Scotland Premiership",short: "Scotland Premiership" },
+const LEAGUES = [
+  { id: "wc2026", label: "FIFA World Cup 2026", short: "FIFA World Cup 2026" },
+  { id: "pl", label: "Premier League", short: "Premier League" },
+  { id: "laliga", label: "La Liga", short: "La Liga" },
+  { id: "seriea", label: "Serie A", short: "Serie A" },
+  { id: "bundesliga", label: "Bundesliga", short: "Bundesliga" },
+  { id: "ligue1", label: "Ligue 1", short: "Ligue 1" },
+  { id: "ucl", label: "Champions League", short: "Champions League" },
+  { id: "uel", label: "Europa League", short: "Europa League" },
+  { id: "facup", label: "FA Cup", short: "FA Cup" },
+  { id: "copadelrey", label: "Copa del Rey", short: "Copa del Rey" },
+  { id: "afcon", label: "AFCON", short: "AFCON" },
+  { id: "copamerica", label: "Copa America", short: "Copa America" },
+  { id: "championship", label: "Championship", short: "Championship" },
+  { id: "segunda", label: "Segunda Division", short: "Segunda Division" },
+  { id: "ligue2", label: "Ligue 2", short: "Ligue 2" },
+  { id: "bundesliga2", label: "2. Bundesliga", short: "2. Bundesliga" },
+  { id: "serieb", label: "Serie B", short: "Serie B" },
+  { id: "npfl", label: "NPFL", short: "NPFL" },
+  { id: "scotprem", label: "Scotland Premiership", short: "Scotland Premiership" },
 ];
 
 const BADGE_DEFS = [
