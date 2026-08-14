@@ -382,6 +382,11 @@ function MatchStatsGraphic() {
                   <div style={{ fontSize: 15, fontWeight: 800, color: "#4ade80" }}>{s.home.team}</div>
                 </div>
                 <div style={{ textAlign: "center", padding: "0 12px" }}>
+                  {s.goals && (s.goals.home !== null || s.goals.away !== null) && (
+                    <div style={{ fontSize: 26, fontWeight: 900, color: "#f0f0f0", marginBottom: 2 }}>
+                      {s.goals.home ?? "—"} - {s.goals.away ?? "—"}
+                    </div>
+                  )}
                   <div style={{ fontSize: 12, color: "#e2e8f0", textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Match Stats</div>
                 </div>
                 <div style={{ textAlign: "center" }}>
