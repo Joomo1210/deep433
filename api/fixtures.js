@@ -1,190 +1,147 @@
-// /api/fixture-data.js
-// Merged endpoint for all single-fixture data lookups — reduces function count.
-// Usage:
-//   /api/fixture-data?type=events&fixtureId=X    (goals, cards, subs)
-//   /api/fixture-data?type=stats&fixtureId=X     (full match statistics)
-//   /api/fixture-data?type=ratings&fixtureId=X   (per-player match ratings)
-//   /api/fixture-data?type=injuries&fixtureId=X  (pre-match unavailability)
+// /api/fixtures.js
+// Fetches upcoming and recent fixtures for a league across a date range
+// Usage: /api/fixtures?leagueId=wc2026
+
+const LEAGUE_MAP = {
+  wc2026:      { id: 1,   season: 2026 },
+  pl:          { id: 39,  season: 2026 },
+  laliga:      { id: 140, season: 2026 },
+  seriea:      { id: 135, season: 2026 },
+  bundesliga:  { id: 78,  season: 2026 },
+  ligue1:      { id: 61,  season: 2026 },
+  ucl:         { id: 2,   season: 2026 },
+  uel:         { id: 3,   season: 2026 },
+  facup:       { id: 45,  season: 2026 },
+  copadelrey:  { id: 143, season: 2026 },
+  afcon:       { id: 6,   season: 2025 },
+  copamerica:  { id: 9,   season: 2024 },
+  communityshield: { id: 528, season: 2026 },
+  dflsupercup:     { id: 529, season: 2026 },
+  tropheedeschampions: { id: 526, season: 2026 },
+  supercoppa:      { id: 547, season: 2026 },
+  championship: { id: 40,  season: 2026 },
+  segunda:      { id: 141, season: 2026 },
+  ligue2:       { id: 62,  season: 2026 },
+  bundesliga2:  { id: 79,  season: 2026 },
+  serieb:       { id: 136, season: 2026 },
+  npfl:         { id: 399, season: 2026 },
+  scotprem:     { id: 179, season: 2026 },
+};
+
+function mapStatus(short) {
+  const live = ["1H","HT","2H","ET","BT","P","INT"];
+  const finished = ["FT","AET","PEN"];
+  if (live.includes(short)) return "live";
+  if (finished.includes(short)) return "finished";
+  return "upcoming";
+}
 
 export default async function handler(req, res) {
-  const { type, fixtureId } = req.query;
-  if (!fixtureId) return res.status(400).json({ error: "fixtureId is required" });
+  const { leagueId, full } = req.query;
+  if (!leagueId) return res.status(400).json({ error: "leagueId required" });
+
+  const league = LEAGUE_MAP[leagueId];
+  if (!league) return res.status(400).json({ error: "Unknown league" });
 
   const apiKey = process.env.API_FOOTBALL_KEY;
-  if (!apiKey) return res.status(500).json({ error: "API_FOOTBALL_KEY not configured" });
 
-  // ── Match Events (goals, cards, substitutions) ──
-  if (type === "events") {
+  // Full mode: fetch entire season in one call (for stats aggregation, e.g. clean sheets)
+  if (full === "true") {
     try {
-      const url = `https://v3.football.api-sports.io/fixtures/events?fixture=${fixtureId}`;
-      const response = await fetch(url, { headers: { "x-apisports-key": apiKey } });
-      if (!response.ok) return res.status(200).json({ events: [] });
-
-      const data = await response.json();
-      const raw = data.response || [];
-
-      const events = raw
-        .filter(e => ["Goal", "Card", "subst"].includes(e.type))
-        .map(e => {
-          const minute = e.time?.elapsed;
-          const extra = e.time?.extra ? `+${e.time.extra}` : "";
-          const team = e.team?.name;
-          const player = e.player?.name;
-          const assist = e.assist?.name;
-          const detail = e.detail;
-
-          let icon = "";
-          let label = "";
-
-          if (e.type === "Goal") {
-            if (detail === "Own Goal") icon = "⚽ OG";
-            else if (detail === "Penalty") icon = "⚽ P";
-            else icon = "⚽";
-            label = player + (assist ? ` (${assist.split(" ").pop()})` : "");
-          } else if (e.type === "Card") {
-            icon = detail === "Red Card" ? "🟥" : detail === "Yellow Card" ? "🟨" : "🟥🟨";
-            label = player;
-          } else if (e.type === "subst") {
-            icon = "🔄";
-            label = `${player?.split(" ").pop()} → ${assist?.split(" ").pop()}`;
-          }
-
-          return { minute, extra, team, icon, label, type: e.type, detail };
-        })
-        .sort((a, b) => (a.minute || 0) - (b.minute || 0));
-
-      return res.status(200).json({ events });
-    } catch (err) {
-      return res.status(200).json({ events: [], error: err.message });
-    }
-  }
-
-  // ── Match Statistics ──
-  if (type === "stats") {
-    try {
-      // Statistics endpoint alone has no goals field — API-Football keeps
-      // score on the fixture object itself, so fetch both in parallel.
-      const [r, fixtureR] = await Promise.all([
-        fetch(`https://v3.football.api-sports.io/fixtures/statistics?fixture=${fixtureId}`, {
-          headers: { "x-apisports-key": apiKey }
-        }),
-        fetch(`https://v3.football.api-sports.io/fixtures?id=${fixtureId}`, {
-          headers: { "x-apisports-key": apiKey }
-        }),
-      ]);
-      const data = await r.json();
-      const fixtureData = await fixtureR.json();
-      const teams = data.response || [];
-      if (teams.length < 2) return res.status(200).json({ available: false });
-
-      const parseStat = (team, statType) => {
-        const s = team.statistics?.find(s => s.type === statType);
-        return s?.value ?? null;
-      };
-
-      const fixtureInfo = fixtureData.response?.[0];
-      const goals = {
-        home: fixtureInfo?.goals?.home ?? null,
-        away: fixtureInfo?.goals?.away ?? null,
-      };
-
-      const result = teams.map(team => ({
-        team: team.team?.name,
-        logo: team.team?.logo,
-        stats: {
-          possession:      parseStat(team, "Ball Possession"),
-          shotsTotal:      parseStat(team, "Total Shots"),
-          shotsOnGoal:     parseStat(team, "Shots on Goal"),
-          shotsOffGoal:    parseStat(team, "Shots off Goal"),
-          shotsBlocked:    parseStat(team, "Blocked Shots"),
-          shotsInsideBox:  parseStat(team, "Shots insidebox"),
-          shotsOutsideBox: parseStat(team, "Shots outsidebox"),
-          corners:         parseStat(team, "Corner Kicks"),
-          offsides:        parseStat(team, "Offsides"),
-          fouls:           parseStat(team, "Fouls"),
-          yellowCards:     parseStat(team, "Yellow Cards"),
-          redCards:        parseStat(team, "Red Cards"),
-          saves:           parseStat(team, "Goalkeeper Saves"),
-          passesTotal:     parseStat(team, "Total passes"),
-          passesAccurate:  parseStat(team, "Passes accurate"),
-          passAccuracy:    parseStat(team, "Passes %"),
-        }
-      }));
-
-      return res.status(200).json({ available: true, home: result[0], away: result[1], goals });
-    } catch (err) {
-      return res.status(200).json({ available: false, error: err.message });
-    }
-  }
-
-  // ── Player Ratings ──
-  if (type === "ratings") {
-    try {
-      const r = await fetch(`https://v3.football.api-sports.io/fixtures/players?fixture=${fixtureId}`, {
+      const r = await fetch(`https://v3.football.api-sports.io/fixtures?league=${league.id}&season=${league.season}`, {
         headers: { "x-apisports-key": apiKey }
       });
       const data = await r.json();
-      const teams = data.response || [];
-      if (!teams.length) return res.status(200).json({ available: false });
-
-      const mapPlayers = (team) => team.players?.map(p => ({
-        name: p.player?.name,
-        photo: p.player?.photo,
-        position: p.statistics?.[0]?.games?.position,
-        rating: p.statistics?.[0]?.games?.rating,
-        minutesPlayed: p.statistics?.[0]?.games?.minutes,
-        goals: p.statistics?.[0]?.goals?.total,
-        assists: p.statistics?.[0]?.goals?.assists,
-        shots: p.statistics?.[0]?.shots?.total,
-        shotsOnGoal: p.statistics?.[0]?.shots?.on,
-        keyPasses: p.statistics?.[0]?.passes?.key,
-        passAccuracy: p.statistics?.[0]?.passes?.accuracy,
-        dribbles: p.statistics?.[0]?.dribbles?.success,
-        tackles: p.statistics?.[0]?.tackles?.total,
-        yellowCards: p.statistics?.[0]?.cards?.yellow,
-        redCards: p.statistics?.[0]?.cards?.red,
-      })).filter(p => p.minutesPlayed > 0) || [];
-
-      return res.status(200).json({
-        available: true,
-        home: { team: teams[0]?.team?.name, logo: teams[0]?.team?.logo, players: mapPlayers(teams[0]) },
-        away: { team: teams[1]?.team?.name, logo: teams[1]?.team?.logo, players: mapPlayers(teams[1]) },
-      });
+      const fixtures = (data.response || []).map(f => ({
+        home: f.teams?.home?.name,
+        away: f.teams?.away?.name,
+        homeLogo: f.teams?.home?.logo,
+        awayLogo: f.teams?.away?.logo,
+        status: mapStatus(f.fixture?.status?.short),
+        statusRaw: f.fixture?.status?.short,
+        elapsed: f.fixture?.status?.elapsed,
+        kickoff: f.fixture?.date,
+        date: f.fixture?.date?.split("T")[0],
+        fixtureId: f.fixture?.id,
+        round: f.league?.round,
+        venue: f.fixture?.venue?.name,
+        city: f.fixture?.venue?.city,
+        score: { home: f.goals?.home, away: f.goals?.away },
+        fulltimeScore: { home: f.score?.fulltime?.home, away: f.score?.fulltime?.away },
+      }));
+      return res.status(200).json({ fixtures });
     } catch (err) {
-      return res.status(200).json({ available: false, error: err.message });
+      return res.status(500).json({ error: err.message });
     }
   }
 
-  // ── Injuries ──
-  if (type === "injuries") {
-    try {
-      const url = `https://v3.football.api-sports.io/injuries?fixture=${fixtureId}`;
-      const response = await fetch(url, { headers: { "x-apisports-key": apiKey } });
-      if (!response.ok) return res.status(200).json({ home: [], away: [], error: "Could not fetch injury data" });
+  const now = new Date();
 
-      const data = await response.json();
-      const injuries = data.response || [];
-      if (!injuries.length) return res.status(200).json({ home: [], away: [] });
-
-      const homeTeamId = injuries[0]?.team?.id;
-      const home = [];
-      const away = [];
-
-      injuries.forEach(entry => {
-        const player = {
-          name: entry.player?.name,
-          reason: entry.player?.reason,
-          type: entry.player?.type,
-        };
-        if (entry.team?.id === homeTeamId) home.push(player);
-        else away.push(player);
-      });
-
-      return res.status(200).json({ home, away });
-    } catch (err) {
-      return res.status(200).json({ home: [], away: [], error: err.message });
-    }
+  // Fetch yesterday through next 25 days. Widened from the original 10-day
+  // window because league start dates vary considerably during pre-season
+  // (e.g. Premier League 2026-27 starts Aug 21, a week later than usual due
+  // to the World Cup — a 10-day window entirely missed it while La Liga's
+  // Aug 15 start just barely fit).
+  const dates = [];
+  for (let i = -1; i <= 25; i++) {
+    const d = new Date(now.getTime() + i * 86400000);
+    dates.push(d.toISOString().split("T")[0]);
   }
 
-  return res.status(400).json({ error: "Unknown type — use events, stats, ratings, or injuries" });
+  try {
+    // Fetch all dates in parallel
+    const results = await Promise.allSettled(
+      dates.map(date =>
+        fetch(`https://v3.football.api-sports.io/fixtures?league=${league.id}&season=${league.season}&date=${date}`, {
+          headers: { "x-apisports-key": apiKey }
+        }).then(r => r.json()).then(d => ({ date, fixtures: d.response || [] }))
+      )
+    );
+
+    const allFixtures = [];
+    results.forEach(r => {
+      if (r.status === "fulfilled") {
+        r.value.fixtures.forEach(f => {
+          allFixtures.push({
+            home: f.teams?.home?.name,
+            away: f.teams?.away?.name,
+            homeLogo: f.teams?.home?.logo,
+            awayLogo: f.teams?.away?.logo,
+            status: mapStatus(f.fixture?.status?.short),
+            statusRaw: f.fixture?.status?.short,
+            elapsed: f.fixture?.status?.elapsed,
+            kickoff: f.fixture?.date,
+            date: r.value.date,
+            fixtureId: f.fixture?.id,
+            round: f.league?.round,
+            venue: f.fixture?.venue?.name,
+            city: f.fixture?.venue?.city,
+            score: {
+              home: f.goals?.home,
+              away: f.goals?.away,
+            },
+            fulltimeScore: {
+              home: f.score?.fulltime?.home,
+              away: f.score?.fulltime?.away,
+            },
+          });
+        });
+      }
+    });
+
+    // Sort by kickoff time
+    allFixtures.sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+
+    // Remove duplicates (same fixtureId)
+    const seen = new Set();
+    const unique = allFixtures.filter(f => {
+      if (seen.has(f.fixtureId)) return false;
+      seen.add(f.fixtureId);
+      return true;
+    });
+
+    res.status(200).json({ fixtures: unique });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 }
