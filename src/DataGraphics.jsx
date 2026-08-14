@@ -276,10 +276,10 @@ function AnimatedStatBar({ label, homeVal, awayVal, unit = "", animate }) {
 
   return (
     <div style={{ marginBottom: 10 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-        <span style={{ fontSize: 17, fontWeight: 900, color: "#4ade80" }}>{displayHv.toFixed(unit === "%" ? 0 : (Number.isInteger(hv) ? 0 : 1))}{unit}</span>
-        <span style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
-        <span style={{ fontSize: 17, fontWeight: 900, color: "#f59e0b" }}>{displayAv.toFixed(unit === "%" ? 0 : (Number.isInteger(av) ? 0 : 1))}{unit}</span>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4, gap: 6 }}>
+        <span style={{ fontSize: 17, fontWeight: 900, color: "#4ade80", flexShrink: 0 }}>{displayHv.toFixed(unit === "%" ? 0 : (Number.isInteger(hv) ? 0 : 1))}{unit}</span>
+        <span style={{ fontSize: 11, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>{label}</span>
+        <span style={{ fontSize: 17, fontWeight: 900, color: "#f59e0b", flexShrink: 0 }}>{displayAv.toFixed(unit === "%" ? 0 : (Number.isInteger(av) ? 0 : 1))}{unit}</span>
       </div>
       <div style={{ display: "flex", height: 6, borderRadius: 3, overflow: "hidden", background: "#1a1a24" }}>
         <div style={{ width: expanded ? `${homePct}%` : "0%", background: "#4ade80", transition: "width 0.9s cubic-bezier(0.16,1,0.3,1)" }} />
