@@ -2195,17 +2195,21 @@ function PlayerH2HGraphic() {
                 );
 
                 if (isDefender) {
-                  // Defensive output leads, attack drops to a single
-                  // secondary box below rather than the 2x2 hero grid.
+                  // Defensive output leads. Attack and Caution are genuinely
+                  // separate things (goals/assists vs cards), so they each
+                  // get their own small box instead of being mixed together.
                   return (
                     <>
                       <div style={{ marginBottom: 10 }}>{defenseSection}</div>
+                      <div style={{ marginBottom: 10 }}>{creativitySection}</div>
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-                        {creativitySection}
-                        <BentoBox title="Caution" icon="🟨" color="#fbbf24">
-                          <CompareRow label="Yellow Cards" val1={player1.yellowCards} val2={player2.yellowCards} higherIsBetter={false} />
+                        <BentoBox title="Attack" icon="🎯" color="#4ade80">
                           <CompareRow label="Goals" val1={player1.goals} val2={player2.goals} />
                           <CompareRow label="Assists" val1={player1.assists} val2={player2.assists} />
+                        </BentoBox>
+                        <BentoBox title="Caution" icon="🟨" color="#fbbf24">
+                          <CompareRow label="Yellow Cards" val1={player1.yellowCards} val2={player2.yellowCards} higherIsBetter={false} />
+                          <CompareRow label="Red Cards" val1={player1.redCards} val2={player2.redCards} higherIsBetter={false} />
                         </BentoBox>
                       </div>
                     </>
