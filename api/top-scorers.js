@@ -10,6 +10,18 @@ const LEAGUE_MAP = {
   bundesliga:  { id: 78,  season: 2026 },
   ligue1:      { id: 61,  season: 2026 },
   ucl:         { id: 2,   season: 2026 },
+  uel:         { id: 3,   season: 2026 },
+  facup:       { id: 45,  season: 2026 },
+  copadelrey:  { id: 143, season: 2026 },
+  afcon:       { id: 6,   season: 2025 },
+  copamerica:  { id: 9,   season: 2024 },
+  championship: { id: 40,  season: 2026 },
+  segunda:      { id: 141, season: 2026 },
+  ligue2:       { id: 62,  season: 2026 },
+  bundesliga2:  { id: 79,  season: 2026 },
+  serieb:       { id: 136, season: 2026 },
+  npfl:         { id: 399, season: 2026 },
+  scotprem:     { id: 179, season: 2026 },
 };
 
 export default async function handler(req, res) {
