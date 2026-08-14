@@ -2153,28 +2153,96 @@ function PlayerH2HGraphic() {
                 </div>
               </div>
 
-              {/* Bento grid — 2x2 */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-                <BentoBox title="Attack" icon="🎯" color="#4ade80">
-                  <CompareRow label="Goals" val1={player1.goals} val2={player2.goals} />
-                  <CompareRow label="Assists" val1={player1.assists} val2={player2.assists} />
-                  <CompareRow label="Shots" val1={player1.shots} val2={player2.shots} />
-                  <CompareRow label="On Target" val1={player1.shotsOnTarget} val2={player2.shotsOnTarget} />
-                </BentoBox>
+              {/* Bento sections — order depends on Player 1's position, so a
+                  defender's card leads with defensive output rather than
+                  attacking stats that aren't their actual job. */}
+              {(() => {
+                const pos = (player1.position || "").toLowerCase();
+                const isDefender = pos.includes("defen");
+                const isMidfielder = pos.includes("mid");
+                // Attacker and Goalkeeper (no GK-specific stats available)
+                // both fall through to the original default order.
 
-                <BentoBox title="Creativity" icon="🎨" color="#60a5fa">
-                  <CompareRow label="Key Passes" val1={player1.keyPasses} val2={player2.keyPasses} />
-                  <CompareRow label="Dribbles" val1={player1.dribbles} val2={player2.dribbles} />
-                  <CompareRow label="Apps" val1={player1.appearances} val2={player2.appearances} />
-                </BentoBox>
-              </div>
+                const attackSection = (
+                  <BentoBox title="Attack" icon="🎯" color="#4ade80">
+                    <CompareRow label="Goals" val1={player1.goals} val2={player2.goals} />
+                    <CompareRow label="Assists" val1={player1.assists} val2={player2.assists} />
+                    <CompareRow label="Shots" val1={player1.shots} val2={player2.shots} />
+                    <CompareRow label="On Target" val1={player1.shotsOnTarget} val2={player2.shotsOnTarget} />
+                  </BentoBox>
+                );
+                const creativitySection = (
+                  <BentoBox title="Creativity" icon="🎨" color="#60a5fa">
+                    <CompareRow label="Key Passes" val1={player1.keyPasses} val2={player2.keyPasses} />
+                    <CompareRow label="Dribbles" val1={player1.dribbles} val2={player2.dribbles} />
+                    <CompareRow label="Apps" val1={player1.appearances} val2={player2.appearances} />
+                  </BentoBox>
+                );
+                const defenseSection = (
+                  <BentoBox title="Defensive Actions" icon="🛡️" color="#f87171">
+                    <CompareRow label="Tackles" val1={player1.tackles} val2={player2.tackles} />
+                    <CompareRow label="Interceptions" val1={player1.interceptions} val2={player2.interceptions} />
+                    <CompareRow label="Duels Won" val1={player1.duelsWon} val2={player2.duelsWon} />
+                  </BentoBox>
+                );
+                const workrateSection = (
+                  <BentoBox title="Workrate & Caution" icon="⚔️" color="#c084fc">
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                      <CompareRow label="Tackles" val1={player1.tackles} val2={player2.tackles} />
+                      <CompareRow label="Cards" val1={player1.yellowCards} val2={player2.yellowCards} higherIsBetter={false} />
+                    </div>
+                  </BentoBox>
+                );
 
-              <BentoBox title="Workrate & Caution" icon="⚔️" color="#c084fc">
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                  <CompareRow label="Tackles" val1={player1.tackles} val2={player2.tackles} />
-                  <CompareRow label="Cards" val1={player1.yellowCards} val2={player2.yellowCards} higherIsBetter={false} />
-                </div>
-              </BentoBox>
+                if (isDefender) {
+                  // Defensive output leads, attack drops to a single
+                  // secondary box below rather than the 2x2 hero grid.
+                  return (
+                    <>
+                      <div style={{ marginBottom: 10 }}>{defenseSection}</div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                        {creativitySection}
+                        <BentoBox title="Caution" icon="🟨" color="#fbbf24">
+                          <CompareRow label="Yellow Cards" val1={player1.yellowCards} val2={player2.yellowCards} higherIsBetter={false} />
+                          <CompareRow label="Goals" val1={player1.goals} val2={player2.goals} />
+                          <CompareRow label="Assists" val1={player1.assists} val2={player2.assists} />
+                        </BentoBox>
+                      </div>
+                    </>
+                  );
+                }
+
+                if (isMidfielder) {
+                  // Creativity leads for midfielders, defensive work sits
+                  // alongside it rather than attack.
+                  return (
+                    <>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                        {creativitySection}
+                        {defenseSection}
+                      </div>
+                      <BentoBox title="Attack" icon="🎯" color="#4ade80">
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                          <CompareRow label="Goals" val1={player1.goals} val2={player2.goals} />
+                          <CompareRow label="Assists" val1={player1.assists} val2={player2.assists} />
+                        </div>
+                      </BentoBox>
+                    </>
+                  );
+                }
+
+                // Default (Attacker, Goalkeeper, or unrecognized position) —
+                // original order, unchanged.
+                return (
+                  <>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                      {attackSection}
+                      {creativitySection}
+                    </div>
+                    {workrateSection}
+                  </>
+                );
+              })()}
             </div>
           </GraphicCard>
           <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
