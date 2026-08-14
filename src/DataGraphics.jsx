@@ -2115,7 +2115,7 @@ function PlayerH2HGraphic() {
       {player1 && player2 && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "22px 18px 18px" }}>
+            <div style={{ padding: "42px 18px 18px" }}>
               <div style={{ textAlign: "center", marginBottom: 12 }}>
                 <span style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5 }}>
                   {season === 2026 ? "🌍 World Cup 2026" : "📅 2025/26 Season"}
