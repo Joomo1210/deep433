@@ -62,16 +62,30 @@ export default async function handler(req, res) {
   // ── Match Statistics ──
   if (type === "stats") {
     try {
-      const r = await fetch(`https://v3.football.api-sports.io/fixtures/statistics?fixture=${fixtureId}`, {
-        headers: { "x-apisports-key": apiKey }
-      });
+      // Statistics endpoint alone has no goals field — API-Football keeps
+      // score on the fixture object itself, so fetch both in parallel.
+      const [r, fixtureR] = await Promise.all([
+        fetch(`https://v3.football.api-sports.io/fixtures/statistics?fixture=${fixtureId}`, {
+          headers: { "x-apisports-key": apiKey }
+        }),
+        fetch(`https://v3.football.api-sports.io/fixtures?id=${fixtureId}`, {
+          headers: { "x-apisports-key": apiKey }
+        }),
+      ]);
       const data = await r.json();
+      const fixtureData = await fixtureR.json();
       const teams = data.response || [];
       if (teams.length < 2) return res.status(200).json({ available: false });
 
       const parseStat = (team, statType) => {
         const s = team.statistics?.find(s => s.type === statType);
         return s?.value ?? null;
+      };
+
+      const fixtureInfo = fixtureData.response?.[0];
+      const goals = {
+        home: fixtureInfo?.goals?.home ?? null,
+        away: fixtureInfo?.goals?.away ?? null,
       };
 
       const result = teams.map(team => ({
@@ -97,7 +111,7 @@ export default async function handler(req, res) {
         }
       }));
 
-      return res.status(200).json({ available: true, home: result[0], away: result[1] });
+      return res.status(200).json({ available: true, home: result[0], away: result[1], goals });
     } catch (err) {
       return res.status(200).json({ available: false, error: err.message });
     }
