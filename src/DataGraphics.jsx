@@ -2084,7 +2084,7 @@ function PlayerH2HGraphic() {
     return (
       <div style={{ display: "flex", alignItems: "center", padding: "6px 0", borderBottom: "1px solid #0f0f1a" }}>
         <span style={{ flex: 1, textAlign: "right", fontSize: 20, fontWeight: p1Better ? 900 : 700, color: "#4ade80", opacity: p1Better ? 1 : 0.65, paddingRight: 12 }}>{val1 ?? "—"}</span>
-        <span style={{ fontSize: 11, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.3, width: 90, textAlign: "center", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span>
+        <span style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.2, width: 108, textAlign: "center", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span>
         <span style={{ flex: 1, textAlign: "left", fontSize: 20, fontWeight: p2Better ? 900 : 700, color: "#f59e0b", opacity: p2Better ? 1 : 0.65, paddingLeft: 12 }}>{val2 ?? "—"}</span>
       </div>
     );
@@ -2195,41 +2195,39 @@ function PlayerH2HGraphic() {
                 );
 
                 if (isDefender) {
-                  // Defensive output leads. Attack and Caution are genuinely
-                  // separate things (goals/assists vs cards), so they each
-                  // get their own small box instead of being mixed together.
+                  // Defensive output leads, full width. Creativity and
+                  // Attack pair up in row two to keep the card compact.
+                  // Caution stays small and inline rather than its own box.
                   return (
                     <>
                       <div style={{ marginBottom: 10 }}>{defenseSection}</div>
-                      <div style={{ marginBottom: 10 }}>{creativitySection}</div>
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                        {creativitySection}
                         <BentoBox title="Attack" icon="🎯" color="#4ade80">
                           <CompareRow label="Goals" val1={player1.goals} val2={player2.goals} />
                           <CompareRow label="Assists" val1={player1.assists} val2={player2.assists} />
                         </BentoBox>
-                        <BentoBox title="Caution" icon="🟨" color="#fbbf24">
-                          <CompareRow label="Yellow Cards" val1={player1.yellowCards} val2={player2.yellowCards} higherIsBetter={false} />
-                          <CompareRow label="Red Cards" val1={player1.redCards} val2={player2.redCards} higherIsBetter={false} />
-                        </BentoBox>
                       </div>
+                      <BentoBox title="Caution" icon="🟨" color="#fbbf24">
+                        <CompareRow label="Yellow Cards" val1={player1.yellowCards} val2={player2.yellowCards} higherIsBetter={false} />
+                        <CompareRow label="Red Cards" val1={player1.redCards} val2={player2.redCards} higherIsBetter={false} />
+                      </BentoBox>
                     </>
                   );
                 }
 
                 if (isMidfielder) {
-                  // Creativity leads for midfielders, defensive work sits
-                  // alongside it rather than attack.
+                  // Creativity leads for midfielders. Defensive Actions stays
+                  // full width below it, not squeezed into a half-width
+                  // column — "Interceptions" is too long a label to fit
+                  // comfortably at half the card's width.
                   return (
                     <>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-                        {creativitySection}
-                        {defenseSection}
-                      </div>
+                      <div style={{ marginBottom: 10 }}>{creativitySection}</div>
+                      <div style={{ marginBottom: 10 }}>{defenseSection}</div>
                       <BentoBox title="Attack" icon="🎯" color="#4ade80">
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                          <CompareRow label="Goals" val1={player1.goals} val2={player2.goals} />
-                          <CompareRow label="Assists" val1={player1.assists} val2={player2.assists} />
-                        </div>
+                        <CompareRow label="Goals" val1={player1.goals} val2={player2.goals} />
+                        <CompareRow label="Assists" val1={player1.assists} val2={player2.assists} />
                       </BentoBox>
                     </>
                   );
