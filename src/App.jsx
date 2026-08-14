@@ -23,6 +23,13 @@ const LEAGUE_LOGOS = {
   copadelrey: "https://media.api-sports.io/football/leagues/143.png",
   afcon:      "https://media.api-sports.io/football/leagues/6.png",
   copamerica: "https://media.api-sports.io/football/leagues/9.png",
+  championship: "https://media.api-sports.io/football/leagues/40.png",
+  segunda:      "https://media.api-sports.io/football/leagues/141.png",
+  ligue2:       "https://media.api-sports.io/football/leagues/62.png",
+  bundesliga2:  "https://media.api-sports.io/football/leagues/79.png",
+  serieb:       "https://media.api-sports.io/football/leagues/136.png",
+  npfl:         "https://media.api-sports.io/football/leagues/399.png",
+  scotprem:     "https://media.api-sports.io/football/leagues/179.png",
 };
 
 const LEAGUES = [
