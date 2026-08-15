@@ -418,6 +418,7 @@ function MatchStatsGraphic() {
                 <BentoBox title="Discipline" icon="🟨" color="#f59e0b">
                   <AnimatedStatBar label="Fouls" homeVal={s.home.stats.fouls} awayVal={s.away.stats.fouls} animate={animate} />
                   <AnimatedStatBar label="Yellow Cards" homeVal={s.home.stats.yellowCards} awayVal={s.away.stats.yellowCards} animate={animate} />
+                  <AnimatedStatBar label="Red Cards" homeVal={s.home.stats.redCards} awayVal={s.away.stats.redCards} animate={animate} />
                   <AnimatedStatBar label="Offsides" homeVal={s.home.stats.offsides} awayVal={s.away.stats.offsides} animate={animate} />
                 </BentoBox>
               </div>
