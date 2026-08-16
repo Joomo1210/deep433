@@ -784,7 +784,7 @@ export default function FootballPredictor() {
   }, [selectedLeague, session]);
 
  // Poll live scores every 3 minutes across all main leagues
-const SCORES_TAB_LEAGUES = ["pl", "laliga", "seriea", "bundesliga", "ligue1", "ucl", "championship"];
+const SCORES_TAB_LEAGUES = ["pl", "laliga", "seriea", "bundesliga", "ligue1", "ucl", "championship", "communityshield"];
 
 useEffect(() => {
   const fetchLive = async () => {
