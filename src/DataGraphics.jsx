@@ -2550,7 +2550,7 @@ function MatchH2HGraphic() {
             <div style={{ padding: "22px 18px 18px" }}>
               <div style={{ textAlign: "center", marginBottom: 12 }}>
                 <div style={{ fontSize: 14, color: "#f0f0f0", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 3 }}>
-                  🏆 FIFA World Cup 2026
+                  🏆 {LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label || "Match"}
                 </div>
                 <span style={{ fontSize: 12, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>
                   📋 {selectedFixture.home} vs {selectedFixture.away}
