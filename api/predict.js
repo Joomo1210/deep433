@@ -1,15 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
-
 const supabase = createClient(
   'https://idisdztwpvedtnroiian.supabase.co',
   process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlkaXNkenR3cHZlZHRucm9paWFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NTczOTQsImV4cCI6MjA5NzAzMzM5NH0.YmF0DqWmopuJs9Ci1hdFi0XDMoWRD0yfVwOuuG7WVyE'
 );
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
   const { homeTeam, awayTeam, league, fixtureId } = req.body;
-
   // ── Cache check ──────────────────────────────────────────────────────────
   // If we already have a prediction for this exact match, return it immediately
   // so all users see the same canonical AI prediction.
@@ -21,19 +17,16 @@ export default async function handler(req, res) {
       .eq('home_team', homeTeam)
       .eq('away_team', awayTeam)
       .single();
-
     if (cached?.ai_data) {
       return res.status(200).json({ ...cached.ai_data, cached: true });
     }
   } catch {}
   // ─────────────────────────────────────────────────────────────────────────
-
   // ── Fetch live squads from API-Football using fixtureId ──────────────────
   const safeGet = (url, headers) => Promise.race([
     fetch(url, { headers }).then(r => r.json()).catch(() => null),
     new Promise(resolve => setTimeout(() => resolve(null), 4000))
   ]);
-
   async function fetchLiveSquad(teamId) {
     if (!teamId) return null;
     try {
@@ -59,11 +52,9 @@ export default async function handler(req, res) {
       ].join(', ') || null;
     } catch { return null; }
   }
-
   // Get team IDs from the fixture
   let homeSquadStr = null;
   let awaySquadStr = null;
-
   if (fixtureId) {
     try {
       const fixData = await safeGet(
@@ -83,26 +74,21 @@ export default async function handler(req, res) {
       }
     } catch {}
   }
-
   const squadInstructions = homeSquadStr && awaySquadStr
     ? `VERIFIED SQUADS — you MUST only pick players from these lists:
 ${homeTeam} squad: ${homeSquadStr}
 ${awayTeam} squad: ${awaySquadStr}
 Do NOT invent players. Do NOT use players from other teams. Only use names exactly as listed above.`
     : `CRITICAL: Only use real players who genuinely represent that national team. Verify every player nationality before including them.`;
-
-    const NEUTRAL_VENUE_LEAGUES = ["wc2026", "afcon", "copamerica", "ucl", "uel", "facup", "copadelrey", "communityshield", "dflsupercup", "tropheedeschampions", "supercoppa"];
+  const NEUTRAL_VENUE_LEAGUES = ["wc2026", "afcon", "copamerica", "ucl", "uel", "facup", "copadelrey", "communityshield", "dflsupercup", "tropheedeschampions", "supercoppa"];
   const isNeutralVenue = NEUTRAL_VENUE_LEAGUES.some(l => (league || "").toLowerCase().includes(l.replace("2026","").replace("copa","copa"))) ||
     ["world cup", "copa america", "afcon", "champions league", "europa league", "fa cup", "copa del rey", "community shield", "dfl-supercup", "dfl supercup", "trophée des champions", "trophee des champions", "supercoppa", "tournament"].some(k => (league || "").toLowerCase().includes(k));
-
   const venueInstruction = isNeutralVenue
-    ? `This match is played at a NEUTRAL VENUE as part of a tournament. Neither team has home advantage. Do NOT mention "home crowd," "home support," "at home," or any home-field advantage anywhere in your analysis or verdict. Refer to "${homeTeam}" and "${awayTeam}" by name only, never as "the hosts" or "the home side."`
+    ? `IMPORTANT — VENUE: This match is played at a neutral venue (like a cup final), with both "${homeTeam}" and "${awayTeam}" travelling equally to an unfamiliar ground. Base your analysis purely on squad quality, form, and tactics, treating both sides as away from home. If you are tempted to reference crowd support, home comfort, or a home/away edge for either side, stop and reconsider: at a neutral venue, no such edge exists for either team.`
     : `This is a domestic league/cup fixture. ${homeTeam} are playing at their home ground with their usual home advantage — this is a legitimate factor to mention.`;
-
   // Fetch injury/suspension data if we have a fixtureId
   let injuryInstruction = "";
   let insightsInstruction = "";
-
   if (fixtureId) {
     // Fetch injuries and insights in parallel
     const [injuryRes, insightsRes] = await Promise.allSettled([
@@ -113,7 +99,6 @@ Do NOT invent players. Do NOT use players from other teams. Only use names exact
         headers: { "x-apisports-key": process.env.API_FOOTBALL_KEY },
       }),
     ]);
-
     // Process injuries
     try {
       if (injuryRes.status === "fulfilled" && injuryRes.value) {
@@ -137,7 +122,6 @@ Do NOT invent players. Do NOT use players from other teams. Only use names exact
         }
       }
     } catch {}
-
     // Process insights/predictions
     try {
       if (insightsRes.status === "fulfilled" && insightsRes.value) {
@@ -151,7 +135,6 @@ Do NOT invent players. Do NOT use players from other teams. Only use names exact
           const homeForm = pred.teams?.home?.last_5?.form || "";
           const awayForm = pred.teams?.away?.last_5?.form || "";
           const comp = pred.comparison || {};
-
           const parts = [];
           if (pct) parts.push(`Statistical win probabilities: ${homeTeam} ${pct.home}, Draw ${pct.draw}, ${awayTeam} ${pct.away}`);
           if (goalsH !== null && goalsA !== null) parts.push(`Predicted goals: ${homeTeam} ${goalsH}, ${awayTeam} ${goalsA}`);
@@ -159,7 +142,6 @@ Do NOT invent players. Do NOT use players from other teams. Only use names exact
           if (comp.att) parts.push(`Attack strength: ${homeTeam} ${comp.att.home}, ${awayTeam} ${comp.att.away}`);
           if (comp.def) parts.push(`Defence strength: ${homeTeam} ${comp.def.home}, ${awayTeam} ${comp.def.away}`);
           if (advice) parts.push(`Statistical advice: ${advice}`);
-
           if (parts.length) {
             insightsInstruction = `STATISTICAL CONTEXT (use to inform your verdict but form your own independent analysis): ${parts.join(" | ")}.`;
           }
@@ -167,7 +149,6 @@ Do NOT invent players. Do NOT use players from other teams. Only use names exact
       }
     } catch {}
   }
-
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -185,13 +166,30 @@ Do NOT invent players. Do NOT use players from other teams. Only use names exact
       }],
     }),
   });
-
   const data = await response.json();
   const text = data.content?.map(b => b.text || '').join('').trim() || '';
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) return res.status(500).json({ error: 'Parse error' });
-
   const parsed = JSON.parse(jsonMatch[0]);
+
+  // Safety net — strip any home-advantage phrasing that slipped through
+  // despite the instruction, for neutral-venue matches specifically.
+  if (isNeutralVenue) {
+    const stripHomeLanguage = (str) => {
+      if (!str) return str;
+      return str
+        .replace(/\bhome advantage\b/gi, "the occasion")
+        .replace(/\bhome crowd\b/gi, "the crowd")
+        .replace(/\bhome support\b/gi, "the atmosphere")
+        .replace(/\bat home\b/gi, "on the day")
+        .replace(/\bhome field advantage\b/gi, "the occasion")
+        .replace(/\bthe hosts\b/gi, homeTeam)
+        .replace(/\bthe home side\b/gi, homeTeam);
+    };
+    parsed.verdict = stripHomeLanguage(parsed.verdict);
+    parsed.keyBattle = stripHomeLanguage(parsed.keyBattle);
+    parsed.wildcard = stripHomeLanguage(parsed.wildcard);
+  }
 
   // Save to cache for future users
   try {
@@ -202,6 +200,5 @@ Do NOT invent players. Do NOT use players from other teams. Only use names exact
       ai_data: parsed,
     }, { onConflict: 'league,home_team,away_team' });
   } catch {}
-
   res.status(200).json(parsed);
 }
