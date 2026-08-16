@@ -2585,6 +2585,239 @@ function ManOfMatchGraphic() {
 }
 
 
+// ─── BRILLIANT PERFORMANCES ───────────────────────────────────────────────
+function BrilliantPerformancesGraphic() {
+  const cardRef = useRef(null);
+  const [selectedFixture, setSelectedFixture] = useState(null);
+  const [allPlayers, setAllPlayers] = useState([]);
+  const [threshold, setThreshold] = useState(7.5);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSelect = async (f) => {
+    setSelectedFixture(f);
+    setAllPlayers([]);
+    setError("");
+    if (!f.fixtureId) { setError("No fixture ID available"); return; }
+    setLoading(true);
+    try {
+      const r = await fetch(`/api/fixture-data?type=ratings&fixtureId=${f.fixtureId}`);
+      const d = await r.json();
+      if (!d.available) throw new Error("Player stats not available yet — check back after the match");
+      const combined = [
+        ...(d.home.players || []).map(p => ({ ...p, team: d.home.team, teamLogo: d.home.logo })),
+        ...(d.away.players || []).map(p => ({ ...p, team: d.away.team, teamLogo: d.away.logo })),
+      ].filter(p => p.rating != null);
+      setAllPlayers(combined);
+    } catch (e) { setError(e.message); }
+    setLoading(false);
+  };
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, `deep433-brilliant-${selectedFixture?.home}-vs-${selectedFixture?.away}.png`, undefined, transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const standouts = allPlayers
+    .filter(p => parseFloat(p.rating) >= threshold)
+    .sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating));
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {!selectedFixture ? (
+        <FixturePicker onSelect={handleSelect} />
+      ) : (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
+            <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
+            <button onClick={() => { setSelectedFixture(null); setAllPlayers([]); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
+          </div>
+
+          {loading && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 16, padding: "20px 0" }}>Loading player stats...</div>}
+          {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
+
+          {allPlayers.length > 0 && (
+            <div>
+              <div style={{ fontSize: 11, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>
+                Rating Threshold: {threshold.toFixed(1)}+
+              </div>
+              <input
+                type="range" min="6.0" max="9.5" step="0.1" value={threshold}
+                onChange={e => setThreshold(parseFloat(e.target.value))}
+                style={{ width: "100%" }}
+              />
+              <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>{standouts.length} player{standouts.length !== 1 ? "s" : ""} at or above this rating</div>
+            </div>
+          )}
+        </>
+      )}
+
+      {standouts.length > 0 && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "44px 18px 22px" }}>
+              <div style={{ textAlign: "center", marginBottom: 4 }}>
+                <div style={{ fontSize: 15, fontWeight: 900, color: "#4ade80", textTransform: "uppercase", letterSpacing: 1.5 }}>✨ Brilliant Performances</div>
+                <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{selectedFixture.home} vs {selectedFixture.away} · {threshold.toFixed(1)}+ rating</div>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 16 }}>
+                {standouts.map((p, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 10, padding: "8px 12px" }}>
+                    {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: "#f0f0f0" }}>{p.name}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 1 }}>
+                        {p.teamLogo && <img src={p.teamLogo} alt="" crossOrigin="anonymous" style={{ width: 13, height: 13, objectFit: "contain" }} />}
+                        <span style={{ fontSize: 11, color: "#94a3b8" }}>{p.team} · {p.position}</span>
+                      </div>
+                    </div>
+                    <div style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", borderRadius: 6, padding: "4px 10px", flexShrink: 0 }}>
+                      <span style={{ fontSize: 14, fontWeight: 900, color: "#0a0f0a" }}>{parseFloat(p.rating).toFixed(1)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </GraphicCard>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+
+      {allPlayers.length > 0 && standouts.length === 0 && (
+        <div style={{ textAlign: "center", color: "#94a3b8", fontSize: 14, padding: "20px 0" }}>No players reached this rating threshold — try lowering it.</div>
+      )}
+    </div>
+  );
+}
+
+
+// ─── WORST PERFORMANCES ───────────────────────────────────────────────────
+function WorstPerformancesGraphic() {
+  const cardRef = useRef(null);
+  const [selectedFixture, setSelectedFixture] = useState(null);
+  const [allPlayers, setAllPlayers] = useState([]);
+  const [threshold, setThreshold] = useState(7.0);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSelect = async (f) => {
+    setSelectedFixture(f);
+    setAllPlayers([]);
+    setError("");
+    if (!f.fixtureId) { setError("No fixture ID available"); return; }
+    setLoading(true);
+    try {
+      const r = await fetch(`/api/fixture-data?type=ratings&fixtureId=${f.fixtureId}`);
+      const d = await r.json();
+      if (!d.available) throw new Error("Player stats not available yet — check back after the match");
+      const combined = [
+        ...(d.home.players || []).map(p => ({ ...p, team: d.home.team, teamLogo: d.home.logo })),
+        ...(d.away.players || []).map(p => ({ ...p, team: d.away.team, teamLogo: d.away.logo })),
+      ].filter(p => p.rating != null);
+      setAllPlayers(combined);
+    } catch (e) { setError(e.message); }
+    setLoading(false);
+  };
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, `deep433-worst-${selectedFixture?.home}-vs-${selectedFixture?.away}.png`, undefined, transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  // No lower bound — anyone at or below the threshold qualifies, however low.
+  const flops = allPlayers
+    .filter(p => parseFloat(p.rating) <= threshold)
+    .sort((a, b) => parseFloat(a.rating) - parseFloat(b.rating));
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {!selectedFixture ? (
+        <FixturePicker onSelect={handleSelect} />
+      ) : (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
+            <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
+            <button onClick={() => { setSelectedFixture(null); setAllPlayers([]); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
+          </div>
+
+          {loading && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 16, padding: "20px 0" }}>Loading player stats...</div>}
+          {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
+
+          {allPlayers.length > 0 && (
+            <div>
+              <div style={{ fontSize: 11, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>
+                Rating Threshold: {threshold.toFixed(1)} or below
+              </div>
+              <input
+                type="range" min="4.0" max="8.0" step="0.1" value={threshold}
+                onChange={e => setThreshold(parseFloat(e.target.value))}
+                style={{ width: "100%" }}
+              />
+              <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>{flops.length} player{flops.length !== 1 ? "s" : ""} at or below this rating</div>
+            </div>
+          )}
+        </>
+      )}
+
+      {flops.length > 0 && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "44px 18px 22px" }}>
+              <div style={{ textAlign: "center", marginBottom: 4 }}>
+                <div style={{ fontSize: 15, fontWeight: 900, color: "#f87171", textTransform: "uppercase", letterSpacing: 1.5 }}>📉 Worst Performances</div>
+                <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{selectedFixture.home} vs {selectedFixture.away} · {threshold.toFixed(1)} or below</div>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 16 }}>
+                {flops.map((p, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 10, padding: "8px 12px" }}>
+                    {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: "#f0f0f0" }}>{p.name}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 1 }}>
+                        {p.teamLogo && <img src={p.teamLogo} alt="" crossOrigin="anonymous" style={{ width: 13, height: 13, objectFit: "contain" }} />}
+                        <span style={{ fontSize: 11, color: "#94a3b8" }}>{p.team} · {p.position}</span>
+                      </div>
+                    </div>
+                    <div style={{ background: "linear-gradient(135deg,#f87171,#ef4444)", borderRadius: 6, padding: "4px 10px", flexShrink: 0 }}>
+                      <span style={{ fontSize: 14, fontWeight: 900, color: "#fff" }}>{parseFloat(p.rating).toFixed(1)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </GraphicCard>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#f87171,#ef4444)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+
+      {allPlayers.length > 0 && flops.length === 0 && (
+        <div style={{ textAlign: "center", color: "#94a3b8", fontSize: 14, padding: "20px 0" }}>No players fell at or below this rating — try raising the threshold.</div>
+      )}
+    </div>
+  );
+}
+
+
 function MatchH2HGraphic() {
   const cardRef = useRef(null);
   const [selectedFixture, setSelectedFixture] = useState(null);
@@ -7851,6 +8084,8 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "h2h",      label: "🆚 Player H2H" },
     { id: "matchh2h", label: "📋 Match H2H" },
     { id: "motm", label: "⭐ Man of the Match" },
+    { id: "brilliant", label: "✨ Brilliant Performances" },
+    { id: "worst", label: "📉 Worst Performances" },
     { id: "glove",    label: "Golden Glove" },
     { id: "transfer", label: "🔄 Transfer Fit" },
     { id: "timing",   label: "⏱️ Goal Timing" },
@@ -7908,6 +8143,8 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "h2h"      && <PlayerH2HGraphic />}
       {activeSection === "matchh2h" && <MatchH2HGraphic />}
       {activeSection === "motm" && <ManOfMatchGraphic />}
+      {activeSection === "brilliant" && <BrilliantPerformancesGraphic />}
+      {activeSection === "worst" && <WorstPerformancesGraphic />}
       {activeSection === "glove"    && <GoldenGloveGraphic />}
       {activeSection === "transfer" && <TransferFitGraphic />}
       {activeSection === "timing"   && <GoalTimingGraphic />}
