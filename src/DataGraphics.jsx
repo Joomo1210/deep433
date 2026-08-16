@@ -151,7 +151,7 @@ function FixturePicker({ onSelect }) {
             {dateFixtures.map((f, i) => (
               <div
                 key={i}
-                onClick={() => onSelect(f)}
+                onClick={() => onSelect({ ...f, leagueId, leagueLabel: LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label })}
                 style={{ background: "#13131f", border: "1px solid #1e1e30", borderRadius: 8, padding: "8px 12px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -1698,7 +1698,7 @@ function DeepInsightsGraphic({ history = [] }) {
                   {/* Competition label */}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 10 }}>
                     <img src="/fifa.png" alt="" crossOrigin="anonymous" style={{ width: 18, height: 18, objectFit: "contain" }} />
-                    <span style={{ fontSize: 12, color: "#ccc", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 }}>FIFA World Cup 2026</span>
+                    <span style={{ fontSize: 12, color: "#ccc", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 }}>{selectedFixture.leagueLabel || "Match"}</span>
                   </div>
                   {/* Match header */}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, marginTop: 8 }}>
@@ -2550,7 +2550,7 @@ function MatchH2HGraphic() {
             <div style={{ padding: "22px 18px 18px" }}>
               <div style={{ textAlign: "center", marginBottom: 12 }}>
                 <div style={{ fontSize: 14, color: "#f0f0f0", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 3 }}>
-                  🏆 {LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label || "Match"}
+                  🏆 {selectedFixture.leagueLabel || "Match"}
                 </div>
                 <span style={{ fontSize: 12, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>
                   📋 {selectedFixture.home} vs {selectedFixture.away}
