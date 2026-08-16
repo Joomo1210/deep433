@@ -91,9 +91,9 @@ ${awayTeam} squad: ${awaySquadStr}
 Do NOT invent players. Do NOT use players from other teams. Only use names exactly as listed above.`
     : `CRITICAL: Only use real players who genuinely represent that national team. Verify every player nationality before including them.`;
 
-    const NEUTRAL_VENUE_LEAGUES = ["wc2026", "afcon", "copamerica", "ucl", "uel", "facup", "copadelrey"];
+    const NEUTRAL_VENUE_LEAGUES = ["wc2026", "afcon", "copamerica", "ucl", "uel", "facup", "copadelrey", "communityshield", "dflsupercup", "tropheedeschampions", "supercoppa"];
   const isNeutralVenue = NEUTRAL_VENUE_LEAGUES.some(l => (league || "").toLowerCase().includes(l.replace("2026","").replace("copa","copa"))) ||
-    ["world cup", "copa america", "afcon", "champions league", "europa league", "fa cup", "copa del rey", "tournament"].some(k => (league || "").toLowerCase().includes(k));
+    ["world cup", "copa america", "afcon", "champions league", "europa league", "fa cup", "copa del rey", "community shield", "dfl-supercup", "dfl supercup", "trophée des champions", "trophee des champions", "supercoppa", "tournament"].some(k => (league || "").toLowerCase().includes(k));
 
   const venueInstruction = isNeutralVenue
     ? `This match is played at a NEUTRAL VENUE as part of a tournament. Neither team has home advantage. Do NOT mention "home crowd," "home support," "at home," or any home-field advantage anywhere in your analysis or verdict. Refer to "${homeTeam}" and "${awayTeam}" by name only, never as "the hosts" or "the home side."`
