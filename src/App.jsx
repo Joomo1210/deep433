@@ -783,41 +783,43 @@ export default function FootballPredictor() {
       .finally(() => setFixturesLoading(false));
   }, [selectedLeague, session]);
 
-  // Poll live scores every 3 minutes for the currently selected league
-  useEffect(() => {
-    const fetchLive = async () => {
-      const today = new Date().toISOString().split("T")[0];
-      try {
-        const res = await fetch(`/api/live-scores?leagueId=${selectedLeague}&date=${today}`);
-        if (!res.ok) return; // league not supported on free tier, or other error — fail quietly
-        const data = await res.json();
-        setLiveData(data.fixtures || []);
-      } catch {
-        // network error — keep using whatever liveData we already have
-      }
-    };
+ // Poll live scores every 3 minutes across all main leagues
+const SCORES_TAB_LEAGUES = ["pl", "laliga", "seriea", "bundesliga", "ligue1", "ucl", "championship"];
 
-    fetchLive();
-    const interval = setInterval(fetchLive, 3 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [session, selectedLeague]);
-
-  // matches that don't have a logged result yet, and fill it in automatically.
-  useEffect(() => {
-    if (!liveData.length || !history.length) return;
-
-    history.forEach(h => {
-      if (h.actual_score) return; // already logged
-
-      const live = findLiveFixture(h.home_team, h.away_team);
-      if (!live || live.status !== "finished") return;
-      if (live.score.home == null || live.score.away == null) return;
-
-      const score = `${live.score.home}-${live.score.away}`;
-      logResult(h.id, score);
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [liveData, history]);
+useEffect(() => {
+  const fetchLive = async () => {
+    const today = new Date().toISOString().split("T")[0];
+    try {
+      const results = await Promise.allSettled(
+        SCORES_TAB_LEAGUES.map(leagueId =>
+          fetch(`/api/live-scores?leagueId=${leagueId}&date=${today}`).then(r => r.ok ? r.json() : { fixtures: [] })
+        )
+      );
+      const combined = results
+        .filter(r => r.status === "fulfilled")
+        .flatMap(r => r.value.fixtures || []);
+      setLiveData(combined);
+    } catch {
+      // network error — keep using whatever liveData we already have
+    }
+  };
+  fetchLive();
+  const interval = setInterval(fetchLive, 3 * 60 * 1000);
+  return () => clearInterval(interval);
+}, [session]);
+// matches that don't have a logged result yet, and fill it in automatically.
+useEffect(() => {
+  if (!liveData.length || !history.length) return;
+  history.forEach(h => {
+    if (h.actual_score) return; // already logged
+    const live = findLiveFixture(h.home_team, h.away_team);
+    if (!live || live.status !== "finished") return;
+    if (live.score.home == null || live.score.away == null) return;
+    const score = `${live.score.home}-${live.score.away}`;
+    logResult(h.id, score);
+  });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [liveData, history]);
 
   const loadHistory = async (userId) => {
     const { data } = await supabase.from("predictions").select("*, confirmed_lineup").eq("user_id", userId).order("created_at", { ascending: false });
