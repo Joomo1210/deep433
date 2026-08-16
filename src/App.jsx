@@ -783,26 +783,47 @@ export default function FootballPredictor() {
       .finally(() => setFixturesLoading(false));
   }, [selectedLeague, session]);
 
- // Poll live scores every 3 minutes across all main leagues
-const SCORES_TAB_LEAGUES = ["pl", "laliga", "seriea", "bundesliga", "ligue1", "ucl", "championship", "communityshield"];
+// Poll live scores every 3 minutes across all main leagues
+const SCORES_TAB_LEAGUES = [
+  { id: "pl", label: "Premier League" },
+  { id: "laliga", label: "La Liga" },
+  { id: "seriea", label: "Serie A" },
+  { id: "bundesliga", label: "Bundesliga" },
+  { id: "ligue1", label: "Ligue 1" },
+  { id: "ucl", label: "Champions League" },
+  { id: "championship", label: "Championship" },
+  { id: "communityshield", label: "Community Shield" },
+];
 
 useEffect(() => {
   const fetchLive = async () => {
     const today = new Date().toISOString().split("T")[0];
     try {
-      const results = await Promise.allSettled(
-        SCORES_TAB_LEAGUES.map(leagueId =>
-          fetch(`/api/live-scores?leagueId=${leagueId}&date=${today}`).then(r => r.ok ? r.json() : { fixtures: [] })
-        )
-      );
-      const combined = results
-        .filter(r => r.status === "fulfilled")
-        .flatMap(r => r.value.fixtures || []);
-      setLiveData(combined);
+      // Fetch with a small stagger between requests, rather than all at
+      // once, to reduce the chance of hitting API-Football's rate limit —
+      // firing 8 simultaneous requests every poll was likely why fixtures
+      // sometimes disappeared until a later refresh happened to succeed.
+      const allFixtures = [];
+      for (const league of SCORES_TAB_LEAGUES) {
+        try {
+          const res = await fetch(`/api/live-scores?leagueId=${league.id}&date=${today}`);
+          if (res.ok) {
+            const data = await res.json();
+            const tagged = (data.fixtures || []).map(f => ({ ...f, leagueLabel: league.label }));
+            allFixtures.push(...tagged);
+          }
+        } catch {}
+        await new Promise(resolve => setTimeout(resolve, 150)); // small stagger
+      }
+      setLiveData(allFixtures);
     } catch {
       // network error — keep using whatever liveData we already have
     }
   };
+  fetchLive();
+  const interval = setInterval(fetchLive, 3 * 60 * 1000);
+  return () => clearInterval(interval);
+}, [session]);
   fetchLive();
   const interval = setInterval(fetchLive, 3 * 60 * 1000);
   return () => clearInterval(interval);
