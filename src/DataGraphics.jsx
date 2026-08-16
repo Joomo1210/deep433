@@ -2662,7 +2662,8 @@ function BrilliantPerformancesGraphic() {
             <div style={{ padding: "44px 18px 22px" }}>
               <div style={{ textAlign: "center", marginBottom: 4 }}>
                 <div style={{ fontSize: 15, fontWeight: 900, color: "#4ade80", textTransform: "uppercase", letterSpacing: 1.5 }}>✨ Brilliant Performances</div>
-                <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{selectedFixture.home} vs {selectedFixture.away} · {threshold.toFixed(1)}+ rating</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "#f0f0f0", marginTop: 6 }}>{selectedFixture.home} vs {selectedFixture.away}</div>
+                <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{selectedFixture.leagueLabel || "Match"}</div>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 16 }}>
@@ -2779,7 +2780,8 @@ function WorstPerformancesGraphic() {
             <div style={{ padding: "44px 18px 22px" }}>
               <div style={{ textAlign: "center", marginBottom: 4 }}>
                 <div style={{ fontSize: 15, fontWeight: 900, color: "#f87171", textTransform: "uppercase", letterSpacing: 1.5 }}>📉 Worst Performances</div>
-                <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{selectedFixture.home} vs {selectedFixture.away} · {threshold.toFixed(1)} or below</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "#f0f0f0", marginTop: 6 }}>{selectedFixture.home} vs {selectedFixture.away}</div>
+                <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{selectedFixture.leagueLabel || "Match"}</div>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 16 }}>
