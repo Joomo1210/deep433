@@ -824,10 +824,7 @@ useEffect(() => {
   const interval = setInterval(fetchLive, 3 * 60 * 1000);
   return () => clearInterval(interval);
 }, [session]);
-  fetchLive();
-  const interval = setInterval(fetchLive, 3 * 60 * 1000);
-  return () => clearInterval(interval);
-}, [session]);
+ 
 // matches that don't have a logged result yet, and fill it in automatically.
 useEffect(() => {
   if (!liveData.length || !history.length) return;
