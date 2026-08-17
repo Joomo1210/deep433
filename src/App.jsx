@@ -435,8 +435,7 @@ function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineu
     <div style={{
       display: "flex", flexDirection: "column", alignItems: "center", gap: 3, marginBottom: 8,
       opacity: 0,
-      animation: `pitchRowReveal 0.4s ease-out forwards`,
-      animationDelay: `${rowIndex * 0.3}s`,
+      animation: `pitchRowReveal 0.4s ease-out ${rowIndex * 0.3}s forwards`,
     }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: isAway ? "#ffffff" : border, letterSpacing: 1, textTransform: "uppercase", opacity: 0.8 }}>{row.label}</div>
       <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 5 }}>
