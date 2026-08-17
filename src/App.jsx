@@ -402,25 +402,20 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
   );
 }
 
-
 function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineupNames, awayLineupNames, lineupSource }) {
   const homeFlag = TEAM_FLAGS[homeTeam] || "🏳️";
   const awayFlag = TEAM_FLAGS[awayTeam] || "🏳️";
-
   const parseFormation = (f) => {
     if (!f) return [4, 3, 3];
     return f.split("-").map(Number);
   };
-
   const hForm = parseFormation(homeFormation);
   const aForm = parseFormation(awayFormation);
-
   const surname = (fullName) => {
     if (!fullName) return "";
     const parts = fullName.trim().split(" ");
     return parts[parts.length - 1];
   };
-
   const splitIntoRows = (names, formation) => {
     if (!names || !names.length) return [];
     const rows = [1, ...formation];
@@ -434,12 +429,15 @@ function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineu
     });
     return result;
   };
-
   const homeRows = splitIntoRows(homeLineupNames, hForm);
   const awayRows = splitIntoRows(awayLineupNames, aForm);
-
-  const PlayerRow = ({ row, border, flag, isAway }) => (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, marginBottom: 8 }}>
+  const PlayerRow = ({ row, border, flag, isAway, rowIndex }) => (
+    <div style={{
+      display: "flex", flexDirection: "column", alignItems: "center", gap: 3, marginBottom: 8,
+      opacity: 0,
+      animation: `pitchRowReveal 0.4s ease-out forwards`,
+      animationDelay: `${rowIndex * 0.3}s`,
+    }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: isAway ? "#ffffff" : border, letterSpacing: 1, textTransform: "uppercase", opacity: 0.8 }}>{row.label}</div>
       <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 5 }}>
         {row.names.map((name, i) => (
@@ -450,9 +448,14 @@ function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineu
       </div>
     </div>
   );
-
   return (
     <div style={{ width: "100%", borderRadius: 10, overflow: "hidden" }}>
+      <style>{`
+        @keyframes pitchRowReveal {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
       {lineupSource && (
         <div style={{ textAlign: "center", padding: "6px", background: "#0d0d18" }}>
           <span style={{ fontSize: 12, fontWeight: 700, padding: "3px 10px", borderRadius: 10, background: lineupSource === "confirmed" ? "#22c55e22" : "#f59e0b22", color: lineupSource === "confirmed" ? "#4ade80" : "#f59e0b", border: "1px solid " + (lineupSource === "confirmed" ? "#22c55e44" : "#f59e0b44") }}>
@@ -460,14 +463,12 @@ function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineu
           </span>
         </div>
       )}
-
       <div style={{ background: "repeating-linear-gradient(180deg,#1a7a1a 0px,#1a7a1a 28px,#1f8c1f 28px,#1f8c1f 56px)", padding: "12px 14px 8px" }}>
         <div style={{ textAlign: "center", marginBottom: 12 }}>
           <span style={{ fontSize: 15, fontWeight: 800, color: "#4ade80", background: "rgba(0,0,0,0.65)", padding: "4px 12px", borderRadius: 6 }}>{homeFlag} {homeTeam} · {homeFormation || "4-3-3"}</span>
         </div>
-        {homeRows.map((row, i) => <PlayerRow key={i} row={row} border="#4ade80" flag={homeFlag} isAway={false} />)}
+        {homeRows.map((row, i) => <PlayerRow key={i} row={row} border="#4ade80" flag={homeFlag} isAway={false} rowIndex={i} />)}
       </div>
-
       <div style={{ background: "#0d0d18", display: "flex", alignItems: "center", gap: 8, padding: "5px 14px" }}>
         <div style={{ flex: 1, height: 1, background: "#1e1e30" }} />
         <div style={{ width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg, #1a1a2e, #16213e)", border: "2px solid #2a2a4a", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
@@ -475,9 +476,8 @@ function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineu
         </div>
         <div style={{ flex: 1, height: 1, background: "#1e1e30" }} />
       </div>
-
       <div style={{ background: "repeating-linear-gradient(180deg,#1f8c1f 0px,#1f8c1f 28px,#1a7a1a 28px,#1a7a1a 56px)", padding: "8px 14px 12px" }}>
-        {[...awayRows].reverse().map((row, i) => <PlayerRow key={i} row={row} border="#a855f7" flag={awayFlag} isAway={true} />)}
+        {[...awayRows].reverse().map((row, i) => <PlayerRow key={i} row={row} border="#a855f7" flag={awayFlag} isAway={true} rowIndex={i} />)}
         <div style={{ textAlign: "center", marginTop: 12 }}>
           <span style={{ fontSize: 15, fontWeight: 800, color: "#ffffff", background: "rgba(0,0,0,0.65)", padding: "4px 12px", borderRadius: 6 }}>{awayFlag} {awayTeam} · {awayFormation || "4-3-3"}</span>
         </div>
