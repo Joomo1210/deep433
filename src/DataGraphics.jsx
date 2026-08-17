@@ -1833,7 +1833,11 @@ function MatchPitchViewGraphic() {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "8px 0" }}>
         {displayRows.map((row, ri) => (
-          <div key={ri} style={{ display: "flex", justifyContent: "space-around", alignItems: "center" }}>
+          <div key={ri} style={{
+            display: "flex", justifyContent: "space-around", alignItems: "center",
+            opacity: 0,
+            animation: `pitchRowReveal 0.4s ease-out ${ri * 0.3}s forwards`,
+          }}>
             {row.map((p, pi) => <PlayerNode key={pi} player={p} color={color} />)}
           </div>
         ))}
@@ -1869,6 +1873,12 @@ function MatchPitchViewGraphic() {
                   fontFamily: "'Inter',sans-serif",
                 }}
               >
+                <style>{`
+                  @keyframes pitchRowReveal {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                  }
+                `}</style>
                 {/* Pitch background SVG */}
                 <svg viewBox="0 0 420 680" xmlns="http://www.w3.org/2000/svg" style={{ display: "block", width: "100%" }}>
                   {/* Pitch */}
