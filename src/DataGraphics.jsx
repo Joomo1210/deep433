@@ -2006,6 +2006,7 @@ function MatchPitchViewGraphic() {
 function PlayerH2HGraphic() {
   const cardRef = useRef(null);
   const [season, setSeason] = useState(2025);
+  const [isWorldCup, setIsWorldCup] = useState(false);
 
   const [search1, setSearch1] = useState("");
   const [suggestions1, setSuggestions1] = useState([]);
@@ -2066,7 +2067,7 @@ function PlayerH2HGraphic() {
 
     setLoadingStats(true);
     try {
-      const wcFilter = season === 2026 ? "&onlyLeagueId=1" : "";
+      const wcFilter = isWorldCup ? "&onlyLeagueId=1" : "";
       const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${playerId}&season=${season}&teamId=${teamInfo?.id}${wcFilter}`);
       const d = await r.json();
       const enriched = d.available
@@ -2122,8 +2123,8 @@ function PlayerH2HGraphic() {
       <div>
         <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Season</div>
         <div style={{ display: "flex", gap: 6 }}>
-          {[{ v: 2025, label: "2025-26 Season" }, { v: 2026, label: "2026 (World Cup)" }].map(s => (
-            <button key={s.v} onClick={() => setSeason(s.v)} style={{ background: season === s.v ? "#4ade8022" : "none", border: `1px solid ${season === s.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: season === s.v ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px" }}>
+          {[{ v: 2025, wc: false, label: "2025-26 Season" }, { v: 2026, wc: false, label: "2026-27 Season" }, { v: 2026, wc: true, label: "2026 (World Cup)" }].map((s, si) => (
+            <button key={si} onClick={() => { setSeason(s.v); setIsWorldCup(s.wc); }} style={{ background: (season === s.v && isWorldCup === s.wc) ? "#4ade8022" : "none", border: `1px solid ${(season === s.v && isWorldCup === s.wc) ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: (season === s.v && isWorldCup === s.wc) ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px" }}>
               {s.label}
             </button>
           ))}
@@ -2143,7 +2144,7 @@ function PlayerH2HGraphic() {
             <div style={{ padding: "42px 18px 18px" }}>
               <div style={{ textAlign: "center", marginBottom: 12 }}>
                 <span style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5 }}>
-                  {season === 2026 ? "🌍 World Cup 2026" : "📅 2025/26 Season"}
+                  {isWorldCup ? "🌍 World Cup 2026" : "📅 2025/26 Season"}
                 </span>
               </div>
               {/* Player headers */}
@@ -3090,6 +3091,7 @@ function TeamThenPlayerPicker({ label, search, setSearch, suggestions, team, sea
 function TransferFitGraphic() {
   const cardRef = useRef(null);
   const [season, setSeason] = useState(2025);
+  const [isWorldCup, setIsWorldCup] = useState(false);
 
   // Target side
   const [searchTargetTeam, setSearchTargetTeam] = useState("");
@@ -3159,7 +3161,7 @@ function TransferFitGraphic() {
 
     setLoadingStats(true);
     try {
-      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${playerId}&season=${season}&teamId=${teamInfo?.id}${season === 2026 ? '&onlyLeagueId=1' : ''}`);
+      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${playerId}&season=${season}&teamId=${teamInfo?.id}${isWorldCup ? '&onlyLeagueId=1' : ''}`);
       const d = await r.json();
       const enriched = d.available
         ? { ...d, photo: basePlayer.photo, age: basePlayer.age, team: teamInfo?.name, teamLogo: teamInfo?.logo }
@@ -3176,7 +3178,7 @@ function TransferFitGraphic() {
     setDebugLoading(true);
     setDebugData(null);
     try {
-      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${target.id}&season=${season}&teamId=${targetTeam.id}${season === 2026 ? '&onlyLeagueId=1' : ''}&debug=true`);
+      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${target.id}&season=${season}&teamId=${targetTeam.id}${isWorldCup ? '&onlyLeagueId=1' : ''}&debug=true`);
       const d = await r.json();
       setDebugData(d);
     } catch (e) {
@@ -3214,8 +3216,8 @@ function TransferFitGraphic() {
       <div>
         <div style={{ fontSize: 13, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Season</div>
         <div style={{ display: "flex", gap: 6 }}>
-          {[{ v: 2025, label: "2025-26 Season" }, { v: 2026, label: "2026 (World Cup)" }].map(s => (
-            <button key={s.v} onClick={() => setSeason(s.v)} style={{ background: season === s.v ? "#4ade8022" : "none", border: `1px solid ${season === s.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: season === s.v ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "6px 12px" }}>
+          {[{ v: 2025, wc: false, label: "2025-26 Season" }, { v: 2026, wc: false, label: "2026-27 Season" }, { v: 2026, wc: true, label: "2026 (World Cup)" }].map((s, si) => (
+            <button key={si} onClick={() => { setSeason(s.v); setIsWorldCup(s.wc); }} style={{ background: (season === s.v && isWorldCup === s.wc) ? "#4ade8022" : "none", border: `1px solid ${(season === s.v && isWorldCup === s.wc) ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: (season === s.v && isWorldCup === s.wc) ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "6px 12px" }}>
               {s.label}
             </button>
           ))}
@@ -3258,7 +3260,7 @@ function TransferFitGraphic() {
             <div style={{ padding: "22px 18px 18px" }}>
               <div style={{ textAlign: "center", marginBottom: 14 }}>
                 <div style={{ fontSize: 24, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5, marginBottom: 4 }}>The Comparison</div>
-                <span style={{ fontSize: 14, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>🔄 Transfer Fit · {season === 2026 ? "2026 World Cup" : `${season}/${season + 1}`}</span>
+                <span style={{ fontSize: 14, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>🔄 Transfer Fit · {isWorldCup ? "2026 World Cup" : `${season}/${season + 1}`}</span>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16 }}>
@@ -3328,7 +3330,7 @@ function TransferFitGraphic() {
             <div style={{ padding: "22px 18px 18px" }}>
               <div style={{ textAlign: "center", marginBottom: 14 }}>
                 <div style={{ fontSize: 22, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5, marginBottom: 4 }}>Player Profile</div>
-                <span style={{ fontSize: 14, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>🔄 Transfer Fit · {season === 2026 ? "2026 World Cup" : `${season}/${season + 1}`}</span>
+                <span style={{ fontSize: 14, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>🔄 Transfer Fit · {isWorldCup ? "2026 World Cup" : `${season}/${season + 1}`}</span>
               </div>
 
               <div style={{ textAlign: "center", marginBottom: 18 }}>
@@ -4910,6 +4912,7 @@ function GameweekRatingGraphic() {
 function QuickVSGraphic() {
   const cardRef = useRef(null);
   const [season, setSeason] = useState(2025);
+  const [isWorldCup, setIsWorldCup] = useState(false);
   const emptySlot = () => ({
     search: "", suggestions: [], team: null, searching: false,
     squad: [], playerId: "", player: null,
@@ -4959,7 +4962,7 @@ function QuickVSGraphic() {
 
     setLoadingStats(true);
     try {
-      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${playerId}&season=${season}&teamId=${teamInfo?.id}${season === 2026 ? '&onlyLeagueId=1' : ''}`);
+      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${playerId}&season=${season}&teamId=${teamInfo?.id}${isWorldCup ? '&onlyLeagueId=1' : ''}`);
       const d = await r.json();
       const enriched = d.available
         ? { ...d, photo: basePlayer.photo, age: basePlayer.age, team: teamInfo?.name, teamLogo: teamInfo?.logo }
@@ -4989,8 +4992,8 @@ function QuickVSGraphic() {
       <div>
         <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Season</div>
         <div style={{ display: "flex", gap: 6 }}>
-          {[{ v: 2025, label: "2025-26 Season" }, { v: 2026, label: "2026 (World Cup)" }].map(s => (
-            <button key={s.v} onClick={() => setSeason(s.v)} style={{ background: season === s.v ? "#4ade8022" : "none", border: `1px solid ${season === s.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: season === s.v ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px" }}>
+          {[{ v: 2025, wc: false, label: "2025-26 Season" }, { v: 2026, wc: false, label: "2026-27 Season" }, { v: 2026, wc: true, label: "2026 (World Cup)" }].map((s, si) => (
+            <button key={si} onClick={() => { setSeason(s.v); setIsWorldCup(s.wc); }} style={{ background: (season === s.v && isWorldCup === s.wc) ? "#4ade8022" : "none", border: `1px solid ${(season === s.v && isWorldCup === s.wc) ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: (season === s.v && isWorldCup === s.wc) ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px" }}>
               {s.label}
             </button>
           ))}
@@ -5073,6 +5076,7 @@ function QuickVSGraphic() {
 function BeyondScoresheetGraphic() {
   const cardRef = useRef(null);
   const [season, setSeason] = useState(2025);
+  const [isWorldCup, setIsWorldCup] = useState(false);
 
   const [searchTeam, setSearchTeamText] = useState("");
   const [suggestTeam, setSuggestTeam] = useState([]);
@@ -5118,7 +5122,7 @@ function BeyondScoresheetGraphic() {
     if (!basePlayer) return;
     setLoadingStats(true);
     try {
-      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${pid}&season=${season}&teamId=${team?.id}${season === 2026 ? '&onlyLeagueId=1' : ''}`);
+      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${pid}&season=${season}&teamId=${team?.id}${isWorldCup ? '&onlyLeagueId=1' : ''}`);
       const d = await r.json();
       const enriched = d.available
         ? { ...d, photo: basePlayer.photo, age: basePlayer.age, team: team?.name, teamLogo: team?.logo }
@@ -5135,7 +5139,7 @@ function BeyondScoresheetGraphic() {
     setDebugLoading(true);
     setDebugData(null);
     try {
-      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${player.id}&season=${season}&teamId=${team.id}${season === 2026 ? '&onlyLeagueId=1' : ''}&debug=true`);
+      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${player.id}&season=${season}&teamId=${team.id}${isWorldCup ? '&onlyLeagueId=1' : ''}&debug=true`);
       const d = await r.json();
       setDebugData(d);
     } catch (e) {
@@ -5159,8 +5163,8 @@ function BeyondScoresheetGraphic() {
       <div>
         <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Season</div>
         <div style={{ display: "flex", gap: 6 }}>
-          {[{ v: 2025, label: "2025-26 Season" }, { v: 2026, label: "2026 (World Cup)" }].map(s => (
-            <button key={s.v} onClick={() => setSeason(s.v)} style={{ background: season === s.v ? "#4ade8022" : "none", border: `1px solid ${season === s.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: season === s.v ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px" }}>
+          {[{ v: 2025, wc: false, label: "2025-26 Season" }, { v: 2026, wc: false, label: "2026-27 Season" }, { v: 2026, wc: true, label: "2026 (World Cup)" }].map((s, si) => (
+            <button key={si} onClick={() => { setSeason(s.v); setIsWorldCup(s.wc); }} style={{ background: (season === s.v && isWorldCup === s.wc) ? "#4ade8022" : "none", border: `1px solid ${(season === s.v && isWorldCup === s.wc) ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: (season === s.v && isWorldCup === s.wc) ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px" }}>
               {s.label}
             </button>
           ))}
@@ -5241,6 +5245,7 @@ function BeyondScoresheetGraphic() {
 function BackFourBattleGraphic() {
   const cardRef = useRef(null);
   const [season, setSeason] = useState(2025);
+  const [isWorldCup, setIsWorldCup] = useState(false);
   const SLOTS = ["d1", "d2", "d3", "d4"];
   const SLOT_COLORS = { d1: "#4ade80", d2: "#a855f7", d3: "#60a5fa", d4: "#f59e0b" };
 
@@ -5334,8 +5339,8 @@ function BackFourBattleGraphic() {
       <div>
         <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Season</div>
         <div style={{ display: "flex", gap: 6 }}>
-          {[{ v: 2025, label: "2025-26 Season" }, { v: 2026, label: "2026 (World Cup)" }].map(s => (
-            <button key={s.v} onClick={() => setSeason(s.v)} style={{ background: season === s.v ? "#4ade8022" : "none", border: `1px solid ${season === s.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: season === s.v ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px" }}>
+          {[{ v: 2025, wc: false, label: "2025-26 Season" }, { v: 2026, wc: false, label: "2026-27 Season" }, { v: 2026, wc: true, label: "2026 (World Cup)" }].map((s, si) => (
+            <button key={si} onClick={() => { setSeason(s.v); setIsWorldCup(s.wc); }} style={{ background: (season === s.v && isWorldCup === s.wc) ? "#4ade8022" : "none", border: `1px solid ${(season === s.v && isWorldCup === s.wc) ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: (season === s.v && isWorldCup === s.wc) ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px" }}>
               {s.label}
             </button>
           ))}
@@ -5439,6 +5444,7 @@ function BackFourBattleGraphic() {
 function TrioBattleGraphic() {
   const cardRef = useRef(null);
   const [season, setSeason] = useState(2025);
+  const [isWorldCup, setIsWorldCup] = useState(false);
   const [posType, setPosType] = useState("attack");
   const SLOTS = ["p1", "p2", "p3"];
   const SLOT_COLORS = { p1: "#4ade80", p2: "#a855f7", p3: "#f59e0b" };
@@ -5550,8 +5556,8 @@ function TrioBattleGraphic() {
       <div>
         <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Season</div>
         <div style={{ display: "flex", gap: 6 }}>
-          {[{ v: 2025, label: "2025-26 Season" }, { v: 2026, label: "2026 (World Cup)" }].map(s => (
-            <button key={s.v} onClick={() => setSeason(s.v)} style={{ background: season === s.v ? "#4ade8022" : "none", border: `1px solid ${season === s.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: season === s.v ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px" }}>
+          {[{ v: 2025, wc: false, label: "2025-26 Season" }, { v: 2026, wc: false, label: "2026-27 Season" }, { v: 2026, wc: true, label: "2026 (World Cup)" }].map((s, si) => (
+            <button key={si} onClick={() => { setSeason(s.v); setIsWorldCup(s.wc); }} style={{ background: (season === s.v && isWorldCup === s.wc) ? "#4ade8022" : "none", border: `1px solid ${(season === s.v && isWorldCup === s.wc) ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: (season === s.v && isWorldCup === s.wc) ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px" }}>
               {s.label}
             </button>
           ))}
