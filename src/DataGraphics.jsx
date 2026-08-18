@@ -3001,7 +3001,20 @@ function SquadDepthGraphic() {
                       const slotKey = `${pos.key}-${slotIdx}`;
                       const selected = depth[pos.key][slotIdx];
                       const q = (slotSearch[slotKey] || "").toLowerCase();
-                      const filtered = q.length >= 1 ? squad.filter(p => p.name.toLowerCase().includes(q)) : squad;
+                      // Position each slot's search actually cares about, so
+                      // browsing without typing shows relevant players first
+                      // instead of whatever order the API happens to return
+                      // (which put every goalkeeper before any outfield player).
+                      const relevantPosition = pos.key === "gk" ? "Goalkeeper"
+                        : ["rb", "cb1", "cb2", "lb"].includes(pos.key) ? "Defender"
+                        : ["cm1", "cam", "cm2"].includes(pos.key) ? "Midfielder"
+                        : "Attacker";
+                      const matches = q.length >= 1 ? squad.filter(p => p.name.toLowerCase().includes(q)) : squad;
+                      const filtered = [...matches].sort((a, b) => {
+                        const aMatch = a.position === relevantPosition ? 0 : 1;
+                        const bMatch = b.position === relevantPosition ? 0 : 1;
+                        return aMatch - bMatch;
+                      });
                       return (
                         <div key={slotIdx} style={{ position: "relative" }}>
                           {selected ? (
@@ -3021,7 +3034,7 @@ function SquadDepthGraphic() {
                           )}
                           {openSlot === slotKey && !selected && (
                             <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#1a1a24", border: "1px solid #2a2a3a", borderRadius: 6, marginTop: 2, zIndex: 20, maxHeight: 160, overflowY: "auto" }}>
-                              {filtered.slice(0, 8).map(p => (
+                              {filtered.slice(0, 20).map(p => (
                                 <div key={p.id} onClick={() => selectPlayer(pos.key, slotIdx, p)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 8px", cursor: "pointer", borderBottom: "1px solid #2a2a3a" }}>
                                   {p.photo && <img src={p.photo} alt="" style={{ width: 16, height: 16, borderRadius: "50%", objectFit: "cover" }} />}
                                   <span style={{ fontSize: 12, color: "#f0f0f0" }}>{p.name}</span>
