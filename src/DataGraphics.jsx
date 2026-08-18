@@ -2941,6 +2941,26 @@ function SquadDepthGraphic() {
   // Per-slot search text, keyed by `${posKey}-${slotIdx}`
   const [slotSearch, setSlotSearch] = useState({});
   const [openSlot, setOpenSlot] = useState(null);
+  // Fallback results when a search finds nothing in the fetched squad list —
+  // API-Football's squad endpoint is sometimes genuinely incomplete for a
+  // team (e.g. missing established players like Kudus, Kulusevski at
+  // Tottenham), so a live name search scoped to this team catches those.
+  const [fallbackResults, setFallbackResults] = useState({});
+  const [fallbackLoading, setFallbackLoading] = useState({});
+
+  const searchFallback = async (slotKey, query, teamName) => {
+    if (query.length < 3) { setFallbackResults(prev => ({ ...prev, [slotKey]: [] })); return; }
+    setFallbackLoading(prev => ({ ...prev, [slotKey]: true }));
+    try {
+      const r = await fetch(`/api/team-stats?mode=playersearch&query=${encodeURIComponent(query)}`);
+      const d = await r.json();
+      const normalize = s => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const teamNorm = normalize(teamName);
+      const matches = (d.players || []).filter(p => normalize(p.team) === teamNorm);
+      setFallbackResults(prev => ({ ...prev, [slotKey]: matches }));
+    } catch {}
+    setFallbackLoading(prev => ({ ...prev, [slotKey]: false }));
+  };
 
   const searchTeam = async (query) => {
     setSearch(query);
@@ -3062,7 +3082,17 @@ function SquadDepthGraphic() {
                           ) : (
                             <input
                               value={slotSearch[slotKey] || ""}
-                              onChange={e => { setSlotSearch(prev => ({ ...prev, [slotKey]: e.target.value })); setOpenSlot(slotKey); }}
+                              onChange={e => {
+                                const val = e.target.value;
+                                setSlotSearch(prev => ({ ...prev, [slotKey]: val }));
+                                setOpenSlot(slotKey);
+                                // Only hit the live fallback once local squad
+                                // search comes up empty for this text — keeps
+                                // this from firing on every keystroke when the
+                                // squad list already has the answer.
+                                const localMatch = squad.some(p => p.name.toLowerCase().includes(val.toLowerCase()));
+                                if (val.length >= 3 && !localMatch) searchFallback(slotKey, val, team.name);
+                              }}
                               onFocus={() => setOpenSlot(slotKey)}
                               placeholder={slotIdx === 0 ? "Starter" : `Backup ${slotIdx}`}
                               style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "6px 8px", outline: "none", fontFamily: "inherit" }}
@@ -3077,7 +3107,24 @@ function SquadDepthGraphic() {
                                   {p.position && <span style={{ fontSize: 10, color: "#94a3b8", marginLeft: "auto" }}>{p.position}</span>}
                                 </div>
                               ))}
-                              {filtered.length === 0 && <div style={{ padding: "6px 8px", fontSize: 12, color: "#94a3b8" }}>No matches</div>}
+                              {filtered.length === 0 && fallbackLoading[slotKey] && (
+                                <div style={{ padding: "6px 8px", fontSize: 12, color: "#94a3b8" }}>Searching...</div>
+                              )}
+                              {filtered.length === 0 && !fallbackLoading[slotKey] && (fallbackResults[slotKey] || []).length > 0 && (
+                                <>
+                                  <div style={{ padding: "4px 8px", fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase" }}>Found via live search</div>
+                                  {fallbackResults[slotKey].map(p => (
+                                    <div key={p.id} onClick={() => selectPlayer(pos.key, slotIdx, p)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 8px", cursor: "pointer", borderBottom: "1px solid #2a2a3a" }}>
+                                      {p.photo && <img src={p.photo} alt="" style={{ width: 16, height: 16, borderRadius: "50%", objectFit: "cover" }} />}
+                                      <span style={{ fontSize: 12, color: "#f0f0f0" }}>{p.name}</span>
+                                      {p.position && <span style={{ fontSize: 10, color: "#94a3b8", marginLeft: "auto" }}>{p.position}</span>}
+                                    </div>
+                                  ))}
+                                </>
+                              )}
+                              {filtered.length === 0 && !fallbackLoading[slotKey] && (fallbackResults[slotKey] || []).length === 0 && (slotSearch[slotKey] || "").length >= 3 && (
+                                <div style={{ padding: "6px 8px", fontSize: 12, color: "#94a3b8" }}>No matches</div>
+                              )}
                             </div>
                           )}
                         </div>
