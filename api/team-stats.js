@@ -444,9 +444,17 @@ export default async function handler(req, res) {
   // ── Player name search ──
   if (mode === "playersearch") {
     if (!query || query.length < 3) return res.status(200).json({ players: [] });
-    const { season: seasonParam } = req.query;
+    const { season: seasonParam, teamId: searchTeamId } = req.query;
     let apiUrl;
-    if (leagueId) {
+    if (searchTeamId) {
+      // Team-scoped search — API-Football requires either league or team
+      // alongside the search param, it genuinely rejects a bare name search
+      // with no scope at all ("The League or Team field is required with
+      // the Search field"). This is also more precise than league-scoped
+      // search, since it only returns players from this exact team.
+      const season = seasonParam || 2026;
+      apiUrl = `https://v3.football.api-sports.io/players?search=${encodeURIComponent(query)}&team=${searchTeamId}&season=${season}`;
+    } else if (leagueId) {
       // Scoped search within one of our curated leagues
       const league = LEAGUE_MAP[leagueId];
       if (!league) return res.status(400).json({ error: "Unknown league" });
