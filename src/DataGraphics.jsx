@@ -2831,6 +2831,254 @@ function WorstPerformancesGraphic() {
 }
 
 
+// ─── SQUAD DEPTH CHART ────────────────────────────────────────────────────
+const DEPTH_POSITIONS = [
+  { key: "gk", label: "GK" },
+  { key: "rb", label: "RB" },
+  { key: "cb1", label: "CB" },
+  { key: "cb2", label: "CB" },
+  { key: "lb", label: "LB" },
+  { key: "cm1", label: "CM" },
+  { key: "cam", label: "CAM" },
+  { key: "cm2", label: "CM" },
+  { key: "rw", label: "RW" },
+  { key: "st", label: "ST" },
+  { key: "lw", label: "LW" },
+];
+
+// Grid position for each slot within an 11-column x 4-row formation grid —
+// gives the rough 4-3-3 shape (GK centred, back four spread, midfield with
+// CAM recessed slightly, front three with ST central) without needing a
+// dynamic formation engine, since depth charts are always roughly this shape.
+const DEPTH_GRID = {
+  gk:  { col: "5 / 7", row: 1 },
+  rb:  { col: "1 / 3", row: 2 }, cb1: { col: "3 / 6", row: 2 }, cb2: { col: "6 / 9", row: 2 }, lb: { col: "9 / 11", row: 2 },
+  cm1: { col: "1 / 4", row: 3 }, cam: { col: "4 / 8", row: 4 }, cm2: { col: "8 / 11", row: 3 },
+  rw:  { col: "1 / 4", row: 5 }, st:  { col: "4 / 8", row: 5 }, lw:  { col: "8 / 11", row: 5 },
+};
+
+function PositionColumn({ label, players }) {
+  const filled = players.filter(p => p);
+  if (!filled.length) return null;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <div style={{ background: "#0a0f2e", color: "#fbbf24", fontSize: 11, fontWeight: 900, padding: "3px 10px", borderRadius: 6, marginBottom: 3, letterSpacing: 0.5 }}>{label}</div>
+      <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
+        {filled.map((player, i) => (
+          <div key={i} style={{
+            background: "linear-gradient(180deg,#fde047,#facc15)",
+            color: "#0a0f2e",
+            fontSize: 11,
+            fontWeight: 800,
+            padding: "5px 8px",
+            display: "flex",
+            alignItems: "center",
+            gap: 5,
+            borderBottom: i < filled.length - 1 ? "1px solid #0a0f2e33" : "none",
+            borderRadius: i === 0 ? (filled.length === 1 ? "6px" : "6px 6px 0 0") : (i === filled.length - 1 ? "0 0 6px 6px" : "0"),
+            boxShadow: "0 2px 3px rgba(0,0,0,0.3)",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+          }}>
+            {player.photo && <img src={player.photo} alt="" crossOrigin="anonymous" style={{ width: 18, height: 18, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: "1px solid #0a0f2e55" }} />}
+            <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{player.name}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SquadDepthGraphic() {
+  const cardRef = useRef(null);
+  const [search, setSearch] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [team, setTeam] = useState(null);
+  const [squad, setSquad] = useState([]);
+  const [squadLoading, setSquadLoading] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  // Each slot holds either null or a full player object { id, name, photo }
+  const [depth, setDepth] = useState(
+    Object.fromEntries(DEPTH_POSITIONS.map(p => [p.key, [null, null, null]]))
+  );
+  // Per-slot search text, keyed by `${posKey}-${slotIdx}`
+  const [slotSearch, setSlotSearch] = useState({});
+  const [openSlot, setOpenSlot] = useState(null);
+
+  const searchTeam = async (query) => {
+    setSearch(query);
+    if (query.length < 3) { setSuggestions([]); return; }
+    setSearching(true);
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
+      const d = await r.json();
+      setSuggestions(d.teams || []);
+    } catch {}
+    setSearching(false);
+  };
+
+  const selectTeam = async (t) => {
+    setTeam(t);
+    setSuggestions([]);
+    setSearch(t.name);
+    setSquad([]);
+    setSquadLoading(true);
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsquad&teamId=${t.id}`);
+      const d = await r.json();
+      setSquad(d.players || []);
+    } catch {}
+    setSquadLoading(false);
+  };
+
+  const selectPlayer = (posKey, slotIdx, player) => {
+    setDepth(prev => ({
+      ...prev,
+      [posKey]: prev[posKey].map((v, i) => i === slotIdx ? player : v),
+    }));
+    setSlotSearch(prev => ({ ...prev, [`${posKey}-${slotIdx}`]: "" }));
+    setOpenSlot(null);
+  };
+
+  const clearSlot = (posKey, slotIdx) => {
+    setDepth(prev => ({
+      ...prev,
+      [posKey]: prev[posKey].map((v, i) => i === slotIdx ? null : v),
+    }));
+  };
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, `deep433-squad-depth-${team?.name}.png`, undefined, transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const hasAnyDepth = Object.values(depth).some(arr => arr.some(v => v));
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Squad Depth Chart — pick players directly from the team's real squad, crests included automatically. Depth order (starter → backups) is up to you.</div>
+
+      <div style={{ position: "relative" }}>
+        <input
+          value={search}
+          onChange={e => searchTeam(e.target.value)}
+          placeholder="Search team..."
+          style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+        />
+        {suggestions.length > 0 && (
+          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#1a1a24", border: "1px solid #2a2a3a", borderRadius: 8, marginTop: 4, zIndex: 10, maxHeight: 200, overflowY: "auto" }}>
+            {suggestions.map(t => (
+              <div key={t.id} onClick={() => selectTeam(t)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", cursor: "pointer", borderBottom: "1px solid #2a2a3a" }}>
+                {t.logo && <img src={t.logo} alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />}
+                <span style={{ fontSize: 13, color: "#f0f0f0" }}>{t.name}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {team && (
+        <>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
+            {team.logo && <img src={team.logo} alt="" style={{ width: 24, height: 24, objectFit: "contain" }} />}
+            <span style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0" }}>{team.name}</span>
+          </div>
+
+          {squadLoading && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 14, padding: "10px 0" }}>Loading squad...</div>}
+
+          {!squadLoading && squad.length > 0 && (
+            <>
+              <div style={{ fontSize: 11, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>Depth Order (Starter → Backups)</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                {DEPTH_POSITIONS.map(pos => (
+                  <div key={pos.key} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <div style={{ fontSize: 11, color: "#fbbf24", fontWeight: 700 }}>{pos.label}</div>
+                    {[0, 1, 2].map(slotIdx => {
+                      const slotKey = `${pos.key}-${slotIdx}`;
+                      const selected = depth[pos.key][slotIdx];
+                      const q = (slotSearch[slotKey] || "").toLowerCase();
+                      const filtered = q.length >= 1 ? squad.filter(p => p.name.toLowerCase().includes(q)) : squad;
+                      return (
+                        <div key={slotIdx} style={{ position: "relative" }}>
+                          {selected ? (
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#1a1a24", border: "1.5px solid #4ade8044", borderRadius: 6, padding: "5px 8px" }}>
+                              {selected.photo && <img src={selected.photo} alt="" style={{ width: 16, height: 16, borderRadius: "50%", objectFit: "cover" }} />}
+                              <span style={{ fontSize: 12, color: "#f0f0f0", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{selected.name}</span>
+                              <button onClick={() => clearSlot(pos.key, slotIdx)} style={{ background: "none", border: "none", color: "#f87171", cursor: "pointer", fontSize: 12, padding: 0, fontFamily: "inherit" }}>✕</button>
+                            </div>
+                          ) : (
+                            <input
+                              value={slotSearch[slotKey] || ""}
+                              onChange={e => { setSlotSearch(prev => ({ ...prev, [slotKey]: e.target.value })); setOpenSlot(slotKey); }}
+                              onFocus={() => setOpenSlot(slotKey)}
+                              placeholder={slotIdx === 0 ? "Starter" : `Backup ${slotIdx}`}
+                              style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "6px 8px", outline: "none", fontFamily: "inherit" }}
+                            />
+                          )}
+                          {openSlot === slotKey && !selected && (
+                            <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#1a1a24", border: "1px solid #2a2a3a", borderRadius: 6, marginTop: 2, zIndex: 20, maxHeight: 160, overflowY: "auto" }}>
+                              {filtered.slice(0, 8).map(p => (
+                                <div key={p.id} onClick={() => selectPlayer(pos.key, slotIdx, p)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 8px", cursor: "pointer", borderBottom: "1px solid #2a2a3a" }}>
+                                  {p.photo && <img src={p.photo} alt="" style={{ width: 16, height: 16, borderRadius: "50%", objectFit: "cover" }} />}
+                                  <span style={{ fontSize: 12, color: "#f0f0f0" }}>{p.name}</span>
+                                  {p.position && <span style={{ fontSize: 10, color: "#94a3b8", marginLeft: "auto" }}>{p.position}</span>}
+                                </div>
+                              ))}
+                              {filtered.length === 0 && <div style={{ padding: "6px 8px", fontSize: 12, color: "#94a3b8" }}>No matches</div>}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </>
+      )}
+
+      {team && hasAnyDepth && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{
+              padding: "44px 16px 20px",
+              background: "repeating-linear-gradient(135deg, #1a1a24 0px, #1a1a24 20px, #1e1e2a 20px, #1e1e2a 40px)",
+            }}>
+              {/* Header */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 20 }}>
+                <div>{team.logo && <img src={team.logo} alt="" crossOrigin="anonymous" style={{ width: 36, height: 36, objectFit: "contain" }} />}</div>
+                <div style={{ fontSize: 15, fontWeight: 900, color: "#f0f0f0", textAlign: "center", whiteSpace: "nowrap" }}>{team.name} Squad Depth</div>
+                <div />
+              </div>
+
+              {/* Formation grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(10, 1fr)", gridAutoRows: "auto", rowGap: 16, columnGap: 6 }}>
+                {DEPTH_POSITIONS.map(pos => (
+                  <div key={pos.key} style={{ gridColumn: DEPTH_GRID[pos.key].col, gridRow: DEPTH_GRID[pos.key].row }}>
+                    <PositionColumn label={pos.label} players={depth[pos.key]} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </GraphicCard>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)", border: "none", borderRadius: 8, color: "#0a0f2e", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+
 function MatchH2HGraphic() {
   const cardRef = useRef(null);
   const [selectedFixture, setSelectedFixture] = useState(null);
@@ -8104,6 +8352,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "motm", label: "⭐ Man of the Match" },
     { id: "brilliant", label: "✨ Brilliant Performances" },
     { id: "worst", label: "📉 Worst Performances" },
+    { id: "squaddepth", label: "📊 Squad Depth Chart" },
     { id: "glove",    label: "Golden Glove" },
     { id: "transfer", label: "🔄 Transfer Fit" },
     { id: "timing",   label: "⏱️ Goal Timing" },
@@ -8163,6 +8412,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "motm" && <ManOfMatchGraphic />}
       {activeSection === "brilliant" && <BrilliantPerformancesGraphic />}
       {activeSection === "worst" && <WorstPerformancesGraphic />}
+      {activeSection === "squaddepth" && <SquadDepthGraphic />}
       {activeSection === "glove"    && <GoldenGloveGraphic />}
       {activeSection === "transfer" && <TransferFitGraphic />}
       {activeSection === "timing"   && <GoalTimingGraphic />}
