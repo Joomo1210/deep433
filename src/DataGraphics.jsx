@@ -6171,35 +6171,68 @@ function EuroAssistsGraphic() {
 }
 
 // ─── PREDICTED LINEUP (visual pitch, fixed positions, team-then-squad search) ─
-const FORMATION_POSITIONS = [
-  { key: "gk", label: "GK", x: 210, y: 620 },
-  { key: "lb", label: "LB", x: 60, y: 480 },
-  { key: "cb1", label: "CB", x: 150, y: 500 },
-  { key: "cb2", label: "CB", x: 270, y: 500 },
-  { key: "rb", label: "RB", x: 360, y: 480 },
-  { key: "dm", label: "DM", x: 210, y: 370 },
-  { key: "cm1", label: "CM", x: 130, y: 290 },
-  { key: "cm2", label: "CM", x: 290, y: 290 },
-  { key: "lw", label: "LW", x: 60, y: 170 },
-  { key: "st", label: "ST", x: 210, y: 130 },
-  { key: "rw", label: "RW", x: 360, y: 170 },
+// Two coordinate sets — "Your Team" compressed into the bottom half of the
+// pitch, "Opponent" mirrored into the top half, so both full XIs fit on one
+// pitch without overlapping (previously "Your Team" alone spanned the full
+// height, leaving no room for a second team).
+const FORMATION_POSITIONS_HOME = [
+  { key: "gk",  label: "GK",  x: 210, y: 655 },
+  { key: "lb",  label: "LB",  x: 60,  y: 565 },
+  { key: "cb1", label: "CB",  x: 150, y: 580 },
+  { key: "cb2", label: "CB",  x: 270, y: 580 },
+  { key: "rb",  label: "RB",  x: 360, y: 565 },
+  { key: "dm",  label: "DM",  x: 210, y: 495 },
+  { key: "cm1", label: "CM",  x: 130, y: 445 },
+  { key: "cm2", label: "CM",  x: 290, y: 445 },
+  { key: "lw",  label: "LW",  x: 60,  y: 365 },
+  { key: "st",  label: "ST",  x: 210, y: 345 },
+  { key: "rw",  label: "RW",  x: 360, y: 365 },
 ];
+const FORMATION_POSITIONS_AWAY = [
+  { key: "gk",  label: "GK",  x: 210, y: 25 },
+  { key: "lb",  label: "LB",  x: 360, y: 115 },
+  { key: "cb1", label: "CB",  x: 270, y: 100 },
+  { key: "cb2", label: "CB",  x: 150, y: 100 },
+  { key: "rb",  label: "RB",  x: 60,  y: 115 },
+  { key: "dm",  label: "DM",  x: 210, y: 185 },
+  { key: "cm1", label: "CM",  x: 290, y: 235 },
+  { key: "cm2", label: "CM",  x: 130, y: 235 },
+  { key: "lw",  label: "LW",  x: 360, y: 315 },
+  { key: "st",  label: "ST",  x: 210, y: 335 },
+  { key: "rw",  label: "RW",  x: 60,  y: 315 },
+];
+// Kept for backward compatibility with anything else referencing the
+// original single-team coordinate set
+const FORMATION_POSITIONS = FORMATION_POSITIONS_HOME;
 
 function PredictedLineupGraphic() {
   const cardRef = useRef(null);
-  const [opponent, setOpponent] = useState("");
+  const [downloading, setDownloading] = useState(false);
 
+  // Home ("Your Team") state
   const [teamSearch, setTeamSearch] = useState("");
   const [teamSuggestions, setTeamSuggestions] = useState([]);
   const [team, setTeam] = useState(null);
   const [searchingTeam, setSearchingTeam] = useState(false);
   const [squad, setSquad] = useState([]);
   const [loadingSquad, setLoadingSquad] = useState(false);
-  const [downloading, setDownloading] = useState(false);
-
   const [selected, setSelected] = useState(() => {
     const init = {};
-    FORMATION_POSITIONS.forEach(p => { init[p.key] = ""; });
+    FORMATION_POSITIONS_HOME.forEach(p => { init[p.key] = ""; });
+    return init;
+  });
+
+  // Away ("Opponent") state — mirrors home state exactly, now with real
+  // search + squad selection instead of a plain text label.
+  const [oppSearch, setOppSearch] = useState("");
+  const [oppSuggestions, setOppSuggestions] = useState([]);
+  const [oppTeam, setOppTeam] = useState(null);
+  const [searchingOpp, setSearchingOpp] = useState(false);
+  const [oppSquad, setOppSquad] = useState([]);
+  const [loadingOppSquad, setLoadingOppSquad] = useState(false);
+  const [oppSelected, setOppSelected] = useState(() => {
+    const init = {};
+    FORMATION_POSITIONS_AWAY.forEach(p => { init[p.key] = ""; });
     return init;
   });
 
@@ -6219,7 +6252,7 @@ function PredictedLineupGraphic() {
     setLoadingSquad(true);
     setTeam(t); setTeamSuggestions([]); setTeamSearch(t.name);
     const resetSelected = {};
-    FORMATION_POSITIONS.forEach(p => { resetSelected[p.key] = ""; });
+    FORMATION_POSITIONS_HOME.forEach(p => { resetSelected[p.key] = ""; });
     setSelected(resetSelected);
     try {
       const r = await fetch(`/api/team-stats?mode=teamsquad&teamId=${t.id}`);
@@ -6229,20 +6262,47 @@ function PredictedLineupGraphic() {
     setLoadingSquad(false);
   };
 
+  const searchOpp = async (query) => {
+    setOppSearch(query);
+    if (query.length < 3) { setOppSuggestions([]); return; }
+    setSearchingOpp(true);
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
+      const d = await r.json();
+      setOppSuggestions(d.teams || []);
+    } catch {}
+    setSearchingOpp(false);
+  };
+
+  const selectOppTeam = async (t) => {
+    setLoadingOppSquad(true);
+    setOppTeam(t); setOppSuggestions([]); setOppSearch(t.name);
+    const resetSelected = {};
+    FORMATION_POSITIONS_AWAY.forEach(p => { resetSelected[p.key] = ""; });
+    setOppSelected(resetSelected);
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsquad&teamId=${t.id}`);
+      const d = await r.json();
+      setOppSquad(d.players || []);
+    } catch {}
+    setLoadingOppSquad(false);
+  };
+
   const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-predicted-lineup-${team?.name}-vs-${opponent}.png`, "#0a3d1f", transparent);
+      await downloadCardImage(cardRef.current, `deep433-predicted-lineup-${team?.name}-vs-${oppTeam?.name || "opponent"}.png`, "#0a3d1f", transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
 
-  const filledCount = FORMATION_POSITIONS.filter(p => selected[p.key]).length;
+  const filledCount = FORMATION_POSITIONS_HOME.filter(p => selected[p.key]).length;
   const getPlayer = (key) => squad.find(p => String(p.id) === String(selected[key]));
+  const getOppPlayer = (key) => oppSquad.find(p => String(p.id) === String(oppSelected[key]));
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Search a team, then assign players from their squad to fixed formation positions on an actual pitch.</div>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Search both teams, then assign players from each squad to fixed formation positions on one pitch — genuinely usable for an actual match lineup, not just your own team.</div>
       <div style={{ fontSize: 10, color: "#666" }}>Note: if a player just transferred, they may not appear until the squad list officially syncs (usually within a few days).</div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -6265,38 +6325,71 @@ function PredictedLineupGraphic() {
             </div>
           )}
         </div>
-        <div>
+        <div style={{ position: "relative" }}>
           <div style={{ fontSize: 10, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Opponent</div>
           <input
-            value={opponent}
-            onChange={e => setOpponent(e.target.value)}
-            placeholder="e.g. Coventry"
+            value={oppSearch}
+            onChange={e => searchOpp(e.target.value)}
+            placeholder="Search team..."
             style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
           />
+          {oppSuggestions.length > 0 && (
+            <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 20, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, marginTop: 4, maxHeight: 160, overflowY: "auto" }}>
+              {oppSuggestions.map(t => (
+                <div key={t.id} onClick={() => selectOppTeam(t)} style={{ padding: "8px 12px", cursor: "pointer", fontSize: 13, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 8 }}>
+                  {t.logo && <img src={t.logo} alt="" style={{ width: 16, height: 16, objectFit: "contain" }} />}
+                  {t.name}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      {loadingSquad && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 12 }}>Loading squad...</div>}
+      {(loadingSquad || loadingOppSquad) && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 12 }}>Loading squad...</div>}
 
-      {squad.length > 0 && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-          {FORMATION_POSITIONS.map(pos => (
-            <div key={pos.key}>
-              <div style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, marginBottom: 3 }}>{pos.label}</div>
-              <select
-                value={selected[pos.key]}
-                onChange={e => setSelected(prev => ({ ...prev, [pos.key]: e.target.value }))}
-                style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "6px 8px", outline: "none", fontFamily: "inherit" }}
-              >
-                <option value="">— Select —</option>
-                {squad.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
+      {(squad.length > 0 || oppSquad.length > 0) && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          {squad.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase" }}>Your Team Positions</div>
+              {FORMATION_POSITIONS_HOME.map(pos => (
+                <div key={pos.key}>
+                  <div style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, marginBottom: 3 }}>{pos.label}</div>
+                  <select
+                    value={selected[pos.key]}
+                    onChange={e => setSelected(prev => ({ ...prev, [pos.key]: e.target.value }))}
+                    style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "6px 8px", outline: "none", fontFamily: "inherit" }}
+                  >
+                    <option value="">— Select —</option>
+                    {squad.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
+          {oppSquad.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <div style={{ fontSize: 10, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase" }}>Opponent Positions</div>
+              {FORMATION_POSITIONS_AWAY.map(pos => (
+                <div key={pos.key}>
+                  <div style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, marginBottom: 3 }}>{pos.label}</div>
+                  <select
+                    value={oppSelected[pos.key]}
+                    onChange={e => setOppSelected(prev => ({ ...prev, [pos.key]: e.target.value }))}
+                    style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "6px 8px", outline: "none", fontFamily: "inherit" }}
+                  >
+                    <option value="">— Select —</option>
+                    {oppSquad.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {filledCount > 0 && team && (
+      {(filledCount > 0 || FORMATION_POSITIONS_AWAY.some(p => oppSelected[p.key])) && (team || oppTeam) && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "20px 18px" }}>
@@ -6304,7 +6397,9 @@ function PredictedLineupGraphic() {
                 <span style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>Predicted Lineup</span>
               </div>
               <div style={{ textAlign: "center", marginBottom: 16 }}>
-                <span style={{ fontSize: 13, color: "#a78bfa", fontWeight: 700 }}>{opponent ? `${team.name} vs ${opponent}` : team.name}</span>
+                <span style={{ fontSize: 13, color: "#a78bfa", fontWeight: 700 }}>
+                  {team && oppTeam ? `${team.name} vs ${oppTeam.name}` : (team?.name || oppTeam?.name)}
+                </span>
               </div>
 
               <div style={{ position: "relative", maxWidth: 320, margin: "0 auto" }}>
@@ -6316,7 +6411,7 @@ function PredictedLineupGraphic() {
                   <rect x="110" y="570" width="200" height="90" fill="none" stroke="#2a4a3a" strokeWidth="2" />
                 </svg>
 
-                {FORMATION_POSITIONS.map(pos => {
+                {team && FORMATION_POSITIONS_HOME.map(pos => {
                   const p = getPlayer(pos.key);
                   const leftPct = (pos.x / 420) * 100;
                   const topPct = (pos.y / 680) * 100;
@@ -6324,11 +6419,29 @@ function PredictedLineupGraphic() {
                     <div key={pos.key} style={{ position: "absolute", left: `${leftPct}%`, top: `${topPct}%`, transform: "translate(-50%, -50%)", textAlign: "center", width: 70 }}>
                       {p ? (
                         <>
-                          {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: 34, height: 34, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 3px", display: "block" }} />}
-                          <div style={{ fontSize: 10, fontWeight: 800, color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,0.8)", lineHeight: 1.1 }}>{p.name?.split(" ").slice(-1)[0]}</div>
+                          {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 2px", display: "block" }} />}
+                          <div style={{ fontSize: 9, fontWeight: 800, color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,0.8)", lineHeight: 1.1 }}>{p.name?.split(" ").slice(-1)[0]}</div>
                         </>
                       ) : (
-                        <div style={{ fontSize: 10, fontWeight: 700, color: "#4ade8088" }}>{pos.label}</div>
+                        <div style={{ fontSize: 9, fontWeight: 700, color: "#4ade8088" }}>{pos.label}</div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {oppTeam && FORMATION_POSITIONS_AWAY.map(pos => {
+                  const p = getOppPlayer(pos.key);
+                  const leftPct = (pos.x / 420) * 100;
+                  const topPct = (pos.y / 680) * 100;
+                  return (
+                    <div key={pos.key} style={{ position: "absolute", left: `${leftPct}%`, top: `${topPct}%`, transform: "translate(-50%, -50%)", textAlign: "center", width: 70 }}>
+                      {p ? (
+                        <>
+                          {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, borderRadius: "50%", objectFit: "cover", border: "2px solid #f59e0b", margin: "0 auto 2px", display: "block" }} />}
+                          <div style={{ fontSize: 9, fontWeight: 800, color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,0.8)", lineHeight: 1.1 }}>{p.name?.split(" ").slice(-1)[0]}</div>
+                        </>
+                      ) : (
+                        <div style={{ fontSize: 9, fontWeight: 700, color: "#f59e0b88" }}>{pos.label}</div>
                       )}
                     </div>
                   );
