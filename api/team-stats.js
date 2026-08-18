@@ -471,12 +471,21 @@ export default async function handler(req, res) {
       let data = await r.json();
       let usedFallback = false;
 
-      // If the league-scoped search comes back empty, the new season likely has no
-      // registered player data yet — automatically retry with the previous season.
-      // Once the new season's data exists, this naturally stops triggering.
+      // If the league-scoped OR team-scoped search comes back empty, the new
+      // season likely doesn't have this player's stats recorded yet (API-
+      // Football only returns a player once they have a real match appearance
+      // logged for that season) — automatically retry with the previous
+      // season. Once the new season's data exists, this naturally stops
+      // triggering.
       if (leagueId && (!data.response || data.response.length === 0)) {
         const league = LEAGUE_MAP[leagueId];
         const prevUrl = `https://v3.football.api-sports.io/players?search=${encodeURIComponent(query)}&league=${league.id}&season=${league.season - 1}`;
+        r = await fetch(prevUrl, { headers: { "x-apisports-key": apiKey } });
+        data = await r.json();
+        usedFallback = true;
+      } else if (searchTeamId && (!data.response || data.response.length === 0)) {
+        const season = parseInt(seasonParam || 2026);
+        const prevUrl = `https://v3.football.api-sports.io/players?search=${encodeURIComponent(query)}&team=${searchTeamId}&season=${season - 1}`;
         r = await fetch(prevUrl, { headers: { "x-apisports-key": apiKey } });
         data = await r.json();
         usedFallback = true;
