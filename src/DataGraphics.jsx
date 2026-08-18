@@ -2857,33 +2857,67 @@ const DEPTH_GRID = {
   rw:  { col: "1 / 4", row: 5 }, st:  { col: "4 / 8", row: 5 }, lw:  { col: "8 / 11", row: 5 },
 };
 
+// Colors per position group, per the requested scheme. Positions not
+// explicitly specified (RB/LB/RW/LW) default to yellow.
+const POSITION_COLORS = {
+  GK: { bg: "linear-gradient(180deg,#4ade80,#22c55e)", text: "#0a2e0f" },
+  CB: { bg: "linear-gradient(180deg,#c084fc,#a855f7)", text: "#ffffff" },
+  CM: { bg: "linear-gradient(180deg,#4ade80,#22c55e)", text: "#0a2e0f" },
+  CAM: { bg: "linear-gradient(180deg,#4ade80,#22c55e)", text: "#0a2e0f" },
+  ST: { bg: "linear-gradient(180deg,#fde047,#facc15)", text: "#0a0f2e" },
+  DEFAULT: { bg: "linear-gradient(180deg,#fde047,#facc15)", text: "#0a0f2e" },
+};
+
+// Formats a full name down to "F. Surname" — shortens most names enough to
+// fit the narrower columns (RB/LB/CB/GK) without truncating mid-word. Names
+// already in this format (e.g. "W. Saliba" from some data sources) pass
+// through unchanged.
+function formatPlayerName(fullName) {
+  if (!fullName) return "";
+  const parts = fullName.trim().split(" ");
+  if (parts.length === 1) return parts[0];
+  // Already abbreviated (e.g. "W. Saliba") — leave as-is
+  if (parts[0].length <= 2 && parts[0].endsWith(".")) return fullName;
+  const surname = parts[parts.length - 1];
+  const firstInitial = parts[0][0];
+  return `${firstInitial}. ${surname}`;
+}
+
 function PositionColumn({ label, players }) {
   const filled = players.filter(p => p);
   if (!filled.length) return null;
+  const colors = POSITION_COLORS[label] || POSITION_COLORS.DEFAULT;
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
       <div style={{ background: "#0a0f2e", color: "#fbbf24", fontSize: 11, fontWeight: 900, padding: "3px 10px", borderRadius: 6, marginBottom: 3, letterSpacing: 0.5 }}>{label}</div>
       <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
-        {filled.map((player, i) => (
-          <div key={i} style={{
-            background: "linear-gradient(180deg,#fde047,#facc15)",
-            color: "#0a0f2e",
-            fontSize: 11,
-            fontWeight: 800,
-            padding: "5px 8px",
-            display: "flex",
-            alignItems: "center",
-            gap: 5,
-            borderBottom: i < filled.length - 1 ? "1px solid #0a0f2e33" : "none",
-            borderRadius: i === 0 ? (filled.length === 1 ? "6px" : "6px 6px 0 0") : (i === filled.length - 1 ? "0 0 6px 6px" : "0"),
-            boxShadow: "0 2px 3px rgba(0,0,0,0.3)",
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-          }}>
-            {player.photo && <img src={player.photo} alt="" crossOrigin="anonymous" style={{ width: 18, height: 18, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: "1px solid #0a0f2e55" }} />}
-            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0, display: "block", flex: 1 }}>{player.name}</span>
-          </div>
-        ))}
+        {filled.map((player, i) => {
+          const displayName = formatPlayerName(player.name);
+          // Font-size clamp — shrinks names still long after abbreviation
+          // (e.g. hyphenated surnames like "Lewis-Skelly") rather than
+          // letting them get cut off or overflow the pill.
+          const nameFontSize = displayName.length > 13 ? 9 : displayName.length > 10 ? 10 : 11;
+          return (
+            <div key={i} style={{
+              background: colors.bg,
+              color: colors.text,
+              fontSize: nameFontSize,
+              fontWeight: 800,
+              padding: "5px 8px",
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
+              borderBottom: i < filled.length - 1 ? "1px solid rgba(0,0,0,0.2)" : "none",
+              borderRadius: i === 0 ? (filled.length === 1 ? "6px" : "6px 6px 0 0") : (i === filled.length - 1 ? "0 0 6px 6px" : "0"),
+              boxShadow: "0 2px 3px rgba(0,0,0,0.3)",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+            }}>
+              {player.photo && <img src={player.photo} alt="" crossOrigin="anonymous" style={{ width: 18, height: 18, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: "1px solid rgba(0,0,0,0.25)" }} />}
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0, display: "block", flex: 1 }}>{displayName}</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
