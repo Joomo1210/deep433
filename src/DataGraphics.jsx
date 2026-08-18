@@ -2881,7 +2881,7 @@ function PositionColumn({ label, players }) {
             overflow: "hidden",
           }}>
             {player.photo && <img src={player.photo} alt="" crossOrigin="anonymous" style={{ width: 18, height: 18, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: "1px solid #0a0f2e55" }} />}
-            <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{player.name}</span>
+            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0, display: "block", flex: 1 }}>{player.name}</span>
           </div>
         ))}
       </div>
