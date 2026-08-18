@@ -2948,19 +2948,13 @@ function SquadDepthGraphic() {
   const [fallbackResults, setFallbackResults] = useState({});
   const [fallbackLoading, setFallbackLoading] = useState({});
 
-  const searchFallback = async (slotKey, query, teamName) => {
+  const searchFallback = async (slotKey, query, teamId) => {
     if (query.length < 3) { setFallbackResults(prev => ({ ...prev, [slotKey]: [] })); return; }
     setFallbackLoading(prev => ({ ...prev, [slotKey]: true }));
     try {
-      const r = await fetch(`/api/team-stats?mode=playersearch&query=${encodeURIComponent(query)}&season=2026`);
+      const r = await fetch(`/api/team-stats?mode=playersearch&query=${encodeURIComponent(query)}&teamId=${teamId}&season=2026`);
       const d = await r.json();
-      const normalize = s => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-      const teamNorm = normalize(teamName);
-      const matches = (d.players || []).filter(p => {
-        const pTeam = normalize(p.team);
-        return pTeam === teamNorm || pTeam.includes(teamNorm) || teamNorm.includes(pTeam);
-      });
-      setFallbackResults(prev => ({ ...prev, [slotKey]: matches }));
+      setFallbackResults(prev => ({ ...prev, [slotKey]: d.players || [] }));
     } catch {}
     setFallbackLoading(prev => ({ ...prev, [slotKey]: false }));
   };
@@ -3094,7 +3088,7 @@ function SquadDepthGraphic() {
                                 // this from firing on every keystroke when the
                                 // squad list already has the answer.
                                 const localMatch = squad.some(p => p.name.toLowerCase().includes(val.toLowerCase()));
-                                if (val.length >= 3 && !localMatch) searchFallback(slotKey, val, team.name);
+                                if (val.length >= 3 && !localMatch) searchFallback(slotKey, val, team.id);
                               }}
                               onFocus={() => setOpenSlot(slotKey)}
                               placeholder={slotIdx === 0 ? "Starter" : `Backup ${slotIdx}`}
