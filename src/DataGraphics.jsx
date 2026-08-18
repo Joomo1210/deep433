@@ -2846,15 +2846,17 @@ const DEPTH_POSITIONS = [
   { key: "lw", label: "LW" },
 ];
 
-// Grid position for each slot within an 11-column x 4-row formation grid —
-// gives the rough 4-3-3 shape (GK centred, back four spread, midfield with
-// CAM recessed slightly, front three with ST central) without needing a
-// dynamic formation engine, since depth charts are always roughly this shape.
+// Grid position for each slot within a 20-column x 6-row formation grid —
+// finer than a 10-column grid so back-line positions (RB/CB/CB/LB) can be
+// genuinely equal width instead of RB/LB being narrower than CB/CB, which
+// was causing names to truncate unevenly. ST also gets its own row, slightly
+// below RW/LW, so the front line reads like a real formation (centre-forward
+// pushed higher up the pitch) rather than three names on a flat row.
 const DEPTH_GRID = {
-  gk:  { col: "5 / 7", row: 1 },
-  rb:  { col: "1 / 3", row: 2 }, cb1: { col: "3 / 6", row: 2 }, cb2: { col: "6 / 9", row: 2 }, lb: { col: "9 / 11", row: 2 },
-  cm1: { col: "1 / 4", row: 3 }, cam: { col: "4 / 8", row: 4 }, cm2: { col: "8 / 11", row: 3 },
-  rw:  { col: "1 / 4", row: 5 }, st:  { col: "4 / 8", row: 5 }, lw:  { col: "8 / 11", row: 5 },
+  gk:  { col: "8 / 14", row: 1 },
+  rb:  { col: "1 / 6", row: 2 }, cb1: { col: "6 / 11", row: 2 }, cb2: { col: "11 / 16", row: 2 }, lb: { col: "16 / 21", row: 2 },
+  cm1: { col: "1 / 7", row: 3 }, cam: { col: "7 / 15", row: 4 }, cm2: { col: "15 / 21", row: 3 },
+  rw:  { col: "1 / 7", row: 5 }, st:  { col: "7 / 15", row: 6 }, lw:  { col: "15 / 21", row: 5 },
 };
 
 // Colors per position group, per the requested scheme. Positions not
@@ -3104,7 +3106,7 @@ function SquadDepthGraphic() {
               </div>
 
               {/* Formation grid */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(10, 1fr)", gridAutoRows: "auto", rowGap: 16, columnGap: 6 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(20, 1fr)", gridAutoRows: "auto", rowGap: 16, columnGap: 4 }}>
                 {DEPTH_POSITIONS.map(pos => (
                   <div key={pos.key} style={{ gridColumn: DEPTH_GRID[pos.key].col, gridRow: DEPTH_GRID[pos.key].row }}>
                     <PositionColumn label={pos.label} players={depth[pos.key]} />
