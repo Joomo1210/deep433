@@ -2952,11 +2952,14 @@ function SquadDepthGraphic() {
     if (query.length < 3) { setFallbackResults(prev => ({ ...prev, [slotKey]: [] })); return; }
     setFallbackLoading(prev => ({ ...prev, [slotKey]: true }));
     try {
-      const r = await fetch(`/api/team-stats?mode=playersearch&query=${encodeURIComponent(query)}`);
+      const r = await fetch(`/api/team-stats?mode=playersearch&query=${encodeURIComponent(query)}&season=2026`);
       const d = await r.json();
       const normalize = s => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
       const teamNorm = normalize(teamName);
-      const matches = (d.players || []).filter(p => normalize(p.team) === teamNorm);
+      const matches = (d.players || []).filter(p => {
+        const pTeam = normalize(p.team);
+        return pTeam === teamNorm || pTeam.includes(teamNorm) || teamNorm.includes(pTeam);
+      });
       setFallbackResults(prev => ({ ...prev, [slotKey]: matches }));
     } catch {}
     setFallbackLoading(prev => ({ ...prev, [slotKey]: false }));
