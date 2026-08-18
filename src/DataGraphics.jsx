@@ -3257,7 +3257,7 @@ function TransferFitGraphic() {
       {target && incumbent && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "22px 18px 18px" }}>
+            <div style={{ padding: "44px 18px 18px" }}>
               <div style={{ textAlign: "center", marginBottom: 14 }}>
                 <div style={{ fontSize: 24, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5, marginBottom: 4 }}>The Comparison</div>
                 <span style={{ fontSize: 14, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>🔄 Transfer Fit · {isWorldCup ? "2026 World Cup" : `${season}/${season + 1}`}</span>
@@ -3327,7 +3327,7 @@ function TransferFitGraphic() {
       {target && !incumbent && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "22px 18px 18px" }}>
+            <div style={{ padding: "44px 18px 18px" }}>
               <div style={{ textAlign: "center", marginBottom: 14 }}>
                 <div style={{ fontSize: 22, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5, marginBottom: 4 }}>Player Profile</div>
                 <span style={{ fontSize: 14, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>🔄 Transfer Fit · {isWorldCup ? "2026 World Cup" : `${season}/${season + 1}`}</span>
