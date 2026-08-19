@@ -307,6 +307,7 @@ function BentoBox({ title, icon, color, children, span, light = false }) {
       borderRadius: 10,
       padding: "12px 14px",
       gridColumn: span ? "span " + span : undefined,
+      minWidth: 0,
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10, minWidth: 0 }}>
         <span style={{ fontSize: 15, flexShrink: 0 }}>{icon}</span>
@@ -6175,35 +6176,154 @@ function EuroAssistsGraphic() {
 // pitch, "Opponent" mirrored into the top half, so both full XIs fit on one
 // pitch without overlapping (previously "Your Team" alone spanned the full
 // height, leaving no room for a second team).
-const FORMATION_POSITIONS_HOME = [
-  { key: "gk",  label: "GK",  x: 210, y: 655 },
-  { key: "lb",  label: "LB",  x: 60,  y: 565 },
-  { key: "cb1", label: "CB",  x: 150, y: 580 },
-  { key: "cb2", label: "CB",  x: 270, y: 580 },
-  { key: "rb",  label: "RB",  x: 360, y: 565 },
-  { key: "dm",  label: "DM",  x: 210, y: 495 },
-  { key: "cm1", label: "CM",  x: 130, y: 445 },
-  { key: "cm2", label: "CM",  x: 290, y: 445 },
-  { key: "lw",  label: "LW",  x: 60,  y: 365 },
-  { key: "st",  label: "ST",  x: 210, y: 345 },
-  { key: "rw",  label: "RW",  x: 360, y: 365 },
-];
-const FORMATION_POSITIONS_AWAY = [
-  { key: "gk",  label: "GK",  x: 210, y: 25 },
-  { key: "lb",  label: "LB",  x: 360, y: 115 },
-  { key: "cb1", label: "CB",  x: 270, y: 100 },
-  { key: "cb2", label: "CB",  x: 150, y: 100 },
-  { key: "rb",  label: "RB",  x: 60,  y: 115 },
-  { key: "dm",  label: "DM",  x: 210, y: 185 },
-  { key: "cm1", label: "CM",  x: 290, y: 235 },
-  { key: "cm2", label: "CM",  x: 130, y: 235 },
-  { key: "lw",  label: "LW",  x: 360, y: 315 },
-  { key: "st",  label: "ST",  x: 210, y: 335 },
-  { key: "rw",  label: "RW",  x: 60,  y: 315 },
-];
-// Kept for backward compatibility with anything else referencing the
-// original single-team coordinate set
-const FORMATION_POSITIONS = FORMATION_POSITIONS_HOME;
+// Multiple selectable formations, each with home (bottom-half) and away
+// (mirrored top-half) coordinate sets. Attacking lines are kept well clear
+// of the halfway line (y=340) on both sides — minimum ~70px gap between the
+// two front lines — since a tighter gap was causing visual overlap at the
+// centre circle.
+const FORMATIONS = {
+  "4-3-3": {
+    home: [
+      { key: "gk",  label: "GK",  x: 210, y: 655 },
+      { key: "lb",  label: "LB",  x: 60,  y: 565 },
+      { key: "cb1", label: "CB",  x: 150, y: 585 },
+      { key: "cb2", label: "CB",  x: 270, y: 585 },
+      { key: "rb",  label: "RB",  x: 360, y: 565 },
+      { key: "dm",  label: "DM",  x: 210, y: 505 },
+      { key: "cm1", label: "CM",  x: 130, y: 460 },
+      { key: "cm2", label: "CM",  x: 290, y: 460 },
+      { key: "lw",  label: "LW",  x: 60,  y: 390 },
+      { key: "st",  label: "ST",  x: 210, y: 375 },
+      { key: "rw",  label: "RW",  x: 360, y: 390 },
+    ],
+    away: [
+      { key: "gk",  label: "GK",  x: 210, y: 25 },
+      { key: "lb",  label: "LB",  x: 360, y: 115 },
+      { key: "cb1", label: "CB",  x: 270, y: 95 },
+      { key: "cb2", label: "CB",  x: 150, y: 95 },
+      { key: "rb",  label: "RB",  x: 60,  y: 115 },
+      { key: "dm",  label: "DM",  x: 210, y: 175 },
+      { key: "cm1", label: "CM",  x: 290, y: 220 },
+      { key: "cm2", label: "CM",  x: 130, y: 220 },
+      { key: "lw",  label: "LW",  x: 360, y: 290 },
+      { key: "st",  label: "ST",  x: 210, y: 305 },
+      { key: "rw",  label: "RW",  x: 60,  y: 290 },
+    ],
+  },
+  "4-4-2": {
+    home: [
+      { key: "gk",  label: "GK",  x: 210, y: 655 },
+      { key: "lb",  label: "LB",  x: 50,  y: 565 },
+      { key: "cb1", label: "CB",  x: 150, y: 585 },
+      { key: "cb2", label: "CB",  x: 270, y: 585 },
+      { key: "rb",  label: "RB",  x: 370, y: 565 },
+      { key: "lm",  label: "LM",  x: 50,  y: 460 },
+      { key: "cm1", label: "CM",  x: 150, y: 475 },
+      { key: "cm2", label: "CM",  x: 270, y: 475 },
+      { key: "rm",  label: "RM",  x: 370, y: 460 },
+      { key: "st1", label: "ST",  x: 160, y: 375 },
+      { key: "st2", label: "ST",  x: 260, y: 375 },
+    ],
+    away: [
+      { key: "gk",  label: "GK",  x: 210, y: 25 },
+      { key: "lb",  label: "LB",  x: 370, y: 115 },
+      { key: "cb1", label: "CB",  x: 270, y: 95 },
+      { key: "cb2", label: "CB",  x: 150, y: 95 },
+      { key: "rb",  label: "RB",  x: 50,  y: 115 },
+      { key: "lm",  label: "LM",  x: 370, y: 220 },
+      { key: "cm1", label: "CM",  x: 270, y: 205 },
+      { key: "cm2", label: "CM",  x: 150, y: 205 },
+      { key: "rm",  label: "RM",  x: 50,  y: 220 },
+      { key: "st1", label: "ST",  x: 260, y: 305 },
+      { key: "st2", label: "ST",  x: 160, y: 305 },
+    ],
+  },
+  "4-2-3-1": {
+    home: [
+      { key: "gk",  label: "GK",  x: 210, y: 655 },
+      { key: "lb",  label: "LB",  x: 60,  y: 565 },
+      { key: "cb1", label: "CB",  x: 150, y: 585 },
+      { key: "cb2", label: "CB",  x: 270, y: 585 },
+      { key: "rb",  label: "RB",  x: 360, y: 565 },
+      { key: "dm1", label: "DM",  x: 160, y: 505 },
+      { key: "dm2", label: "DM",  x: 260, y: 505 },
+      { key: "lam", label: "LAM", x: 70,  y: 435 },
+      { key: "cam", label: "CAM", x: 210, y: 425 },
+      { key: "ram", label: "RAM", x: 350, y: 435 },
+      { key: "st",  label: "ST",  x: 210, y: 375 },
+    ],
+    away: [
+      { key: "gk",  label: "GK",  x: 210, y: 25 },
+      { key: "lb",  label: "LB",  x: 360, y: 115 },
+      { key: "cb1", label: "CB",  x: 270, y: 95 },
+      { key: "cb2", label: "CB",  x: 150, y: 95 },
+      { key: "rb",  label: "RB",  x: 60,  y: 115 },
+      { key: "dm1", label: "DM",  x: 260, y: 175 },
+      { key: "dm2", label: "DM",  x: 160, y: 175 },
+      { key: "lam", label: "LAM", x: 350, y: 245 },
+      { key: "cam", label: "CAM", x: 210, y: 255 },
+      { key: "ram", label: "RAM", x: 70,  y: 245 },
+      { key: "st",  label: "ST",  x: 210, y: 305 },
+    ],
+  },
+  "3-5-2": {
+    home: [
+      { key: "gk",  label: "GK",  x: 210, y: 655 },
+      { key: "cb1", label: "CB",  x: 130, y: 585 },
+      { key: "cb2", label: "CB",  x: 210, y: 595 },
+      { key: "cb3", label: "CB",  x: 290, y: 585 },
+      { key: "lwb", label: "LWB", x: 50,  y: 505 },
+      { key: "rwb", label: "RWB", x: 370, y: 505 },
+      { key: "cm1", label: "CM",  x: 140, y: 470 },
+      { key: "cm2", label: "CM",  x: 210, y: 480 },
+      { key: "cm3", label: "CM",  x: 280, y: 470 },
+      { key: "st1", label: "ST",  x: 160, y: 380 },
+      { key: "st2", label: "ST",  x: 260, y: 380 },
+    ],
+    away: [
+      { key: "gk",  label: "GK",  x: 210, y: 25 },
+      { key: "cb1", label: "CB",  x: 290, y: 95 },
+      { key: "cb2", label: "CB",  x: 210, y: 85 },
+      { key: "cb3", label: "CB",  x: 130, y: 95 },
+      { key: "lwb", label: "LWB", x: 370, y: 175 },
+      { key: "rwb", label: "RWB", x: 50,  y: 175 },
+      { key: "cm1", label: "CM",  x: 280, y: 210 },
+      { key: "cm2", label: "CM",  x: 210, y: 200 },
+      { key: "cm3", label: "CM",  x: 140, y: 210 },
+      { key: "st1", label: "ST",  x: 260, y: 300 },
+      { key: "st2", label: "ST",  x: 160, y: 300 },
+    ],
+  },
+  "3-4-2-1": {
+    home: [
+      { key: "gk",  label: "GK",  x: 210, y: 655 },
+      { key: "cb1", label: "CB",  x: 130, y: 585 },
+      { key: "cb2", label: "CB",  x: 210, y: 595 },
+      { key: "cb3", label: "CB",  x: 290, y: 585 },
+      { key: "lwb", label: "LWB", x: 50,  y: 500 },
+      { key: "rwb", label: "RWB", x: 370, y: 500 },
+      { key: "dm1", label: "DM",  x: 150, y: 490 },
+      { key: "dm2", label: "DM",  x: 270, y: 490 },
+      { key: "lam", label: "LAM", x: 130, y: 415 },
+      { key: "ram", label: "RAM", x: 290, y: 415 },
+      { key: "st",  label: "ST",  x: 210, y: 375 },
+    ],
+    away: [
+      { key: "gk",  label: "GK",  x: 210, y: 25 },
+      { key: "cb1", label: "CB",  x: 290, y: 95 },
+      { key: "cb2", label: "CB",  x: 210, y: 85 },
+      { key: "cb3", label: "CB",  x: 130, y: 95 },
+      { key: "lwb", label: "LWB", x: 370, y: 180 },
+      { key: "rwb", label: "RWB", x: 50,  y: 180 },
+      { key: "dm1", label: "DM",  x: 270, y: 190 },
+      { key: "dm2", label: "DM",  x: 150, y: 190 },
+      { key: "lam", label: "LAM", x: 290, y: 265 },
+      { key: "ram", label: "RAM", x: 130, y: 265 },
+      { key: "st",  label: "ST",  x: 210, y: 305 },
+    ],
+  },
+};
+const FORMATION_NAMES = Object.keys(FORMATIONS);
 
 function PredictedLineupGraphic() {
   const cardRef = useRef(null);
@@ -6216,25 +6336,27 @@ function PredictedLineupGraphic() {
   const [searchingTeam, setSearchingTeam] = useState(false);
   const [squad, setSquad] = useState([]);
   const [loadingSquad, setLoadingSquad] = useState(false);
-  const [selected, setSelected] = useState(() => {
-    const init = {};
-    FORMATION_POSITIONS_HOME.forEach(p => { init[p.key] = ""; });
-    return init;
-  });
+  const [homeFormation, setHomeFormation] = useState("4-3-3");
+  const [selected, setSelected] = useState({});
 
-  // Away ("Opponent") state — mirrors home state exactly, now with real
-  // search + squad selection instead of a plain text label.
+  // Away ("Opponent") state
   const [oppSearch, setOppSearch] = useState("");
   const [oppSuggestions, setOppSuggestions] = useState([]);
   const [oppTeam, setOppTeam] = useState(null);
   const [searchingOpp, setSearchingOpp] = useState(false);
   const [oppSquad, setOppSquad] = useState([]);
   const [loadingOppSquad, setLoadingOppSquad] = useState(false);
-  const [oppSelected, setOppSelected] = useState(() => {
+  const [awayFormation, setAwayFormation] = useState("4-3-3");
+  const [oppSelected, setOppSelected] = useState({});
+
+  const homePositions = FORMATIONS[homeFormation].home;
+  const awayPositions = FORMATIONS[awayFormation].away;
+
+  const resetSelectionFor = (positions) => {
     const init = {};
-    FORMATION_POSITIONS_AWAY.forEach(p => { init[p.key] = ""; });
+    positions.forEach(p => { init[p.key] = ""; });
     return init;
-  });
+  };
 
   const searchTeam = async (query) => {
     setTeamSearch(query);
@@ -6251,9 +6373,7 @@ function PredictedLineupGraphic() {
   const selectTeam = async (t) => {
     setLoadingSquad(true);
     setTeam(t); setTeamSuggestions([]); setTeamSearch(t.name);
-    const resetSelected = {};
-    FORMATION_POSITIONS_HOME.forEach(p => { resetSelected[p.key] = ""; });
-    setSelected(resetSelected);
+    setSelected(resetSelectionFor(FORMATIONS[homeFormation].home));
     try {
       const r = await fetch(`/api/team-stats?mode=teamsquad&teamId=${t.id}`);
       const d = await r.json();
@@ -6277,9 +6397,7 @@ function PredictedLineupGraphic() {
   const selectOppTeam = async (t) => {
     setLoadingOppSquad(true);
     setOppTeam(t); setOppSuggestions([]); setOppSearch(t.name);
-    const resetSelected = {};
-    FORMATION_POSITIONS_AWAY.forEach(p => { resetSelected[p.key] = ""; });
-    setOppSelected(resetSelected);
+    setOppSelected(resetSelectionFor(FORMATIONS[awayFormation].away));
     try {
       const r = await fetch(`/api/team-stats?mode=teamsquad&teamId=${t.id}`);
       const d = await r.json();
@@ -6288,21 +6406,34 @@ function PredictedLineupGraphic() {
     setLoadingOppSquad(false);
   };
 
+  // Changing formation resets that team's position selections, since the
+  // position keys themselves change between formations (e.g. "dm" doesn't
+  // exist in 4-4-2), so old selections wouldn't cleanly carry over anyway.
+  const changeHomeFormation = (f) => {
+    setHomeFormation(f);
+    setSelected(resetSelectionFor(FORMATIONS[f].home));
+  };
+  const changeAwayFormation = (f) => {
+    setAwayFormation(f);
+    setOppSelected(resetSelectionFor(FORMATIONS[f].away));
+  };
+
   const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-predicted-lineup-${team?.name}-vs-${oppTeam?.name || "opponent"}.png`, "#0a3d1f", transparent);
+      await downloadCardImage(cardRef.current, `deep433-lineup-${team?.name}-vs-${oppTeam?.name || "opponent"}.png`, "#0a3d1f", transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
 
-  const filledCount = FORMATION_POSITIONS_HOME.filter(p => selected[p.key]).length;
+  const filledCount = homePositions.filter(p => selected[p.key]).length;
+  const oppFilledCount = awayPositions.filter(p => oppSelected[p.key]).length;
   const getPlayer = (key) => squad.find(p => String(p.id) === String(selected[key]));
   const getOppPlayer = (key) => oppSquad.find(p => String(p.id) === String(oppSelected[key]));
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Search both teams, then assign players from each squad to fixed formation positions on one pitch — genuinely usable for an actual match lineup, not just your own team.</div>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Search both teams, pick each side's formation, then assign players to positions on one pitch.</div>
       <div style={{ fontSize: 10, color: "#666" }}>Note: if a player just transferred, they may not appear until the squad list officially syncs (usually within a few days).</div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -6324,6 +6455,13 @@ function PredictedLineupGraphic() {
               ))}
             </div>
           )}
+          <select
+            value={homeFormation}
+            onChange={e => changeHomeFormation(e.target.value)}
+            style={{ width: "100%", marginTop: 6, background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#4ade80", fontSize: 12, padding: "7px 10px", outline: "none", fontFamily: "inherit", fontWeight: 700 }}
+          >
+            {FORMATION_NAMES.map(f => <option key={f} value={f}>{f}</option>)}
+          </select>
         </div>
         <div style={{ position: "relative" }}>
           <div style={{ fontSize: 10, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Opponent</div>
@@ -6343,6 +6481,13 @@ function PredictedLineupGraphic() {
               ))}
             </div>
           )}
+          <select
+            value={awayFormation}
+            onChange={e => changeAwayFormation(e.target.value)}
+            style={{ width: "100%", marginTop: 6, background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f59e0b", fontSize: 12, padding: "7px 10px", outline: "none", fontFamily: "inherit", fontWeight: 700 }}
+          >
+            {FORMATION_NAMES.map(f => <option key={f} value={f}>{f}</option>)}
+          </select>
         </div>
       </div>
 
@@ -6353,11 +6498,11 @@ function PredictedLineupGraphic() {
           {squad.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <div style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, textTransform: "uppercase" }}>Your Team Positions</div>
-              {FORMATION_POSITIONS_HOME.map(pos => (
+              {homePositions.map(pos => (
                 <div key={pos.key}>
                   <div style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, marginBottom: 3 }}>{pos.label}</div>
                   <select
-                    value={selected[pos.key]}
+                    value={selected[pos.key] || ""}
                     onChange={e => setSelected(prev => ({ ...prev, [pos.key]: e.target.value }))}
                     style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "6px 8px", outline: "none", fontFamily: "inherit" }}
                   >
@@ -6371,11 +6516,11 @@ function PredictedLineupGraphic() {
           {oppSquad.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <div style={{ fontSize: 10, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase" }}>Opponent Positions</div>
-              {FORMATION_POSITIONS_AWAY.map(pos => (
+              {awayPositions.map(pos => (
                 <div key={pos.key}>
                   <div style={{ fontSize: 10, color: "#e2e8f0", fontWeight: 700, marginBottom: 3 }}>{pos.label}</div>
                   <select
-                    value={oppSelected[pos.key]}
+                    value={oppSelected[pos.key] || ""}
                     onChange={e => setOppSelected(prev => ({ ...prev, [pos.key]: e.target.value }))}
                     style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "6px 8px", outline: "none", fontFamily: "inherit" }}
                   >
@@ -6389,16 +6534,16 @@ function PredictedLineupGraphic() {
         </div>
       )}
 
-      {(filledCount > 0 || FORMATION_POSITIONS_AWAY.some(p => oppSelected[p.key])) && (team || oppTeam) && (
+      {(filledCount > 0 || oppFilledCount > 0) && (team || oppTeam) && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "20px 18px" }}>
               <div style={{ textAlign: "center", marginTop: 30, marginBottom: 4 }}>
-                <span style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>Predicted Lineup</span>
+                <span style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>Lineup</span>
               </div>
               <div style={{ textAlign: "center", marginBottom: 16 }}>
                 <span style={{ fontSize: 13, color: "#a78bfa", fontWeight: 700 }}>
-                  {team && oppTeam ? `${team.name} vs ${oppTeam.name}` : (team?.name || oppTeam?.name)}
+                  {team && oppTeam ? `${team.name} (${homeFormation}) vs ${oppTeam.name} (${awayFormation})` : (team ? `${team.name} (${homeFormation})` : `${oppTeam.name} (${awayFormation})`)}
                 </span>
               </div>
 
@@ -6411,37 +6556,37 @@ function PredictedLineupGraphic() {
                   <rect x="110" y="570" width="200" height="90" fill="none" stroke="#2a4a3a" strokeWidth="2" />
                 </svg>
 
-                {team && FORMATION_POSITIONS_HOME.map(pos => {
+                {team && homePositions.map(pos => {
                   const p = getPlayer(pos.key);
                   const leftPct = (pos.x / 420) * 100;
                   const topPct = (pos.y / 680) * 100;
                   return (
-                    <div key={pos.key} style={{ position: "absolute", left: `${leftPct}%`, top: `${topPct}%`, transform: "translate(-50%, -50%)", textAlign: "center", width: 70 }}>
+                    <div key={pos.key} style={{ position: "absolute", left: `${leftPct}%`, top: `${topPct}%`, transform: "translate(-50%, -50%)", textAlign: "center", width: 60 }}>
                       {p ? (
                         <>
-                          {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 2px", display: "block" }} />}
-                          <div style={{ fontSize: 9, fontWeight: 800, color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,0.8)", lineHeight: 1.1 }}>{p.name?.split(" ").slice(-1)[0]}</div>
+                          {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 2px", display: "block" }} />}
+                          <div style={{ fontSize: 8, fontWeight: 800, color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,0.8)", lineHeight: 1.1 }}>{p.name?.split(" ").slice(-1)[0]}</div>
                         </>
                       ) : (
-                        <div style={{ fontSize: 9, fontWeight: 700, color: "#4ade8088" }}>{pos.label}</div>
+                        <div style={{ fontSize: 8, fontWeight: 700, color: "#4ade8088" }}>{pos.label}</div>
                       )}
                     </div>
                   );
                 })}
 
-                {oppTeam && FORMATION_POSITIONS_AWAY.map(pos => {
+                {oppTeam && awayPositions.map(pos => {
                   const p = getOppPlayer(pos.key);
                   const leftPct = (pos.x / 420) * 100;
                   const topPct = (pos.y / 680) * 100;
                   return (
-                    <div key={pos.key} style={{ position: "absolute", left: `${leftPct}%`, top: `${topPct}%`, transform: "translate(-50%, -50%)", textAlign: "center", width: 70 }}>
+                    <div key={pos.key} style={{ position: "absolute", left: `${leftPct}%`, top: `${topPct}%`, transform: "translate(-50%, -50%)", textAlign: "center", width: 60 }}>
                       {p ? (
                         <>
-                          {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, borderRadius: "50%", objectFit: "cover", border: "2px solid #f59e0b", margin: "0 auto 2px", display: "block" }} />}
-                          <div style={{ fontSize: 9, fontWeight: 800, color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,0.8)", lineHeight: 1.1 }}>{p.name?.split(" ").slice(-1)[0]}</div>
+                          {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", border: "2px solid #f59e0b", margin: "0 auto 2px", display: "block" }} />}
+                          <div style={{ fontSize: 8, fontWeight: 800, color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,0.8)", lineHeight: 1.1 }}>{p.name?.split(" ").slice(-1)[0]}</div>
                         </>
                       ) : (
-                        <div style={{ fontSize: 9, fontWeight: 700, color: "#f59e0b88" }}>{pos.label}</div>
+                        <div style={{ fontSize: 8, fontWeight: 700, color: "#f59e0b88" }}>{pos.label}</div>
                       )}
                     </div>
                   );
