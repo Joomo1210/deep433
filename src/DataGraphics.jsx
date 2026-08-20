@@ -340,9 +340,26 @@ function MatchStatsGraphic() {
     if (!fid) return;
     setLoading(true); setError(""); setData(null);
     try {
-      const r = await fetch(`/api/fixture-data?type=stats&fixtureId=${fid}`);
-      const d = await r.json();
+      const [statsR, ratingsR] = await Promise.all([
+        fetch(`/api/fixture-data?type=stats&fixtureId=${fid}`),
+        fetch(`/api/fixture-data?type=ratings&fixtureId=${fid}`),
+      ]);
+      const d = await statsR.json();
       if (!d.available) throw new Error("No stats available for this fixture yet — try after kickoff");
+      // Defensive totals aren't part of API-Football's team-statistics
+      // endpoint at all (tackles/interceptions only exist per-player) — so
+      // they're derived here by summing each team's individual players from
+      // the post-match ratings data, rather than fetched directly.
+      try {
+        const ratingsD = await ratingsR.json();
+        if (ratingsD.available) {
+          const sumStat = (players, key) => (players || []).reduce((total, p) => total + (parseInt(p[key]) || 0), 0);
+          d.defensive = {
+            home: { tackles: sumStat(ratingsD.home?.players, "tackles"), interceptions: sumStat(ratingsD.home?.players, "interceptions") },
+            away: { tackles: sumStat(ratingsD.away?.players, "tackles"), interceptions: sumStat(ratingsD.away?.players, "interceptions") },
+          };
+        }
+      } catch {}
       setData(d);
       setAnimate(true);
     } catch (e) { setError(e.message); }
@@ -441,6 +458,17 @@ function MatchStatsGraphic() {
                   <AnimatedStatBar label="Saves" homeVal={s.home.stats.saves} awayVal={s.away.stats.saves} animate={animate} />
                 </div>
               </BentoBox>
+
+              {/* Derived from summing individual players' post-match stats —
+                  team-level tackles/interceptions aren't part of API-
+                  Football's standard match-statistics endpoint at all, so
+                  this only appears once ratings data exists (full-time). */}
+              {s.defensive && (
+                <BentoBox title="Defensive Work" icon="🛡️" color="#f87171">
+                  <AnimatedStatBar label="Tackles" homeVal={s.defensive.home.tackles} awayVal={s.defensive.away.tackles} animate={animate} />
+                  <AnimatedStatBar label="Interceptions" homeVal={s.defensive.home.interceptions} awayVal={s.defensive.away.interceptions} animate={animate} />
+                </BentoBox>
+              )}
             </div>
           </GraphicCard>
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
