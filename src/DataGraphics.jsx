@@ -6378,8 +6378,11 @@ function PredictedLineupGraphic() {
   const [awayFormation, setAwayFormation] = useState("4-3-3");
   const [oppSelected, setOppSelected] = useState({});
 
-  const homePositions = FORMATIONS[homeFormation].home;
-  const awayPositions = FORMATIONS[awayFormation].away;
+  // Note: "home" and "away" here refer to top-half/bottom-half pitch
+  // coordinates, not which team is actually home/away in the match — "Your
+  // Team" renders using the top-half set, "Opponent" the bottom-half set.
+  const homePositions = FORMATIONS[homeFormation].away;
+  const awayPositions = FORMATIONS[awayFormation].home;
 
   const resetSelectionFor = (positions) => {
     const init = {};
