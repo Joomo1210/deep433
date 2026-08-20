@@ -371,8 +371,13 @@ export default async function handler(req, res) {
       });
 
       // If a specific club is given, restrict to that club's competitions only —
-      // excludes international caps or spells at other clubs mixed into the same season
-      if (teamId) {
+      // excludes international caps or spells at other clubs mixed into the same season.
+      // Skipped when fallback data is in use (seasonUsed !== requested season), since
+      // a transferred player's most recent real stats are genuinely from their old
+      // club — filtering by the new team's ID there would just wipe the data out
+      // again, defeating the whole purpose of the fallback.
+      const usingFallback = seasonUsed !== parseInt(season);
+      if (teamId && !usingFallback) {
         statsArr = statsArr.filter(s => String(s.team?.id) === String(teamId));
       }
 
