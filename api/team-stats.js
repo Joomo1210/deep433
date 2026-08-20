@@ -326,11 +326,30 @@ export default async function handler(req, res) {
     const { playerId, season, teamId } = req.query;
     if (!playerId || !season) return res.status(400).json({ error: "playerId and season required" });
     try {
-      const r = await fetch(`https://v3.football.api-sports.io/players?id=${playerId}&season=${season}`, {
+      let r = await fetch(`https://v3.football.api-sports.io/players?id=${playerId}&season=${season}`, {
         headers: { "x-apisports-key": apiKey }
       });
-      const data = await r.json();
-      const entry = data.response?.[0];
+      let data = await r.json();
+      let entry = data.response?.[0];
+      let seasonUsed = parseInt(season);
+
+      // If this season has no recorded stats at all — genuinely common right
+      // after a transfer, since a player has no match appearances logged yet
+      // for their new season regardless of club — fall back to the previous
+      // season's real data rather than showing an empty card.
+      if ((!entry || !entry.statistics?.length) && !isNaN(seasonUsed)) {
+        const prevSeason = seasonUsed - 1;
+        const prevR = await fetch(`https://v3.football.api-sports.io/players?id=${playerId}&season=${prevSeason}`, {
+          headers: { "x-apisports-key": apiKey }
+        });
+        const prevData = await prevR.json();
+        const prevEntry = prevData.response?.[0];
+        if (prevEntry?.statistics?.length) {
+          entry = prevEntry;
+          seasonUsed = prevSeason;
+        }
+      }
+
       if (!entry) return res.status(200).json({ available: false });
 
       // Deduplicate by team+league combo — API-Football occasionally returns
@@ -412,6 +431,7 @@ export default async function handler(req, res) {
 
       return res.status(200).json({
         available: true,
+        seasonUsed,
         id: entry.player?.id,
         name: entry.player?.name,
         photo: entry.player?.photo,
