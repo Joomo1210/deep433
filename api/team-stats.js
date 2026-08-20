@@ -326,60 +326,71 @@ export default async function handler(req, res) {
     const { playerId, season, teamId } = req.query;
     if (!playerId || !season) return res.status(400).json({ error: "playerId and season required" });
     try {
-      let r = await fetch(`https://v3.football.api-sports.io/players?id=${playerId}&season=${season}`, {
-        headers: { "x-apisports-key": apiKey }
-      });
-      let data = await r.json();
-      let entry = data.response?.[0];
-      let seasonUsed = parseInt(season);
-
-      // If this season has no recorded stats at all — genuinely common right
-      // after a transfer, since a player has no match appearances logged yet
-      // for their new season regardless of club — fall back to the previous
-      // season's real data rather than showing an empty card.
-      if ((!entry || !entry.statistics?.length) && !isNaN(seasonUsed)) {
-        const prevSeason = seasonUsed - 1;
-        const prevR = await fetch(`https://v3.football.api-sports.io/players?id=${playerId}&season=${prevSeason}`, {
+      const fetchSeason = async (s) => {
+        const r = await fetch(`https://v3.football.api-sports.io/players?id=${playerId}&season=${s}`, {
           headers: { "x-apisports-key": apiKey }
         });
-        const prevData = await prevR.json();
-        const prevEntry = prevData.response?.[0];
-        if (prevEntry?.statistics?.length) {
+        const data = await r.json();
+        return data.response?.[0] || null;
+      };
+
+      // Builds the same deduped, team-filtered stats array we ultimately need —
+      // used for both the requested season and, if empty, the fallback season,
+      // so the emptiness check genuinely matches what the response will contain.
+      const buildStatsArr = (entry) => {
+        if (!entry) return [];
+        const rawStats = entry.statistics || [];
+        const validStats = rawStats.filter(s => s.league?.id != null);
+        const seen = new Set();
+        let arr = validStats.filter(s => {
+          const key = `${s.team?.id}-${s.league?.id}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+        if (teamId) arr = arr.filter(s => String(s.team?.id) === String(teamId));
+        return arr;
+      };
+
+      let seasonUsed = parseInt(season);
+      let entry = await fetchSeason(seasonUsed);
+      let statsArr = buildStatsArr(entry);
+
+      // If the team-filtered stats are genuinely empty — the real check that
+      // matters, not just "does the player have any 2026 record at all" —
+      // fall back to the previous season. Common right after a transfer,
+      // since a player has no appearances logged yet for their new club
+      // this season. The fallback intentionally does NOT re-apply the
+      // teamId filter, since a transferred player's most recent real stats
+      // are from their old club — filtering by the new team's ID there
+      // would just wipe the data out again, defeating the fallback's purpose.
+      if (!statsArr.length && !isNaN(seasonUsed)) {
+        const prevSeason = seasonUsed - 1;
+        const prevEntry = await fetchSeason(prevSeason);
+        const prevStatsArrUnfiltered = buildStatsArrNoTeamFilter(prevEntry);
+        if (prevStatsArrUnfiltered.length) {
           entry = prevEntry;
           seasonUsed = prevSeason;
+          statsArr = prevStatsArrUnfiltered;
         }
       }
 
-      if (!entry) return res.status(200).json({ available: false });
-
-      // Deduplicate by team+league combo — API-Football occasionally returns
-      // a duplicate stats block for the same competition, which would double-count
-      const rawStats = entry.statistics || [];
-
-      // Exclude entries with a null league ID — API-Football occasionally returns
-      // a malformed duplicate record (e.g. mislabeled "Super Cup" with 30+ appearances,
-      // which is impossible for a one-off match) that isn't caught by team+league dedup
-      // since null never matches a real league ID
-      const validStats = rawStats.filter(s => s.league?.id != null);
-
-      const seen = new Set();
-      let statsArr = validStats.filter(s => {
-        const key = `${s.team?.id}-${s.league?.id}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-
-      // If a specific club is given, restrict to that club's competitions only —
-      // excludes international caps or spells at other clubs mixed into the same season.
-      // Skipped when fallback data is in use (seasonUsed !== requested season), since
-      // a transferred player's most recent real stats are genuinely from their old
-      // club — filtering by the new team's ID there would just wipe the data out
-      // again, defeating the whole purpose of the fallback.
-      const usingFallback = seasonUsed !== parseInt(season);
-      if (teamId && !usingFallback) {
-        statsArr = statsArr.filter(s => String(s.team?.id) === String(teamId));
+      // Same dedup logic as buildStatsArr, but intentionally skips the
+      // teamId filter — only used for the fallback season specifically.
+      function buildStatsArrNoTeamFilter(entry) {
+        if (!entry) return [];
+        const rawStats = entry.statistics || [];
+        const validStats = rawStats.filter(s => s.league?.id != null);
+        const seen = new Set();
+        return validStats.filter(s => {
+          const key = `${s.team?.id}-${s.league?.id}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
       }
+
+      if (!entry || !statsArr.length) return res.status(200).json({ available: false });
 
       // If a specific competition is requested (e.g. World Cup only), restrict further —
       // excludes friendlies/other competitions the team played in the same calendar year
@@ -392,12 +403,9 @@ export default async function handler(req, res) {
       if (req.query.debug === "true") {
         return res.status(200).json({
           debug: true,
-          rawEntryCount: rawStats.length,
-          afterNullLeagueFilterCount: validStats.length,
-          afterDedupeCount: (validStats.length ? validStats.filter((s, i, arr) => {
-            const key = `${s.team?.id}-${s.league?.id}`;
-            return arr.findIndex(x => `${x.team?.id}-${x.league?.id}` === key) === i;
-          }).length : 0),
+          requestedSeason: parseInt(season),
+          seasonUsed,
+          usedFallback: seasonUsed !== parseInt(season),
           afterTeamFilterCount: statsArr.length,
           entries: statsArr.map(s => ({
             team: s.team?.name,
