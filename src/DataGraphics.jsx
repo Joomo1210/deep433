@@ -8616,7 +8616,7 @@ function PositionRadarGraphic() {
           {player1Percentiles && (
             <>
               <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-                <div style={{ padding: "16px 48px 52px" }}>
+                <div style={{ padding: "44px 48px 52px" }}>
                   <div style={{ textAlign: "center", marginTop: 8, marginBottom: 60 }}>
                     {player2Percentiles ? (
                       <div style={{ display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap" }}>
