@@ -6275,9 +6275,9 @@ const FORMATIONS = {
       { key: "rb",  label: "RB",  x: 360, y: 565 },
       { key: "dm1", label: "DM",  x: 160, y: 505 },
       { key: "dm2", label: "DM",  x: 260, y: 505 },
-      { key: "lam", label: "LAM", x: 70,  y: 435 },
-      { key: "cam", label: "CAM", x: 210, y: 425 },
-      { key: "ram", label: "RAM", x: 350, y: 435 },
+      { key: "lam", label: "LAM", x: 70,  y: 445 },
+      { key: "cam", label: "CAM", x: 210, y: 450 },
+      { key: "ram", label: "RAM", x: 350, y: 445 },
       { key: "st",  label: "ST",  x: 210, y: 375 },
     ],
     away: [
@@ -6288,9 +6288,9 @@ const FORMATIONS = {
       { key: "rb",  label: "RB",  x: 60,  y: 115 },
       { key: "dm1", label: "DM",  x: 260, y: 175 },
       { key: "dm2", label: "DM",  x: 160, y: 175 },
-      { key: "lam", label: "LAM", x: 350, y: 245 },
-      { key: "cam", label: "CAM", x: 210, y: 255 },
-      { key: "ram", label: "RAM", x: 70,  y: 245 },
+      { key: "lam", label: "LAM", x: 350, y: 235 },
+      { key: "cam", label: "CAM", x: 210, y: 230 },
+      { key: "ram", label: "RAM", x: 70,  y: 235 },
       { key: "st",  label: "ST",  x: 210, y: 305 },
     ],
   },
@@ -6356,6 +6356,7 @@ const FORMATION_NAMES = Object.keys(FORMATIONS);
 function PredictedLineupGraphic() {
   const cardRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
+  const [cardTitle, setCardTitle] = useState("Lineup"); // toggle between "Lineup" and "Predicted Lineup"
 
   // Home ("Your Team") state
   const [teamSearch, setTeamSearch] = useState("");
@@ -6564,18 +6565,27 @@ function PredictedLineupGraphic() {
 
       {(filledCount > 0 || oppFilledCount > 0) && (team || oppTeam) && (
         <>
+          <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
+            {["Lineup", "Predicted Lineup"].map(t => (
+              <button key={t} onClick={() => setCardTitle(t)} style={{ background: cardTitle === t ? "#4ade8022" : "none", border: `1px solid ${cardTitle === t ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8, color: cardTitle === t ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px" }}>
+                {t}
+              </button>
+            ))}
+          </div>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "20px 18px" }}>
               <div style={{ textAlign: "center", marginTop: 30, marginBottom: 4 }}>
-                <span style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>Lineup</span>
+                <span style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>{cardTitle}</span>
               </div>
-              <div style={{ textAlign: "center", marginBottom: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 16 }}>
+                {team?.logo && <img src={team.logo} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
                 <span style={{ fontSize: 13, color: "#a78bfa", fontWeight: 700 }}>
                   {team && oppTeam ? `${team.name} (${homeFormation}) vs ${oppTeam.name} (${awayFormation})` : (team ? `${team.name} (${homeFormation})` : `${oppTeam.name} (${awayFormation})`)}
                 </span>
+                {oppTeam?.logo && <img src={oppTeam.logo} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
               </div>
 
-              <div style={{ position: "relative", maxWidth: 320, margin: "0 auto" }}>
+              <div style={{ position: "relative", maxWidth: 380, margin: "0 auto" }}>
                 <svg viewBox="0 0 420 680" xmlns="http://www.w3.org/2000/svg" style={{ display: "block", width: "100%" }}>
                   <rect x="2" y="2" width="416" height="676" fill="#0d2818" stroke="#2a4a3a" strokeWidth="2" rx="4" />
                   <line x1="2" y1="340" x2="418" y2="340" stroke="#2a4a3a" strokeWidth="2" />
@@ -6592,7 +6602,7 @@ function PredictedLineupGraphic() {
                     <div key={pos.key} style={{ position: "absolute", left: `${leftPct}%`, top: `${topPct}%`, transform: "translate(-50%, -50%)", textAlign: "center", width: 60 }}>
                       {p ? (
                         <>
-                          {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 2px", display: "block" }} />}
+                          {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 2px", display: "block" }} />}
                           <div style={{ fontSize: 8, fontWeight: 800, color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,0.8)", lineHeight: 1.1 }}>{p.name?.split(" ").slice(-1)[0]}</div>
                         </>
                       ) : (
@@ -6610,7 +6620,7 @@ function PredictedLineupGraphic() {
                     <div key={pos.key} style={{ position: "absolute", left: `${leftPct}%`, top: `${topPct}%`, transform: "translate(-50%, -50%)", textAlign: "center", width: 60 }}>
                       {p ? (
                         <>
-                          {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", border: "2px solid #f59e0b", margin: "0 auto 2px", display: "block" }} />}
+                          {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", border: "2px solid #f59e0b", margin: "0 auto 2px", display: "block" }} />}
                           <div style={{ fontSize: 8, fontWeight: 800, color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,0.8)", lineHeight: 1.1 }}>{p.name?.split(" ").slice(-1)[0]}</div>
                         </>
                       ) : (
