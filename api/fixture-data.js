@@ -141,6 +141,7 @@ export default async function handler(req, res) {
         passAccuracy: p.statistics?.[0]?.passes?.accuracy,
         dribbles: p.statistics?.[0]?.dribbles?.success,
         tackles: p.statistics?.[0]?.tackles?.total,
+        interceptions: p.statistics?.[0]?.tackles?.interceptions,
         yellowCards: p.statistics?.[0]?.cards?.yellow,
         redCards: p.statistics?.[0]?.cards?.red,
       })).filter(p => p.minutesPlayed > 0) || [];
