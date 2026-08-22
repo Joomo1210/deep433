@@ -318,6 +318,126 @@ function BentoBox({ title, icon, color, children, span, light = false }) {
   );
 }
 
+// ─── LEAGUE TABLE ─────────────────────────────────────────────────────────
+const LEAGUE_TABLE_OPTIONS = [
+  { id: "pl", label: "Premier League" },
+  { id: "laliga", label: "La Liga" },
+  { id: "seriea", label: "Serie A" },
+  { id: "bundesliga", label: "Bundesliga" },
+  { id: "ligue1", label: "Ligue 1" },
+  { id: "championship", label: "Championship" },
+  { id: "ligue2", label: "Ligue 2" },
+  { id: "bundesliga2", label: "2. Bundesliga" },
+  { id: "serieb", label: "Serie B" },
+  { id: "segunda", label: "Segunda División" },
+  { id: "scotprem", label: "Scotland Premiership" },
+  { id: "npfl", label: "NPFL" },
+];
+
+function LeagueTableGraphic() {
+  const cardRef = useRef(null);
+  const [leagueId, setLeagueId] = useState("pl");
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [downloading, setDownloading] = useState(false);
+  const [highlightTeam, setHighlightTeam] = useState("");
+
+  const fetchTable = async (id) => {
+    setLoading(true); setError(""); setRows([]);
+    try {
+      const r = await fetch(`/api/team-stats?mode=standings&leagueId=${id}`);
+      const d = await r.json();
+      if (!d.available) throw new Error("Table not available yet — check back once matches have been played");
+      setRows(d.rows || []);
+    } catch (e) { setError(e.message); }
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchTable(leagueId); }, [leagueId]);
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, `deep433-table-${leagueId}.png`, undefined, transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const leagueLabel = LEAGUE_TABLE_OPTIONS.find(l => l.id === leagueId)?.label || "League";
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Full league table, pulled directly from live standings.</div>
+
+      <select
+        value={leagueId}
+        onChange={e => setLeagueId(e.target.value)}
+        style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+      >
+        {LEAGUE_TABLE_OPTIONS.map(l => <option key={l.id} value={l.id}>{l.label}</option>)}
+      </select>
+
+      <input
+        value={highlightTeam}
+        onChange={e => setHighlightTeam(e.target.value)}
+        placeholder="Highlight a team (optional, e.g. Arsenal)"
+        style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "8px 12px", outline: "none", fontFamily: "inherit" }}
+      />
+
+      {loading && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 16, padding: "20px 0" }}>Loading table...</div>}
+      {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
+
+      {rows.length > 0 && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "44px 14px 20px" }}>
+              <div style={{ textAlign: "center", marginBottom: 14 }}>
+                <span style={{ fontSize: 17, fontWeight: 900, color: "#f0f0f0" }}>{leagueLabel} Table</span>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "20px 1fr 24px 24px 24px 24px 32px 36px", gap: 4, fontSize: 9, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", padding: "0 6px 4px", borderBottom: "1px solid #2a2a3a", marginBottom: 4 }}>
+                <div>#</div><div>Team</div><div style={{ textAlign: "center" }}>P</div><div style={{ textAlign: "center" }}>W</div><div style={{ textAlign: "center" }}>D</div><div style={{ textAlign: "center" }}>L</div><div style={{ textAlign: "center" }}>GD</div><div style={{ textAlign: "center" }}>Pts</div>
+              </div>
+
+              {rows.map(row => {
+                const isHighlighted = highlightTeam && row.team?.toLowerCase().includes(highlightTeam.toLowerCase());
+                return (
+                  <div key={row.position} style={{
+                    display: "grid", gridTemplateColumns: "20px 1fr 24px 24px 24px 24px 32px 36px", gap: 4,
+                    alignItems: "center", padding: "6px", borderRadius: 6,
+                    background: isHighlighted ? "#4ade8022" : (row.position % 2 === 0 ? "#13131f" : "transparent"),
+                    border: isHighlighted ? "1px solid #4ade8066" : "none",
+                  }}>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: "#94a3b8" }}>{row.position}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
+                      {row.logo && <img src={row.logo} alt="" crossOrigin="anonymous" style={{ width: 16, height: 16, objectFit: "contain", flexShrink: 0 }} />}
+                      <span style={{ fontSize: 11, fontWeight: isHighlighted ? 800 : 600, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.team}</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: "#e2e8f0", textAlign: "center" }}>{row.played}</div>
+                    <div style={{ fontSize: 11, color: "#e2e8f0", textAlign: "center" }}>{row.won}</div>
+                    <div style={{ fontSize: 11, color: "#e2e8f0", textAlign: "center" }}>{row.drawn}</div>
+                    <div style={{ fontSize: 11, color: "#e2e8f0", textAlign: "center" }}>{row.lost}</div>
+                    <div style={{ fontSize: 11, color: row.goalDiff > 0 ? "#4ade80" : row.goalDiff < 0 ? "#f87171" : "#e2e8f0", textAlign: "center" }}>{row.goalDiff > 0 ? "+" : ""}{row.goalDiff}</div>
+                    <div style={{ fontSize: 12, fontWeight: 900, color: "#fbbf24", textAlign: "center" }}>{row.points}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </GraphicCard>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+
 function MatchStatsGraphic() {
   const cardRef = useRef(null);
   const [fixtureId, setFixtureId] = useState("");
@@ -8745,6 +8865,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "brilliant", label: "✨ Brilliant Performances" },
     { id: "worst", label: "📉 Worst Performances" },
     { id: "squaddepth", label: "📊 Squad Depth Chart" },
+    { id: "leaguetable", label: "🏆 League Table" },
     { id: "glove",    label: "Golden Glove" },
     { id: "transfer", label: "🔄 Transfer Fit" },
     { id: "timing",   label: "⏱️ Goal Timing" },
@@ -8805,6 +8926,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "brilliant" && <BrilliantPerformancesGraphic />}
       {activeSection === "worst" && <WorstPerformancesGraphic />}
       {activeSection === "squaddepth" && <SquadDepthGraphic />}
+      {activeSection === "leaguetable" && <LeagueTableGraphic />}
       {activeSection === "glove"    && <GoldenGloveGraphic />}
       {activeSection === "transfer" && <TransferFitGraphic />}
       {activeSection === "timing"   && <GoalTimingGraphic />}
