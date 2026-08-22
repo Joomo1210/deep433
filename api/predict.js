@@ -250,5 +250,14 @@ Do NOT invent players. Do NOT use players from other teams. Only use names exact
     });
   }
 
+  // Always included, no separate debug flag needed — lets squad-fetch
+  // status be checked directly from any normal prediction response, without
+  // requiring any frontend code changes to test.
+  parsed._squadFetchStatus = {
+    fixtureIdReceived: fixtureId || null,
+    homeSquadFetched: !!homeSquadStr,
+    awaySquadFetched: !!awaySquadStr,
+  };
+
   res.status(200).json(parsed);
 }
