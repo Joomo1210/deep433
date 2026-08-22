@@ -172,6 +172,41 @@ Do NOT invent players. Do NOT use players from other teams. Only use names exact
   if (!jsonMatch) return res.status(500).json({ error: 'Parse error' });
   const parsed = JSON.parse(jsonMatch[0]);
 
+  // Deterministic validation — the AI is repeatedly ignoring prompt-level
+  // instructions and naming outdated/retired players despite being given
+  // the real squad list. Since prompt instructions alone haven't reliably
+  // worked, cross-check every named player against the actual verified
+  // squad data directly, and replace any name that doesn't genuinely match
+  // with a generic position label instead of letting a hallucinated name
+  // through silently.
+  if (homeSquadStr && awaySquadStr) {
+    const extractNames = (squadStr) => squadStr.split(", ").map(entry => entry.replace(/^(GK|DEF|MID|FWD):\s*/, "").trim());
+    const homeRealNames = extractNames(homeSquadStr);
+    const awayRealNames = extractNames(awaySquadStr);
+    const surname = (name) => (name || "").trim().split(" ").pop().toLowerCase();
+    const isGenuine = (name, realNames) => realNames.some(real => surname(real) === surname(name));
+
+    const validateLineup = (lineup, realNames, positionOrder) => {
+      if (!Array.isArray(lineup)) return lineup;
+      return lineup.map((name, i) => isGenuine(name, realNames) ? name : (positionOrder[i] || "Player"));
+    };
+    const defaultPositions = ["GK", "RB", "CB", "CB", "LB", "CM", "CM", "CM", "RW", "ST", "LW"];
+    parsed.homeLineup = validateLineup(parsed.homeLineup, homeRealNames, defaultPositions);
+    parsed.awayLineup = validateLineup(parsed.awayLineup, awayRealNames, defaultPositions);
+
+    // homeKeyPlayer/awayKeyPlayer and keyBattle/wildcard often name specific
+    // players in free text too — these are harder to validate word-by-word
+    // reliably, but the key player fields specifically are single names and
+    // can be checked the same way.
+    if (parsed.homeKeyPlayer && !isGenuine(parsed.homeKeyPlayer, homeRealNames)) {
+      parsed.homeKeyPlayer = null;
+    }
+    if (parsed.awayKeyPlayer && !isGenuine(parsed.awayKeyPlayer, awayRealNames)) {
+      parsed.awayKeyPlayer = null;
+    }
+  }
+
+
   // Safety net — strip any home-advantage phrasing that slipped through
   // despite the instruction, for neutral-venue matches specifically.
   if (isNeutralVenue) {
@@ -200,5 +235,20 @@ Do NOT invent players. Do NOT use players from other teams. Only use names exact
       ai_data: parsed,
     }, { onConflict: 'league,home_team,away_team' });
   } catch {}
+  // Debug mode — shows whether verified squad data was genuinely fetched
+  // for this match, so squad-fetch failures can be confirmed directly
+  // rather than inferred from the AI's output alone.
+  if (req.query.debug === "true") {
+    return res.status(200).json({
+      debug: true,
+      fixtureId: fixtureId || null,
+      homeSquadFetched: !!homeSquadStr,
+      awaySquadFetched: !!awaySquadStr,
+      homeSquadPreview: homeSquadStr ? homeSquadStr.slice(0, 200) : null,
+      awaySquadPreview: awaySquadStr ? awaySquadStr.slice(0, 200) : null,
+      parsed,
+    });
+  }
+
   res.status(200).json(parsed);
 }
