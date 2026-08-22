@@ -987,39 +987,23 @@ useEffect(() => {
     return acc;
   }, {});
 
-  // Look up fixtureId whenever home/away/league changes — try live data first, then API
+   // Look up fixtureId whenever home/away/league changes — search the
+  // already-loaded fixtures list (covers ~25 days ahead) rather than a
+  // separate, narrow 3-day live-scores lookup, which was missing matches
+  // scheduled further out and silently leaving fixtureId as null.
   useEffect(() => {
     if (!homeTeam || !awayTeam || !session) return;
     const live = findLiveFixture(homeTeam, awayTeam);
     if (live?.fixtureId) { setSelectedFixtureId(live.fixtureId); return; }
-    const fetchFixtureId = async () => {
-      const now = new Date();
-      const dates = [
-        now.toISOString().split("T")[0],
-        new Date(now.getTime() + 86400000).toISOString().split("T")[0],
-        new Date(now.getTime() + 172800000).toISOString().split("T")[0],
-      ];
-      for (const date of dates) {
-        try {
-          const res = await fetch(`/api/live-scores?leagueId=${selectedLeague}&date=${date}`);
-          const data = await res.json();
-          const h = homeTeam.toLowerCase().replace(/[^a-z0-9]/g, "");
-          const a = awayTeam.toLowerCase().replace(/[^a-z0-9]/g, "");
-          const match = (data.fixtures || []).find(f =>
-            (f.home.toLowerCase().replace(/[^a-z0-9]/g, "") === h && f.away.toLowerCase().replace(/[^a-z0-9]/g, "") === a) ||
-            (f.home.toLowerCase().replace(/[^a-z0-9]/g, "") === a && f.away.toLowerCase().replace(/[^a-z0-9]/g, "") === h)
-          );
-          if (match?.fixtureId) { setSelectedFixtureId(match.fixtureId); return; }
-        } catch {}
-      }
-      setSelectedFixtureId(null);
-    };
-    fetchFixtureId();
-  }, [homeTeam, awayTeam, selectedLeague, session]);
-
-  const fetchConfirmedLineup = async (home, away, league, predictionId) => {
-    setLineupFetching(true);
-
+    const h = homeTeam.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const a = awayTeam.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const match = (fixtures || []).find(f => {
+      const fh = (f.home || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const fa = (f.away || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      return (fh === h && fa === a) || (fh === a && fa === h);
+    });
+    setSelectedFixtureId(match?.fixtureId || null);
+  }, [homeTeam, awayTeam, selectedLeague, session, fixtures]);
     // Find the prediction ID — use passed ID, savedPredictionId, or look up from history
     const pid = predictionId || savedPredictionId || (() => {
       const h = normalize(home);
