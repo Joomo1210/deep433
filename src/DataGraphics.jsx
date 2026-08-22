@@ -2786,7 +2786,7 @@ function motmStatsForPosition(player) {
       { label: "Tackles", value: player.tackles },
       { label: "Interceptions", value: player.interceptions },
       { label: "Duels Won", value: player.duelsWon },
-      { label: "Pass Acc.", value: player.passAccuracy != null ? `${player.passAccuracy}%` : null },
+      { label: "Acc. Passes", value: player.passAccuracy },
       { label: "Key Passes", value: player.keyPasses },
       { label: "Dribbles", value: player.dribbles },
     ];
@@ -2797,7 +2797,7 @@ function motmStatsForPosition(player) {
       { label: "Assists", value: player.assists },
       { label: "Dribbles", value: player.dribbles },
       { label: "Tackles", value: player.tackles },
-      { label: "Pass Acc.", value: player.passAccuracy != null ? `${player.passAccuracy}%` : null },
+      { label: "Acc. Passes", value: player.passAccuracy },
       { label: "Goals", value: player.goals },
     ];
   }
@@ -3649,7 +3649,7 @@ function MatchH2HGraphic() {
 
                 <BentoBox title="Creativity" icon="🎨" color="#818cf8">
                   <MatchCompareRow label="Key Passes" val1={player1.keyPasses} val2={player2.keyPasses} />
-                  <MatchCompareRow label="Pass Acc" val1={player1.passAccuracy} val2={player2.passAccuracy} unit="%" />
+                  <MatchCompareRow label="Acc. Passes" val1={player1.passAccuracy} val2={player2.passAccuracy} />
                   <MatchCompareRow label="Dribbles" val1={player1.dribbles} val2={player2.dribbles} />
                 </BentoBox>
               </div>
@@ -5885,7 +5885,7 @@ function BeyondScoresheetGraphic() {
                   { label: "Interceptions", value: player.interceptions, color: "#60a5fa" },
                   { label: "Duels Won", value: player.duelsWon, color: "#f59e0b" },
                   { label: "Key Passes", value: player.keyPasses, color: "#a855f7" },
-                  { label: "Pass Accuracy", value: player.passAccuracy ? `${player.passAccuracy}%` : null, color: "#4ade80" },
+                  { label: "Acc. Passes", value: player.passAccuracy ?? null, color: "#4ade80" },
                   { label: "Apps", value: player.appearances, color: "#e2e8f0" },
                 ].map(s => (
                   <div key={s.label} style={{ background: "#13131f", borderRadius: 10, padding: "14px 10px", textAlign: "center" }}>
@@ -6006,7 +6006,7 @@ function BackFourBattleGraphic() {
     { key: "tackles", label: "Tackles" },
     { key: "interceptions", label: "Interceptions" },
     { key: "duelsWon", label: "Duels Won" },
-    { key: "passAccuracy", label: "Pass Accuracy", suffix: "%" },
+    { key: "passAccuracy", label: "Acc. Passes" },
   ];
 
   return (
@@ -6206,7 +6206,7 @@ function TrioBattleGraphic() {
     midfield: [
       { key: "keyPasses", label: "Key Passes" },
       { key: "tackles", label: "Tackles" },
-      { key: "passAccuracy", label: "Pass Accuracy", suffix: "%" },
+      { key: "passAccuracy", label: "Acc. Passes" },
       { key: "duelsWon", label: "Duels Won" },
     ],
     attack: [
@@ -7446,7 +7446,7 @@ function PlayerTrajectoryGraphic() {
                   { key: "tackles", label: "Tackles" },
                   { key: "interceptions", label: "Interceptions" },
                   { key: "keyPasses", label: "Key Passes" },
-                  { key: "passAccuracy", label: "Pass Accuracy %" },
+                  { key: "passAccuracy", label: "Acc. Passes" },
                   { key: "appearances", label: "Appearances" },
                   { key: "rating", label: "Rating" },
                 ];
