@@ -162,20 +162,27 @@ export default function DeepInsightsPanel({ insights, homeTeam, awayTeam, showHe
           </BentoBox>
         )}
       </div>
-
       {totalMatches > 0 && (
         <BentoBox title="Recent H2H" icon="📋" color="#60a5fa">
-          <TeamH2HRow team={homeTeam} h2hResults={parsed.map(m => getH2HResult(m, homeTeam))} color="#4ade80" />
-          <TeamH2HRow team={awayTeam} h2hResults={parsed.map(m => getH2HResult(m, awayTeam))} color="#f59e0b" />
+          <div style={{ display: "flex", gap: 16 }}>
+            <div style={{ flex: 1 }}>
+              <TeamH2HRow team={homeTeam} h2hResults={parsed.map(m => getH2HResult(m, homeTeam))} color="#4ade80" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <TeamH2HRow team={awayTeam} h2hResults={parsed.map(m => getH2HResult(m, awayTeam))} color="#f59e0b" />
+            </div>
+          </div>
         </BentoBox>
       )}
-
       {(realForm.home || realForm.away) && (
         <BentoBox title="Last 5 Matches" icon="📈" color="#c084fc">
-          <FormRow team={homeTeam} form={realForm.home} color="#4ade80" />
-          <FormRow team={awayTeam} form={realForm.away} color="#f59e0b" />
+          <div style={{ display: "flex", gap: 16 }}>
+            <div style={{ flex: 1 }}>
+              <FormRow team={homeTeam} form={realForm.home} color="#4ade80" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <FormRow team={awayTeam} form={realForm.away} color="#f59e0b" />
+            </div>
+          </div>
         </BentoBox>
       )}
-    </div>
-  );
-}
