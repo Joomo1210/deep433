@@ -89,14 +89,28 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Fetch a single date's fixtures, with one retry if it comes back
+    // empty/failed — across 27 simultaneous requests (one per date), a
+    // transient rate-limit hit on any single date was previously silently
+    // dropped by Promise.allSettled, which could make a genuine, scheduled
+    // fixture disappear entirely from this list with no indication anything
+    // went wrong.
+    const fetchDate = async (date) => {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const r = await fetch(`https://v3.football.api-sports.io/fixtures?league=${league.id}&season=${league.season}&date=${date}`, {
+            headers: { "x-apisports-key": apiKey }
+          });
+          const d = await r.json();
+          if (d.response) return { date, fixtures: d.response };
+        } catch {}
+        if (attempt === 0) await new Promise(res => setTimeout(res, 400));
+      }
+      return { date, fixtures: [] };
+    };
+
     // Fetch all dates in parallel
-    const results = await Promise.allSettled(
-      dates.map(date =>
-        fetch(`https://v3.football.api-sports.io/fixtures?league=${league.id}&season=${league.season}&date=${date}`, {
-          headers: { "x-apisports-key": apiKey }
-        }).then(r => r.json()).then(d => ({ date, fixtures: d.response || [] }))
-      )
-    );
+    const results = await Promise.allSettled(dates.map(fetchDate));
 
     const allFixtures = [];
     results.forEach(r => {
