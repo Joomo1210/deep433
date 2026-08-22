@@ -2762,6 +2762,50 @@ function GoldenGloveGraphic() {
 
 // ─── MATCH HEAD-TO-HEAD GRAPHIC ──────────────────────────────────────────────
 // ─── MAN OF THE MATCH ─────────────────────────────────────────────────────
+// Picks genuinely relevant stats per position — the previous fixed set
+// (Goals/Assists/Shots/Dribbles/Tackles) suited attackers well, but left
+// goalkeepers showing mostly zeros with no mention of saves, their actual
+// contribution, and defenders missing interceptions/duels entirely.
+function motmStatsForPosition(player) {
+  const pos = (player.position || "").toLowerCase();
+  if (pos.includes("goalkeeper")) {
+    return [
+      { label: "Saves", value: player.saves },
+      { label: "Pass Acc.", value: player.passAccuracy != null ? `${player.passAccuracy}%` : null },
+      { label: "Minutes", value: player.minutesPlayed },
+    ];
+  }
+  if (pos.includes("defender")) {
+    return [
+      { label: "Tackles", value: player.tackles },
+      { label: "Interceptions", value: player.interceptions },
+      { label: "Duels Won", value: player.duelsWon },
+      { label: "Pass Acc.", value: player.passAccuracy != null ? `${player.passAccuracy}%` : null },
+      { label: "Key Passes", value: player.keyPasses },
+      { label: "Dribbles", value: player.dribbles },
+    ];
+  }
+  if (pos.includes("midfielder")) {
+    return [
+      { label: "Key Passes", value: player.keyPasses },
+      { label: "Assists", value: player.assists },
+      { label: "Dribbles", value: player.dribbles },
+      { label: "Tackles", value: player.tackles },
+      { label: "Pass Acc.", value: player.passAccuracy != null ? `${player.passAccuracy}%` : null },
+      { label: "Goals", value: player.goals },
+    ];
+  }
+  // Attacker / fallback for unrecognised positions
+  return [
+    { label: "Goals", value: player.goals },
+    { label: "Assists", value: player.assists },
+    { label: "Shots", value: player.shots },
+    { label: "On Target", value: player.shotsOnGoal },
+    { label: "Dribbles", value: player.dribbles },
+    { label: "Key Passes", value: player.keyPasses },
+  ];
+}
+
 function ManOfMatchGraphic() {
   const cardRef = useRef(null);
   const [selectedFixture, setSelectedFixture] = useState(null);
@@ -2842,34 +2886,28 @@ function ManOfMatchGraphic() {
       {selectedPlayer && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "44px 20px 22px", textAlign: "center" }}>
-              <div style={{ fontSize: 13, color: "#fbbf24", fontWeight: 800, textTransform: "uppercase", letterSpacing: 2, marginBottom: 4 }}>⭐ Man of the Match</div>
-              <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 16 }}>{selectedFixture.home} vs {selectedFixture.away}</div>
+            <div style={{ padding: "48px 20px 24px", textAlign: "center" }}>
+              <div style={{ fontSize: 16, color: "#fbbf24", fontWeight: 900, textTransform: "uppercase", letterSpacing: 2, marginBottom: 6 }}>⭐ Man of the Match</div>
+              <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 4 }}>{selectedFixture.home} vs {selectedFixture.away}</div>
+              {selectedFixture.leagueLabel && <div style={{ fontSize: 11, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 18 }}>{selectedFixture.leagueLabel}</div>}
 
-              {selectedPlayer.photo && <img src={selectedPlayer.photo} alt="" crossOrigin="anonymous" style={{ width: 90, height: 90, borderRadius: "50%", objectFit: "cover", border: "3px solid #fbbf24", margin: "0 auto 12px" }} />}
-              <div style={{ fontSize: 22, fontWeight: 900, color: "#f0f0f0", marginBottom: 4 }}>{selectedPlayer.name}</div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 16 }}>
-                {selectedPlayer.teamLogo && <img src={selectedPlayer.teamLogo} alt="" crossOrigin="anonymous" style={{ width: 18, height: 18, objectFit: "contain" }} />}
-                <span style={{ fontSize: 13, color: "#94a3b8" }}>{selectedPlayer.team} · {selectedPlayer.position}</span>
+              {selectedPlayer.photo && <img src={selectedPlayer.photo} alt="" crossOrigin="anonymous" style={{ width: 120, height: 120, borderRadius: "50%", objectFit: "cover", border: "4px solid #fbbf24", margin: "0 auto 14px" }} />}
+              <div style={{ fontSize: 26, fontWeight: 900, color: "#f0f0f0", marginBottom: 6 }}>{selectedPlayer.name}</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 20 }}>
+                {selectedPlayer.teamLogo && <img src={selectedPlayer.teamLogo} alt="" crossOrigin="anonymous" style={{ width: 28, height: 28, objectFit: "contain" }} />}
+                <span style={{ fontSize: 15, color: "#e2e8f0", fontWeight: 600 }}>{selectedPlayer.team} · {selectedPlayer.position}</span>
               </div>
 
-              <div style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)", borderRadius: 10, padding: "10px 20px", display: "inline-block", marginBottom: 18 }}>
-                <div style={{ fontSize: 9, color: "#0a0f0a", fontWeight: 700, textTransform: "uppercase" }}>Rating</div>
-                <div style={{ fontSize: 26, fontWeight: 900, color: "#0a0f0a" }}>{parseFloat(selectedPlayer.rating).toFixed(2)}</div>
+              <div style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)", borderRadius: 12, padding: "12px 26px", display: "inline-block", marginBottom: 20 }}>
+                <div style={{ fontSize: 10, color: "#0a0f0a", fontWeight: 700, textTransform: "uppercase" }}>Rating</div>
+                <div style={{ fontSize: 32, fontWeight: 900, color: "#0a0f0a" }}>{parseFloat(selectedPlayer.rating).toFixed(2)}</div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, textAlign: "left" }}>
-                {[
-                  { label: "Goals", value: selectedPlayer.goals },
-                  { label: "Assists", value: selectedPlayer.assists },
-                  { label: "Key Passes", value: selectedPlayer.keyPasses },
-                  { label: "Shots", value: selectedPlayer.shots },
-                  { label: "Dribbles", value: selectedPlayer.dribbles },
-                  { label: "Tackles", value: selectedPlayer.tackles },
-                ].map(s => (
-                  <div key={s.label} style={{ background: "#13131f", borderRadius: 8, padding: "8px 6px", textAlign: "center" }}>
-                    <div style={{ fontSize: 16, fontWeight: 900, color: "#f0f0f0" }}>{s.value ?? "—"}</div>
-                    <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2, textTransform: "uppercase" }}>{s.label}</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, textAlign: "left" }}>
+                {motmStatsForPosition(selectedPlayer).map(s => (
+                  <div key={s.label} style={{ background: "#13131f", borderRadius: 10, padding: "10px 6px", textAlign: "center" }}>
+                    <div style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>{s.value ?? "—"}</div>
+                    <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2, textTransform: "uppercase" }}>{s.label}</div>
                   </div>
                 ))}
               </div>
