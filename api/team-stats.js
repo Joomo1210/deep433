@@ -228,6 +228,38 @@ export default async function handler(req, res) {
     }
   }
 
+  // ── Full league table/standings ──
+  if (mode === "standings") {
+    if (!leagueId) return res.status(400).json({ error: "leagueId required" });
+    const league = LEAGUE_MAP[leagueId];
+    if (!league) return res.status(400).json({ error: "Unknown league" });
+    try {
+      const r = await fetch(`https://v3.football.api-sports.io/standings?league=${league.id}&season=${league.season}`, {
+        headers: { "x-apisports-key": apiKey }
+      });
+      const data = await r.json();
+      const table = data.response?.[0]?.league?.standings?.[0] || [];
+      if (!table.length) return res.status(200).json({ available: false });
+      const rows = table.map(row => ({
+        position: row.rank,
+        team: row.team?.name,
+        logo: row.team?.logo,
+        played: row.all?.played,
+        won: row.all?.win,
+        drawn: row.all?.draw,
+        lost: row.all?.lose,
+        goalsFor: row.all?.goals?.for,
+        goalsAgainst: row.all?.goals?.against,
+        goalDiff: row.goalsDiff,
+        points: row.points,
+        form: row.form,
+      }));
+      return res.status(200).json({ available: true, rows });
+    } catch (err) {
+      return res.status(200).json({ available: false, error: err.message });
+    }
+  }
+
   if (mode === "leaguesearch") {
     if (!query || query.length < 3) return res.status(200).json({ leagues: [] });
     try {
