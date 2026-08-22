@@ -78,8 +78,8 @@ export default async function handler(req, res) {
     ? `VERIFIED SQUADS — you MUST only pick players from these lists:
 ${homeTeam} squad: ${homeSquadStr}
 ${awayTeam} squad: ${awaySquadStr}
-Do NOT invent players. Do NOT use players from other teams. Only use names exactly as listed above.`
-    : `CRITICAL: Only use real players who genuinely represent that national team. Verify every player nationality before including them.`;
+Do NOT invent players. Do NOT use players from other teams. Only use names exactly as listed above. Every player must appear in the lineup at most once — do not repeat the same name in multiple positions.`
+    : `CRITICAL — no verified squad data was available for this match, so extra caution is required. Only use real players who are CURRENTLY on this exact team's books right now (not a previous club, not a player who has since left or retired). If you are not confident a specific player is still at this club today, do NOT name them — describe the tactical battle in general terms (e.g. "the home side's midfield press" rather than a specific, possibly-outdated name) instead of guessing. This applies to both club and international football. Every player must appear in the lineup at most once — do not repeat the same name in multiple positions.`;
   const NEUTRAL_VENUE_LEAGUES = ["wc2026", "afcon", "copamerica", "ucl", "uel", "facup", "copadelrey", "communityshield", "dflsupercup", "tropheedeschampions", "supercoppa"];
   const isNeutralVenue = NEUTRAL_VENUE_LEAGUES.some(l => (league || "").toLowerCase().includes(l.replace("2026","").replace("copa","copa"))) ||
     ["world cup", "copa america", "afcon", "champions league", "europa league", "fa cup", "copa del rey", "community shield", "dfl-supercup", "dfl supercup", "trophée des champions", "trophee des champions", "supercoppa", "tournament"].some(k => (league || "").toLowerCase().includes(k));
