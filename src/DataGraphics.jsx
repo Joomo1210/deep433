@@ -2817,6 +2817,7 @@ function motmStatsForPosition(player) {
 // from the stat-dense cards elsewhere: this one is a poster, not a data card.
 function PlayerSpotlightGraphic() {
   const cardRef = useRef(null);
+  const [league, setLeague] = useState("pl");
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
@@ -2830,7 +2831,10 @@ function PlayerSpotlightGraphic() {
     if (q.trim().length < 3) { setResults([]); return; }
     setSearching(true);
     try {
-      const r = await fetch(`/api/team-stats?mode=playersearch&query=${encodeURIComponent(q.trim())}`);
+      // API-Football requires a league or team scope alongside a name
+      // search — it rejects a bare, unscoped search entirely, which was
+      // silently returning zero results before this fix.
+      const r = await fetch(`/api/team-stats?mode=playersearch&query=${encodeURIComponent(q.trim())}&leagueId=${league}`);
       const d = await r.json();
       setResults(d.players || []);
     } catch { setError("Search failed"); }
@@ -2856,8 +2860,17 @@ function PlayerSpotlightGraphic() {
       {!selectedPlayer ? (
         <div>
           <div style={{ fontSize: 13, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>
-            Search any player, any team
+            Search any player
           </div>
+          <select
+            value={league}
+            onChange={e => { setLeague(e.target.value); setQuery(""); setResults([]); }}
+            style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #818cf840", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit", marginBottom: 8 }}
+          >
+            {LEAGUE_OPTIONS.map(l => (
+              <option key={l.id} value={l.id}>{l.label}</option>
+            ))}
+          </select>
           <input
             value={query}
             onChange={e => handleSearch(e.target.value)}
