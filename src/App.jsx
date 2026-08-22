@@ -2300,7 +2300,7 @@ if (!session && !guestMode) {
                       <span style={{ fontSize: 14, color: "#e2e8f0" }}>👔 {viewingAnalysis.confirmed_lineup.away?.coach}</span>
                     )}
                   </div>
-                  <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
+                                  <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
                     {(viewingAnalysis.confirmed_lineup.away?.substitutes || []).map((p, i) => (
                       <div key={i} style={{ background: "#1a1a28", border: "1px solid #2a2a40", borderRadius: 20, padding: "4px 10px", fontSize: 15, fontWeight: 600, color: "#ccc", whiteSpace: "nowrap", flexShrink: 0 }}>
                         <span style={{ color: "#a855f7", marginRight: 4, fontSize: 14 }}>{p.number}</span>{p.name?.split(" ").pop()}
@@ -2310,6 +2310,9 @@ if (!session && !guestMode) {
                 </div>
               </div>
             )}
-          
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
