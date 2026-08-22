@@ -2812,6 +2812,129 @@ function motmStatsForPosition(player) {
   ];
 }
 
+// ─── Player Spotlight — massive photo + club crest watermark, season stats
+// reduced to a single small caption line. A deliberately different register
+// from the stat-dense cards elsewhere: this one is a poster, not a data card.
+function PlayerSpotlightGraphic() {
+  const cardRef = useRef(null);
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [searching, setSearching] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSearch = async (q) => {
+    setQuery(q);
+    setError("");
+    if (q.trim().length < 3) { setResults([]); return; }
+    setSearching(true);
+    try {
+      const r = await fetch(`/api/team-stats?mode=playersearch&query=${encodeURIComponent(q.trim())}`);
+      const d = await r.json();
+      setResults(d.players || []);
+    } catch { setError("Search failed"); }
+    setSearching(false);
+  };
+
+  const selectPlayer = (p) => {
+    setSelectedPlayer(p);
+    setResults([]);
+    setQuery("");
+  };
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, `deep433-spotlight-${selectedPlayer?.name}.png`, undefined, transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {!selectedPlayer ? (
+        <div>
+          <div style={{ fontSize: 13, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>
+            Search any player, any team
+          </div>
+          <input
+            value={query}
+            onChange={e => handleSearch(e.target.value)}
+            placeholder="Type a player name..."
+            style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #818cf840", borderRadius: 8, color: "#f0f0f0", fontSize: 15, padding: "10px 12px", outline: "none", fontFamily: "inherit" }}
+          />
+          {searching && <div style={{ color: "#94a3b8", fontSize: 14, marginTop: 8 }}>Searching...</div>}
+          {error && <div style={{ color: "#f87171", fontSize: 14, marginTop: 8 }}>{error}</div>}
+          {results.length > 0 && (
+            <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+              {results.map(p => (
+                <button
+                  key={p.id}
+                  onClick={() => selectPlayer(p)}
+                  style={{ display: "flex", alignItems: "center", gap: 10, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, padding: "8px 12px", cursor: "pointer", textAlign: "left", fontFamily: "inherit" }}
+                >
+                  {p.teamLogo && <img src={p.teamLogo} alt="" style={{ width: 22, height: 22, objectFit: "contain" }} />}
+                  <span style={{ color: "#f0f0f0", fontSize: 14, fontWeight: 600 }}>{p.name}</span>
+                  <span style={{ color: "#94a3b8", fontSize: 13 }}>{p.team}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
+            <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{selectedPlayer.name}</span>
+            <button onClick={() => setSelectedPlayer(null)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
+          </div>
+
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ position: "relative", overflow: "hidden", background: "#0a0a0f", minHeight: 480 }}>
+              {selectedPlayer.teamLogo && (
+                <img
+                  src={selectedPlayer.teamLogo}
+                  alt=""
+                  crossOrigin="anonymous"
+                  style={{
+                    position: "absolute", top: "50%", left: "50%",
+                    width: 520, height: 520,
+                    transform: "translate(-50%, -50%)",
+                    objectFit: "contain", opacity: 0.14, filter: "grayscale(20%)",
+                  }}
+                />
+              )}
+              <div style={{ position: "relative", zIndex: 1, padding: "36px 24px 28px", textAlign: "center" }}>
+                {selectedPlayer.photo && (
+                  <img
+                    src={selectedPlayer.photo}
+                    alt=""
+                    crossOrigin="anonymous"
+                    style={{ width: 260, height: 260, borderRadius: "50%", objectFit: "cover", border: "5px solid #4ade80", margin: "0 auto 20px", display: "block", boxShadow: "0 0 60px #4ade8033" }}
+                  />
+                )}
+                <div style={{ fontSize: 34, fontWeight: 900, color: "#f0f0f0", letterSpacing: -0.5, marginBottom: 6 }}>{selectedPlayer.name}</div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 28 }}>
+                  {selectedPlayer.teamLogo && <img src={selectedPlayer.teamLogo} alt="" crossOrigin="anonymous" style={{ width: 24, height: 24, objectFit: "contain" }} />}
+                  <span style={{ fontSize: 16, color: "#94a3b8", fontWeight: 600 }}>{selectedPlayer.team}{selectedPlayer.position ? ` · ${selectedPlayer.position}` : ""}</span>
+                </div>
+                <div style={{ fontSize: 13, color: "#818cf8", fontWeight: 600 }}>
+                  {selectedPlayer.goals ?? 0} Goals · {selectedPlayer.assists ?? 0} Assists · {selectedPlayer.appearances ?? 0} Apps{selectedPlayer.rating ? ` · ${parseFloat(selectedPlayer.rating).toFixed(2)} Rating` : ""} — last season
+                </div>
+              </div>
+            </div>
+          </GraphicCard>
+
+          <div style={{ display: "flex", gap: 10 }}>
+            <button onClick={() => download(false)} disabled={downloading} className="copy-btn" style={{ flex: 1 }}>{downloading ? "Saving..." : "⬇️ Download"}</button>
+            <button onClick={() => download(true)} disabled={downloading} className="ghost-btn" style={{ flex: 1 }}>Transparent BG</button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function ManOfMatchGraphic() {
   const cardRef = useRef(null);
   const [selectedFixture, setSelectedFixture] = useState(null);
@@ -9060,6 +9183,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "h2h",      label: "🆚 Player H2H" },
     { id: "matchh2h", label: "📋 Match H2H" },
     { id: "motm", label: "⭐ Man of the Match" },
+    { id: "spotlight", label: "📸 Player Spotlight" },
     { id: "brilliant", label: "✨ Brilliant Performances" },
     { id: "worst", label: "📉 Worst Performances" },
     { id: "squaddepth", label: "📊 Squad Depth Chart" },
@@ -9122,6 +9246,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "h2h"      && <PlayerH2HGraphic />}
       {activeSection === "matchh2h" && <MatchH2HGraphic />}
       {activeSection === "motm" && <ManOfMatchGraphic />}
+      {activeSection === "spotlight" && <PlayerSpotlightGraphic />}
       {activeSection === "brilliant" && <BrilliantPerformancesGraphic />}
       {activeSection === "worst" && <WorstPerformancesGraphic />}
       {activeSection === "squaddepth" && <SquadDepthGraphic />}
