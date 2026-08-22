@@ -1,7 +1,6 @@
 // src/DeepInsightsPanel.jsx
 // Single source of truth for the Deep Insights display — Attack/Defence bento boxes + H2H + Last 5 Form.
 // Used both in-app (Predict tab Step 3 reveal) and in the Graphics tab (downloadable card).
-
 import { useState, useEffect } from "react";
 
 function capStat(val) {
@@ -129,7 +128,6 @@ export default function DeepInsightsPanel({ insights, homeTeam, awayTeam, showHe
           <div style={{ fontSize: 13, color: "#aaa", fontWeight: 600 }}>Statistical model — independent of AI verdict</div>
         </div>
       )}
-
       {(aiPrediction || userPrediction) && (
         <div style={{
           background: "linear-gradient(135deg, #818cf814, #4ade800e)",
@@ -149,7 +147,6 @@ export default function DeepInsightsPanel({ insights, homeTeam, awayTeam, showHe
           </div>
         </div>
       )}
-
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         {insights.comparison?.attackHome && (
           <BentoBox title="Attack" icon="⚔️" color="#4ade80">
@@ -186,3 +183,6 @@ export default function DeepInsightsPanel({ insights, homeTeam, awayTeam, showHe
           </div>
         </BentoBox>
       )}
+    </div>
+  );
+}
