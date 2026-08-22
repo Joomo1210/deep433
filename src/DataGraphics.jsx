@@ -2779,8 +2779,6 @@ function motmStatsForPosition(player) {
   if (isGK) {
     return [
       { label: "Saves", value: player.saves },
-      { label: "Pass Acc.", value: player.passAccuracy != null ? `${player.passAccuracy}%` : null },
-      { label: "Minutes", value: player.minutesPlayed },
     ];
   }
   if (isDef) {
@@ -2911,7 +2909,7 @@ function ManOfMatchGraphic() {
                 <div style={{ fontSize: 32, fontWeight: 900, color: "#0a0f0a" }}>{parseFloat(selectedPlayer.rating).toFixed(2)}</div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, textAlign: "left" }}>
+              <div style={{ display: "grid", gridTemplateColumns: `repeat(${motmStatsForPosition(selectedPlayer).length}, 1fr)`, gap: 10, textAlign: "left", maxWidth: motmStatsForPosition(selectedPlayer).length === 1 ? 160 : "100%", margin: "0 auto" }}>
                 {motmStatsForPosition(selectedPlayer).map(s => (
                   <div key={s.label} style={{ background: "#13131f", borderRadius: 10, padding: "10px 6px", textAlign: "center" }}>
                     <div style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>{s.value ?? "—"}</div>
