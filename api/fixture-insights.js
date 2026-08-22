@@ -56,9 +56,17 @@ export default async function handler(req, res) {
     const awayForm = pred.teams?.away?.last_5?.form || "";
 
     // Normalise comparison values to always sum to 100%
+    // Returns null when both sides genuinely have no data at all, rather
+    // than silently flooring each to a minimum of 5 — that flooring was
+    // producing an identical, misleading 50/50 split whenever API-Football
+    // had no real comparison data for a fixture, indistinguishable from an
+    // actual close matchup.
     const norm = (a, b) => {
-      const av = Math.max(parseFloat(a) || 0, 5);
-      const bv = Math.max(parseFloat(b) || 0, 5);
+      const aRaw = parseFloat(a);
+      const bRaw = parseFloat(b);
+      if (isNaN(aRaw) && isNaN(bRaw)) return null;
+      const av = Math.max(aRaw || 0, 5);
+      const bv = Math.max(bRaw || 0, 5);
       const total = av + bv;
       return { a: Math.round((av / total) * 100) + "%", b: Math.round((bv / total) * 100) + "%" };
     };
@@ -81,16 +89,18 @@ export default async function handler(req, res) {
         away: goalsAway,
       },
       comparison: {
-        attackHome: atk.a,
-        attackAway: atk.b,
-        defenceHome: def.a,
-        defenceAway: def.b,
-        formHome: form.a,
-        formAway: form.b,
+        attackHome: atk?.a,
+        attackAway: atk?.b,
+        defenceHome: def?.a,
+        defenceAway: def?.b,
+        formHome: form?.a,
+        formAway: form?.b,
         h2hHome: comp.h2h?.home,
         h2hAway: comp.h2h?.away,
       },
       form: { home: homeForm, away: awayForm },
+      homeTeamId: pred.teams?.home?.id,
+      awayTeamId: pred.teams?.away?.id,
       h2h: h2hSummary,
     });
   } catch (err) {
