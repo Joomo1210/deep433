@@ -2919,11 +2919,6 @@ function ManOfMatchGraphic() {
                   style={{ width: 90, fontSize: 32, fontWeight: 900, color: "#0a0f0a", background: "transparent", border: "none", outline: "none", textAlign: "center", fontFamily: "inherit", padding: 0 }}
                 />
               </div>
-              {customRating != null && parseFloat(customRating) !== parseFloat(selectedPlayer.rating) && (
-                <div style={{ fontSize: 11, color: "#94a3b8", marginTop: -14, marginBottom: 20 }}>
-                  Your rating (API had {selectedPlayer.rating != null ? parseFloat(selectedPlayer.rating).toFixed(2) : "—"})
-                </div>
-              )}
 
               <div style={{ display: "grid", gridTemplateColumns: `repeat(${motmStatsForPosition(selectedPlayer).length}, 1fr)`, gap: 10, textAlign: "left", maxWidth: motmStatsForPosition(selectedPlayer).length === 1 ? 160 : "100%", margin: "0 auto" }}>
                 {motmStatsForPosition(selectedPlayer).map(s => (
