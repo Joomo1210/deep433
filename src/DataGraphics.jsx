@@ -2767,15 +2767,23 @@ function GoldenGloveGraphic() {
 // goalkeepers showing mostly zeros with no mention of saves, their actual
 // contribution, and defenders missing interceptions/duels entirely.
 function motmStatsForPosition(player) {
-  const pos = (player.position || "").toLowerCase();
-  if (pos.includes("goalkeeper")) {
+  // Different API-Football endpoints use different position formats — the
+  // ratings/fixtures-players endpoint (used here) returns short codes like
+  // "G"/"D"/"M"/"F", while the squad-list endpoint elsewhere uses full words
+  // like "Goalkeeper". Checking for both avoids silently falling through to
+  // the wrong stat set for one data source but not the other.
+  const pos = (player.position || "").toLowerCase().trim();
+  const isGK = pos === "g" || pos.includes("goalkeeper") || pos.includes("keeper");
+  const isDef = pos === "d" || pos.includes("defender") || pos.includes("back");
+  const isMid = pos === "m" || pos.includes("midfielder");
+  if (isGK) {
     return [
       { label: "Saves", value: player.saves },
       { label: "Pass Acc.", value: player.passAccuracy != null ? `${player.passAccuracy}%` : null },
       { label: "Minutes", value: player.minutesPlayed },
     ];
   }
-  if (pos.includes("defender")) {
+  if (isDef) {
     return [
       { label: "Tackles", value: player.tackles },
       { label: "Interceptions", value: player.interceptions },
@@ -2785,7 +2793,7 @@ function motmStatsForPosition(player) {
       { label: "Dribbles", value: player.dribbles },
     ];
   }
-  if (pos.includes("midfielder")) {
+  if (isMid) {
     return [
       { label: "Key Passes", value: player.keyPasses },
       { label: "Assists", value: player.assists },
