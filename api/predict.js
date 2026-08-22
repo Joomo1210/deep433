@@ -3,18 +3,27 @@ const supabase = createClient(
   'https://idisdztwpvedtnroiian.supabase.co',
   process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlkaXNkenR3cHZlZHRucm9paWFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NTczOTQsImV4cCI6MjA5NzAzMzM5NH0.YmF0DqWmopuJs9Ci1hdFi0XDMoWRD0yfVwOuuG7WVyE'
 );
+
+// ─────────────────────────────────────────────────────────────────────────
+// This endpoint is now fully deterministic — no AI text generation at all.
+// Every field is derived directly from API-Football's own prediction data
+// (win probabilities, predicted goals, attack/defence/form comparison,
+// head-to-head), which is real, verified data rather than free-form text
+// a model could hallucinate. This trades the AI's varied "analyst voice"
+// for a genuine guarantee of accuracy, matching Deep433's identity as an
+// analytics site rather than an AI-commentary site.
+//
+// Lineups, formations, and "key player" fields were dropped entirely —
+// API-Football's squad list doesn't distinguish starting XI from bench,
+// so predicting a "Likely Lineup" without AI inference isn't reliably
+// possible. Confirmed lineups (once officially announced) are handled by
+// the separate /api/match-lineup endpoint, unaffected by this change.
+// ─────────────────────────────────────────────────────────────────────────
+
 export default async function handler(req, res) {
   if (req.method !== 'POST' && req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
-  // GET requests read the same params from the query string instead of the
-  // body, so this can be tested by pasting a URL directly into a browser —
-  // the same simple approach that's worked reliably throughout this session,
-  // rather than needing dev tools or a POST client.
   const { homeTeam, awayTeam, league, fixtureId } = req.method === 'GET' ? req.query : req.body;
-  // ── Cache check ──────────────────────────────────────────────────────────
-  // If we already have a prediction for this exact match, return it immediately
-  // so all users see the same canonical AI prediction.
-  // skipCache=true bypasses this — needed when testing, since a cached
-  // response was saved before the _squadFetchStatus field existed.
+
   const skipCache = (req.method === 'GET' ? req.query.skipCache : req.body.skipCache) === 'true';
   if (!skipCache) {
     try {
@@ -30,212 +39,115 @@ export default async function handler(req, res) {
       }
     } catch {}
   }
-  // ─────────────────────────────────────────────────────────────────────────
-  // ── Fetch live squads from API-Football using fixtureId ──────────────────
-  const safeGet = (url, headers) => Promise.race([
-    fetch(url, { headers }).then(r => r.json()).catch(() => null),
-    new Promise(resolve => setTimeout(() => resolve(null), 4000))
+
+  const apiKey = process.env.API_FOOTBALL_KEY;
+  const safeGet = (url) => Promise.race([
+    fetch(url, { headers: { 'x-apisports-key': apiKey } }).then(r => r.json()).catch(() => null),
+    new Promise(resolve => setTimeout(() => resolve(null), 4000)),
   ]);
-  async function fetchLiveSquad(teamId) {
-    if (!teamId) return null;
-    try {
-      const data = await safeGet(
-        `https://v3.football.api-sports.io/players/squads?team=${teamId}`,
-        { 'x-apisports-key': process.env.API_FOOTBALL_KEY }
-      );
-      const players = data?.response?.[0]?.players || [];
-      if (!players.length) return null;
-      const byPos = { GK: [], DEF: [], MID: [], ATT: [] };
-      players.forEach(p => {
-        const pos = p.position;
-        if (pos === 'Goalkeeper') byPos.GK.push(p.name);
-        else if (pos === 'Defender') byPos.DEF.push(p.name);
-        else if (pos === 'Midfielder') byPos.MID.push(p.name);
-        else if (pos === 'Attacker') byPos.ATT.push(p.name);
-      });
-      return [
-        ...byPos.GK.map(n => `GK: ${n}`),
-        ...byPos.DEF.map(n => `DEF: ${n}`),
-        ...byPos.MID.map(n => `MID: ${n}`),
-        ...byPos.ATT.map(n => `FWD: ${n}`),
-      ].join(', ') || null;
-    } catch { return null; }
+
+  if (!fixtureId) {
+    return res.status(200).json({
+      available: false,
+      reason: 'No fixture ID available — this match needs to be selected from the fixture list, not entered manually.',
+    });
   }
-  // Get team IDs from the fixture
-  let homeSquadStr = null;
-  let awaySquadStr = null;
-  if (fixtureId) {
-    try {
-      const fixData = await safeGet(
-        `https://v3.football.api-sports.io/fixtures?id=${fixtureId}`,
-        { 'x-apisports-key': process.env.API_FOOTBALL_KEY }
-      );
-      const fix = fixData?.response?.[0];
-      if (fix) {
-        const homeId = fix.teams?.home?.id;
-        const awayId = fix.teams?.away?.id;
-        const [homeSquad, awaySquad] = await Promise.all([
-          fetchLiveSquad(homeId),
-          fetchLiveSquad(awayId),
-        ]);
-        homeSquadStr = homeSquad;
-        awaySquadStr = awaySquad;
-      }
-    } catch {}
+
+  // ── Fetch injuries and predictions in parallel — both real, factual data ──
+  const [injuryData, predData] = await Promise.all([
+    safeGet(`https://v3.football.api-sports.io/injuries?fixture=${fixtureId}`),
+    safeGet(`https://v3.football.api-sports.io/predictions?fixture=${fixtureId}`),
+  ]);
+
+  const pred = predData?.response?.[0];
+  if (!pred) {
+    return res.status(200).json({ available: false, reason: 'No prediction data available from API-Football for this fixture yet.' });
   }
-  const squadInstructions = homeSquadStr && awaySquadStr
-    ? `VERIFIED SQUADS — you MUST only pick players from these lists:
-${homeTeam} squad: ${homeSquadStr}
-${awayTeam} squad: ${awaySquadStr}
-Do NOT invent players. Do NOT use players from other teams. Only use names exactly as listed above. Every player must appear in the lineup at most once — do not repeat the same name in multiple positions.`
-    : `CRITICAL — no verified squad data was available for this match, so extra caution is required. Only use real players who are CURRENTLY on this exact team's books right now (not a previous club, not a player who has since left or retired). If you are not confident a specific player is still at this club today, do NOT name them — describe the tactical battle in general terms (e.g. "the home side's midfield press" rather than a specific, possibly-outdated name) instead of guessing. This applies to both club and international football. Every player must appear in the lineup at most once — do not repeat the same name in multiple positions.`;
-  const NEUTRAL_VENUE_LEAGUES = ["wc2026", "afcon", "copamerica", "ucl", "uel", "facup", "copadelrey", "communityshield", "dflsupercup", "tropheedeschampions", "supercoppa"];
-  const isNeutralVenue = NEUTRAL_VENUE_LEAGUES.some(l => (league || "").toLowerCase().includes(l.replace("2026","").replace("copa","copa"))) ||
-    ["world cup", "copa america", "afcon", "champions league", "europa league", "fa cup", "copa del rey", "community shield", "dfl-supercup", "dfl supercup", "trophée des champions", "trophee des champions", "supercoppa", "tournament"].some(k => (league || "").toLowerCase().includes(k));
-  const venueInstruction = isNeutralVenue
-    ? `IMPORTANT — VENUE: This match is played at a neutral venue (like a cup final), with both "${homeTeam}" and "${awayTeam}" travelling equally to an unfamiliar ground. Base your analysis purely on squad quality, form, and tactics, treating both sides as away from home. If you are tempted to reference crowd support, home comfort, or a home/away edge for either side, stop and reconsider: at a neutral venue, no such edge exists for either team.`
-    : `This is a domestic league/cup fixture. ${homeTeam} are playing at their home ground with their usual home advantage — this is a legitimate factor to mention.`;
-  // Fetch injury/suspension data if we have a fixtureId
-  let injuryInstruction = "";
-  let insightsInstruction = "";
-  if (fixtureId) {
-    // Fetch injuries and insights in parallel
-    const [injuryRes, insightsRes] = await Promise.allSettled([
-      fetch(`https://v3.football.api-sports.io/injuries?fixture=${fixtureId}`, {
-        headers: { "x-apisports-key": process.env.API_FOOTBALL_KEY },
-      }),
-      fetch(`https://v3.football.api-sports.io/predictions?fixture=${fixtureId}`, {
-        headers: { "x-apisports-key": process.env.API_FOOTBALL_KEY },
-      }),
-    ]);
-    // Process injuries
-    try {
-      if (injuryRes.status === "fulfilled" && injuryRes.value) {
-        const injuryData = injuryRes.value;
-        const injuries = injuryData.response || [];
-        if (injuries.length) {
-          const homeTeamId = injuries[0]?.team?.id;
-          const homeOut = [];
-          const awayOut = [];
-          injuries.forEach(entry => {
-            const label = `${entry.player?.name} (${entry.player?.reason || entry.player?.type || "unavailable"})`;
-            if (entry.team?.id === homeTeamId) homeOut.push(label);
-            else awayOut.push(label);
-          });
-          const parts = [];
-          if (homeOut.length) parts.push(`${homeTeam} unavailable: ${homeOut.join(", ")}`);
-          if (awayOut.length) parts.push(`${awayTeam} unavailable: ${awayOut.join(", ")}`);
-          if (parts.length) {
-            injuryInstruction = `INJURIES & SUSPENSIONS — these players are confirmed unavailable and MUST NOT appear in your predicted lineups: ${parts.join(" | ")}. Adjust your lineup and verdict to reflect these absences.`;
-          }
-        }
-      }
-    } catch {}
-    // Process insights/predictions
-    try {
-      if (insightsRes.status === "fulfilled" && insightsRes.value) {
-        const insightsData = insightsRes.value;
-        const pred = insightsData.response?.[0];
-        if (pred) {
-          const pct = pred.predictions?.percent;
-          const advice = pred.predictions?.advice;
-          const goalsH = pred.predictions?.goals?.home;
-          const goalsA = pred.predictions?.goals?.away;
-          const homeForm = pred.teams?.home?.last_5?.form || "";
-          const awayForm = pred.teams?.away?.last_5?.form || "";
-          const comp = pred.comparison || {};
-          const parts = [];
-          if (pct) parts.push(`Statistical win probabilities: ${homeTeam} ${pct.home}, Draw ${pct.draw}, ${awayTeam} ${pct.away}`);
-          if (goalsH !== null && goalsA !== null) parts.push(`Predicted goals: ${homeTeam} ${goalsH}, ${awayTeam} ${goalsA}`);
-          if (comp.form) parts.push(`Form index (higher = better recent form, not a percentage): ${homeTeam} ${parseFloat(comp.form.home || 0).toFixed(0)}, ${awayTeam} ${parseFloat(comp.form.away || 0).toFixed(0)}`);
-          if (comp.att) parts.push(`Attack strength: ${homeTeam} ${comp.att.home}, ${awayTeam} ${comp.att.away}`);
-          if (comp.def) parts.push(`Defence strength: ${homeTeam} ${comp.def.home}, ${awayTeam} ${comp.def.away}`);
-          if (advice) parts.push(`Statistical advice: ${advice}`);
-          if (parts.length) {
-            insightsInstruction = `STATISTICAL CONTEXT (use to inform your verdict but form your own independent analysis): ${parts.join(" | ")}.`;
-          }
-        }
-      }
-    } catch {}
+
+  // ── Injuries & suspensions — real, direct data, no AI involved ──
+  const injuries = injuryData?.response || [];
+  let homeInjuries = [];
+  let awayInjuries = [];
+  if (injuries.length) {
+    const homeTeamId = injuries[0]?.team?.id;
+    injuries.forEach(entry => {
+      const label = { name: entry.player?.name, reason: entry.player?.reason || entry.player?.type || 'Unavailable' };
+      if (entry.team?.id === homeTeamId) homeInjuries.push(label);
+      else awayInjuries.push(label);
+    });
   }
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': process.env.DEEP433_KEY,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1200,
-      system: `You are a brutally honest expert football analyst. Respond with ONLY a raw JSON object. No markdown. No backticks. Just JSON. ${squadInstructions} ${venueInstruction} ${injuryInstruction} ${insightsInstruction}`,
-      messages: [{
-        role: 'user',
-        content: `Predict this ${league} match. Team 1: ${homeTeam}, Team 2: ${awayTeam}. ${isNeutralVenue ? "Remember: neutral venue, no home advantage for either side." : `${homeTeam} play at home.`} ${injuryInstruction ? "Important: respect the injury/suspension list above in your lineup selections." : ""} ${insightsInstruction ? "Use the statistical context to inform your analysis, but do not just repeat the numbers — synthesise them into your own verdict." : ""} Return ONLY this JSON: {"scoreline":"2-1","homeGoals":2,"awayGoals":1,"outcome":"Home Win","confidence":"Medium","homeLineup":["GK","RB","CB","CB","LB","CM","CM","CM","RW","ST","LW"],"awayLineup":["GK","RB","CB","CB","LB","CM","CM","CM","RW","ST","LW"],"homeFormation":"4-3-3","awayFormation":"4-2-3-1","keyBattle":"Description","homeKeyPlayer":"Name","awayKeyPlayer":"Name","verdict":"2-3 sentence brutal honest verdict.","wildcard":"One surprise factor."} Use only players from the verified squads provided.`
-      }],
-    }),
+
+  // ── Win probabilities, predicted goals, comparison stats — all real ──
+  const percent = pred.predictions?.percent || {};
+  const homePct = parseFloat(percent.home) || 0;
+  const drawPct = parseFloat(percent.draw) || 0;
+  const awayPct = parseFloat(percent.away) || 0;
+
+  const rawGoalsHome = parseFloat(pred.predictions?.goals?.home);
+  const rawGoalsAway = parseFloat(pred.predictions?.goals?.away);
+  const homeGoals = isNaN(rawGoalsHome) ? null : Math.round(rawGoalsHome);
+  const awayGoals = isNaN(rawGoalsAway) ? null : Math.round(rawGoalsAway);
+
+  // Outcome derived directly from the scoreline itself, so the two always
+  // agree — rather than deriving outcome from percent separately, which
+  // could occasionally produce a mismatched label vs scoreline.
+  let outcome = 'Draw';
+  if (homeGoals != null && awayGoals != null) {
+    if (homeGoals > awayGoals) outcome = 'Home Win';
+    else if (awayGoals > homeGoals) outcome = 'Away Win';
+  } else {
+    // Fallback to percent-based outcome if goals weren't available
+    if (homePct > drawPct && homePct > awayPct) outcome = 'Home Win';
+    else if (awayPct > homePct && awayPct > drawPct) outcome = 'Away Win';
+  }
+
+  // Confidence from how clearly one result stands out from the others
+  const sorted = [homePct, drawPct, awayPct].sort((a, b) => b - a);
+  const gap = sorted[0] - sorted[1];
+  const confidence = gap >= 20 ? 'High' : gap >= 10 ? 'Medium' : 'Low';
+
+  const comp = pred.comparison || {};
+  const homeForm = pred.teams?.home?.last_5?.form || '';
+  const awayForm = pred.teams?.away?.last_5?.form || '';
+  const h2h = (pred.h2h || []).slice(0, 5).map(f => {
+    const hg = f.goals?.home ?? '?';
+    const ag = f.goals?.away ?? '?';
+    return `${f.teams?.home?.name} ${hg}-${ag} ${f.teams?.away?.name}`;
   });
-  const data = await response.json();
-  const text = data.content?.map(b => b.text || '').join('').trim() || '';
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) return res.status(500).json({ error: 'Parse error' });
-  const parsed = JSON.parse(jsonMatch[0]);
 
-  // Deterministic validation — the AI is repeatedly ignoring prompt-level
-  // instructions and naming outdated/retired players despite being given
-  // the real squad list. Since prompt instructions alone haven't reliably
-  // worked, cross-check every named player against the actual verified
-  // squad data directly, and replace any name that doesn't genuinely match
-  // with a generic position label instead of letting a hallucinated name
-  // through silently.
-  if (homeSquadStr && awaySquadStr) {
-    const extractNames = (squadStr) => squadStr.split(", ").map(entry => entry.replace(/^(GK|DEF|MID|FWD):\s*/, "").trim());
-    const homeRealNames = extractNames(homeSquadStr);
-    const awayRealNames = extractNames(awaySquadStr);
-    const surname = (name) => (name || "").trim().split(" ").pop().toLowerCase();
-    const isGenuine = (name, realNames) => realNames.some(real => surname(real) === surname(name));
+  // ── Key battle — template sentence built from real attack/defence comparison ──
+  const attHome = parseFloat(comp.att?.home) || 0;
+  const attAway = parseFloat(comp.att?.away) || 0;
+  const defHome = parseFloat(comp.def?.home) || 0;
+  const defAway = parseFloat(comp.def?.away) || 0;
+  const sharperAttack = attHome >= attAway ? homeTeam : awayTeam;
+  const sharperDefence = defHome >= defAway ? homeTeam : awayTeam;
+  const keyBattle = comp.att && comp.def
+    ? `${sharperAttack}'s attack (${sharperAttack === homeTeam ? comp.att.home : comp.att.away} attack rating) against ${sharperDefence}'s defence (${sharperDefence === homeTeam ? comp.def.home : comp.def.away} defence rating) — recent form: ${homeTeam} ${homeForm || 'n/a'}, ${awayTeam} ${awayForm || 'n/a'}.`
+    : `Recent form: ${homeTeam} ${homeForm || 'n/a'}, ${awayTeam} ${awayForm || 'n/a'}.`;
 
-    const validateLineup = (lineup, realNames, positionOrder) => {
-      if (!Array.isArray(lineup)) return lineup;
-      return lineup.map((name, i) => isGenuine(name, realNames) ? name : (positionOrder[i] || "Player"));
-    };
-    const defaultPositions = ["GK", "RB", "CB", "CB", "LB", "CM", "CM", "CM", "RW", "ST", "LW"];
-    parsed.homeLineup = validateLineup(parsed.homeLineup, homeRealNames, defaultPositions);
-    parsed.awayLineup = validateLineup(parsed.awayLineup, awayRealNames, defaultPositions);
+  // ── Verdict — template sentence combining win probability, form, advice ──
+  const advice = pred.predictions?.advice || '';
+  const favourite = homePct >= awayPct ? homeTeam : awayTeam;
+  const favouritePct = Math.max(homePct, awayPct);
+  const verdict = `${favourite} carry the higher win probability at ${favouritePct}% (draw ${drawPct}%). ${advice ? `Statistical model favours: ${advice}.` : ''} Form and head-to-head history support this reading, though football regularly defies pure probability.`.trim();
 
-    // homeKeyPlayer/awayKeyPlayer and keyBattle/wildcard often name specific
-    // players in free text too — these are harder to validate word-by-word
-    // reliably, but the key player fields specifically are single names and
-    // can be checked the same way.
-    if (parsed.homeKeyPlayer && !isGenuine(parsed.homeKeyPlayer, homeRealNames)) {
-      parsed.homeKeyPlayer = null;
-    }
-    if (parsed.awayKeyPlayer && !isGenuine(parsed.awayKeyPlayer, awayRealNames)) {
-      parsed.awayKeyPlayer = null;
-    }
-  }
+  const parsed = {
+    available: true,
+    scoreline: homeGoals != null && awayGoals != null ? `${homeGoals}-${awayGoals}` : null,
+    homeGoals,
+    awayGoals,
+    outcome,
+    confidence,
+    keyBattle,
+    verdict,
+    percent: { home: percent.home, draw: percent.draw, away: percent.away },
+    form: { home: homeForm, away: awayForm },
+    h2h,
+    injuries: { home: homeInjuries, away: awayInjuries },
+    underOver: pred.predictions?.under_over || null,
+  };
 
-
-  // Safety net — strip any home-advantage phrasing that slipped through
-  // despite the instruction, for neutral-venue matches specifically.
-  if (isNeutralVenue) {
-    const stripHomeLanguage = (str) => {
-      if (!str) return str;
-      return str
-        .replace(/\bhome advantage\b/gi, "the occasion")
-        .replace(/\bhome crowd\b/gi, "the crowd")
-        .replace(/\bhome support\b/gi, "the atmosphere")
-        .replace(/\bat home\b/gi, "on the day")
-        .replace(/\bhome field advantage\b/gi, "the occasion")
-        .replace(/\bthe hosts\b/gi, homeTeam)
-        .replace(/\bthe home side\b/gi, homeTeam);
-    };
-    parsed.verdict = stripHomeLanguage(parsed.verdict);
-    parsed.keyBattle = stripHomeLanguage(parsed.keyBattle);
-    parsed.wildcard = stripHomeLanguage(parsed.wildcard);
-  }
-
-  // Save to cache for future users
   try {
     await supabase.from('match_predictions').upsert({
       league,
@@ -244,29 +156,6 @@ Do NOT invent players. Do NOT use players from other teams. Only use names exact
       ai_data: parsed,
     }, { onConflict: 'league,home_team,away_team' });
   } catch {}
-  // Debug mode — shows whether verified squad data was genuinely fetched
-  // for this match, so squad-fetch failures can be confirmed directly
-  // rather than inferred from the AI's output alone.
-  if (req.query.debug === "true") {
-    return res.status(200).json({
-      debug: true,
-      fixtureId: fixtureId || null,
-      homeSquadFetched: !!homeSquadStr,
-      awaySquadFetched: !!awaySquadStr,
-      homeSquadPreview: homeSquadStr ? homeSquadStr.slice(0, 200) : null,
-      awaySquadPreview: awaySquadStr ? awaySquadStr.slice(0, 200) : null,
-      parsed,
-    });
-  }
-
-  // Always included, no separate debug flag needed — lets squad-fetch
-  // status be checked directly from any normal prediction response, without
-  // requiring any frontend code changes to test.
-  parsed._squadFetchStatus = {
-    fixtureIdReceived: fixtureId || null,
-    homeSquadFetched: !!homeSquadStr,
-    awaySquadFetched: !!awaySquadStr,
-  };
 
   res.status(200).json(parsed);
 }
