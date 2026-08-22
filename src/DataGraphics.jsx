@@ -2820,11 +2820,17 @@ function ManOfMatchGraphic() {
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState("");
+  // Lets Joseph override the API's own rating with his own judgment call —
+  // useful since API-Football's rating can favour goalkeepers heavily for
+  // save counts in a way that doesn't always match the eye test. null means
+  // "use the API's rating as-is"; any other value is a manual override.
+  const [customRating, setCustomRating] = useState(null);
 
   const handleSelect = async (f) => {
     setSelectedFixture(f);
     setAllPlayers([]);
     setSelectedPlayer(null);
+    setCustomRating(null);
     setError("");
     if (!f.fixtureId) { setError("No fixture ID available"); return; }
     setLoading(true);
@@ -2864,7 +2870,7 @@ function ManOfMatchGraphic() {
         <>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
             <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
-            <button onClick={() => { setSelectedFixture(null); setAllPlayers([]); setSelectedPlayer(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
+            <button onClick={() => { setSelectedFixture(null); setAllPlayers([]); setSelectedPlayer(null); setCustomRating(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "4px 10px" }}>Change</button>
           </div>
 
           {loading && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 16, padding: "20px 0" }}>Loading player stats...</div>}
@@ -2877,7 +2883,7 @@ function ManOfMatchGraphic() {
               </div>
               <select
                 value={selectedPlayer?.name || ""}
-                onChange={e => setSelectedPlayer(allPlayers.find(p => p.name === e.target.value) || null)}
+                onChange={e => { setSelectedPlayer(allPlayers.find(p => p.name === e.target.value) || null); setCustomRating(null); }}
                 style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #fbbf2440", borderRadius: 8, color: "#f0f0f0", fontSize: 15, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
               >
                 {[...allPlayers].sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating)).map(p => (
@@ -2906,8 +2912,18 @@ function ManOfMatchGraphic() {
 
               <div style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)", borderRadius: 12, padding: "12px 26px", display: "inline-block", marginBottom: 20 }}>
                 <div style={{ fontSize: 10, color: "#0a0f0a", fontWeight: 700, textTransform: "uppercase" }}>Rating</div>
-                <div style={{ fontSize: 32, fontWeight: 900, color: "#0a0f0a" }}>{parseFloat(selectedPlayer.rating).toFixed(2)}</div>
+                <input
+                  type="number" step="0.01" min="0" max="10"
+                  value={customRating != null ? customRating : (selectedPlayer.rating != null ? parseFloat(selectedPlayer.rating).toFixed(2) : "")}
+                  onChange={e => setCustomRating(e.target.value)}
+                  style={{ width: 90, fontSize: 32, fontWeight: 900, color: "#0a0f0a", background: "transparent", border: "none", outline: "none", textAlign: "center", fontFamily: "inherit", padding: 0 }}
+                />
               </div>
+              {customRating != null && parseFloat(customRating) !== parseFloat(selectedPlayer.rating) && (
+                <div style={{ fontSize: 11, color: "#94a3b8", marginTop: -14, marginBottom: 20 }}>
+                  Your rating (API had {selectedPlayer.rating != null ? parseFloat(selectedPlayer.rating).toFixed(2) : "—"})
+                </div>
+              )}
 
               <div style={{ display: "grid", gridTemplateColumns: `repeat(${motmStatsForPosition(selectedPlayer).length}, 1fr)`, gap: 10, textAlign: "left", maxWidth: motmStatsForPosition(selectedPlayer).length === 1 ? 160 : "100%", margin: "0 auto" }}>
                 {motmStatsForPosition(selectedPlayer).map(s => (
