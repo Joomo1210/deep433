@@ -4,23 +4,32 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlkaXNkenR3cHZlZHRucm9paWFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NTczOTQsImV4cCI6MjA5NzAzMzM5NH0.YmF0DqWmopuJs9Ci1hdFi0XDMoWRD0yfVwOuuG7WVyE'
 );
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-  const { homeTeam, awayTeam, league, fixtureId } = req.body;
+  if (req.method !== 'POST' && req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  // GET requests read the same params from the query string instead of the
+  // body, so this can be tested by pasting a URL directly into a browser —
+  // the same simple approach that's worked reliably throughout this session,
+  // rather than needing dev tools or a POST client.
+  const { homeTeam, awayTeam, league, fixtureId } = req.method === 'GET' ? req.query : req.body;
   // ── Cache check ──────────────────────────────────────────────────────────
   // If we already have a prediction for this exact match, return it immediately
   // so all users see the same canonical AI prediction.
-  try {
-    const { data: cached } = await supabase
-      .from('match_predictions')
-      .select('ai_data')
-      .eq('league', league)
-      .eq('home_team', homeTeam)
-      .eq('away_team', awayTeam)
-      .single();
-    if (cached?.ai_data) {
-      return res.status(200).json({ ...cached.ai_data, cached: true });
-    }
-  } catch {}
+  // skipCache=true bypasses this — needed when testing, since a cached
+  // response was saved before the _squadFetchStatus field existed.
+  const skipCache = (req.method === 'GET' ? req.query.skipCache : req.body.skipCache) === 'true';
+  if (!skipCache) {
+    try {
+      const { data: cached } = await supabase
+        .from('match_predictions')
+        .select('ai_data')
+        .eq('league', league)
+        .eq('home_team', homeTeam)
+        .eq('away_team', awayTeam)
+        .single();
+      if (cached?.ai_data) {
+        return res.status(200).json({ ...cached.ai_data, cached: true });
+      }
+    } catch {}
+  }
   // ─────────────────────────────────────────────────────────────────────────
   // ── Fetch live squads from API-Football using fixtureId ──────────────────
   const safeGet = (url, headers) => Promise.race([
