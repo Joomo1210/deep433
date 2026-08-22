@@ -1004,6 +1004,9 @@ useEffect(() => {
     });
     setSelectedFixtureId(match?.fixtureId || null);
   }, [homeTeam, awayTeam, selectedLeague, session, fixtures]);
+
+  const fetchConfirmedLineup = async (home, away, league, predictionId) => {
+    setLineupFetching(true);
     // Find the prediction ID — use passed ID, savedPredictionId, or look up from history
     const pid = predictionId || savedPredictionId || (() => {
       const h = normalize(home);
