@@ -1418,15 +1418,17 @@ if (!session && !guestMode) {
 
             {step === 3 && result && !loading && (
               <>
-                <PitchView
-                  homeTeam={homeTeam}
-                  awayTeam={awayTeam}
-                  homeFormation={confirmedLineup?.home?.formation || result.homeFormation}
-                  awayFormation={confirmedLineup?.away?.formation || result.awayFormation}
-                  homeLineupNames={confirmedLineup ? confirmedLineup.home.players.map(p => p.name) : result.homeLineup}
-                  awayLineupNames={confirmedLineup ? confirmedLineup.away.players.map(p => p.name) : result.awayLineup}
-                  lineupSource={confirmedLineup ? "confirmed" : "predicted"}
-                />
+                {confirmedLineup && (
+                  <PitchView
+                    homeTeam={homeTeam}
+                    awayTeam={awayTeam}
+                    homeFormation={confirmedLineup.home?.formation}
+                    awayFormation={confirmedLineup.away?.formation}
+                    homeLineupNames={confirmedLineup.home.players.map(p => p.name)}
+                    awayLineupNames={confirmedLineup.away.players.map(p => p.name)}
+                    lineupSource="confirmed"
+                  />
+                )}
                 {!confirmedLineup && (
                   <button
                     onClick={() => fetchConfirmedLineup(homeTeam, awayTeam, selectedLeague, savedPredictionId)}
