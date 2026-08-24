@@ -2252,7 +2252,7 @@ if (!session && !guestMode) {
                 <p style={{ fontSize: 16, color: "#e2e8f0", lineHeight: 1.6 }}>{viewingAnalysis.ai_data.keyBattle}</p>
               </div>
             )}
-            {/* Injuries & Suspensions */}
+           {/* Injuries & Suspensions */}
             {viewingAnalysis.ai_data?.injuries && (viewingAnalysis.ai_data.injuries.home?.length > 0 || viewingAnalysis.ai_data.injuries.away?.length > 0) && (
               <div className="card">
                 <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>🩹 Injuries & Suspensions</div>
