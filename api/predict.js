@@ -70,8 +70,14 @@ export default async function handler(req, res) {
   let awayInjuries = [];
   if (injuries.length) {
     const homeTeamId = injuries[0]?.team?.id;
+    const seen = new Set();
     injuries.forEach(entry => {
-      const label = { name: entry.player?.name, reason: entry.player?.reason || entry.player?.type || 'Unavailable' };
+      const name = entry.player?.name;
+      const reason = entry.player?.reason || entry.player?.type || 'Unavailable';
+      const key = `${entry.team?.id}:${name}:${reason}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      const label = { name, reason };
       if (entry.team?.id === homeTeamId) homeInjuries.push(label);
       else awayInjuries.push(label);
     });
@@ -120,8 +126,8 @@ export default async function handler(req, res) {
   const attAway = parseFloat(comp.att?.away);
   const defHome = parseFloat(comp.def?.home);
   const defAway = parseFloat(comp.def?.away);
-  const hasAttData = !isNaN(attHome) || !isNaN(attAway);
-  const hasDefData = !isNaN(defHome) || !isNaN(defAway);
+  const hasAttData = (!isNaN(attHome) && attHome > 0) || (!isNaN(attAway) && attAway > 0);
+  const hasDefData = (!isNaN(defHome) && defHome > 0) || (!isNaN(defAway) && defAway > 0);
   let keyBattle;
   if (hasAttData && hasDefData) {
     // Compare whichever side has the sharper attack against the OPPONENT's
