@@ -137,7 +137,6 @@ export default async function handler(req, res) {
   } else {
     keyBattle = `Recent form: ${homeTeam} ${homeForm || 'n/a'}, ${awayTeam} ${awayForm || 'n/a'}.`;
   }
-    : `Recent form: ${homeTeam} ${homeForm || 'n/a'}, ${awayTeam} ${awayForm || 'n/a'}.`;
 
   // ── Verdict — template sentence combining win probability, form, advice ──
   const advice = pred.predictions?.advice || '';
