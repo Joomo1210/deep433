@@ -1508,10 +1508,12 @@ if (!session && !guestMode) {
                   </div>
                 </div>
 
-                <div className="card" style={{ borderColor: "#2a1f00", background: "#13100a" }}>
-                  <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>🃏 Wildcard Factor</div>
-                  <p style={{ fontSize: 17, color: "#e2e8f0", lineHeight: 1.6 }}>{result.wildcard}</p>
-                </div>
+                                {result.wildcard && (
+                  <div className="card" style={{ borderColor: "#2a1f00", background: "#13100a" }}>
+                    <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>🃏 Wildcard Factor</div>
+                    <p style={{ fontSize: 17, color: "#e2e8f0", lineHeight: 1.6 }}>{result.wildcard}</p>
+                  </div>
+                )}
 
                 {deepInsights && (
                   <div className="card" style={{ borderColor: "#3730a322", background: "#0f0f1f" }}>
