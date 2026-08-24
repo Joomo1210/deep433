@@ -2238,35 +2238,37 @@ if (!session && !guestMode) {
                 </div>
               )}
             </div>
-
-            {/* AI Verdict */}
+{/* AI Verdict */}
             {viewingAnalysis.ai_data?.verdict && (
               <div className="card">
                 <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>🤖 AI Verdict</div>
                 <p style={{ fontSize: 17, lineHeight: 1.7, color: "#ccc" }}>{viewingAnalysis.ai_data.verdict}</p>
               </div>
             )}
-{/* Key battle */}
+            {/* Key battle */}
             {viewingAnalysis.ai_data?.keyBattle && (
-                              <div className="card">
-                  <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>⚔️ Key Tactical Battle</div>
-                  <p style={{ fontSize: 17, color: "#e2e8f0", lineHeight: 1.6 }}>{result.keyBattle}</p>
-                </div>
-                {result.injuries && (result.injuries.home?.length > 0 || result.injuries.away?.length > 0) && (
-                  <div className="card">
-                    <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>🩹 Injuries & Suspensions</div>
-                    {result.injuries.home?.length > 0 && (
-                      <p style={{ fontSize: 15, color: "#e2e8f0", lineHeight: 1.6, marginBottom: result.injuries.away?.length > 0 ? 8 : 0 }}>
-                        <strong>{homeTeam}:</strong> {result.injuries.home.map(p => `${p.name} (${p.reason})`).join(", ")}
-                      </p>
-                    )}
-                    {result.injuries.away?.length > 0 && (
-                      <p style={{ fontSize: 15, color: "#e2e8f0", lineHeight: 1.6 }}>
-                        <strong>{awayTeam}:</strong> {result.injuries.away.map(p => `${p.name} (${p.reason})`).join(", ")}
-                      </p>
-                    )}
-                  </div>
+              <div className="card">
+                <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>⚔️ Key Tactical Battle</div>
+                <p style={{ fontSize: 16, color: "#e2e8f0", lineHeight: 1.6 }}>{viewingAnalysis.ai_data.keyBattle}</p>
+              </div>
+            )}
+            {/* Injuries & Suspensions */}
+            {viewingAnalysis.ai_data?.injuries && (viewingAnalysis.ai_data.injuries.home?.length > 0 || viewingAnalysis.ai_data.injuries.away?.length > 0) && (
+              <div className="card">
+                <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>🩹 Injuries & Suspensions</div>
+                {viewingAnalysis.ai_data.injuries.home?.length > 0 && (
+                  <p style={{ fontSize: 15, color: "#e2e8f0", lineHeight: 1.6, marginBottom: viewingAnalysis.ai_data.injuries.away?.length > 0 ? 8 : 0 }}>
+                    <strong>{viewingAnalysis.home_team}:</strong> {viewingAnalysis.ai_data.injuries.home.map(p => `${p.name} (${p.reason})`).join(", ")}
+                  </p>
                 )}
+                {viewingAnalysis.ai_data.injuries.away?.length > 0 && (
+                  <p style={{ fontSize: 15, color: "#e2e8f0", lineHeight: 1.6 }}>
+                    <strong>{viewingAnalysis.away_team}:</strong> {viewingAnalysis.ai_data.injuries.away.map(p => `${p.name} (${p.reason})`).join(", ")}
+                  </p>
+                )}
+              </div>
+            )}
+      
                 {viewingAnalysis.ai_data.injuries.away?.length > 0 && (
                   <p style={{ fontSize: 15, color: "#e2e8f0", lineHeight: 1.6 }}>
                     <strong>{viewingAnalysis.away_team}:</strong> {viewingAnalysis.ai_data.injuries.away.map(p => `${p.name} (${p.reason})`).join(", ")}
