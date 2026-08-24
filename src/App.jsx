@@ -4,12 +4,10 @@ import DataGraphics from "./DataGraphics";
 import DeepInsightsPanel from "./DeepInsightsPanel";
 import { createClient } from "@supabase/supabase-js";
 import PublicTeamCompare from "./PublicTeamCompare";
-
 const supabase = createClient(
   "https://idisdztwpvedtnroiian.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlkaXNkenR3cHZlZHRucm9paWFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NTczOTQsImV4cCI6MjA5NzAzMzM5NH0.YmF0DqWmopuJs9Ci1hdFi0XDMoWRD0yfVwOuuG7WVyE"
 );
-
 const LEAGUE_LOGOS = {
   wc2026:     "https://media.api-sports.io/football/leagues/1.png",
   pl:         "https://media.api-sports.io/football/leagues/39.png",
@@ -31,7 +29,6 @@ const LEAGUE_LOGOS = {
   npfl:         "https://media.api-sports.io/football/leagues/399.png",
   scotprem:     "https://media.api-sports.io/football/leagues/179.png",
 };
-
 const LEAGUES = [
   { id: "wc2026", label: "FIFA World Cup 2026", short: "FIFA World Cup 2026" },
   { id: "pl", label: "Premier League", short: "Premier League" },
@@ -57,7 +54,6 @@ const LEAGUES = [
   { id: "npfl", label: "NPFL", short: "NPFL" },
   { id: "scotprem", label: "Scotland Premiership", short: "Scotland Premiership" },
 ];
-
 const BADGE_DEFS = [
   { icon: "⚽", name: "Sunday League Scout", desc: "First prediction made", color: "#e2e8f0", condition: (s) => s.total >= 1 },
   { icon: "🤖", name: "AI Beater", desc: "Beat the AI once", color: "#60a5fa", condition: (s) => s.beatAI >= 1 },
@@ -66,12 +62,10 @@ const BADGE_DEFS = [
   { icon: "🧠", name: "Analyst", desc: "Beat the AI 10 times", color: "#4ade80", condition: (s) => s.beatAI >= 10 },
   { icon: "👑", name: "AI Destroyer", desc: "Beat the AI 20 times", color: "#fbbf24", condition: (s) => s.beatAI >= 20 },
 ];
-
 function getRank(stats) {
   const earned = BADGE_DEFS.filter(b => b.condition(stats));
   return earned.length > 0 ? earned[earned.length - 1] : null;
 }
-
 function computeStats(history) {
   const verified = history.filter(h => h.actual_score);
   const userCorrect = verified.filter(h => h.user_prediction === h.actual_score).length;
@@ -79,7 +73,6 @@ function computeStats(history) {
   const beatAI = verified.filter(h => h.result === "user").length;
   return { total: history.length, verified: verified.length, userCorrect, aiCorrect, beatAI };
 }
-
 const TEAM_CODES = {
   "Mexico": "mx", "South Africa": "za", "Korea Republic": "kr", "Czechia": "cz",
   "Canada": "ca", "Bosnia and Herzegovina": "ba", "Bosnia-Herzegovina": "ba",
@@ -96,10 +89,7 @@ const TEAM_CODES = {
   "Panama": "pa", "Uzbekistan": "uz", "Colombia": "co",
   "Cape Verde Islands": "cv",
 };
-
-// Team logo cache — populated from API-Football fixture responses
 const TEAM_LOGOS = {};
-
 function TeamFlag({ team, logo, size = 20 }) {
   const src = logo || TEAM_LOGOS[team];
   if (!src) return null;
@@ -112,7 +102,6 @@ function TeamFlag({ team, logo, size = 20 }) {
     />
   );
 }
-
 const TEAM_FLAGS = {
   "Mexico": "🇲🇽", "South Africa": "🇿🇦", "Korea Republic": "🇰🇷", "Czechia": "🇨🇿",
   "Canada": "🇨🇦", "Bosnia and Herzegovina": "🇧🇦", "USA": "🇺🇸", "Paraguay": "🇵🇾",
@@ -128,14 +117,11 @@ const TEAM_FLAGS = {
   "Ghana": "🇬🇭", "Panama": "🇵🇦", "Uzbekistan": "🇺🇿", "Colombia": "🇨🇴",
   "Cape Verde Islands": "🇨🇻",
 };
-
-
 function capStatShare(val, counterVal) {
   if (!val) return val;
   const num = parseFloat(val);
   if (isNaN(num)) return val;
   const capped = Math.min(Math.max(num, 20), 70);
-  // If counterVal provided, ensure they sum to 100
   if (counterVal !== undefined) {
     const counter = parseFloat(counterVal);
     if (!isNaN(counter)) {
@@ -148,7 +134,6 @@ function capStatShare(val, counterVal) {
   }
   return capped + "%";
 }
-
 function StatBarShare({ leftVal, rightVal }) {
   const left = parseFloat(leftVal) || 50;
   const right = parseFloat(rightVal) || 50;
@@ -162,21 +147,16 @@ function StatBarShare({ leftVal, rightVal }) {
     </div>
   );
 }
-
 function H2HSummaryShare({ h2h, homeTeam, awayTeam }) {
   if (!h2h?.length) return null;
-
   const parse = (r) => {
     const parts = r.match(/^(.+?)\s+(\d+)-(\d+)\s+(.+)$/);
     if (!parts) return null;
     return { homeTeam: parts[1].trim(), hg: parseInt(parts[2]), ag: parseInt(parts[3]), awayTeam: parts[4].trim() };
   };
-
   const hn = normalize(homeTeam);
   const an = normalize(awayTeam);
-
   const normalize = s => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-
   let hw = 0, aw = 0, d = 0;
   const dots = h2h.map(r => {
     const p = parse(r);
@@ -186,12 +166,10 @@ function H2HSummaryShare({ h2h, homeTeam, awayTeam }) {
     const matchHomeIsOurAway = normalize(p.homeTeam) === an;
     if (hg === ag) { d++; return "D"; }
     const matchHomeWon = hg > ag;
-    // Did our homeTeam win this H2H game?
     const ourHomeWon = (matchHomeIsOurHome && matchHomeWon) || (matchHomeIsOurAway && !matchHomeWon);
     if (ourHomeWon) { hw++; return "W"; }
     aw++; return "L";
   });
-
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-around", marginBottom: 10 }}>
@@ -213,7 +191,6 @@ function H2HSummaryShare({ h2h, homeTeam, awayTeam }) {
           <div key={i} style={{ width: 26, height: 26, borderRadius: "50%", background: dot === "W" ? "#4ade80" : dot === "L" ? "#f59e0b" : "#a78bfa", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: "#0a0a0f" }}>{dot}</div>
         ))}
       </div>
-      {/* Raw list fallback */}
       {h2h.map((r, i) => {
         const p = parse(r);
         if (!p) return <div key={i} style={{ fontSize: 13, color: "#444", textAlign: "center" }}>{r}</div>;
@@ -231,13 +208,11 @@ function H2HSummaryShare({ h2h, homeTeam, awayTeam }) {
     </div>
   );
 }
-
 function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPrediction, aiPrediction, leagueLabel, deepInsights, onClose }) {
   const cardRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
   const [variant, setVariant] = useState("square");
   const isLandscape = variant === "landscape";
-
   const downloadImage = async () => {
     if (!cardRef.current) return;
     setDownloading(true);
@@ -258,17 +233,14 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
     } catch { alert("Download failed — try screenshotting manually"); }
     setDownloading(false);
   };
-
   const stats = [
     { label: "Attack",  home: deepInsights?.comparison?.attackHome,  away: deepInsights?.comparison?.attackAway },
     { label: "Defence", home: deepInsights?.comparison?.defenceHome, away: deepInsights?.comparison?.defenceAway },
     { label: "Form",    home: deepInsights?.comparison?.formHome,    away: deepInsights?.comparison?.formAway },
   ].filter(s => s.home && s.away);
-
   const TeamLogo = ({ src, size = 48 }) => src
     ? <img src={src} alt="" crossOrigin="anonymous" style={{ width: size, height: size, objectFit: "contain", display: "block" }} />
     : null;
-
   const CardHeader = () => (
     <>
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
@@ -276,17 +248,14 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
         <span style={{ fontSize: 14, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
         
       </div>
-      {/* Corner watermark */}
       <div style={{ position: "absolute", bottom: 10, left: 10, pointerEvents: "none", zIndex: 0 }}>
         <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 34, height: 34, opacity: 0.35, objectFit: "contain", borderRadius: "50%", userSelect: "none" }} />
       </div>
-      {/* Competition context */}
       <div style={{ textAlign: "center", paddingTop: 18, paddingBottom: 4 }}>
         <span style={{ fontSize: 12, color: "#e2e8f0", letterSpacing: 2, textTransform: "uppercase", fontWeight: 600 }}>{leagueLabel}</span>
       </div>
     </>
   );
-
   const StatsSection = () => (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>📊 Deep Insights</div>
@@ -315,7 +284,6 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
       })}
     </div>
   );
-
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)", zIndex: 60, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 16, overflowY: "auto" }}>
       <div style={{ display: "flex", gap: 8, marginBottom: 12, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
@@ -329,7 +297,6 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
         </button>
         <button onClick={onClose} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 15, padding: "6px 12px" }}>✕ Close</button>
       </div>
-
       <div
         ref={cardRef}
         style={{
@@ -342,11 +309,8 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
         }}
       >
         <CardHeader />
-
         {isLandscape ? (
-          // ── LANDSCAPE 16:9 ──────────────────────────────────────────
           <>
-            {/* Left: teams + prediction */}
             <div style={{ width: "45%", padding: "36px 20px 20px", display: "flex", flexDirection: "column", justifyContent: "space-between", borderRight: "1px solid #1a1a2a" }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 8 }}>
                 <div style={{ textAlign: "center" }}>
@@ -366,15 +330,12 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
                 </div>
               </div>
             </div>
-            {/* Right: stats */}
             <div style={{ flex: 1, padding: "36px 20px 20px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
               <StatsSection />
             </div>
           </>
         ) : (
-          // ── SQUARE 1:1 ──────────────────────────────────────────────
           <div style={{ flex: 1, padding: "20px", display: "flex", flexDirection: "column", gap: 14, paddingTop: 36 }}>
-            {/* Teams + hero scores */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 8 }}>
               <div style={{ textAlign: "center" }}>
                 <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><TeamLogo src={homeLogo} size={44} /></div>
@@ -401,7 +362,6 @@ function SocialShareCard({ homeTeam, awayTeam, homeLogo, awayLogo, userPredictio
     </div>
   );
 }
-
 function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineupNames, awayLineupNames, lineupSource }) {
   const homeFlag = TEAM_FLAGS[homeTeam] || "🏳️";
   const awayFlag = TEAM_FLAGS[awayTeam] || "🏳️";
@@ -484,7 +444,6 @@ function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineu
     </div>
   );
 }
-
 function getTimeLabel(statusRaw, elapsed) {
   switch(statusRaw) {
     case "1H":  return elapsed ? `${elapsed}'` : "1H";
@@ -500,7 +459,6 @@ function getTimeLabel(statusRaw, elapsed) {
     default:    return statusRaw || "";
   }
 }
-
 function AuthScreen({ onGuestMode }) {
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
@@ -508,7 +466,6 @@ function AuthScreen({ onGuestMode }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-
   const handleEmail = async () => {
     if (!email || !password) { setError("Enter email and password."); return; }
     setLoading(true); setError(""); setMessage("");
@@ -524,13 +481,11 @@ function AuthScreen({ onGuestMode }) {
     } catch (e) { setError(e.message); }
     setLoading(false);
   };
-
   const handleGoogle = async () => {
     setLoading(true);
     const { error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: "https://deep433.com" } });
     if (error) { setError(error.message); setLoading(false); }
   };
-
   return (
     <div style={{ minHeight: "100vh", background: "#0a0a0f", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 20, fontFamily: "'Inter','Helvetica Neue',sans-serif" }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; }`}</style>
@@ -568,7 +523,6 @@ function AuthScreen({ onGuestMode }) {
     </div>
   );
 }
-
 export default function FootballPredictor() {
   const [session, setSession] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -607,7 +561,7 @@ export default function FootballPredictor() {
   const [remainingTeams, setRemainingTeams] = useState([]);
   const [awardsLoading, setAwardsLoading] = useState(false);
   const [tournamentPred, setTournamentPred] = useState(null);
-  const [awardsStep, setAwardsStep] = useState(1); // 1=SF, 2=Finalists, 3=Winner
+  const [awardsStep, setAwardsStep] = useState(1);
   const [awardsForm, setAwardsForm] = useState({ sf1: "", sf2: "", sf3: "", sf4: "", finalist1: "", finalist2: "", winner: "" });
   const [awardsSubmitting, setAwardsSubmitting] = useState(false);
   const [awardsError, setAwardsError] = useState("");
@@ -620,18 +574,14 @@ export default function FootballPredictor() {
   const [savedPredictionId, setSavedPredictionId] = useState(null);
   const [deepInsights, setDeepInsights] = useState(null);
   const [selectedFixtureId, setSelectedFixtureId] = useState(null);
-
   const isWorldCup = selectedLeague === "wc2026";
   const leagueLabel = LEAGUES.find(l => l.id === selectedLeague)?.short || "World Cup 2026";
-
-  const ESTIMATED_MATCH_MINUTES = 105; // 90 min + halftime/stoppage buffer
-
+  const ESTIMATED_MATCH_MINUTES = 105;
   const normalize = (s) =>
     (s || "")
       .toLowerCase()
       .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9]/g, "");
-
   const findFixture = (homeTeam, awayTeam) => {
     const h = normalize(homeTeam);
     const a = normalize(awayTeam);
@@ -640,7 +590,6 @@ export default function FootballPredictor() {
       (normalize(f.home) === a && normalize(f.away) === h)
     );
   };
-
   const findLiveFixture = (homeTeam, awayTeam) => {
     const h = normalize(homeTeam);
     const a = normalize(awayTeam);
@@ -649,11 +598,9 @@ export default function FootballPredictor() {
       (normalize(f.home) === a && normalize(f.away) === h)
     );
   };
-
   const getMatchStatus = (homeTeam, awayTeam) => {
     const live = findLiveFixture(homeTeam, awayTeam);
-    if (live) return live.status; // "upcoming" | "live" | "finished" — straight from the API
-
+    if (live) return live.status;
     const fixture = findFixture(homeTeam, awayTeam);
     if (!fixture || !fixture.kickoff) return "unknown";
     const now = new Date();
@@ -663,12 +610,10 @@ export default function FootballPredictor() {
     if (now < finish) return "live";
     return "finished";
   };
-
   const isLocked = (homeTeam, awayTeam) => {
     const status = getMatchStatus(homeTeam, awayTeam);
     return status === "live" || status === "finished";
   };
-
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session); setAuthLoading(false);
@@ -680,8 +625,6 @@ export default function FootballPredictor() {
     });
     return () => subscription.unsubscribe();
   }, []);
-
-  // Fetch bracket when bracket tab selected
   useEffect(() => {
     if (tab !== "bracket" || !session) return;
     setBracketLoading(true);
@@ -692,8 +635,6 @@ export default function FootballPredictor() {
       .catch(() => {})
       .finally(() => setBracketLoading(false));
   }, [tab, selectedLeague, session]);
-
-  // Fetch remaining teams + existing prediction for Season Awards tab
   useEffect(() => {
     if (tab !== "awards" || !session) return;
     setAwardsLoading(true);
@@ -701,12 +642,10 @@ export default function FootballPredictor() {
     setTournamentPred(null);
     setAwardsStep(1);
     setAwardsForm({ sf1: "", sf2: "", sf3: "", sf4: "", finalist1: "", finalist2: "", winner: "" });
-
     Promise.all([
       fetch(`/api/bracket?leagueId=${awardsLeague}`).then(r => r.json()),
       supabase.from("tournament_predictions").select("*").eq("user_id", session.user.id).eq("league_id", awardsLeague).maybeSingle(),
     ]).then(([bracketData, predResult]) => {
-      // Extract unique team names from all rounds
       const teams = new Set();
       (bracketData.rounds || []).forEach(r => {
         r.matches.forEach(m => {
@@ -718,7 +657,6 @@ export default function FootballPredictor() {
       if (predResult.data) setTournamentPred(predResult.data);
     }).catch(() => setAwardsError("Failed to load teams")).finally(() => setAwardsLoading(false));
   }, [tab, awardsLeague, session]);
-
   const downloadAwardsCard = async () => {
     if (!awardsCardRef.current) return;
     setAwardsDownloading(true);
@@ -737,7 +675,6 @@ export default function FootballPredictor() {
     } catch { alert("Download failed — try screenshotting manually"); }
     setAwardsDownloading(false);
   };
-
   const submitTournamentPrediction = async () => {
     const { sf1, sf2, sf3, sf4, finalist1, finalist2, winner } = awardsForm;
     if (!sf1 || !sf2 || !sf3 || !sf4 || !finalist1 || !finalist2 || !winner) {
@@ -762,8 +699,6 @@ export default function FootballPredictor() {
     else setTournamentPred(data);
     setAwardsSubmitting(false);
   };
-
-  // Fetch fixtures for the selected league
   useEffect(() => {
     setFixturesLoading(true);
     setFixtures([]);
@@ -771,7 +706,6 @@ export default function FootballPredictor() {
       .then(r => r.json())
       .then(d => {
         const fixtureList = d.fixtures || [];
-        // Cache team logos from API response
         fixtureList.forEach(f => {
           if (f.home && f.homeLogo) TEAM_LOGOS[f.home] = f.homeLogo;
           if (f.away && f.awayLogo) TEAM_LOGOS[f.away] = f.awayLogo;
@@ -781,8 +715,6 @@ export default function FootballPredictor() {
       .catch(() => {})
       .finally(() => setFixturesLoading(false));
   }, [selectedLeague, session]);
-
-// Poll live scores every 3 minutes across all main leagues
 const SCORES_TAB_LEAGUES = [
   { id: "pl", label: "Premier League" },
   { id: "laliga", label: "La Liga" },
@@ -793,15 +725,10 @@ const SCORES_TAB_LEAGUES = [
   { id: "championship", label: "Championship" },
   { id: "communityshield", label: "Community Shield" },
 ];
-
 useEffect(() => {
   const fetchLive = async () => {
     const today = new Date().toISOString().split("T")[0];
     try {
-      // Fetch with a small stagger between requests, rather than all at
-      // once, to reduce the chance of hitting API-Football's rate limit —
-      // firing 8 simultaneous requests every poll was likely why fixtures
-      // sometimes disappeared until a later refresh happened to succeed.
       const allFixtures = [];
       for (const league of SCORES_TAB_LEAGUES) {
         try {
@@ -812,23 +739,21 @@ useEffect(() => {
             allFixtures.push(...tagged);
           }
         } catch {}
-        await new Promise(resolve => setTimeout(resolve, 150)); // small stagger
+        await new Promise(resolve => setTimeout(resolve, 150));
       }
       setLiveData(allFixtures);
     } catch {
-      // network error — keep using whatever liveData we already have
     }
   };
   fetchLive();
   const interval = setInterval(fetchLive, 3 * 60 * 1000);
   return () => clearInterval(interval);
 }, [session]);
- 
-// matches that don't have a logged result yet, and fill it in automatically.
+
 useEffect(() => {
   if (!liveData.length || !history.length) return;
   history.forEach(h => {
-    if (h.actual_score) return; // already logged
+    if (h.actual_score) return;
     const live = findLiveFixture(h.home_team, h.away_team);
     if (!live || live.status !== "finished") return;
     if (live.score.home == null || live.score.away == null) return;
@@ -837,31 +762,25 @@ useEffect(() => {
   });
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [liveData, history]);
-
   const loadHistory = async (userId) => {
     const { data } = await supabase.from("predictions").select("*, confirmed_lineup").eq("user_id", userId).order("created_at", { ascending: false });
     if (data) setHistory(data);
   };
-
   const loadUserRole = async (userId) => {
     const { data } = await supabase.from("profiles").select("role").eq("id", userId).single();
     if (data?.role) setUserRole(data.role);
   };
-
   const signOut = async () => {
     await supabase.auth.signOut();
     setHistory([]); setStep(1); setResult(null);
     setHomeTeam(""); setAwayTeam("");
   };
-
   const stats = computeStats(history);
   const rank = getRank(stats);
   const badges = BADGE_DEFS.map(b => ({ ...b, earned: b.condition(stats) }));
-
   const confidenceColor = (c) => c === "High" ? "#22c55e" : c === "Medium" ? "#f59e0b" : "#ef4444";
   const outcomeColor = (o) => o === "Home Win" ? "#60a5fa" : o === "Away Win" ? "#f87171" : "#a78bfa";
   const resultColor = (r) => r === "user" ? "#4ade80" : r === "ai" ? "#f87171" : r === "tie" ? "#f59e0b" : "#e2e8f0";
-
   const selectFixture = (fix) => {
     setHomeTeam(fix.home);
     setAwayTeam(fix.away);
@@ -869,7 +788,6 @@ useEffect(() => {
     setSelectedHomeLogo(fix.homeLogo || null);
     setSelectedAwayLogo(fix.awayLogo || null);
   };
-
   const hasExistingPrediction = (homeTeam, awayTeam) => {
     const h = normalize(homeTeam);
     const a = normalize(awayTeam);
@@ -878,7 +796,6 @@ useEffect(() => {
       (normalize(item.home_team) === a && normalize(item.away_team) === h)
     );
   };
-
   const goToStep2 = () => {
     if (!homeTeam || !awayTeam) { setError("Enter both team names."); return; }
     if (hasExistingPrediction(homeTeam, awayTeam)) {
@@ -890,7 +807,6 @@ useEffect(() => {
     if (status === "finished") { setError("This match has finished — predictions are closed."); return; }
     setError(""); setStep(2);
   };
-
   const submitAndReveal = async () => {
     if (userHome === "" || userAway === "") { setError("Enter your predicted score."); return; }
     const up = `${userHome}-${userAway}`;
@@ -921,13 +837,11 @@ useEffect(() => {
     } catch (e) { setError(e.message || "Something went wrong. Try again."); }
     setLoading(false);
   };
-
   const resetPredict = () => {
     setStep(1); setResult(null); setHomeTeam(""); setAwayTeam("");
     setUserHome(""); setUserAway(""); setUserPrediction(""); setError(""); setFixtureSearch("");
     setSelectedFixtureId(null); setDeepInsights(null); setSelectedHomeLogo(null); setSelectedAwayLogo(null);
   };
-
   const logResult = async (id, score) => {
     const item = history.find(h => h.id === id);
     if (!item) return;
@@ -943,23 +857,17 @@ useEffect(() => {
     } catch {}
     setLoggingIdx(null); setLogScore("");
   };
-
   const deletePredict = async (id) => {
     await supabase.from("predictions").delete().eq("id", id);
     setHistory(prev => prev.filter(h => h.id !== id));
   };
-
   const editPredict = async (id, newScore) => {
     await supabase.from("predictions").update({ user_prediction: newScore }).eq("id", id);
     setHistory(prev => prev.map(h => h.id === id ? { ...h, user_prediction: newScore } : h));
     setLoggingIdx(null); setLogScore("");
   };
-
   const shareText = result && userPrediction ? `⚽ DEEP433 — YOU vs AI\n${leagueLabel}: ${homeTeam} vs ${awayTeam}\n\nMy prediction: ${userPrediction}\nAI prediction: ${result.scoreline}\n\n"${result.verdict?.slice(0, 100)}..."\n\nChallenge the AI at deep433.com` : "";
   const copyShare = () => { navigator.clipboard.writeText(shareText).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }); };
-
-  // Group fixtures by date, filtered by search
-  // Group fixtures by date label (Today / Tomorrow / Fri 4 Jul etc.)
   const getDateLabel = (dateStr) => {
     const now = new Date();
     const localDate = (d) => {
@@ -975,22 +883,15 @@ useEffect(() => {
     const d = new Date(dateStr);
     return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
   };
-
   const filteredFixtures = fixtureSearch.trim()
     ? fixtures.filter(f => f.home.toLowerCase().includes(fixtureSearch.toLowerCase()) || f.away.toLowerCase().includes(fixtureSearch.toLowerCase()))
     : fixtures;
-
   const fixturesByDate = filteredFixtures.reduce((acc, f) => {
     const label = getDateLabel(f.date);
     if (!acc[label]) acc[label] = [];
     acc[label].push(f);
     return acc;
   }, {});
-
-   // Look up fixtureId whenever home/away/league changes — search the
-  // already-loaded fixtures list (covers ~25 days ahead) rather than a
-  // separate, narrow 3-day live-scores lookup, which was missing matches
-  // scheduled further out and silently leaving fixtureId as null.
   useEffect(() => {
     if (!homeTeam || !awayTeam || !session) return;
     const live = findLiveFixture(homeTeam, awayTeam);
@@ -1004,10 +905,8 @@ useEffect(() => {
     });
     setSelectedFixtureId(match?.fixtureId || null);
   }, [homeTeam, awayTeam, selectedLeague, session, fixtures]);
-
   const fetchConfirmedLineup = async (home, away, league, predictionId) => {
     setLineupFetching(true);
-    // Find the prediction ID — use passed ID, savedPredictionId, or look up from history
     const pid = predictionId || savedPredictionId || (() => {
       const h = normalize(home);
       const a = normalize(away);
@@ -1029,9 +928,7 @@ useEffect(() => {
         const data = await res.json();
         if (data.available) {
           setConfirmedLineup(data);
-          // Also update viewingPitch so the modal re-renders with confirmed data immediately
           setViewingPitch(prev => prev ? { ...prev, confirmed_lineup: data } : prev);
-          // Save to localStorage as reliable fallback
           try {
             localStorage.setItem(`lineup_${home}_${away}`, JSON.stringify(data));
           } catch {}
@@ -1053,25 +950,18 @@ useEffect(() => {
     }
     setLineupFetching(false);
   };
-
-  // Once a prediction reveals (step 3), try fetching the real confirmed lineup.
   useEffect(() => {
     if (step !== 3 || !result) return;
     setDeepInsights(null);
-
-    // Check if we already have a saved confirmed lineup in history
     const existingPrediction = savedPredictionId
       ? history.find(h => h.id === savedPredictionId)
       : null;
-
     if (existingPrediction?.confirmed_lineup) {
       setConfirmedLineup(existingPrediction.confirmed_lineup);
     } else {
       setConfirmedLineup(null);
       fetchConfirmedLineup(homeTeam, awayTeam, selectedLeague, savedPredictionId);
     }
-
-    // Also fetch deep insights if we have a fixtureId
     const fid = selectedFixtureId || findLiveFixture(homeTeam, awayTeam)?.fixtureId;
     if (fid) {
       fetch(`/api/fixture-insights?fixtureId=${fid}`)
@@ -1080,7 +970,6 @@ useEffect(() => {
         .catch(() => {});
     }
   }, [step, result, homeTeam, awayTeam, selectedLeague]);
-
   const capStat = (val) => {
     if (!val) return val;
     const num = parseFloat(val);
@@ -1088,7 +977,6 @@ useEffect(() => {
     const capped = Math.min(Math.max(num, 20), 70);
     return capped + '%';
   };
-
   const TABS = !session ? [
     { id: "predict", label: "⚡ Predict" },
   ] : [
@@ -1101,14 +989,12 @@ useEffect(() => {
     { id: "badges",    label: "🏅 Badges" },
     { id: "history",   label: "📋 History" },
   ];
-
   if (authLoading) return (
     <div style={{ minHeight: "100vh", background: "#0a0a0f", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ width: 36, height: 36, border: "3px solid #1e1e30", borderTop: "3px solid #4ade80", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
-
 if (showTeamCompare) {
   return (
     <PublicTeamCompare
@@ -1117,12 +1003,10 @@ if (showTeamCompare) {
     />
   );
 }
-
 if (!session && !guestMode) {
  if (showLanding) return <LandingPage onGetStarted={() => setShowLanding(false)} onTeamCompare={() => setShowTeamCompare(true)} />;
   return <AuthScreen onGuestMode={() => setGuestMode(true)} />;
 }
-
   return (
     <div style={{ minHeight: "100vh", background: "#0a0a0f", color: "#f0f0f0", fontFamily: "'Inter','Helvetica Neue',sans-serif" }}>
       <style>{`
@@ -1164,7 +1048,6 @@ if (!session && !guestMode) {
         .step-dot.active { background: #4ade80; }
         .step-dot.done { background: #22c55e; }
       `}</style>
-
       <div style={{ background: "#0d0d18", borderBottom: "1px solid #1a1a2e", padding: "16px 20px" }}>
         <div style={{ maxWidth: 600, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -1184,19 +1067,15 @@ if (!session && !guestMode) {
           </div>
         </div>
       </div>
-
       <div style={{ background: "#0d0d18", borderBottom: "1px solid #1a1a2e", overflowX: "auto" }}>
         <div style={{ maxWidth: 600, margin: "0 auto", display: "flex", gap: 4, padding: "0 16px" }}>
           {TABS.map(t => <button key={t.id} className={`nav-tab${tab === t.id ? " active" : ""}`} onClick={() => setTab(t.id)}>{t.label}</button>)}
         </div>
       </div>
-
-      {/* Live ticker bar — shows when matches are live */}
       {liveData.filter(f => f.status === "live").length > 0 && (
         <div style={{ background: "#0f0f0f", borderBottom: "1px solid #1a0000" }}>
           {liveData.filter(f => f.status === "live").map(f => (
             <div key={f.fixtureId}>
-              {/* Collapsed ticker row */}
               <div
                 onClick={() => setExpandedLive(expandedLive === f.fixtureId ? null : f.fixtureId)}
                 style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 16px", cursor: "pointer", maxWidth: 600, margin: "0 auto" }}
@@ -1215,12 +1094,8 @@ if (!session && !guestMode) {
                 )}
                 <span style={{ fontSize: 13, color: "#e2e8f0" }}>{expandedLive === f.fixtureId ? "▲" : "▼"}</span>
               </div>
-
-              {/* Expanded live card */}
               {expandedLive === f.fixtureId && (
                 <div style={{ background: "#0a0a0a", borderTop: "1px solid #1a1a1a", padding: "12px 16px", maxWidth: 600, margin: "0 auto" }}>
-
-                  {/* Score header */}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 8, alignItems: "center", marginBottom: 12 }}>
                     <div style={{ textAlign: "center" }}>
                       <div style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>{f.home}</div>
@@ -1235,8 +1110,6 @@ if (!session && !guestMode) {
                       <div style={{ fontSize: 36, fontWeight: 900, color: "#f59e0b" }}>{f.score.away ?? 0}</div>
                     </div>
                   </div>
-
-                  {/* Possession bar */}
                   {f.possession?.home && (
                     <div style={{ marginBottom: 12 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#e2e8f0", marginBottom: 4 }}>
@@ -1250,8 +1123,6 @@ if (!session && !guestMode) {
                       </div>
                     </div>
                   )}
-
-                  {/* Cards summary */}
                   {(f.cards?.home?.yellow > 0 || f.cards?.away?.yellow > 0 || f.cards?.home?.red > 0 || f.cards?.away?.red > 0) && (
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, fontSize: 15 }}>
                       <div style={{ display: "flex", gap: 6 }}>
@@ -1265,8 +1136,6 @@ if (!session && !guestMode) {
                       </div>
                     </div>
                   )}
-
-                  {/* Events timeline */}
                   {f.events?.length > 0 && (
                     <div style={{ borderTop: "1px solid #1a1a1a", paddingTop: 10 }}>
                       <div style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Match Events</div>
@@ -1289,18 +1158,14 @@ if (!session && !guestMode) {
           <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }`}</style>
         </div>
       )}
-
       <div style={{ maxWidth: 600, margin: "0 auto", padding: "20px 16px", display: "flex", flexDirection: "column", gap: 14 }}>
-
         {tab === "predict" && (
           <>
             <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
               {[1,2,3].map(s => <div key={s} className={`step-dot${step === s ? " active" : step > s ? " done" : ""}`} />)}
             </div>
-
             {step === 1 && (
               <div className="card">
-                {/* League selector */}
                 <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Competition</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
                   {LEAGUES.map(l => (
@@ -1311,10 +1176,7 @@ if (!session && !guestMode) {
                     </button>
                   ))}
                 </div>
-
                 <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Set Up The Match</div>
-
-                {/* Free text inputs always visible */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 8, marginBottom: 16, alignItems: "center" }}>
                   <div>
                     <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Home / Team 1</div>
@@ -1326,20 +1188,14 @@ if (!session && !guestMode) {
                     <input className="team-input away" placeholder="e.g. Argentina" value={awayTeam} onChange={e => setAwayTeam(e.target.value)} />
                   </div>
                 </div>
-
-                {/* World Cup fixture quick-pick */}
-                {/* Live fixture picker — works for all leagues */}
                 <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Or pick a fixture</div>
                 <input className="search-input" placeholder="🔍 Search team..." value={fixtureSearch} onChange={e => setFixtureSearch(e.target.value)} style={{ marginBottom: 12 }} />
-
                 {fixturesLoading && (
                   <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 16, padding: "20px 0" }}>Loading fixtures...</div>
                 )}
-
                 {!fixturesLoading && fixtures.length === 0 && (
                   <div style={{ textAlign: "center", color: "#444", fontSize: 16, padding: "20px 0" }}>No upcoming fixtures found for this competition</div>
                 )}
-
                 <div style={{ maxHeight: 320, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
                   {Object.entries(fixturesByDate).map(([date, dateFixtures]) => (
                     <div key={date}>
@@ -1377,14 +1233,12 @@ if (!session && !guestMode) {
                     </div>
                   ))}
                 </div>
-
                 {error && <div style={{ color: "#f87171", fontSize: 16, margin: "12px 0" }}>{error}</div>}
                 <button className="predict-btn" onClick={goToStep2} disabled={!homeTeam || !awayTeam} style={{ marginTop: 16 }}>
                   ⚡ Predict This Match
                 </button>
               </div>
             )}
-
             {step === 2 && (
               <div className="card">
                 <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Your Prediction</div>
@@ -1408,14 +1262,12 @@ if (!session && !guestMode) {
                 <button className="ghost-btn" onClick={() => setStep(1)}>← Back</button>
               </div>
             )}
-
             {loading && (
               <div className="card" style={{ textAlign: "center", padding: "40px 20px" }}>
                 <div className="spinner" style={{ marginBottom: 16 }} />
                 <div style={{ color: "#e2e8f0", fontSize: 16 }}>AI is analysing the match...</div>
               </div>
             )}
-
             {step === 3 && result && !loading && (
               <>
                 {confirmedLineup && (
@@ -1438,7 +1290,6 @@ if (!session && !guestMode) {
                     {lineupFetching ? "Checking for confirmed lineup..." : "🔄 Refresh Lineup"}
                   </button>
                 )}
-
                 <div className="reveal-box">
                   <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 16, textAlign: "center" }}>{homeTeam} vs {awayTeam} · {leagueLabel}</div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 12, alignItems: "center" }}>
@@ -1457,21 +1308,31 @@ if (!session && !guestMode) {
                     <span className="tag" style={{ background: confidenceColor(result.confidence) + "22", color: confidenceColor(result.confidence), border: `1px solid ${confidenceColor(result.confidence)}44` }}>{result.confidence} Confidence</span>
                   </div>
                 </div>
-
                 <div className="card">
                   <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>🤖 AI Verdict</div>
                   <p style={{ fontSize: 17, lineHeight: 1.7, color: "#ccc" }}>{result.verdict}</p>
                 </div>
-
                 <div className="card">
                   <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>⚔️ Key Tactical Battle</div>
                   <p style={{ fontSize: 17, color: "#e2e8f0", lineHeight: 1.6 }}>{result.keyBattle}</p>
                 </div>
-
+                {result.injuries && (result.injuries.home?.length > 0 || result.injuries.away?.length > 0) && (
+                  <div className="card">
+                    <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>🩹 Injuries & Suspensions</div>
+                    {result.injuries.home?.length > 0 && (
+                      <p style={{ fontSize: 15, color: "#e2e8f0", lineHeight: 1.6, marginBottom: result.injuries.away?.length > 0 ? 8 : 0 }}>
+                        <strong>{homeTeam}:</strong> {result.injuries.home.map(p => `${p.name} (${p.reason})`).join(", ")}
+                      </p>
+                    )}
+                    {result.injuries.away?.length > 0 && (
+                      <p style={{ fontSize: 15, color: "#e2e8f0", lineHeight: 1.6 }}>
+                        <strong>{awayTeam}:</strong> {result.injuries.away.map(p => `${p.name} (${p.reason})`).join(", ")}
+                      </p>
+                    )}
+                  </div>
+                )}
                 <div className="card" style={{ padding: "14px 16px" }}>
                   <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🪑 Bench & Managers</div>
-
-                  {/* Home bench */}
                   <div style={{ marginBottom: 12 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                       <span style={{ fontSize: 15, fontWeight: 700, color: "#4ade80" }}>{homeTeam}</span>
@@ -1488,8 +1349,6 @@ if (!session && !guestMode) {
                       {!confirmedLineup && <span style={{ fontSize: 15, color: "#333", fontStyle: "italic" }}>Available after lineup confirmation</span>}
                     </div>
                   </div>
-
-                  {/* Away bench */}
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                       <span style={{ fontSize: 15, fontWeight: 700, color: "#a855f7" }}>{awayTeam}</span>
@@ -1507,21 +1366,17 @@ if (!session && !guestMode) {
                     </div>
                   </div>
                 </div>
-
-                                {result.wildcard && (
+                {result.wildcard && (
                   <div className="card" style={{ borderColor: "#2a1f00", background: "#13100a" }}>
                     <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>🃏 Wildcard Factor</div>
                     <p style={{ fontSize: 17, color: "#e2e8f0", lineHeight: 1.6 }}>{result.wildcard}</p>
                   </div>
                 )}
-
                 {deepInsights && (
                   <div className="card" style={{ borderColor: "#3730a322", background: "#0f0f1f" }}>
                     <DeepInsightsPanel insights={deepInsights} homeTeam={homeTeam} awayTeam={awayTeam} aiPrediction={result?.scoreline} userPrediction={userPrediction} leagueId={selectedLeague} />
                   </div>
                 )}
-
-
                 <div className="card" style={{ borderColor: "#4ade8033" }}>
                   <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>📤 Challenge Your Friends</div>
                   <div style={{ background: "linear-gradient(135deg, #0d1a0d, #0a0a1f)", border: "1px solid #2a3a2a", borderRadius: 12, padding: 16, marginBottom: 12, textAlign: "center" }}>
@@ -1551,10 +1406,8 @@ if (!session && !guestMode) {
             )}
           </>
         )}
-
         {tab === "scores" && (
           <>
-            {/* Horizontal scrolling completed scores ticker */}
             {liveData.filter(f => f.status === "finished").length > 0 && (
               <div style={{ background: "#0d0d18", borderRadius: 10, padding: "10px 0", overflow: "hidden", position: "relative" }}>
                 <div style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, padding: "0 14px", marginBottom: 8 }}>FT Results</div>
@@ -1572,23 +1425,17 @@ if (!session && !guestMode) {
                 </div>
               </div>
             )}
-
-            {/* All today's fixtures */}
             <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Today's Fixtures</div>
-
             {liveData.length === 0 && (
               <div style={{ textAlign: "center", color: "#444", fontSize: 17, padding: "40px 0" }}>No fixtures today — check back on matchday</div>
             )}
-
             {liveData.map((f, i) => {
               const isLive = f.status === "live";
               const isFinished = f.status === "finished";
               const statusColor = isLive ? "#ef4444" : isFinished ? "#e2e8f0" : "#4ade80";
               const statusLabel = isLive ? `🔴 ${getTimeLabel(f.statusRaw, f.elapsed)}` : isFinished ? (f.statusRaw === "AET" ? "AET" : f.statusRaw === "PEN" ? "PEN" : "FT") : "Soon";
-
               return (
                 <div key={i} style={{ background: "#13131f", border: `1px solid ${isLive ? "#ef444433" : "#1e1e30"}`, borderRadius: 12, overflow: "hidden" }}>
-                  {/* Match header */}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", padding: "14px 16px", gap: 8 }}>
                     <div style={{ textAlign: "center" }}>
                       <TeamFlag team={f.home} logo={f.homeLogo} size={24} />
@@ -1608,16 +1455,12 @@ if (!session && !guestMode) {
                       <div style={{ fontSize: 36, fontWeight: 900, color: isFinished ? "#e2e8f0" : "#f0f0f0", marginTop: 2 }}>{isLive || isFinished ? (f.score.away ?? 0) : ""}</div>
                     </div>
                   </div>
-
-                  {/* Live possession bar */}
                   {isLive && f.possession?.home && (
                     <div style={{ display: "flex", height: 3 }}>
                       <div style={{ width: f.possession.home, background: "#4ade80" }} />
                       <div style={{ flex: 1, background: "#f59e0b", opacity: 0.5 }} />
                     </div>
                   )}
-
-                  {/* Events for live/finished matches */}
                   {(isLive || isFinished) && f.events?.length > 0 && (
                     <div style={{ padding: "8px 16px 12px", borderTop: "1px solid #1a1a2a" }}>
                       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -1630,7 +1473,6 @@ if (!session && !guestMode) {
                           </div>
                         ))}
                       </div>
-                      {/* Subs collapsed */}
                       {f.events.filter(e => e.type === "subst").length > 0 && (
                         <div style={{ marginTop: 6, fontSize: 13, color: "#444" }}>
                           🔄 {f.events.filter(e => e.type === "subst").length} substitution{f.events.filter(e => e.type === "subst").length !== 1 ? "s" : ""}
@@ -1643,10 +1485,8 @@ if (!session && !guestMode) {
             })}
           </>
         )}
-
         {tab === "bracket" && (
           <>
-            {/* Cup competitions only */}
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
               {[
                 { id: "wc2026",     label: "World Cup 2026" },
@@ -1664,40 +1504,30 @@ if (!session && !guestMode) {
                 </button>
               ))}
             </div>
-
             {bracketLoading && (
               <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 16, padding: "40px 0" }}>Loading bracket...</div>
             )}
-
             {!bracketLoading && bracketRounds.length === 0 && (
               <div style={{ textAlign: "center", color: "#444", fontSize: 16, padding: "40px 0" }}>No knockout fixtures found for this competition</div>
             )}
-
-            {/* Bracket rounds — horizontal scroll */}
             <div style={{ overflowX: "auto", paddingBottom: 8 }}>
               <div style={{ display: "flex", gap: 16, minWidth: "max-content", alignItems: "flex-start" }}>
                 {bracketRounds.map((round, ri) => (
                   <div key={round.round} style={{ display: "flex", flexDirection: "column", gap: 12, minWidth: 200 }}>
-                    {/* Round header */}
                     <div style={{ fontSize: 13, fontWeight: 800, color: "#4ade80", textTransform: "uppercase", letterSpacing: 1.5, textAlign: "center", padding: "6px 0", borderBottom: "1px solid #1a1a2a" }}>
                       {round.round}
                     </div>
-
-                    {/* Spacer to vertically centre matches relative to next round */}
                     <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-around", gap: 8, flex: 1 }}>
                       {round.matches.map((m, mi) => {
                         const isLive = m.status === "live";
                         const isFinished = m.status === "finished";
                         const homeWon = isFinished && m.score.home > m.score.away;
                         const awayWon = isFinished && m.score.away > m.score.home;
-
-                        // Check if user predicted this match
                         const norm = s => (s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
                         const userPred = history.find(h =>
                           (norm(h.home_team) === norm(m.home) && norm(h.away_team) === norm(m.away)) ||
                           (norm(h.home_team) === norm(m.away) && norm(h.away_team) === norm(m.home))
                         );
-
                         return (
                           <div key={m.fixtureId} style={{
                             background: "#13131f",
@@ -1706,12 +1536,9 @@ if (!session && !guestMode) {
                             overflow: "hidden",
                             position: "relative",
                           }}>
-                            {/* Live indicator */}
                             {isLive && (
                               <div style={{ background: "#ef4444", height: 2, width: "100%" }} />
                             )}
-
-                            {/* Home team */}
                             <div style={{
                               display: "flex", alignItems: "center", gap: 8, padding: "8px 10px",
                               background: homeWon ? "#4ade8010" : "transparent",
@@ -1730,8 +1557,6 @@ if (!session && !guestMode) {
                                 </span>
                               )}
                             </div>
-
-                            {/* Away team */}
                             <div style={{
                               display: "flex", alignItems: "center", gap: 8, padding: "8px 10px",
                               background: awayWon ? "#4ade8010" : "transparent",
@@ -1749,8 +1574,6 @@ if (!session && !guestMode) {
                                 </span>
                               )}
                             </div>
-
-                            {/* Status footer */}
                             <div style={{ padding: "4px 10px", background: "#0d0d18", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                               <span style={{ fontSize: 12, color: isLive ? "#ef4444" : isFinished ? "#e2e8f0" : "#e2e8f0", fontWeight: 700 }}>
                                 {isLive ? `🔴 ${getTimeLabel(m.statusRaw, m.elapsed)}` : isFinished ? m.statusRaw : new Date(m.kickoff).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
@@ -1765,16 +1588,13 @@ if (!session && !guestMode) {
                 ))}
               </div>
             </div>
-
             <div style={{ fontSize: 14, color: "#e2e8f0", textAlign: "center" }}>
               Scroll horizontally to see all rounds · Green border = your prediction
             </div>
           </>
         )}
-
         {tab === "awards" && (
           <>
-            {/* Cup competition selector */}
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
               {[
                 { id: "wc2026",     label: "World Cup 2026" },
@@ -1792,11 +1612,9 @@ if (!session && !guestMode) {
                 </button>
               ))}
             </div>
-
             {awardsLoading && (
               <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 16, padding: "30px 0" }}>Loading...</div>
             )}
-
             {!awardsLoading && tournamentPred && (
               <>
                 <div
@@ -1813,11 +1631,9 @@ if (!session && !guestMode) {
                     <span style={{ fontSize: 13, fontWeight: 900, color: "#4ade80", letterSpacing: 1 }}>DEEP433</span>
                     
                   </div>
-                  {/* Logo watermark */}
                   <div style={{ position: "absolute", bottom: 12, left: 12, pointerEvents: "none" }}>
                     <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, opacity: 0.35, objectFit: "contain", borderRadius: "50%", userSelect: "none" }} />
                   </div>
-
                   <div style={{ textAlign: "center", marginBottom: 16, marginTop: 6, position: "relative", zIndex: 1 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                       {awardsLeague === "wc2026" && <img src="/fifa.png" alt="" crossOrigin="anonymous" style={{ width: 22, height: 22, objectFit: "contain" }} />}
@@ -1826,8 +1642,6 @@ if (!session && !guestMode) {
                       </div>
                     </div>
                   </div>
-
-                  {/* Winner — hero */}
                   <div style={{ textAlign: "center", marginBottom: 16, position: "relative", zIndex: 1 }}>
                     <div style={{ fontSize: 12, color: "#fbbf24", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>🏆 Winner</div>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
@@ -1835,10 +1649,7 @@ if (!session && !guestMode) {
                       <span style={{ fontSize: 22, fontWeight: 900, color: "#fbbf24" }}>{tournamentPred.winner}</span>
                     </div>
                   </div>
-
                   <div style={{ height: 1, background: "#1a1a2a", marginBottom: 14, position: "relative", zIndex: 1 }} />
-
-                  {/* Runner-up */}
                   <div style={{ textAlign: "center", marginBottom: 14, position: "relative", zIndex: 1 }}>
                     <div style={{ fontSize: 12, color: "#c0c0c0", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>🥈 Runner-up</div>
                     {(() => {
@@ -1851,10 +1662,7 @@ if (!session && !guestMode) {
                       );
                     })()}
                   </div>
-
                   <div style={{ height: 1, background: "#1a1a2a", marginBottom: 14, position: "relative", zIndex: 1 }} />
-
-                  {/* Semi-finalists */}
                   <div style={{ position: "relative", zIndex: 1 }}>
                     <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, textAlign: "center", marginBottom: 10 }}>Semi-Finalists</div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
@@ -1866,12 +1674,10 @@ if (!session && !guestMode) {
                       ))}
                     </div>
                   </div>
-
                   <div style={{ fontSize: 12, color: "#444", textAlign: "center", marginTop: 16, position: "relative", zIndex: 1 }}>
                     Submitted {new Date(tournamentPred.submitted_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                   </div>
                 </div>
-
                 <button onClick={downloadAwardsCard} disabled={awardsDownloading} style={{ marginTop: 12, background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
                   {awardsDownloading ? "Generating..." : "⬇ Download Prediction Card"}
                 </button>
@@ -1889,16 +1695,13 @@ if (!session && !guestMode) {
                 </button>
               </>
             )}
-
             {!awardsLoading && !tournamentPred && remainingTeams.length > 0 && (
               <div className="card" style={{ padding: "24px" }}>
-                {/* Step indicator */}
                 <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
                   {[1, 2, 3].map(s => (
                     <div key={s} style={{ flex: 1, height: 4, borderRadius: 2, background: awardsStep >= s ? "#4ade80" : "#2a2a3a" }} />
                   ))}
                 </div>
-
                 {awardsStep === 1 && (
                   <>
                     <div style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>Step 1 of 3 — Semi-Finalists</div>
@@ -1925,7 +1728,6 @@ if (!session && !guestMode) {
                     </button>
                   </>
                 )}
-
                 {awardsStep === 2 && (
                   <>
                     <div style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>Step 2 of 3 — Finalists</div>
@@ -1955,7 +1757,6 @@ if (!session && !guestMode) {
                     </div>
                   </>
                 )}
-
                 {awardsStep === 3 && (
                   <>
                     <div style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>Step 3 of 3 — Winner</div>
@@ -1982,13 +1783,11 @@ if (!session && !guestMode) {
                 )}
               </div>
             )}
-
             {!awardsLoading && !tournamentPred && remainingTeams.length === 0 && (
               <div style={{ textAlign: "center", color: "#444", fontSize: 16, padding: "30px 0" }}>No teams found for this competition</div>
             )}
           </>
         )}
-
         {tab === "graphics" && (
           userRole === "admin"
             ? <DataGraphics history={history} supabase={supabase} />
@@ -1998,7 +1797,6 @@ if (!session && !guestMode) {
                 <div style={{ fontSize: 16, color: "#e2e8f0", lineHeight: 1.6 }}>This section is available to authorised Deep433 users. Contact us to request access.</div>
               </div>
         )}
-
         {tab === "standings" && (
           <>
             <div className="card" style={{ textAlign: "center", padding: "28px 20px" }}>
@@ -2031,7 +1829,6 @@ if (!session && !guestMode) {
             {stats.total === 0 && <div style={{ textAlign: "center", color: "#444", fontSize: 17, padding: "32px 0" }}>Make your first prediction to start the battle!</div>}
           </>
         )}
-
         {tab === "badges" && (
           <>
             <div className="card" style={{ textAlign: "center", padding: "16px 20px" }}>
@@ -2051,7 +1848,6 @@ if (!session && !guestMode) {
             </div>
           </>
         )}
-
         {tab === "history" && (
           <>
             <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Prediction History</div>
@@ -2070,7 +1866,6 @@ if (!session && !guestMode) {
                     {h.ai_data && (
                       <div style={{ display: "flex", gap: 6 }}>
                         <button onClick={() => {
-                          // Load from localStorage if available
                           const cached = (() => { try { const s = localStorage.getItem(`lineup_${h.home_team}_${h.away_team}`); return s ? JSON.parse(s) : null; } catch { return null; } })();
                           setViewingPitch(cached ? { ...h, confirmed_lineup: cached } : h);
                         }} style={{ background: "none", border: "1px solid #4ade8044", borderRadius: 6, color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "5px 10px", whiteSpace: "nowrap" }}>⚽ Pitch</button>
@@ -2100,7 +1895,6 @@ if (!session && !guestMode) {
                       {h.result === "user" ? "🏆 You beat the AI!" : h.result === "ai" ? "🤖 AI wins this one" : "🤝 It's a tie"}
                     </div>
                   )}
-
                   {matchStatus === "live" && (
                     <div style={{ fontSize: 14, color: "#ef4444", fontWeight: 700, textAlign: "center", padding: "6px", marginTop: 4 }}>🔴 Match in progress</div>
                   )}
@@ -2129,8 +1923,6 @@ if (!session && !guestMode) {
                   {matchStatus === "finished" && !h.actual_score && (
                     <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, textAlign: "center", padding: "6px", marginTop: 4 }}>🏁 Fetching final score...</div>
                   )}
-
-                  {/* Edit and Delete only — no manual score logging */}
                   <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                     <button onClick={() => deletePredict(h.id)} style={{ background: "none", border: "1px solid #f8717133", borderRadius: 6, color: "#f87171", cursor: "pointer", fontFamily: "inherit", fontSize: 15, padding: "6px 12px", flex: 1 }}>🗑️ Delete</button>
                   </div>
@@ -2140,10 +1932,8 @@ if (!session && !guestMode) {
           </>
         )}
       </div>
-
       {viewingPitch && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)", zIndex: 50, display: "flex", flexDirection: "column" }}>
-          {/* Fixed header */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", background: "#0d0d18", borderBottom: "1px solid #1a1a2a", flexShrink: 0 }}>
             <div style={{ fontSize: 16, color: "#f0f0f0", fontWeight: 700 }}>{viewingPitch.home_team} vs {viewingPitch.away_team}</div>
             <div style={{ display: "flex", gap: 8 }}>
@@ -2159,7 +1949,6 @@ if (!session && !guestMode) {
               <button onClick={() => setViewingPitch(null)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 16, padding: "6px 14px" }}>✕ Close</button>
             </div>
           </div>
-          {/* Scrollable pitch content */}
           <div style={{ flex: 1, overflowY: "auto", padding: 16, maxWidth: 500, width: "100%", margin: "0 auto" }}>
             <PitchView
               homeTeam={viewingPitch.home_team}
@@ -2170,8 +1959,6 @@ if (!session && !guestMode) {
               awayLineupNames={viewingPitch.confirmed_lineup ? viewingPitch.confirmed_lineup.away.players.map(p => p.name) : viewingPitch.ai_data?.awayLineup}
               lineupSource={viewingPitch.confirmed_lineup ? "confirmed" : "predicted"}
             />
-
-            {/* Bench & Managers — shown when confirmed lineup is available */}
             {viewingPitch.confirmed_lineup && (
               <div className="card" style={{ marginTop: 12, padding: "14px 16px" }}>
                 <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🪑 Bench & Managers</div>
@@ -2210,7 +1997,6 @@ if (!session && !guestMode) {
           </div>
         </div>
       )}
-
       {viewingAnalysis && (
         <div style={{ position: "fixed", inset: 0, background: "#0a0a0f", zIndex: 50, overflowY: "auto" }}>
           <div style={{ maxWidth: 600, margin: "0 auto", padding: "16px 16px 60px", display: "flex", flexDirection: "column", gap: 14 }}>
@@ -2218,8 +2004,6 @@ if (!session && !guestMode) {
               <div style={{ fontSize: 17, color: "#f0f0f0", fontWeight: 700 }}>{viewingAnalysis.home_team} vs {viewingAnalysis.away_team}</div>
               <button onClick={() => setViewingAnalysis(null)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 16, padding: "6px 14px" }}>✕ Close</button>
             </div>
-
-            {/* Score comparison */}
             <div className="reveal-box">
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 12, alignItems: "center" }}>
                 <div style={{ textAlign: "center" }}>
@@ -2238,21 +2022,18 @@ if (!session && !guestMode) {
                 </div>
               )}
             </div>
-{/* AI Verdict */}
             {viewingAnalysis.ai_data?.verdict && (
               <div className="card">
                 <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>🤖 AI Verdict</div>
                 <p style={{ fontSize: 17, lineHeight: 1.7, color: "#ccc" }}>{viewingAnalysis.ai_data.verdict}</p>
               </div>
             )}
-            {/* Key battle */}
             {viewingAnalysis.ai_data?.keyBattle && (
               <div className="card">
                 <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>⚔️ Key Tactical Battle</div>
                 <p style={{ fontSize: 16, color: "#e2e8f0", lineHeight: 1.6 }}>{viewingAnalysis.ai_data.keyBattle}</p>
               </div>
             )}
-           {/* Injuries & Suspensions */}
             {viewingAnalysis.ai_data?.injuries && (viewingAnalysis.ai_data.injuries.home?.length > 0 || viewingAnalysis.ai_data.injuries.away?.length > 0) && (
               <div className="card">
                 <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>🩹 Injuries & Suspensions</div>
@@ -2268,22 +2049,12 @@ if (!session && !guestMode) {
                 )}
               </div>
             )}
-      
-                {viewingAnalysis.ai_data.injuries.away?.length > 0 && (
-                  <p style={{ fontSize: 15, color: "#e2e8f0", lineHeight: 1.6 }}>
-                    <strong>{viewingAnalysis.away_team}:</strong> {viewingAnalysis.ai_data.injuries.away.map(p => `${p.name} (${p.reason})`).join(", ")}
-                  </p>
-                )}
-              </div>
-            )}
-            {/* Wildcard */}
             {viewingAnalysis.ai_data?.wildcard && (
               <div className="card" style={{ borderColor: "#2a1f00", background: "#13100a" }}>
                 <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>🃏 Wildcard</div>
                 <p style={{ fontSize: 16, color: "#e2e8f0", lineHeight: 1.6 }}>{viewingAnalysis.ai_data.wildcard}</p>
               </div>
             )}
-            {/* Bench & Managers — from saved confirmedLineup */}
             {viewingAnalysis.confirmed_lineup && (
               <div className="card" style={{ padding: "14px 16px" }}>
                 <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>🪑 Bench & Managers</div>
@@ -2309,7 +2080,7 @@ if (!session && !guestMode) {
                       <span style={{ fontSize: 14, color: "#e2e8f0" }}>👔 {viewingAnalysis.confirmed_lineup.away?.coach}</span>
                     )}
                   </div>
-                                  <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
+                  <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
                     {(viewingAnalysis.confirmed_lineup.away?.substitutes || []).map((p, i) => (
                       <div key={i} style={{ background: "#1a1a28", border: "1px solid #2a2a40", borderRadius: 20, padding: "4px 10px", fontSize: 15, fontWeight: 600, color: "#ccc", whiteSpace: "nowrap", flexShrink: 0 }}>
                         <span style={{ color: "#a855f7", marginRight: 4, fontSize: 14 }}>{p.number}</span>{p.name?.split(" ").pop()}
