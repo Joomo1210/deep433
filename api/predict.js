@@ -116,14 +116,27 @@ export default async function handler(req, res) {
   });
 
   // ── Key battle — template sentence built from real attack/defence comparison ──
-  const attHome = parseFloat(comp.att?.home) || 0;
-  const attAway = parseFloat(comp.att?.away) || 0;
-  const defHome = parseFloat(comp.def?.home) || 0;
-  const defAway = parseFloat(comp.def?.away) || 0;
-  const sharperAttack = attHome >= attAway ? homeTeam : awayTeam;
-  const sharperDefence = defHome >= defAway ? homeTeam : awayTeam;
-  const keyBattle = comp.att && comp.def
-    ? `${sharperAttack}'s attack (${sharperAttack === homeTeam ? comp.att.home : comp.att.away} attack rating) against ${sharperDefence}'s defence (${sharperDefence === homeTeam ? comp.def.home : comp.def.away} defence rating) — recent form: ${homeTeam} ${homeForm || 'n/a'}, ${awayTeam} ${awayForm || 'n/a'}.`
+  const attHome = parseFloat(comp.att?.home);
+  const attAway = parseFloat(comp.att?.away);
+  const defHome = parseFloat(comp.def?.home);
+  const defAway = parseFloat(comp.def?.away);
+  const hasAttData = !isNaN(attHome) || !isNaN(attAway);
+  const hasDefData = !isNaN(defHome) || !isNaN(defAway);
+  let keyBattle;
+  if (hasAttData && hasDefData) {
+    // Compare whichever side has the sharper attack against the OPPONENT's
+    // defence (not its own) — comparing a team against itself was a real
+    // bug in the earlier version, producing nonsense like "Fulham's attack
+    // against Fulham's defence".
+    const sharperIsHome = (attHome || 0) >= (attAway || 0);
+    const attackingTeam = sharperIsHome ? homeTeam : awayTeam;
+    const attackingRating = sharperIsHome ? comp.att?.home : comp.att?.away;
+    const opponentTeam = sharperIsHome ? awayTeam : homeTeam;
+    const opponentDefRating = sharperIsHome ? comp.def?.away : comp.def?.home;
+    keyBattle = `${attackingTeam}'s attack (${attackingRating} attack rating) against ${opponentTeam}'s defence (${opponentDefRating} defence rating) — recent form: ${homeTeam} ${homeForm || 'n/a'}, ${awayTeam} ${awayForm || 'n/a'}.`;
+  } else {
+    keyBattle = `Recent form: ${homeTeam} ${homeForm || 'n/a'}, ${awayTeam} ${awayForm || 'n/a'}.`;
+  }
     : `Recent form: ${homeTeam} ${homeForm || 'n/a'}, ${awayTeam} ${awayForm || 'n/a'}.`;
 
   // ── Verdict — template sentence combining win probability, form, advice ──
