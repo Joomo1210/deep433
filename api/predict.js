@@ -113,8 +113,13 @@ export default async function handler(req, res) {
   const confidence = gap >= 20 ? 'High' : gap >= 10 ? 'Medium' : 'Low';
 
   const comp = pred.comparison || {};
-  const homeForm = pred.teams?.home?.last_5?.form || '';
-  const awayForm = pred.teams?.away?.last_5?.form || '';
+  const rawHomeForm = pred.teams?.home?.last_5?.form || '';
+  const rawAwayForm = pred.teams?.away?.last_5?.form || '';
+  // API-Football appears to return a literal "0%" placeholder rather than
+  // leaving this genuinely empty when there's no real form data — same
+  // pattern as the attack/defence comparison fields, so treat it the same way.
+  const homeForm = rawHomeForm === '0%' ? '' : rawHomeForm;
+  const awayForm = rawAwayForm === '0%' ? '' : rawAwayForm;
   const h2h = (pred.h2h || []).slice(0, 5).map(f => {
     const hg = f.goals?.home ?? '?';
     const ag = f.goals?.away ?? '?';
