@@ -2527,7 +2527,44 @@ function PlayerH2HGraphic() {
 
       {(loadingSquad || loadingStats) && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 12 }}>Loading...</div>}
 
-      {player1 && player2 && (
+      {player1 && player2 && (() => {
+        // Overall "standout" verdict, computed purely for display — none of
+        // the underlying stat values are touched, this just tallies which
+        // player leads in more of the shown categories (rating breaks ties)
+        // so one clear badge can sit on the card without re-deriving numbers
+        // the person can already see in the rows below.
+        const categories = [
+          ["goals", true], ["assists", true], ["shots", true], ["shotsOnTarget", true],
+          ["keyPasses", true], ["dribbles", true], ["tackles", true],
+          ["interceptions", true], ["duelsWon", true], ["yellowCards", false],
+        ];
+        let wins1 = 0, wins2 = 0;
+        categories.forEach(([key, higherIsBetter]) => {
+          const v1 = parseFloat(player1[key]);
+          const v2 = parseFloat(player2[key]);
+          if (isNaN(v1) || isNaN(v2)) return;
+          if (higherIsBetter ? v1 > v2 : v1 < v2) wins1++;
+          else if (higherIsBetter ? v2 > v1 : v2 < v1) wins2++;
+        });
+        if (wins1 === wins2) {
+          const r1 = parseFloat(player1.rating), r2 = parseFloat(player2.rating);
+          if (!isNaN(r1) && !isNaN(r2) && r1 !== r2) { if (r1 > r2) wins1++; else wins2++; }
+        }
+        const standout = wins1 > wins2 ? 1 : wins2 > wins1 ? 2 : null;
+
+        const PlayerAvatar = ({ photo, name, color }) => (
+          photo
+            ? <img src={photo} alt="" crossOrigin="anonymous" style={{ width: 60, height: 60, borderRadius: "50%", objectFit: "cover", border: `2.5px solid ${color}`, margin: "0 auto 8px", display: "block" }} />
+            : (
+              <div style={{
+                width: 60, height: 60, borderRadius: "50%", border: `2.5px solid ${color}`, margin: "0 auto 8px",
+                background: "#1a1a28", display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 22, fontWeight: 900, color,
+              }}>{(name || "?").trim().charAt(0).toUpperCase()}</div>
+            )
+        );
+
+        return (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "42px 18px 18px" }}>
@@ -2536,20 +2573,40 @@ function PlayerH2HGraphic() {
                   {isWorldCup ? "🌍 World Cup 2026" : `📅 ${season}/${(season + 1).toString().slice(-2)} Season`}
                 </span>
               </div>
-              {/* Player headers */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16, marginTop: 8 }}>
+              {/* Player headers — VS badge sits in its own fixed-width centre
+                  column, and both photo slots reserve identical space (real
+                  photo or an initial-letter fallback) so the header stays
+                  visually balanced even when one player has no photo. */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 64px 1fr", alignItems: "center", marginBottom: 18, marginTop: 8, position: "relative" }}>
                 <div style={{ textAlign: "center" }}>
-                  {player1.photo && <img src={player1.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 8px" }} />}
+                  <PlayerAvatar photo={player1.photo} name={player1.name} color="#4ade80" />
                   <div style={{ fontSize: 17, fontWeight: 900, color: "#4ade80" }}>{player1.name}</div>
                   <div style={{ fontSize: 12, color: "#e2e8f0", marginTop: 2 }}>{player1.team}</div>
+                  {standout === 1 && (
+                    <div style={{ display: "inline-block", marginTop: 6, background: "linear-gradient(135deg,#fbbf24,#f59e0b)", borderRadius: 20, padding: "2px 10px" }}>
+                      <span style={{ fontSize: 10, fontWeight: 900, color: "#0a0f0a", letterSpacing: 0.3 }}>🏆 STANDOUT</span>
+                    </div>
+                  )}
                 </div>
-                <div style={{ textAlign: "center", padding: "0 8px" }}>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: "#333" }}>VS</div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{
+                    width: 46, height: 46, borderRadius: "50%",
+                    background: "linear-gradient(135deg, #1a1a28, #0d0d16)",
+                    border: "2px solid #3a3a4a", boxShadow: "0 0 14px rgba(129,140,248,0.35)",
+                    display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                  }}>
+                    <span style={{ fontSize: 15, fontWeight: 900, color: "#818cf8", letterSpacing: 0.5 }}>VS</span>
+                  </div>
                 </div>
                 <div style={{ textAlign: "center" }}>
-                  {player2.photo && <img src={player2.photo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid #f59e0b", margin: "0 auto 8px" }} />}
+                  <PlayerAvatar photo={player2.photo} name={player2.name} color="#f59e0b" />
                   <div style={{ fontSize: 17, fontWeight: 900, color: "#f59e0b" }}>{player2.name}</div>
                   <div style={{ fontSize: 12, color: "#e2e8f0", marginTop: 2 }}>{player2.team}</div>
+                  {standout === 2 && (
+                    <div style={{ display: "inline-block", marginTop: 6, background: "linear-gradient(135deg,#fbbf24,#f59e0b)", borderRadius: 20, padding: "2px 10px" }}>
+                      <span style={{ fontSize: 10, fontWeight: 900, color: "#0a0f0a", letterSpacing: 0.3 }}>🏆 STANDOUT</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -2711,7 +2768,8 @@ function PlayerH2HGraphic() {
             </div>
           )}
         </>
-      )}
+        );
+      })()}
     </div>
   );
 }
