@@ -375,7 +375,7 @@ function WatchAlongPosterGraphic() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Reusable watch-along Space poster — search both teams, fill in details, download to post.</div>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Reusable Listen Along Space poster — search both teams, fill in details, download to post.</div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
         <div style={{ position: "relative" }}>
@@ -434,34 +434,34 @@ function WatchAlongPosterGraphic() {
               background: "linear-gradient(160deg, #0a0f2e, #1a1a3a)",
               textAlign: "center",
             }}>
-              <div style={{ fontSize: 13, color: "#fbbf24", fontWeight: 900, textTransform: "uppercase", letterSpacing: 2, marginBottom: 6 }}>🎙️ Live Watch Along</div>
-              {competition && <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 20 }}>{competition}</div>}
+              <div style={{ fontSize: 17, color: "#fbbf24", fontWeight: 900, textTransform: "uppercase", letterSpacing: 2, marginBottom: 8 }}>🎙️ Listen Along</div>
+              {competition && <div style={{ fontSize: 15, color: "#94a3b8", marginBottom: 22 }}>{competition}</div>}
 
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 20, marginBottom: 20 }}>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, width: 90 }}>
-                  {homeTeam.logo && <img src={homeTeam.logo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, objectFit: "contain" }} />}
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>{homeTeam.name}</span>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 22, marginBottom: 22 }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, width: 100 }}>
+                  {homeTeam.logo && <img src={homeTeam.logo} alt="" crossOrigin="anonymous" style={{ width: 64, height: 64, objectFit: "contain" }} />}
+                  <span style={{ fontSize: 16, fontWeight: 800, color: "#f0f0f0" }}>{homeTeam.name}</span>
                 </div>
-                <div style={{ fontSize: 18, fontWeight: 900, color: "#818cf8" }}>VS</div>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, width: 90 }}>
-                  {awayTeam.logo && <img src={awayTeam.logo} alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, objectFit: "contain" }} />}
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "#f0f0f0" }}>{awayTeam.name}</span>
+                <div style={{ fontSize: 24, fontWeight: 900, color: "#818cf8" }}>VS</div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, width: 100 }}>
+                  {awayTeam.logo && <img src={awayTeam.logo} alt="" crossOrigin="anonymous" style={{ width: 64, height: 64, objectFit: "contain" }} />}
+                  <span style={{ fontSize: 16, fontWeight: 800, color: "#f0f0f0" }}>{awayTeam.name}</span>
                 </div>
               </div>
 
               {(matchDate || kickoffTime) && (
-                <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, marginBottom: 20 }}>
+                <div style={{ fontSize: 18, color: "#e2e8f0", fontWeight: 800, marginBottom: 22 }}>
                   {matchDate}{matchDate && kickoffTime ? " · " : ""}{kickoffTime}
                 </div>
               )}
 
               {rewardText && (
-                <div style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)", borderRadius: 10, padding: "10px 18px", display: "inline-block", marginBottom: 18 }}>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: "#0a0f2e" }}>{rewardText}</span>
+                <div style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)", borderRadius: 10, padding: "12px 20px", display: "inline-block", marginBottom: 20 }}>
+                  <span style={{ fontSize: 16, fontWeight: 800, color: "#0a0f2e" }}>{rewardText}</span>
                 </div>
               )}
 
-              {ctaText && <div style={{ fontSize: 15, fontWeight: 900, color: "#4ade80" }}>{ctaText}</div>}
+              {ctaText && <div style={{ fontSize: 20, fontWeight: 900, color: "#4ade80" }}>{ctaText}</div>}
             </div>
           </GraphicCard>
           <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
@@ -9298,7 +9298,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "worst", label: "📉 Worst Performances" },
     { id: "squaddepth", label: "📊 Squad Depth Chart" },
     { id: "leaguetable", label: "🏆 League Table" },
-    { id: "watchalong", label: "🎙️ Watch Along Poster" },
+    { id: "watchalong", label: "🎙️ Listen Along" },
     { id: "glove",    label: "Golden Glove" },
     { id: "transfer", label: "🔄 Transfer Fit" },
     { id: "timing",   label: "⏱️ Goal Timing" },
