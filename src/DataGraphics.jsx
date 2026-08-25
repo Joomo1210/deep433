@@ -477,6 +477,54 @@ function WatchAlongPosterGraphic() {
 }
 
 
+// Zone conventions by competition tier. Bottom-3 relegation is treated as a
+// safe default across leagues; European slots only apply to top-flight
+// leagues, and promotion/playoff zones only to the second-tier leagues.
+// Exact spots vary slightly by season/league (e.g. Bundesliga's 16th-place
+// playoff) — this is a reasonable default for a social graphic, not a
+// competition-rules engine.
+const TOP_FLIGHT_LEAGUES = ["pl", "laliga", "seriea", "bundesliga", "ligue1"];
+const SECOND_TIER_LEAGUES = ["championship", "ligue2", "bundesliga2", "serieb", "segunda"];
+
+function getZone(position, totalRows, leagueId) {
+  const fromBottom = totalRows - position + 1;
+  if (TOP_FLIGHT_LEAGUES.includes(leagueId)) {
+    if (position <= 4) return { key: "ucl", color: "#4ade80", label: "Champions League" };
+    if (position === 5) return { key: "uel", color: "#60a5fa", label: "Europa League" };
+    if (fromBottom <= 3) return { key: "rel", color: "#f87171", label: "Relegation" };
+    return null;
+  }
+  if (SECOND_TIER_LEAGUES.includes(leagueId)) {
+    if (position <= 2) return { key: "promo", color: "#4ade80", label: "Automatic Promotion" };
+    if (position <= 6) return { key: "playoff", color: "#fbbf24", label: "Playoffs" };
+    if (fromBottom <= 3) return { key: "rel", color: "#f87171", label: "Relegation" };
+    return null;
+  }
+  if (fromBottom <= 3) return { key: "rel", color: "#f87171", label: "Relegation" };
+  return null;
+}
+
+function FormDots({ form }) {
+  if (!form) return <span style={{ fontSize: 10, color: "#444" }}>—</span>;
+  const results = form.slice(-5).split("");
+  const style = (r) => {
+    if (r === "W") return { background: "#4ade80", color: "#0a0f0a" };
+    if (r === "L") return { background: "#f87171", color: "#0a0f0a" };
+    return { background: "#94a3b8", color: "#0a0f0a" }; // draw
+  };
+  return (
+    <div style={{ display: "flex", gap: 2, justifyContent: "center" }}>
+      {results.map((r, i) => (
+        <div key={i} style={{
+          width: 13, height: 13, borderRadius: "50%", fontSize: 8, fontWeight: 900,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          ...style(r),
+        }}>{r}</div>
+      ))}
+    </div>
+  );
+}
+
 function LeagueTableGraphic() {
   const cardRef = useRef(null);
   const [leagueId, setLeagueId] = useState("pl");
@@ -508,6 +556,9 @@ function LeagueTableGraphic() {
   };
 
   const leagueLabel = LEAGUE_TABLE_OPTIONS.find(l => l.id === leagueId)?.label || "League";
+  const zonesPresent = [...new Map(
+    rows.map(row => getZone(row.position, rows.length, leagueId)).filter(Boolean).map(z => [z.key, z])
+  ).values()];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -534,38 +585,84 @@ function LeagueTableGraphic() {
       {rows.length > 0 && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "44px 14px 20px" }}>
+            <div style={{ padding: "44px 12px 18px" }}>
+              {/* Header */}
+              <div style={{ textAlign: "center", marginBottom: 4 }}>
+                <span style={{
+                  fontSize: 19, fontWeight: 900, color: "#f0f0f0", letterSpacing: 0.3,
+                }}>{leagueLabel}</span>
+              </div>
               <div style={{ textAlign: "center", marginBottom: 14 }}>
-                <span style={{ fontSize: 17, fontWeight: 900, color: "#f0f0f0" }}>{leagueLabel} Table</span>
+                <span style={{ fontSize: 10, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>
+                  Table · Matchday {Math.max(...rows.map(r => r.played || 0))}
+                </span>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "20px 1fr 24px 24px 24px 24px 32px 36px", gap: 4, fontSize: 9, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", padding: "0 6px 4px", borderBottom: "1px solid #2a2a3a", marginBottom: 4 }}>
-                <div>#</div><div>Team</div><div style={{ textAlign: "center" }}>P</div><div style={{ textAlign: "center" }}>W</div><div style={{ textAlign: "center" }}>D</div><div style={{ textAlign: "center" }}>L</div><div style={{ textAlign: "center" }}>GD</div><div style={{ textAlign: "center" }}>Pts</div>
+              {/* Column headers */}
+              <div style={{ display: "grid", gridTemplateColumns: "5px 22px 1fr 22px 22px 22px 22px 32px 62px 38px", gap: 3, fontSize: 8.5, color: "#94a3b8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.4, padding: "0 6px 6px", borderBottom: "1px solid #23232f", marginBottom: 2 }}>
+                <div />
+                <div style={{ textAlign: "center" }}>#</div>
+                <div>Team</div>
+                <div style={{ textAlign: "center" }}>P</div>
+                <div style={{ textAlign: "center" }}>W</div>
+                <div style={{ textAlign: "center" }}>D</div>
+                <div style={{ textAlign: "center" }}>L</div>
+                <div style={{ textAlign: "center" }}>GD</div>
+                <div style={{ textAlign: "center" }}>Form</div>
+                <div style={{ textAlign: "center" }}>Pts</div>
               </div>
 
-              {rows.map(row => {
+              {rows.map((row, idx) => {
                 const isHighlighted = highlightTeam && row.team?.toLowerCase().includes(highlightTeam.toLowerCase());
+                const zone = getZone(row.position, rows.length, leagueId);
                 return (
                   <div key={row.position} style={{
-                    display: "grid", gridTemplateColumns: "20px 1fr 24px 24px 24px 24px 32px 36px", gap: 4,
-                    alignItems: "center", padding: "6px", borderRadius: 6,
-                    background: isHighlighted ? "#4ade8022" : (row.position % 2 === 0 ? "#13131f" : "transparent"),
-                    border: isHighlighted ? "1px solid #4ade8066" : "none",
+                    display: "grid", gridTemplateColumns: "5px 22px 1fr 22px 22px 22px 22px 32px 62px 38px", gap: 3,
+                    alignItems: "center", padding: "7px 6px", borderRadius: 7,
+                    marginBottom: 2,
+                    background: isHighlighted
+                      ? "linear-gradient(90deg, #4ade8022, #4ade8008)"
+                      : (idx % 2 === 0 ? "#14141f" : "transparent"),
+                    boxShadow: isHighlighted ? "0 0 0 1px #4ade8077, 0 0 12px #4ade8033" : "none",
+                    position: "relative",
                   }}>
-                    <div style={{ fontSize: 11, fontWeight: 800, color: "#94a3b8" }}>{row.position}</div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
-                      {row.logo && <img src={row.logo} alt="" crossOrigin="anonymous" style={{ width: 16, height: 16, objectFit: "contain", flexShrink: 0 }} />}
-                      <span style={{ fontSize: 11, fontWeight: isHighlighted ? 800 : 600, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.team}</span>
+                    <div style={{ width: 3, height: "100%", borderRadius: 2, background: zone ? zone.color : "transparent" }} />
+                    <div style={{
+                      width: 20, height: 20, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 10.5, fontWeight: 900, color: isHighlighted ? "#4ade80" : "#94a3b8",
+                      background: isHighlighted ? "#4ade8022" : "#1e1e2c",
+                    }}>{row.position}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                      {row.logo && <img src={row.logo} alt="" crossOrigin="anonymous" style={{ width: 18, height: 18, objectFit: "contain", flexShrink: 0 }} />}
+                      <span style={{ fontSize: 11.5, fontWeight: isHighlighted ? 800 : 600, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.team}</span>
                     </div>
-                    <div style={{ fontSize: 11, color: "#e2e8f0", textAlign: "center" }}>{row.played}</div>
-                    <div style={{ fontSize: 11, color: "#e2e8f0", textAlign: "center" }}>{row.won}</div>
-                    <div style={{ fontSize: 11, color: "#e2e8f0", textAlign: "center" }}>{row.drawn}</div>
-                    <div style={{ fontSize: 11, color: "#e2e8f0", textAlign: "center" }}>{row.lost}</div>
-                    <div style={{ fontSize: 11, color: row.goalDiff > 0 ? "#4ade80" : row.goalDiff < 0 ? "#f87171" : "#e2e8f0", textAlign: "center" }}>{row.goalDiff > 0 ? "+" : ""}{row.goalDiff}</div>
-                    <div style={{ fontSize: 12, fontWeight: 900, color: "#fbbf24", textAlign: "center" }}>{row.points}</div>
+                    <div style={{ fontSize: 11, color: "#c4c9d4", textAlign: "center" }}>{row.played}</div>
+                    <div style={{ fontSize: 11, color: "#c4c9d4", textAlign: "center" }}>{row.won}</div>
+                    <div style={{ fontSize: 11, color: "#c4c9d4", textAlign: "center" }}>{row.drawn}</div>
+                    <div style={{ fontSize: 11, color: "#c4c9d4", textAlign: "center" }}>{row.lost}</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: row.goalDiff > 0 ? "#4ade80" : row.goalDiff < 0 ? "#f87171" : "#c4c9d4", textAlign: "center" }}>{row.goalDiff > 0 ? "+" : ""}{row.goalDiff}</div>
+                    <FormDots form={row.form} />
+                    <div style={{ textAlign: "center" }}>
+                      <span style={{
+                        display: "inline-block", fontSize: 12.5, fontWeight: 900, color: "#0a0f0a",
+                        background: "linear-gradient(135deg,#fbbf24,#f59e0b)", borderRadius: 6, padding: "2px 8px",
+                      }}>{row.points}</span>
+                    </div>
                   </div>
                 );
               })}
+
+              {/* Zone legend */}
+              {zonesPresent.length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", marginTop: 14, paddingTop: 10, borderTop: "1px solid #23232f" }}>
+                  {zonesPresent.map(z => (
+                    <div key={z.key} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: 2, background: z.color }} />
+                      <span style={{ fontSize: 9, color: "#94a3b8", fontWeight: 600 }}>{z.label}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </GraphicCard>
           <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
