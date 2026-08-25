@@ -2774,6 +2774,214 @@ function PlayerH2HGraphic() {
   );
 }
 
+// ─── MATCH FIXTURE GRAPHIC (results + upcoming projections) ─────────────────
+// Presentational core, matches the spec's TypeScript interface exactly:
+//   Team { code, logoUrl }, MatchScore { home, away },
+//   MatchProjection { homeWinProb, drawProb, awayWinProb, predictedScore? },
+//   MatchFixture { id, homeTeam, awayTeam, status, score?, kickoffTime?, projection? },
+//   MatchResultsGraphicProps { title?, fixtures, showProjections? }
+function MatchResultsGraphicCore({ title = "PREMIER LEAGUE", fixtures = [], showProjections = true }) {
+  const pct = (v) => `${Math.round((v || 0) * 100)}%`;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ textAlign: "center", marginBottom: 6 }}>
+        <span style={{ fontSize: 15, fontWeight: 900, color: "#f0f0f0", letterSpacing: 1 }}>{title}</span>
+      </div>
+      {fixtures.map((f) => {
+        const finished = f.status === "FINISHED";
+        return (
+          <div key={f.id} style={{
+            display: "grid",
+            gridTemplateColumns: showProjections ? "1fr 90px 1fr" : "1fr 60px 1fr",
+            alignItems: "center", gap: 6,
+            background: "#13131f", border: "1px solid #1e1e30", borderRadius: 10,
+            padding: "10px 12px",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
+              {f.homeTeam.logoUrl && <img src={f.homeTeam.logoUrl} alt="" crossOrigin="anonymous" style={{ width: 22, height: 22, objectFit: "contain", flexShrink: 0 }} />}
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.homeTeam.code}</span>
+            </div>
+
+            <div style={{ textAlign: "center" }}>
+              {finished ? (
+                <span style={{ fontSize: 17, fontWeight: 900, color: "#f0f0f0" }}>{f.score?.home ?? 0} - {f.score?.away ?? 0}</span>
+              ) : (
+                <>
+                  <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 700, marginBottom: 2 }}>{f.kickoffTime || "TBD"}</div>
+                  {showProjections && f.projection && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                      {f.projection.predictedScore && (
+                        <span style={{ fontSize: 12, fontWeight: 900, color: "#fbbf24" }}>{f.projection.predictedScore}</span>
+                      )}
+                      <div style={{ display: "flex", gap: 3, justifyContent: "center", fontSize: 8.5, fontWeight: 700 }}>
+                        <span style={{ color: "#4ade80" }}>{pct(f.projection.homeWinProb)}</span>
+                        <span style={{ color: "#94a3b8" }}>{pct(f.projection.drawProb)}</span>
+                        <span style={{ color: "#f59e0b" }}>{pct(f.projection.awayWinProb)}</span>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0, justifyContent: "flex-end" }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right" }}>{f.awayTeam.code}</span>
+              {f.awayTeam.logoUrl && <img src={f.awayTeam.logoUrl} alt="" crossOrigin="anonymous" style={{ width: 22, height: 22, objectFit: "contain", flexShrink: 0 }} />}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// Tool wrapper: picks a league + matchday, fetches real fixtures/scores, and
+// lets projections be filled in manually per upcoming fixture (there's no
+// batch win/draw/loss endpoint wired yet — predict.js works per single
+// fixtureId — so this stays an optional, user-supplied field per the spec
+// rather than inventing a data source).
+function MatchFixtureGraphic() {
+  const cardRef = useRef(null);
+  const [leagueId, setLeagueId] = useState("pl");
+  const [allFixtures, setAllFixtures] = useState([]);
+  const [round, setRound] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [downloading, setDownloading] = useState(false);
+  const [showProjections, setShowProjections] = useState(true);
+  const [projections, setProjections] = useState({}); // fixtureId -> {home,draw,away,score}
+
+  const fetchFixtures = async (id) => {
+    setLoading(true); setError(""); setAllFixtures([]); setRound("");
+    try {
+      const r = await fetch(`/api/fixtures?leagueId=${id}&full=true`);
+      const d = await r.json();
+      const list = d.fixtures || [];
+      if (!list.length) throw new Error("No fixtures available for this competition");
+      setAllFixtures(list);
+      const rounds = [...new Set(list.map(f => f.round).filter(Boolean))];
+      if (rounds.length) setRound(rounds[rounds.length - 1]);
+    } catch (e) { setError(e.message); }
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchFixtures(leagueId); }, [leagueId]);
+
+  const rounds = [...new Set(allFixtures.map(f => f.round).filter(Boolean))];
+  const roundFixtures = allFixtures.filter(f => f.round === round);
+
+  const codeFor = (name) => (name || "").replace(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase() || "—";
+
+  const mapped = roundFixtures.map((f, i) => {
+    const finished = f.status === "finished";
+    const p = projections[f.fixtureId ?? i] || {};
+    const hasProjection = p.home || p.draw || p.away || p.score;
+    return {
+      id: String(f.fixtureId ?? i),
+      homeTeam: { code: codeFor(f.home), logoUrl: f.homeLogo },
+      awayTeam: { code: codeFor(f.away), logoUrl: f.awayLogo },
+      status: finished ? "FINISHED" : "UPCOMING",
+      score: finished ? { home: f.score?.home ?? 0, away: f.score?.away ?? 0 } : undefined,
+      kickoffTime: !finished && f.kickoff
+        ? new Date(f.kickoff).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).toUpperCase()
+        : undefined,
+      projection: !finished && hasProjection ? {
+        homeWinProb: (parseFloat(p.home) || 0) / 100,
+        drawProb: (parseFloat(p.draw) || 0) / 100,
+        awayWinProb: (parseFloat(p.away) || 0) / 100,
+        predictedScore: p.score || undefined,
+      } : undefined,
+    };
+  });
+
+  const updateProjection = (fixtureId, field, value) => {
+    setProjections(prev => ({ ...prev, [fixtureId]: { ...prev[fixtureId], [field]: value } }));
+  };
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, `deep433-fixtures-${leagueId}.png`, undefined, transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Aggregates a matchday's results and upcoming fixtures in one card. Win/draw/loss projections are optional and entered manually per fixture below.</div>
+
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {LEAGUE_OPTIONS.map(l => (
+          <button key={l.id} onClick={() => setLeagueId(l.id)} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
+            {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
+            {l.label}
+          </button>
+        ))}
+      </div>
+
+      {loading && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 16, padding: "20px 0" }}>Loading fixtures...</div>}
+      {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
+
+      {rounds.length > 0 && (
+        <select
+          value={round}
+          onChange={e => setRound(e.target.value)}
+          style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+        >
+          {rounds.map(r => <option key={r} value={r}>{r}</option>)}
+        </select>
+      )}
+
+      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#e2e8f0" }}>
+        <input type="checkbox" checked={showProjections} onChange={e => setShowProjections(e.target.checked)} />
+        Show projections column
+      </label>
+
+      {/* Manual projection entry — one row per upcoming fixture in this round */}
+      {showProjections && roundFixtures.some(f => f.status !== "finished") && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, background: "#0f0f1a", borderRadius: 10, padding: 10 }}>
+          <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase" }}>Projections (optional)</div>
+          {roundFixtures.filter(f => f.status !== "finished").map((f, i) => {
+            const key = f.fixtureId ?? i;
+            const p = projections[key] || {};
+            return (
+              <div key={key} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <div style={{ fontSize: 12, color: "#e2e8f0" }}>{f.home} vs {f.away}</div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <input placeholder="Home %" value={p.home || ""} onChange={e => updateProjection(key, "home", e.target.value)} style={{ flex: 1, background: "#1a1a24", border: "1px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "6px 8px", outline: "none", fontFamily: "inherit" }} />
+                  <input placeholder="Draw %" value={p.draw || ""} onChange={e => updateProjection(key, "draw", e.target.value)} style={{ flex: 1, background: "#1a1a24", border: "1px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "6px 8px", outline: "none", fontFamily: "inherit" }} />
+                  <input placeholder="Away %" value={p.away || ""} onChange={e => updateProjection(key, "away", e.target.value)} style={{ flex: 1, background: "#1a1a24", border: "1px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "6px 8px", outline: "none", fontFamily: "inherit" }} />
+                  <input placeholder="Score e.g. 2-1" value={p.score || ""} onChange={e => updateProjection(key, "score", e.target.value)} style={{ flex: 1.4, background: "#1a1a24", border: "1px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "6px 8px", outline: "none", fontFamily: "inherit" }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {mapped.length > 0 && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "44px 14px 20px" }}>
+              <MatchResultsGraphicCore
+                title={LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label?.toUpperCase() || "PREMIER LEAGUE"}
+                fixtures={mapped}
+                showProjections={showProjections}
+              />
+            </div>
+          </GraphicCard>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── GOLDEN GLOVE RACE (CLEAN SHEETS) ────────────────────────────────────────
 function GoldenGloveGraphic() {
   const cardRef = useRef(null);
@@ -9356,6 +9564,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "worst", label: "📉 Worst Performances" },
     { id: "squaddepth", label: "📊 Squad Depth Chart" },
     { id: "leaguetable", label: "🏆 League Table" },
+    { id: "fixtureresults", label: "📊 Fixture Results & Projections" },
     { id: "watchalong", label: "🎙️ Listen Along" },
     { id: "glove",    label: "Golden Glove" },
     { id: "transfer", label: "🔄 Transfer Fit" },
@@ -9419,6 +9628,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "worst" && <WorstPerformancesGraphic />}
       {activeSection === "squaddepth" && <SquadDepthGraphic />}
       {activeSection === "leaguetable" && <LeagueTableGraphic />}
+      {activeSection === "fixtureresults" && <MatchFixtureGraphic />}
       {activeSection === "watchalong" && <WatchAlongPosterGraphic />}
       {activeSection === "glove"    && <GoldenGloveGraphic />}
       {activeSection === "transfer" && <TransferFitGraphic />}
