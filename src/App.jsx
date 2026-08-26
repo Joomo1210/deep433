@@ -866,7 +866,7 @@ useEffect(() => {
     setHistory(prev => prev.map(h => h.id === id ? { ...h, user_prediction: newScore } : h));
     setLoggingIdx(null); setLogScore("");
   };
-  const shareText = result && userPrediction ? `⚽ DEEP433 — YOU vs AI\n${leagueLabel}: ${homeTeam} vs ${awayTeam}\n\nMy prediction: ${userPrediction}\nAI prediction: ${result.scoreline}\n\n"${result.verdict?.slice(0, 100)}..."\n\nChallenge the AI at deep433.com` : "";
+  const shareText = result && userPrediction ? `⚽ DEEP433 — YOU vs AI\n${leagueLabel}: ${homeTeam} vs ${awayTeam}\n\nMy prediction: ${userPrediction}\nAI prediction: ${result.scoreline || "N/A"}\n\n"${result.verdict?.slice(0, 100)}..."\n\nChallenge the AI at deep433.com` : "";
   const copyShare = () => { navigator.clipboard.writeText(shareText).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }); };
   const getDateLabel = (dateStr) => {
     const now = new Date();
@@ -1300,7 +1300,7 @@ if (!session && !guestMode) {
                     <div style={{ textAlign: "center", fontSize: 20, color: "#333", fontWeight: 700 }}>vs</div>
                     <div style={{ textAlign: "center" }}>
                       <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, marginBottom: 8, textTransform: "uppercase" }}>🤖 AI Predicts</div>
-                      <div style={{ fontSize: 48, fontWeight: 900, color: "#f59e0b" }}>{result.scoreline}</div>
+                      <div style={{ fontSize: 48, fontWeight: 900, color: "#f59e0b" }}>{result.scoreline || "N/A"}</div>
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 16, flexWrap: "wrap" }}>
@@ -1389,7 +1389,7 @@ if (!session && !guestMode) {
                       </div>
                       <div style={{ textAlign: "center" }}>
                         <div style={{ fontSize: 13, color: "#f59e0b", fontWeight: 700, marginBottom: 4 }}>🤖 AI SAYS</div>
-                        <div style={{ fontSize: 28, fontWeight: 900, color: "#f59e0b" }}>{result.scoreline}</div>
+                        <div style={{ fontSize: 28, fontWeight: 900, color: "#f59e0b" }}>{result.scoreline || "N/A"}</div>
                       </div>
                     </div>
                     <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700 }}>deep433.com</div>
