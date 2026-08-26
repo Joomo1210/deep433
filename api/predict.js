@@ -91,8 +91,15 @@ export default async function handler(req, res) {
 
   const rawGoalsHome = parseFloat(pred.predictions?.goals?.home);
   const rawGoalsAway = parseFloat(pred.predictions?.goals?.away);
-  const homeGoals = isNaN(rawGoalsHome) ? null : Math.round(rawGoalsHome);
-  const awayGoals = isNaN(rawGoalsAway) ? null : Math.round(rawGoalsAway);
+  // API-Football's predictions.goals field is occasionally not a genuine
+  // predicted score at all — for some fixtures it returns a betting-market
+  // goal-line/handicap value instead (e.g. -3.5), which parses as a
+  // negative number. A real predicted score is never negative, so treat
+  // anything outside a sane range (0–10) as unavailable rather than
+  // display a broken scoreline like "-2--2".
+  const goalsValid = (v) => !isNaN(v) && v >= 0 && v <= 10;
+  const homeGoals = goalsValid(rawGoalsHome) ? Math.round(rawGoalsHome) : null;
+  const awayGoals = goalsValid(rawGoalsAway) ? Math.round(rawGoalsAway) : null;
 
   // Outcome derived directly from the scoreline itself, so the two always
   // agree — rather than deriving outcome from percent separately, which
