@@ -119,6 +119,27 @@ export default async function handler(req, res) {
   const gap = sorted[0] - sorted[1];
   const confidence = gap >= 20 ? 'High' : gap >= 10 ? 'Medium' : 'Low';
 
+  // When API-Football's goals field isn't a genuine predicted score (see
+  // above), don't just leave the scoreline blank — that's the headline
+  // number on this card, and it happens often enough to be a real gap in
+  // the product, not a rare edge case. Instead derive a plain, conservative
+  // scoreline from the win/draw/away percentages, which ARE reliable real
+  // data, rather than fabricating a number from nothing. This is explicitly
+  // a fallback, not a claim of goal-level precision.
+  let finalHomeGoals = homeGoals;
+  let finalAwayGoals = awayGoals;
+  if (homeGoals == null || awayGoals == null) {
+    if (outcome === 'Draw') {
+      finalHomeGoals = 1; finalAwayGoals = 1;
+    } else if (outcome === 'Home Win') {
+      finalHomeGoals = confidence === 'High' ? 2 : confidence === 'Medium' ? 2 : 1;
+      finalAwayGoals = confidence === 'High' ? 0 : confidence === 'Medium' ? 1 : 0;
+    } else {
+      finalHomeGoals = confidence === 'High' ? 0 : confidence === 'Medium' ? 1 : 0;
+      finalAwayGoals = confidence === 'High' ? 2 : confidence === 'Medium' ? 2 : 1;
+    }
+  }
+
   const comp = pred.comparison || {};
   const rawHomeForm = pred.teams?.home?.last_5?.form || '';
   const rawAwayForm = pred.teams?.away?.last_5?.form || '';
@@ -164,9 +185,14 @@ export default async function handler(req, res) {
 
   const parsed = {
     available: true,
-    scoreline: homeGoals != null && awayGoals != null ? `${homeGoals}-${awayGoals}` : null,
-    homeGoals,
-    awayGoals,
+    scoreline: `${finalHomeGoals}-${finalAwayGoals}`,
+    homeGoals: finalHomeGoals,
+    awayGoals: finalAwayGoals,
+    // True when the scoreline came from API-Football's actual goals model;
+    // false when it was derived from win/draw/away percentages because the
+    // goals field wasn't usable for this fixture. Not surfaced in the UI
+    // today, but kept on the object in case it's ever worth flagging.
+    scorelineFromGoalsModel: homeGoals != null && awayGoals != null,
     outcome,
     confidence,
     keyBattle,
