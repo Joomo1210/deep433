@@ -30,11 +30,12 @@ export default async function handler(req, res) {
   // Every prediction this version writes is tagged with this marker; a cached
   // row missing it is treated as a cache miss so it gets regenerated fresh
   // (and the fresh, versioned result then overwrites the stale row below).
-  // Bumped to 3: version 2 had the tie-breaking bug above (ties between
-  // the favourite and draw defaulted to 'Draw' outright), so any row
-  // cached under version 2 needs to regenerate too, not just pre-rewrite
-  // AI-prose rows.
-  const PREDICTION_ENGINE_VERSION = 3;
+  // Bumped to 4: version 3 fixed the outcome tie-breaking but still scaled
+  // the fallback scoreline off the (often tied/compressed) win-draw-away
+  // percentages alone, producing a flat 1-0/0-1 regardless of how lopsided
+  // the actual attack-vs-defence data was — every cached row needs to
+  // regenerate against the dominance-based margin below.
+  const PREDICTION_ENGINE_VERSION = 4;
 
   const skipCache = (req.method === 'GET' ? req.query.skipCache : req.body.skipCache) === 'true';
   if (!skipCache) {
@@ -143,18 +144,46 @@ export default async function handler(req, res) {
   const gap = sorted[0] - sorted[1];
   const confidence = gap >= 20 ? 'High' : gap >= 10 ? 'Medium' : 'Low';
 
+  // Attack/defence comparison, pulled up here (rather than only where the
+  // Key Tactical Battle text is built, further down) so the scoreline
+  // fallback below can use these same real numbers too.
+  const comp = pred.comparison || {};
+  const attHome = parseFloat(comp.att?.home);
+  const attAway = parseFloat(comp.att?.away);
+  const defHome = parseFloat(comp.def?.home);
+  const defAway = parseFloat(comp.def?.away);
+  const hasAttData = (!isNaN(attHome) && attHome > 0) || (!isNaN(attAway) && attAway > 0);
+  const hasDefData = (!isNaN(defHome) && defHome > 0) || (!isNaN(defAway) && defAway > 0);
+
   // When API-Football's goals field isn't a genuine predicted score (see
   // above), don't just leave the scoreline blank — that's the headline
   // number on this card, and it happens often enough to be a real gap in
-  // the product, not a rare edge case. Instead derive a plain, conservative
-  // scoreline from the win/draw/away percentages, which ARE reliable real
-  // data, rather than fabricating a number from nothing. This is explicitly
-  // a fallback, not a claim of goal-level precision.
+  // the product, not a rare edge case. The win/draw/away percentages alone
+  // are a poor basis for the MARGIN though — they're so often compressed
+  // or tied (45/45/10, 50/50/0) that every low-confidence fallback ended up
+  // as the exact same flat 1-0 / 0-1, regardless of whether the match was
+  // genuinely close or one side dominated on paper. The attack/defence
+  // comparison ratings are real, already-fetched data that clearly
+  // differentiate matches (100 vs 0 is nothing like 70 vs 20), so use the
+  // gap between the winning side's attack and the losing side's defence to
+  // scale the margin, falling back to the flatter confidence-based template
+  // only when that comparison data isn't available at all.
   let finalHomeGoals = homeGoals;
   let finalAwayGoals = awayGoals;
   if (homeGoals == null || awayGoals == null) {
     if (outcome === 'Draw') {
       finalHomeGoals = 1; finalAwayGoals = 1;
+    } else if (hasAttData && hasDefData) {
+      const dominance = outcome === 'Home Win'
+        ? (attHome || 0) - (defAway || 0)
+        : (attAway || 0) - (defHome || 0);
+      let winnerGoals, loserGoals;
+      if (dominance >= 60) { winnerGoals = 3; loserGoals = 0; }
+      else if (dominance >= 35) { winnerGoals = 2; loserGoals = 0; }
+      else if (dominance >= 15) { winnerGoals = 2; loserGoals = 1; }
+      else { winnerGoals = 1; loserGoals = 0; }
+      finalHomeGoals = outcome === 'Home Win' ? winnerGoals : loserGoals;
+      finalAwayGoals = outcome === 'Home Win' ? loserGoals : winnerGoals;
     } else if (outcome === 'Home Win') {
       finalHomeGoals = confidence === 'High' ? 2 : confidence === 'Medium' ? 2 : 1;
       finalAwayGoals = confidence === 'High' ? 0 : confidence === 'Medium' ? 1 : 0;
@@ -164,7 +193,6 @@ export default async function handler(req, res) {
     }
   }
 
-  const comp = pred.comparison || {};
   const rawHomeForm = pred.teams?.home?.last_5?.form || '';
   const rawAwayForm = pred.teams?.away?.last_5?.form || '';
   // API-Football appears to return a literal "0%" placeholder rather than
@@ -179,12 +207,6 @@ export default async function handler(req, res) {
   });
 
   // ── Key battle — template sentence built from real attack/defence comparison ──
-  const attHome = parseFloat(comp.att?.home);
-  const attAway = parseFloat(comp.att?.away);
-  const defHome = parseFloat(comp.def?.home);
-  const defAway = parseFloat(comp.def?.away);
-  const hasAttData = (!isNaN(attHome) && attHome > 0) || (!isNaN(attAway) && attAway > 0);
-  const hasDefData = (!isNaN(defHome) && defHome > 0) || (!isNaN(defAway) && defAway > 0);
   let keyBattle;
   if (hasAttData && hasDefData) {
     // Compare whichever side has the sharper attack against the OPPONENT's
