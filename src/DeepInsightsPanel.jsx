@@ -11,6 +11,26 @@ function capStat(val) {
   return capped + "%";
 }
 
+// Caps BOTH sides of a comparison to the 20–70 display range, then
+// renormalizes the pair so they always sum back to 100 — capping each
+// value independently (the previous approach) left genuinely lopsided
+// matchups (e.g. a real 90/10 split) displayed as 70/20, which only sums
+// to 90 and reads as a display bug rather than a deliberately compressed
+// range.
+function capPair(homeVal, awayVal) {
+  const h = parseFloat(homeVal);
+  const a = parseFloat(awayVal);
+  if (isNaN(h) || isNaN(a)) return { home: homeVal, away: awayVal };
+  const cappedH = Math.min(Math.max(h, 20), 70);
+  const cappedA = Math.min(Math.max(a, 20), 70);
+  const total = cappedH + cappedA;
+  if (total === 0) return { home: 50, away: 50 };
+  return {
+    home: Math.round((cappedH / total) * 100),
+    away: Math.round((cappedA / total) * 100),
+  };
+}
+
 // ─── Self-contained bento box wrapper ────────────────────────────────────────
 function BentoBox({ title, icon, color, children }) {
   return (
@@ -26,18 +46,19 @@ function BentoBox({ title, icon, color, children }) {
 
 function RatingBar({ subtitle, homeVal, awayVal, homeTeam, awayTeam }) {
   if (!homeVal) return null;
+  const { home, away } = capPair(homeVal, awayVal);
   return (
     <div>
       <div style={{ fontSize: 13, color: "#999", marginBottom: 6 }}>{subtitle}</div>
       <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-        <span style={{ fontSize: 17, fontWeight: 900, color: "#4ade80", minWidth: 32, textAlign: "right" }}>{capStat(homeVal)}</span>
+        <span style={{ fontSize: 17, fontWeight: 900, color: "#4ade80", minWidth: 32, textAlign: "right" }}>{home}%</span>
         <div style={{ flex: 1, height: 6, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex" }}>
-          <div style={{ width: homeVal, background: "#4ade80" }} />
+          <div style={{ width: home + "%", background: "#4ade80" }} />
         </div>
         <div style={{ flex: 1, height: 6, borderRadius: 3, overflow: "hidden", background: "#1a1a2a", display: "flex", flexDirection: "row-reverse" }}>
-          <div style={{ width: awayVal, background: "#f59e0b" }} />
+          <div style={{ width: away + "%", background: "#f59e0b" }} />
         </div>
-        <span style={{ fontSize: 17, fontWeight: 900, color: "#f59e0b", minWidth: 32 }}>{capStat(awayVal)}</span>
+        <span style={{ fontSize: 17, fontWeight: 900, color: "#f59e0b", minWidth: 32 }}>{away}%</span>
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10, fontSize: 13, color: "#aaa" }}>
         <span style={{ color: "#4ade80" }}>{homeTeam.split(" ")[0]}</span>
