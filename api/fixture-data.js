@@ -93,6 +93,12 @@ export default async function handler(req, res) {
         logo: team.team?.logo,
         stats: {
           possession:      parseStat(team, "Ball Possession"),
+          // "expected_goals" is API-Football's stat type for xG — it's real
+          // data when present, but not every league/plan tier returns it,
+          // so this can legitimately come back null. Never fabricated if
+          // missing, and the render side hides the section entirely rather
+          // than showing a blank or invented number.
+          expectedGoals:   parseStat(team, "expected_goals"),
           shotsTotal:      parseStat(team, "Total Shots"),
           shotsOnGoal:     parseStat(team, "Shots on Goal"),
           shotsOffGoal:    parseStat(team, "Shots off Goal"),
