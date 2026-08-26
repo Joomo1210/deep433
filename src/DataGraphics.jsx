@@ -2114,30 +2114,35 @@ function DeepInsightsGraphic({ history = [] }) {
           {insights && (
             <>
               <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-                <div style={{ padding: "22px 18px 18px" }}>
-                  {/* Competition label — uses the actual competition's own
-                      crest via LEAGUE_LOGOS, rather than a hardcoded FIFA
-                      logo that showed on every card regardless of which
-                      competition the fixture was actually in. */}
+                <div style={{ padding: "44px 18px 18px" }}>
+                  {/* Competition label — top padding bumped from 22px to
+                      44px, matching the convention used elsewhere in this
+                      file. GraphicCard places its Deep433 watermark logo at
+                      top:10 with a 28px height, so anything closer than
+                      ~40px of top padding collides directly with it — this
+                      row was sitting right on top of that watermark before. */}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 10 }}>
                     {LEAGUE_LOGOS[selectedFixture.leagueId] && (
                       <img src={LEAGUE_LOGOS[selectedFixture.leagueId]} alt="" crossOrigin="anonymous" style={{ width: 18, height: 18, objectFit: "contain" }} />
                     )}
                     <span style={{ fontSize: 12, color: "#ccc", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 }}>{selectedFixture.leagueLabel || "Match"}</span>
                   </div>
-                  {/* Match header */}
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, marginTop: 8 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      {selectedFixture.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
-                      <span style={{ fontSize: 17, fontWeight: 900, color: "#4ade80" }}>{home}</span>
+                  {/* Match header — round text removed entirely (it was
+                      cramming the already-narrow middle column between two
+                      team blocks); the middle "vs" slot now gets a fixed
+                      width and its own breathing room instead of squeezing
+                      in wherever space is left over. */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 16, marginTop: 8 }}>
+                    <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                      {selectedFixture.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain", flexShrink: 0 }} />}
+                      <span style={{ fontSize: 17, fontWeight: 900, color: "#4ade80", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{home}</span>
                     </div>
-                    <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{formatRound(selectedFixture.round)}</div>
-                      <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700 }}>vs</div>
+                    <div style={{ flexShrink: 0, width: 36, textAlign: "center" }}>
+                      <span style={{ fontSize: 15, color: "#666", fontWeight: 800 }}>vs</span>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ fontSize: 17, fontWeight: 900, color: "#f59e0b" }}>{away}</span>
-                      {selectedFixture.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
+                    <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, minWidth: 0, justifyContent: "flex-end" }}>
+                      <span style={{ fontSize: 17, fontWeight: 900, color: "#f59e0b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right" }}>{away}</span>
+                      {selectedFixture.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain", flexShrink: 0 }} />}
                     </div>
                   </div>
 
