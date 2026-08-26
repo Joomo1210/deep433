@@ -87,7 +87,11 @@ function FixturePicker({ onSelect }) {
   useEffect(() => {
     setLoading(true);
     setFixtures([]);
-    fetch(`/api/fixtures?leagueId=${leagueId}`)
+    // full=true pulls the whole season (past and future) rather than the
+    // rolling "yesterday + next 25 days" window the default mode uses —
+    // this picker is used by content-creation tools that need to look back
+    // at completed matches well beyond a day or two after kickoff.
+    fetch(`/api/fixtures?leagueId=${leagueId}&full=true`)
       .then(r => r.json())
       .then(d => setFixtures(d.fixtures || []))
       .catch(() => {})
