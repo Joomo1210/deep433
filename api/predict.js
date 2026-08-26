@@ -30,12 +30,11 @@ export default async function handler(req, res) {
   // Every prediction this version writes is tagged with this marker; a cached
   // row missing it is treated as a cache miss so it gets regenerated fresh
   // (and the fresh, versioned result then overwrites the stale row below).
-  // Bumped to 4: version 3 fixed the outcome tie-breaking but still scaled
-  // the fallback scoreline off the (often tied/compressed) win-draw-away
-  // percentages alone, producing a flat 1-0/0-1 regardless of how lopsided
-  // the actual attack-vs-defence data was — every cached row needs to
-  // regenerate against the dominance-based margin below.
-  const PREDICTION_ENGINE_VERSION = 4;
+  // Bumped to 5: version 4 fixed the scoreline margin to use attack/defence
+  // dominance, but left confidence computed only from the win-draw-away
+  // percentage gap — so a card could show "Low Confidence" right next to a
+  // fairly decisive scoreline, an open contradiction on the same card.
+  const PREDICTION_ENGINE_VERSION = 5;
 
   const skipCache = (req.method === 'GET' ? req.query.skipCache : req.body.skipCache) === 'true';
   if (!skipCache) {
@@ -139,14 +138,9 @@ export default async function handler(req, res) {
     }
   }
 
-  // Confidence from how clearly one result stands out from the others
-  const sorted = [homePct, drawPct, awayPct].sort((a, b) => b - a);
-  const gap = sorted[0] - sorted[1];
-  const confidence = gap >= 20 ? 'High' : gap >= 10 ? 'Medium' : 'Low';
-
   // Attack/defence comparison, pulled up here (rather than only where the
-  // Key Tactical Battle text is built, further down) so the scoreline
-  // fallback below can use these same real numbers too.
+  // Key Tactical Battle text is built, further down) so both the confidence
+  // rating and the scoreline fallback below can use these same real numbers.
   const comp = pred.comparison || {};
   const attHome = parseFloat(comp.att?.home);
   const attAway = parseFloat(comp.att?.away);
@@ -155,28 +149,39 @@ export default async function handler(req, res) {
   const hasAttData = (!isNaN(attHome) && attHome > 0) || (!isNaN(attAway) && attAway > 0);
   const hasDefData = (!isNaN(defHome) && defHome > 0) || (!isNaN(defAway) && defAway > 0);
 
+  // Dominance: the gap between the predicted winner's attack rating and the
+  // predicted loser's defence rating. Computed once here and reused for
+  // BOTH confidence and the scoreline margin below, so the two numbers on
+  // the card can never tell a contradictory story again.
+  const dominance = (outcome !== 'Draw' && hasAttData && hasDefData)
+    ? (outcome === 'Home Win' ? (attHome || 0) - (defAway || 0) : (attAway || 0) - (defHome || 0))
+    : 0;
+
+  // Confidence blends the win/draw/away percentage gap with that dominance
+  // signal. Previously confidence came only from the percentage gap, which
+  // is so often compressed or tied (45/45/10) that a card could show "Low
+  // Confidence" right next to a scoreline the attack/defence data clearly
+  // supported as fairly decisive — a lopsided attack-vs-defence mismatch is
+  // real corroborating evidence for the predicted outcome and shouldn't be
+  // ignored just because the raw win-probability split happened to be close.
+  const sorted = [homePct, drawPct, awayPct].sort((a, b) => b - a);
+  const gap = sorted[0] - sorted[1];
+  const combinedSignal = Math.max(gap, dominance * 0.25);
+  const confidence = combinedSignal >= 20 ? 'High' : combinedSignal >= 10 ? 'Medium' : 'Low';
+
   // When API-Football's goals field isn't a genuine predicted score (see
   // above), don't just leave the scoreline blank — that's the headline
   // number on this card, and it happens often enough to be a real gap in
-  // the product, not a rare edge case. The win/draw/away percentages alone
-  // are a poor basis for the MARGIN though — they're so often compressed
-  // or tied (45/45/10, 50/50/0) that every low-confidence fallback ended up
-  // as the exact same flat 1-0 / 0-1, regardless of whether the match was
-  // genuinely close or one side dominated on paper. The attack/defence
-  // comparison ratings are real, already-fetched data that clearly
-  // differentiate matches (100 vs 0 is nothing like 70 vs 20), so use the
-  // gap between the winning side's attack and the losing side's defence to
-  // scale the margin, falling back to the flatter confidence-based template
-  // only when that comparison data isn't available at all.
+  // the product, not a rare edge case. Scale the margin off the same
+  // dominance figure used for confidence above, falling back to the flatter
+  // confidence-based template only when attack/defence data isn't available
+  // at all.
   let finalHomeGoals = homeGoals;
   let finalAwayGoals = awayGoals;
   if (homeGoals == null || awayGoals == null) {
     if (outcome === 'Draw') {
       finalHomeGoals = 1; finalAwayGoals = 1;
     } else if (hasAttData && hasDefData) {
-      const dominance = outcome === 'Home Win'
-        ? (attHome || 0) - (defAway || 0)
-        : (attAway || 0) - (defHome || 0);
       let winnerGoals, loserGoals;
       if (dominance >= 60) { winnerGoals = 3; loserGoals = 0; }
       else if (dominance >= 35) { winnerGoals = 2; loserGoals = 0; }
