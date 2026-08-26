@@ -194,6 +194,18 @@ const LEAGUE_LOGOS = {
   ucl:        "https://media.api-sports.io/football/leagues/2.png",
 };
 
+// API-Football's round strings are often raw internal labels like
+// "Regular Season - 1" rather than something a viewer would recognize —
+// this converts the common pattern into "Matchday N", and falls back to
+// showing the original string untouched for anything that doesn't match
+// (cup rounds like "Quarter-finals" are already readable as-is).
+function formatRound(round) {
+  if (!round) return "";
+  const match = round.match(/Regular Season\s*-\s*(\d+)/i);
+  if (match) return `Matchday ${match[1]}`;
+  return round;
+}
+
 const ratingColor = (r) => {
   const n = parseFloat(r);
   if (!n) return "#e2e8f0";
@@ -2103,9 +2115,14 @@ function DeepInsightsGraphic({ history = [] }) {
             <>
               <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
                 <div style={{ padding: "22px 18px 18px" }}>
-                  {/* Competition label */}
+                  {/* Competition label — uses the actual competition's own
+                      crest via LEAGUE_LOGOS, rather than a hardcoded FIFA
+                      logo that showed on every card regardless of which
+                      competition the fixture was actually in. */}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 10 }}>
-                    <img src="/fifa.png" alt="" crossOrigin="anonymous" style={{ width: 18, height: 18, objectFit: "contain" }} />
+                    {LEAGUE_LOGOS[selectedFixture.leagueId] && (
+                      <img src={LEAGUE_LOGOS[selectedFixture.leagueId]} alt="" crossOrigin="anonymous" style={{ width: 18, height: 18, objectFit: "contain" }} />
+                    )}
                     <span style={{ fontSize: 12, color: "#ccc", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 }}>{selectedFixture.leagueLabel || "Match"}</span>
                   </div>
                   {/* Match header */}
@@ -2115,7 +2132,7 @@ function DeepInsightsGraphic({ history = [] }) {
                       <span style={{ fontSize: 17, fontWeight: 900, color: "#4ade80" }}>{home}</span>
                     </div>
                     <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{selectedFixture.round}</div>
+                      <div style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{formatRound(selectedFixture.round)}</div>
                       <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700 }}>vs</div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
