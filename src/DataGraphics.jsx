@@ -796,6 +796,21 @@ function MatchStatsGraphic() {
                 <PossessionHero home={s.home.stats.possession} awayVal={s.away.stats.possession} animate={animate} />
               </div>
 
+              {/* Only renders when API-Football actually returns this stat —
+                  it's real xG data when present, not every league/plan tier
+                  supplies it, so this section is hidden entirely rather than
+                  showing a blank or fabricated number when it's missing. */}
+              {(s.home.stats.expectedGoals != null || s.away.stats.expectedGoals != null) && (
+                <div style={{
+                  background: "linear-gradient(135deg, #818cf814, #4ade8010)",
+                  border: "1px solid #818cf833",
+                  borderRadius: 12, padding: "16px 18px", marginBottom: 10,
+                }}>
+                  <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 10, textAlign: "center" }}>📈 Expected Goals (xG)</div>
+                  <AnimatedStatBar label="xG" homeVal={s.home.stats.expectedGoals} awayVal={s.away.stats.expectedGoals} animate={animate} />
+                </div>
+              )}
+
               {/* Bento grid — 2x2 */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
                 <BentoBox title="Attack" icon="🎯" color="#4ade80">
