@@ -24,6 +24,18 @@ export default async function handler(req, res) {
   if (req.method !== 'POST' && req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
   const { homeTeam, awayTeam, league, fixtureId } = req.method === 'GET' ? req.query : req.body;
 
+  // Any cached row from before the deterministic rewrite is stale, hallucinated
+  // AI prose (named-player tactical narrative, not derived from real stats) and
+  // must never be served, no matter how old the cache-check logic thinks it is.
+  // Every prediction this version writes is tagged with this marker; a cached
+  // row missing it is treated as a cache miss so it gets regenerated fresh
+  // (and the fresh, versioned result then overwrites the stale row below).
+  // Bumped to 3: version 2 had the tie-breaking bug above (ties between
+  // the favourite and draw defaulted to 'Draw' outright), so any row
+  // cached under version 2 needs to regenerate too, not just pre-rewrite
+  // AI-prose rows.
+  const PREDICTION_ENGINE_VERSION = 3;
+
   const skipCache = (req.method === 'GET' ? req.query.skipCache : req.body.skipCache) === 'true';
   if (!skipCache) {
     try {
@@ -34,7 +46,7 @@ export default async function handler(req, res) {
         .eq('home_team', homeTeam)
         .eq('away_team', awayTeam)
         .single();
-      if (cached?.ai_data) {
+      if (cached?.ai_data && cached.ai_data.predictionEngineVersion === PREDICTION_ENGINE_VERSION) {
         return res.status(200).json({ ...cached.ai_data, cached: true });
       }
     } catch {}
@@ -109,9 +121,21 @@ export default async function handler(req, res) {
     if (homeGoals > awayGoals) outcome = 'Home Win';
     else if (awayGoals > homeGoals) outcome = 'Away Win';
   } else {
-    // Fallback to percent-based outcome if goals weren't available
-    if (homePct > drawPct && homePct > awayPct) outcome = 'Home Win';
-    else if (awayPct > homePct && awayPct > drawPct) outcome = 'Away Win';
+    // Fallback to percent-based outcome if goals weren't available.
+    // API-Football very often returns the favourite's percentage exactly
+    // equal to the draw percentage (e.g. 45/45/10) — the previous strict
+    // `homePct > drawPct` check meant a tie fell through to neither branch
+    // and silently kept the 'Draw' default, even when the advice text
+    // explicitly named a match winner. Draw should only be the outcome
+    // when it's the outright highest of the three; otherwise the higher
+    // of home/away wins, with a home/away tie broken toward home advantage.
+    if (drawPct > homePct && drawPct > awayPct) {
+      outcome = 'Draw';
+    } else if (homePct >= awayPct) {
+      outcome = 'Home Win';
+    } else {
+      outcome = 'Away Win';
+    }
   }
 
   // Confidence from how clearly one result stands out from the others
@@ -185,6 +209,7 @@ export default async function handler(req, res) {
 
   const parsed = {
     available: true,
+    predictionEngineVersion: PREDICTION_ENGINE_VERSION,
     scoreline: `${finalHomeGoals}-${finalAwayGoals}`,
     homeGoals: finalHomeGoals,
     awayGoals: finalAwayGoals,
