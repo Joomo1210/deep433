@@ -2194,9 +2194,11 @@ function LineupSubsSuspensionsGraphic() {
   const [selectedFixture, setSelectedFixture] = useState(null);
   const [lineup, setLineup] = useState(null);
   const [injuries, setInjuries] = useState(null);
+  const [injuriesFailed, setInjuriesFailed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState("");
+  const [showRawInjuries, setShowRawInjuries] = useState(false);
 
   // silent=true is used by the background poll below — it updates state on
   // success but doesn't show a loading spinner or an error for "not out
@@ -2204,17 +2206,27 @@ function LineupSubsSuspensionsGraphic() {
   const fetchTeamNews = async (fixtureId, { silent = false } = {}) => {
     if (!silent) setLoading(true);
     try {
-      const [lineupRes, injuriesRes] = await Promise.all([
-        fetch(`/api/match-lineup?fixtureId=${fixtureId}`).then(r => r.json()),
-        fetch(`/api/injuries?fixtureId=${fixtureId}`).then(r => r.json()).catch(() => ({ home: [], away: [] })),
-      ]);
+      const lineupRes = await fetch(`/api/match-lineup?fixtureId=${fixtureId}`).then(r => r.json());
       if (!lineupRes.available || !lineupRes.home?.players?.length) {
         if (!silent) setError("Lineup not confirmed yet — check back closer to kickoff");
         return;
       }
       setLineup(lineupRes);
-      setInjuries(injuriesRes);
       setError("");
+
+      // Fetched separately from the lineup, with its own error state — a
+      // failed injuries fetch is NOT the same thing as "no injuries
+      // reported", and silently treating them the same (the previous
+      // behavior) made it impossible to tell whether an empty section meant
+      // a clean team news sheet or a fetch that quietly broke.
+      try {
+        const injuriesRes = await fetch(`/api/injuries?fixtureId=${fixtureId}`).then(r => r.json());
+        setInjuries(injuriesRes);
+        setInjuriesFailed(false);
+      } catch {
+        setInjuries(null);
+        setInjuriesFailed(true);
+      }
     } catch (e) {
       if (!silent) setError(e.message);
     } finally {
@@ -2226,6 +2238,7 @@ function LineupSubsSuspensionsGraphic() {
     setSelectedFixture(f);
     setLineup(null);
     setInjuries(null);
+    setInjuriesFailed(false);
     setError("");
     if (!f.fixtureId) { setError("No fixture ID available"); return; }
     fetchTeamNews(f.fixtureId);
@@ -2261,37 +2274,60 @@ function LineupSubsSuspensionsGraphic() {
   };
 
   const TeamColumn = ({ team, color }) => (
-    <div style={{ flex: 1, minWidth: 0 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
-        {team.logo && <img src={team.logo} alt="" crossOrigin="anonymous" style={{ width: 20, height: 20, objectFit: "contain", flexShrink: 0 }} />}
-        <span style={{ fontSize: 13, fontWeight: 900, color, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{team.team}</span>
+    <div style={{
+      flex: 1, minWidth: 0, textAlign: "center",
+      background: `linear-gradient(180deg, ${color}18, ${color}05)`,
+      border: `1px solid ${color}33`, borderRadius: 12, padding: "12px 8px",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 8 }}>
+        {team.logo && <img src={team.logo} alt="" crossOrigin="anonymous" style={{ width: 26, height: 26, objectFit: "contain", flexShrink: 0 }} />}
+        <span style={{ fontSize: 16, fontWeight: 900, color, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{team.team}</span>
       </div>
-      {team.formation && <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 2 }}>Formation: {team.formation}</div>}
-      {team.coach && <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 8 }}>Coach: {team.coach}</div>}
+      {team.formation && (
+        <div style={{ display: "inline-block", background: color + "22", borderRadius: 20, padding: "2px 10px", fontSize: 12, color, fontWeight: 700, marginBottom: 6 }}>
+          {team.formation}
+        </div>
+      )}
+      {team.coach && <div style={{ fontSize: 12, color: "#94a3b8" }}>Manager: <span style={{ color: "#e2e8f0", fontWeight: 600 }}>{team.coach}</span></div>}
+    </div>
+  );
+
+  const SectionHeader = ({ text }) => (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "18px 0 10px" }}>
+      <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, transparent, #2a2a3a)" }} />
+      <span style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.2, whiteSpace: "nowrap" }}>{text}</span>
+      <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, #2a2a3a, transparent)" }} />
     </div>
   );
 
   const PlayerList = ({ players, color }) => (
-    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
+    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
       {(players || []).map((p, i) => (
-        <div key={i} style={{ fontSize: 11.5, color: "#e2e8f0", display: "flex", gap: 5 }}>
-          <span style={{ color, fontWeight: 800, minWidth: 18 }}>{p.number ?? ""}</span>
+        <div key={i} style={{ fontSize: 13.5, color: "#e2e8f0", display: "flex", alignItems: "center", gap: 7, width: "100%", justifyContent: "center" }}>
+          <span style={{
+            background: color + "22", color, fontWeight: 900, fontSize: 11,
+            width: 20, height: 20, borderRadius: "50%", display: "flex",
+            alignItems: "center", justifyContent: "center", flexShrink: 0,
+          }}>{p.number ?? "-"}</span>
           <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
         </div>
       ))}
-      {(!players || !players.length) && <span style={{ fontSize: 11, color: "#444", fontStyle: "italic" }}>None listed</span>}
+      {(!players || !players.length) && <span style={{ fontSize: 12.5, color: "#444", fontStyle: "italic" }}>None listed</span>}
     </div>
   );
 
   const InjuryList = ({ list, color }) => (
-    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
+    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, textAlign: "center" }}>
       {(list || []).map((p, i) => (
-        <div key={i} style={{ fontSize: 11.5, color: "#e2e8f0" }}>
-          <span style={{ fontWeight: 700 }}>{p.name}</span>
-          <span style={{ color: "#94a3b8" }}> ({p.reason})</span>
+        <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0" }}>{p.name}</span>
+          <span style={{
+            fontSize: 10.5, color: "#f59e0b", background: "#f59e0b1a",
+            border: "1px solid #f59e0b33", borderRadius: 20, padding: "1px 8px", fontWeight: 700,
+          }}>{p.reason}</span>
         </div>
       ))}
-      {(!list || !list.length) && <span style={{ fontSize: 11, color: "#444", fontStyle: "italic" }}>None reported</span>}
+      {(!list || !list.length) && <span style={{ fontSize: 12.5, color: "#444", fontStyle: "italic" }}>None reported</span>}
     </div>
   );
 
@@ -2315,39 +2351,59 @@ function LineupSubsSuspensionsGraphic() {
       {lineup && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "44px 18px 20px" }}>
-              <div style={{ textAlign: "center", marginBottom: 16 }}>
-                <span style={{ fontSize: 11, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5 }}>📋 Confirmed Team News</span>
+            <div style={{ padding: "44px 18px 22px" }}>
+              <div style={{ textAlign: "center", marginBottom: 4 }}>
+                <span style={{
+                  fontSize: 13, fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5,
+                  background: "linear-gradient(90deg,#4ade80,#818cf8,#f59e0b)",
+                  WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+                }}>📋 Confirmed Team News</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, marginBottom: 18 }}>
+                {LEAGUE_LOGOS[selectedFixture?.leagueId] && (
+                  <img src={LEAGUE_LOGOS[selectedFixture.leagueId]} alt="" crossOrigin="anonymous" style={{ width: 16, height: 16, objectFit: "contain" }} />
+                )}
+                <span style={{ fontSize: 12, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{selectedFixture?.leagueLabel}</span>
               </div>
 
-              <div style={{ display: "flex", gap: 14, marginBottom: 14 }}>
+              <div style={{ display: "flex", gap: 12, marginBottom: 4 }}>
                 <TeamColumn team={lineup.home} color="#4ade80" />
                 <TeamColumn team={lineup.away || {}} color="#f59e0b" />
               </div>
 
-              <div style={{ fontSize: 11, color: "#e2e8f0", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6, borderTop: "1px solid #23232f", paddingTop: 10 }}>Starting XI</div>
-              <div style={{ display: "flex", gap: 14, marginBottom: 14 }}>
+              <SectionHeader text="Starting XI" />
+              <div style={{ display: "flex", gap: 14, marginBottom: 6 }}>
                 <PlayerList players={lineup.home?.players} color="#4ade80" />
                 <PlayerList players={lineup.away?.players} color="#f59e0b" />
               </div>
 
-              <div style={{ fontSize: 11, color: "#e2e8f0", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6, borderTop: "1px solid #23232f", paddingTop: 10 }}>🪑 Substitutes</div>
-              <div style={{ display: "flex", gap: 14, marginBottom: 14 }}>
+              <SectionHeader text="🪑 Substitutes" />
+              <div style={{ display: "flex", gap: 14, marginBottom: 6 }}>
                 <PlayerList players={lineup.home?.substitutes} color="#4ade80" />
                 <PlayerList players={lineup.away?.substitutes} color="#f59e0b" />
               </div>
 
-              {injuries && (injuries.home?.length > 0 || injuries.away?.length > 0) && (
-                <>
-                  <div style={{ fontSize: 11, color: "#e2e8f0", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6, borderTop: "1px solid #23232f", paddingTop: 10 }}>🩹 Injuries & Suspensions</div>
-                  <div style={{ display: "flex", gap: 14 }}>
-                    <InjuryList list={injuries.home} color="#4ade80" />
-                    <InjuryList list={injuries.away} color="#f59e0b" />
-                  </div>
-                </>
+              <SectionHeader text="🩹 Injuries & Suspensions" />
+              {injuriesFailed ? (
+                <div style={{ fontSize: 13, color: "#f59e0b", fontStyle: "italic", textAlign: "center" }}>Couldn't load injury data — try refreshing.</div>
+              ) : (
+                <div style={{ display: "flex", gap: 14 }}>
+                  <InjuryList list={injuries?.home} color="#4ade80" />
+                  <InjuryList list={injuries?.away} color="#f59e0b" />
+                </div>
               )}
             </div>
           </GraphicCard>
+          {injuries && !injuriesFailed && (
+            <button onClick={() => setShowRawInjuries(v => !v)} style={{ background: "none", border: "1px dashed #444", borderRadius: 6, color: "#818cf8", cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "6px 10px", width: "100%" }}>
+              🐛 {showRawInjuries ? "Hide" : "Show"} Raw Injuries Data
+            </button>
+          )}
+          {showRawInjuries && (
+            <pre style={{ background: "#0a0a12", border: "1px solid #23232f", borderRadius: 8, padding: 10, fontSize: 10, color: "#94a3b8", overflowX: "auto", whiteSpace: "pre-wrap" }}>
+              {JSON.stringify(injuries, null, 2)}
+            </pre>
+          )}
           <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
           </button>
