@@ -2198,27 +2198,59 @@ function LineupSubsSuspensionsGraphic() {
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSelect = async (f) => {
+  // silent=true is used by the background poll below — it updates state on
+  // success but doesn't show a loading spinner or an error for "not out
+  // yet", since that's the expected, normal state while waiting.
+  const fetchTeamNews = async (fixtureId, { silent = false } = {}) => {
+    if (!silent) setLoading(true);
+    try {
+      const [lineupRes, injuriesRes] = await Promise.all([
+        fetch(`/api/match-lineup?fixtureId=${fixtureId}`).then(r => r.json()),
+        fetch(`/api/injuries?fixtureId=${fixtureId}`).then(r => r.json()).catch(() => ({ home: [], away: [] })),
+      ]);
+      if (!lineupRes.available || !lineupRes.home?.players?.length) {
+        if (!silent) setError("Lineup not confirmed yet — check back closer to kickoff");
+        return;
+      }
+      setLineup(lineupRes);
+      setInjuries(injuriesRes);
+      setError("");
+    } catch (e) {
+      if (!silent) setError(e.message);
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  };
+
+  const handleSelect = (f) => {
     setSelectedFixture(f);
     setLineup(null);
     setInjuries(null);
     setError("");
     if (!f.fixtureId) { setError("No fixture ID available"); return; }
-
-    setLoading(true);
-    try {
-      const [lineupRes, injuriesRes] = await Promise.all([
-        fetch(`/api/match-lineup?fixtureId=${f.fixtureId}`).then(r => r.json()),
-        fetch(`/api/injuries?fixtureId=${f.fixtureId}`).then(r => r.json()).catch(() => ({ home: [], away: [] })),
-      ]);
-      if (!lineupRes.available || !lineupRes.home?.players?.length) {
-        throw new Error("Lineup not confirmed yet — check back closer to kickoff");
-      }
-      setLineup(lineupRes);
-      setInjuries(injuriesRes);
-    } catch (e) { setError(e.message); }
-    setLoading(false);
+    fetchTeamNews(f.fixtureId);
   };
+
+  // Background auto-check — lineups are typically published by clubs/
+  // broadcasters around an hour before kickoff, but the exact moment is set
+  // by API-Football's own upstream source, not by this app, so it can vary.
+  // Rather than requiring a manual refresh, this quietly re-checks every 90
+  // seconds once a fixture's selected, but only actually calls the endpoint
+  // inside a sensible window around kickoff (2 hours before through 15
+  // minutes after) — so a fixture picked days in advance doesn't poll
+  // uselessly the whole time, and polling stops once the lineup's found or
+  // kickoff has clearly passed.
+  useEffect(() => {
+    if (!selectedFixture?.fixtureId || lineup || !selectedFixture.kickoff) return;
+    const kickoff = new Date(selectedFixture.kickoff).getTime();
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const withinWindow = now >= kickoff - 2 * 60 * 60 * 1000 && now <= kickoff + 15 * 60 * 1000;
+      if (!withinWindow) return;
+      fetchTeamNews(selectedFixture.fixtureId, { silent: true });
+    }, 90 * 1000);
+    return () => clearInterval(interval);
+  }, [selectedFixture, lineup]);
 
   const download = async (transparent = false) => {
     setDownloading(true);
@@ -2269,7 +2301,16 @@ function LineupSubsSuspensionsGraphic() {
       <FixturePicker onSelect={handleSelect} />
 
       {loading && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 16, padding: "20px 0" }}>Loading team news...</div>}
-      {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
+      {error && (
+        <div style={{ color: "#f87171", fontSize: 16 }}>
+          {error}
+          {selectedFixture?.kickoff && (
+            <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4, fontStyle: "italic" }}>
+              Checking automatically as kickoff gets closer — no need to keep refreshing.
+            </div>
+          )}
+        </div>
+      )}
 
       {lineup && (
         <>
