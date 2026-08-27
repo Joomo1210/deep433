@@ -169,7 +169,7 @@ function FixturePicker({ onSelect }) {
                     ? <span style={{ color: "#ef4444", fontWeight: 700 }}>🔴 LIVE</span>
                     : <span style={{ color: "#e2e8f0" }}>{new Date(f.kickoff).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} BST</span>
                   }
-                  <div style={{ fontSize: 12, color: "#333", marginTop: 2 }}>{f.round}</div>
+                  <div style={{ fontSize: 12, color: "#333", marginTop: 2 }}>{formatRound(f.round)}</div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0" }}>{f.away}</span>
@@ -777,7 +777,7 @@ function MatchStatsGraphic() {
       {s && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "22px 18px 18px" }}>
+            <div style={{ padding: "44px 18px 18px" }}>
               {/* Team header */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16, marginTop: 8 }}>
                 <div style={{ textAlign: "center" }}>
@@ -970,7 +970,7 @@ function PlayerRatingsGraphic() {
           </div>
 
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "22px 18px 18px" }}>
+            <div style={{ padding: "44px 18px 18px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, marginTop: 8 }}>
                 {teamData?.logo && <img src={teamData.logo} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
                 <div>
@@ -1096,7 +1096,7 @@ function TopScorersGraphic() {
       {data && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "22px 18px 18px" }}>
+            <div style={{ padding: "44px 18px 18px" }}>
               {/* Header */}
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, marginTop: 8 }}>
                 {LEAGUE_LOGOS[leagueId] && <img src={LEAGUE_LOGOS[leagueId]} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
@@ -1277,7 +1277,7 @@ function TeamStatsGraphic() {
       {data && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "22px 18px 18px" }}>
+            <div style={{ padding: "44px 18px 18px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14, marginTop: 8 }}>
                 {data.logo && <img src={data.logo} alt="" crossOrigin="anonymous" style={{ width: 40, height: 40, objectFit: "contain" }} />}
                 <div>
@@ -1510,7 +1510,7 @@ function RecapGraphic({ history = [] }) {
             {/* Enhanced header */}
             <div style={{ textAlign: "center", marginBottom: 12 }}>
               <div style={{ fontSize: 14, color: "#e2e8f0", letterSpacing: 2, textTransform: "uppercase" }}>{matchData?.competition}</div>
-              <div style={{ fontSize: 16, color: "#f0f0f0", letterSpacing: 2, textTransform: "uppercase", fontWeight: 900 }}>{selectedFixture?.round}</div>
+              <div style={{ fontSize: 16, color: "#f0f0f0", letterSpacing: 2, textTransform: "uppercase", fontWeight: 900 }}>{formatRound(selectedFixture?.round)}</div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 8 }}>
               {selectedFixture?.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 44, height: 44, objectFit: "contain" }} />}
@@ -1568,7 +1568,7 @@ function RecapGraphic({ history = [] }) {
           {/* Enhanced header + final score */}
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 14, color: "#e2e8f0", letterSpacing: 2, textTransform: "uppercase", marginBottom: 2 }}>{matchData?.competition}</div>
-            <div style={{ fontSize: 15, color: "#f0f0f0", letterSpacing: 2, textTransform: "uppercase", marginBottom: 8, fontWeight: 900 }}>{selectedFixture?.round}</div>
+            <div style={{ fontSize: 15, color: "#f0f0f0", letterSpacing: 2, textTransform: "uppercase", marginBottom: 8, fontWeight: 900 }}>{formatRound(selectedFixture?.round)}</div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 6 }}>
               {selectedFixture?.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 40, height: 40, objectFit: "contain" }} />}
               <div>
@@ -1801,7 +1801,7 @@ function BracketGraphic({ history = [] }) {
       <select value={sel[skey]} onChange={e => setS(skey)(e.target.value)} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 15, padding: "7px 10px", outline: "none", fontFamily: "inherit" }}>
         <option value="">— Select —</option>
         {rounds.map(r => (
-          <optgroup key={r.round} label={r.round}>
+          <optgroup key={r.round} label={formatRound(r.round)}>
             {r.matches.map((m, i) => (
               <option key={m.fixtureId} value={`${r.round}:::${i}`}>
                 {m.home || "TBD"} vs {m.away || "TBD"} {m.status === "finished" ? `(${m.score.home}-${m.score.away})` : ""}
@@ -2182,6 +2182,143 @@ function DeepInsightsGraphic({ history = [] }) {
 }
 
 // ─── MATCH PITCH VIEW GRAPHIC ────────────────────────────────────────────────
+// ─── LINEUP, SUBS & SUSPENSIONS (at-a-glance summary card) ──────────────────
+// Complements MatchPitchViewGraphic (which draws the starting XI on a pitch
+// diagram) by covering what that card doesn't: the bench, the coach, and
+// who's genuinely unavailable. Real data only — starting XI and substitutes
+// come from /api/match-lineup (only populated once lineups are officially
+// confirmed), injuries/suspensions from /api/injuries. Neither is guessed
+// or filled in before the API actually has it.
+function LineupSubsSuspensionsGraphic() {
+  const cardRef = useRef(null);
+  const [selectedFixture, setSelectedFixture] = useState(null);
+  const [lineup, setLineup] = useState(null);
+  const [injuries, setInjuries] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSelect = async (f) => {
+    setSelectedFixture(f);
+    setLineup(null);
+    setInjuries(null);
+    setError("");
+    if (!f.fixtureId) { setError("No fixture ID available"); return; }
+
+    setLoading(true);
+    try {
+      const [lineupRes, injuriesRes] = await Promise.all([
+        fetch(`/api/match-lineup?fixtureId=${f.fixtureId}`).then(r => r.json()),
+        fetch(`/api/injuries?fixtureId=${f.fixtureId}`).then(r => r.json()).catch(() => ({ home: [], away: [] })),
+      ]);
+      if (!lineupRes.available || !lineupRes.home?.players?.length) {
+        throw new Error("Lineup not confirmed yet — check back closer to kickoff");
+      }
+      setLineup(lineupRes);
+      setInjuries(injuriesRes);
+    } catch (e) { setError(e.message); }
+    setLoading(false);
+  };
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, `deep433-teamnews-${selectedFixture?.home}-vs-${selectedFixture?.away}.png`, undefined, transparent);
+    } catch { alert("Download failed — try screenshotting manually"); }
+    setDownloading(false);
+  };
+
+  const TeamColumn = ({ team, color }) => (
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+        {team.logo && <img src={team.logo} alt="" crossOrigin="anonymous" style={{ width: 20, height: 20, objectFit: "contain", flexShrink: 0 }} />}
+        <span style={{ fontSize: 13, fontWeight: 900, color, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{team.team}</span>
+      </div>
+      {team.formation && <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 2 }}>Formation: {team.formation}</div>}
+      {team.coach && <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 8 }}>Coach: {team.coach}</div>}
+    </div>
+  );
+
+  const PlayerList = ({ players, color }) => (
+    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
+      {(players || []).map((p, i) => (
+        <div key={i} style={{ fontSize: 11.5, color: "#e2e8f0", display: "flex", gap: 5 }}>
+          <span style={{ color, fontWeight: 800, minWidth: 18 }}>{p.number ?? ""}</span>
+          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
+        </div>
+      ))}
+      {(!players || !players.length) && <span style={{ fontSize: 11, color: "#444", fontStyle: "italic" }}>None listed</span>}
+    </div>
+  );
+
+  const InjuryList = ({ list, color }) => (
+    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
+      {(list || []).map((p, i) => (
+        <div key={i} style={{ fontSize: 11.5, color: "#e2e8f0" }}>
+          <span style={{ fontWeight: 700 }}>{p.name}</span>
+          <span style={{ color: "#94a3b8" }}> ({p.reason})</span>
+        </div>
+      ))}
+      {(!list || !list.length) && <span style={{ fontSize: 11, color: "#444", fontStyle: "italic" }}>None reported</span>}
+    </div>
+  );
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Confirmed lineup, bench, and injuries/suspensions in one card — only shows once the official lineup is out.</div>
+      <FixturePicker onSelect={handleSelect} />
+
+      {loading && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 16, padding: "20px 0" }}>Loading team news...</div>}
+      {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
+
+      {lineup && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "44px 18px 20px" }}>
+              <div style={{ textAlign: "center", marginBottom: 16 }}>
+                <span style={{ fontSize: 11, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5 }}>📋 Confirmed Team News</span>
+              </div>
+
+              <div style={{ display: "flex", gap: 14, marginBottom: 14 }}>
+                <TeamColumn team={lineup.home} color="#4ade80" />
+                <TeamColumn team={lineup.away || {}} color="#f59e0b" />
+              </div>
+
+              <div style={{ fontSize: 11, color: "#e2e8f0", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6, borderTop: "1px solid #23232f", paddingTop: 10 }}>Starting XI</div>
+              <div style={{ display: "flex", gap: 14, marginBottom: 14 }}>
+                <PlayerList players={lineup.home?.players} color="#4ade80" />
+                <PlayerList players={lineup.away?.players} color="#f59e0b" />
+              </div>
+
+              <div style={{ fontSize: 11, color: "#e2e8f0", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6, borderTop: "1px solid #23232f", paddingTop: 10 }}>🪑 Substitutes</div>
+              <div style={{ display: "flex", gap: 14, marginBottom: 14 }}>
+                <PlayerList players={lineup.home?.substitutes} color="#4ade80" />
+                <PlayerList players={lineup.away?.substitutes} color="#f59e0b" />
+              </div>
+
+              {injuries && (injuries.home?.length > 0 || injuries.away?.length > 0) && (
+                <>
+                  <div style={{ fontSize: 11, color: "#e2e8f0", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6, borderTop: "1px solid #23232f", paddingTop: 10 }}>🩹 Injuries & Suspensions</div>
+                  <div style={{ display: "flex", gap: 14 }}>
+                    <InjuryList list={injuries.home} color="#4ade80" />
+                    <InjuryList list={injuries.away} color="#f59e0b" />
+                  </div>
+                </>
+              )}
+            </div>
+          </GraphicCard>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 function MatchPitchViewGraphic() {
   const cardRef = useRef(null);
   const [selectedFixture, setSelectedFixture] = useState(null);
@@ -3117,7 +3254,7 @@ function GoldenGloveGraphic() {
       {standings && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "22px 18px 18px" }}>
+            <div style={{ padding: "44px 18px 18px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18, marginTop: 8 }}>
                 {LEAGUE_LOGOS[leagueId] && <img src={LEAGUE_LOGOS[leagueId]} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain" }} />}
                 <div style={{ flex: 1 }}>
@@ -4781,7 +4918,7 @@ function GoalTimingGraphic() {
       {stats1 && stats2 && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "22px 18px 18px" }}>
+            <div style={{ padding: "44px 18px 18px" }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16, marginTop: 8 }}>
                 <div style={{ textAlign: "center" }}>
                   {stats1.logo && <img src={stats1.logo} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, objectFit: "contain", margin: "0 auto 6px" }} />}
@@ -4894,9 +5031,9 @@ function HalftimeRecapGraphic() {
       {events && hasReachedHT && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "22px 18px 18px" }}>
+            <div style={{ padding: "44px 18px 18px" }}>
               <div style={{ textAlign: "center", marginBottom: 6 }}>
-                <span style={{ fontSize: 12, color: "#ccc", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 }}>{selectedFixture.round}</span>
+                <span style={{ fontSize: 12, color: "#ccc", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 }}>{formatRound(selectedFixture.round)}</span>
               </div>
               <div style={{ textAlign: "center", marginBottom: 16 }}>
                 <span style={{ fontSize: 11, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>⏱ Halftime Recap</span>
@@ -5349,7 +5486,7 @@ function BestOfEuropeGraphic() {
           </div>
 
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "22px 18px 18px" }}>
+            <div style={{ padding: "44px 18px 18px" }}>
               <div style={{ textAlign: "center", marginBottom: 4 }}>
                 <span style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>Best of Europe</span>
               </div>
@@ -6940,7 +7077,7 @@ function LeagueTotalsGraphic() {
           </div>
 
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "22px 18px 18px" }}>
+            <div style={{ padding: "44px 18px 18px" }}>
               <div style={{ textAlign: "center", marginBottom: 4 }}>
                 <span style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>League Totals</span>
               </div>
@@ -7022,7 +7159,7 @@ function EuroAssistsGraphic() {
       {players && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "22px 18px 18px" }}>
+            <div style={{ padding: "44px 18px 18px" }}>
               <div style={{ textAlign: "center", marginBottom: 4 }}>
                 <span style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>Europe's Top Assists</span>
               </div>
@@ -9597,6 +9734,7 @@ export default function DataGraphics({ history = [], supabase }) {
   const sections = [
     { id: "insights", label: "📊 Brief Insights" },
     { id: "pitch",    label: "⚽ Pitch View" },
+    { id: "teamnews", label: "📋 Lineup, Subs & Suspensions" },
     { id: "h2h",      label: "🆚 Player H2H" },
     { id: "matchh2h", label: "📋 Match H2H" },
     { id: "motm", label: "⭐ Man of the Match" },
@@ -9661,6 +9799,7 @@ export default function DataGraphics({ history = [], supabase }) {
 
       {activeSection === "insights" && <DeepInsightsGraphic history={history} />}
       {activeSection === "pitch"    && <MatchPitchViewGraphic />}
+      {activeSection === "teamnews" && <LineupSubsSuspensionsGraphic />}
       {activeSection === "h2h"      && <PlayerH2HGraphic />}
       {activeSection === "matchh2h" && <MatchH2HGraphic />}
       {activeSection === "motm" && <ManOfMatchGraphic />}
