@@ -2305,14 +2305,14 @@ function LineupSubsSuspensionsGraphic() {
       {(players || []).map((p, i) => (
         <div key={i} style={{
           fontSize: 13.5, color: "#e2e8f0", display: "flex", alignItems: "center", gap: 8, width: "100%",
-          flexDirection: align === "right" ? "row-reverse" : "row",
+          justifyContent: align === "right" ? "flex-end" : "flex-start",
         }}>
           <span style={{
             background: color + "22", color, fontWeight: 900, fontSize: 11,
             width: 20, height: 20, borderRadius: "50%", display: "flex",
             alignItems: "center", justifyContent: "center", flexShrink: 0,
           }}>{p.number ?? "-"}</span>
-          <span style={{ textAlign: align === "right" ? "right" : "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
+          <span style={{ textAlign: "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
         </div>
       ))}
       {(!players || !players.length) && <span style={{ fontSize: 12.5, color: "#444", fontStyle: "italic", textAlign: "center", display: "block" }}>None listed</span>}
