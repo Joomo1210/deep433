@@ -2302,19 +2302,34 @@ function LineupSubsSuspensionsGraphic() {
 
   const PlayerList = ({ players, color, align = "left" }) => (
     <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 5 }}>
-      {(players || []).map((p, i) => (
-        <div key={i} style={{
-          fontSize: 13.5, color: "#e2e8f0", display: "flex", alignItems: "center", gap: 8, width: "100%",
-          justifyContent: align === "right" ? "flex-end" : "flex-start",
-        }}>
+      {(players || []).map((p, i) => {
+        const badge = (
           <span style={{
             background: color + "22", color, fontWeight: 900, fontSize: 11,
             width: 20, height: 20, borderRadius: "50%", display: "flex",
-            alignItems: "center", justifyContent: "center", flexShrink: 0,
+            alignItems: "center", justifyContent: "center",
           }}>{p.number ?? "-"}</span>
-          <span style={{ textAlign: "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
-        </div>
-      ))}
+        );
+        const name = (
+          <span style={{ textAlign: align === "right" ? "right" : "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
+        );
+        return (
+          // Grid, not flex — the badge lives in its own fixed 20px track
+          // regardless of which side it's on, so its position is locked to
+          // that track and never shifts based on how long the name next to
+          // it happens to be. Flex-based anchoring (tried previously) can't
+          // do this: it treats badge+name as one variable-width block, so
+          // the badge still drifts row to row even when the whole block is
+          // pinned to an edge.
+          <div key={i} style={{
+            fontSize: 13.5, color: "#e2e8f0", display: "grid",
+            gridTemplateColumns: align === "right" ? "1fr 20px" : "20px 1fr",
+            alignItems: "center", gap: 8, width: "100%",
+          }}>
+            {align === "right" ? <>{name}{badge}</> : <>{badge}{name}</>}
+          </div>
+        );
+      })}
       {(!players || !players.length) && <span style={{ fontSize: 12.5, color: "#444", fontStyle: "italic", textAlign: "center", display: "block" }}>None listed</span>}
     </div>
   );
