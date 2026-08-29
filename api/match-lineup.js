@@ -71,14 +71,39 @@ export default async function handler(req, res) {
       const lineups = await fetchLineupByFixtureId(fixtureId, apiKey);
       if (!lineups.length) return res.status(200).json({ available: false, reason: "Lineups not yet announced" });
 
-      const homeL = lineups[0];
-      const awayL = lineups[1];
+      // Match each lineup entry to home/away by the fixture's own team name
+      // rather than trusting array position — API-Football does not
+      // guarantee lineups[0] is the home team, and blindly assuming so
+      // risks mislabeling (or worse, mixing) squads if the order ever
+      // differs. Reuses the same normalize()-based name matching Mode 2
+      // below already relies on; homeTeam/awayTeam are optional query
+      // params supplied by the caller for exactly this purpose.
+      const { homeTeam: expectedHome, awayTeam: expectedAway } = req.query;
+      let homeL, awayL;
+      if (expectedHome || expectedAway) {
+        const h = normalize(expectedHome);
+        const a = normalize(expectedAway);
+        homeL = lineups.find(l => normalize(l.team?.name) === h);
+        awayL = lineups.find(l => normalize(l.team?.name) === a);
+      }
+      // Fall back to array order only if no team names were given, or the
+      // name match failed to find both sides (keeps older callers working).
+      if (!homeL || !awayL) {
+        homeL = lineups[0];
+        awayL = lineups[1];
+      }
+
       if (!homeL?.startXI?.length) return res.status(200).json({ available: false, reason: "Lineups not yet announced" });
 
       return res.status(200).json({
         available: true,
         home: mapTeam(homeL, true),
         away: awayL ? mapTeam(awayL, true) : null,
+        // Raw API response, unfiltered — lets the frontend offer a
+        // "show raw data" debug view so a mislabeling or data issue can be
+        // diagnosed directly against what API-Football actually sent,
+        // rather than guessing from what ended up rendered on screen.
+        _raw: lineups,
       });
     }
 
