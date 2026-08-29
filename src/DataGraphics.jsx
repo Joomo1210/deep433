@@ -3238,41 +3238,56 @@ function PredictionContestCardGraphic() {
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "44px 20px 22px" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, marginBottom: 4 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 6 }}>
                 {LEAGUE_LOGOS[selectedFixture.leagueId] && (
-                  <img src={LEAGUE_LOGOS[selectedFixture.leagueId]} alt="" crossOrigin="anonymous" style={{ width: 14, height: 14, objectFit: "contain" }} />
+                  <img src={LEAGUE_LOGOS[selectedFixture.leagueId]} alt="" crossOrigin="anonymous" style={{ width: 16, height: 16, objectFit: "contain" }} />
                 )}
-                <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{selectedFixture.leagueLabel}</span>
+                <span style={{ fontSize: 13, color: "#94a3b8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.2 }}>{selectedFixture.leagueLabel}</span>
               </div>
 
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 4 }}>
-                {selectedFixture.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, objectFit: "contain" }} />}
-                <span style={{ fontSize: 16, fontWeight: 900, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
-                {selectedFixture.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, objectFit: "contain" }} />}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 6 }}>
+                {selectedFixture.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 34, height: 34, objectFit: "contain" }} />}
+                <span style={{ fontSize: 19, fontWeight: 900, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
+                {selectedFixture.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 34, height: 34, objectFit: "contain" }} />}
               </div>
 
-              <div style={{ textAlign: "center", marginBottom: 18 }}>
+              <div style={{ textAlign: "center", marginBottom: 20 }}>
                 <span style={{
-                  fontSize: 22, fontWeight: 900, textTransform: "uppercase", letterSpacing: 1,
+                  fontSize: 26, fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5,
                   background: "linear-gradient(90deg,#4ade80,#818cf8,#f59e0b)",
                   WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
                 }}>🎯 Predict & Win</span>
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 18 }}>
                 {selectedCategories.map((c, i) => (
                   <div key={i} style={{
-                    display: "flex", alignItems: "center", gap: 10,
-                    background: "#13131f", border: "1px solid #23232f", borderRadius: 10, padding: "12px 16px",
+                    display: "flex", alignItems: "center", gap: 12,
+                    background: "linear-gradient(135deg, #4ade8014, #818cf80a)",
+                    border: "1.5px solid #4ade8044", borderRadius: 12, padding: "16px 18px",
                   }}>
-                    <span style={{ fontSize: 18 }}>{c.icon}</span>
-                    <span style={{ fontSize: 15, color: "#f0f0f0", fontWeight: 700 }}>{c.name}</span>
+                    <span style={{ fontSize: 24 }}>{c.icon}</span>
+                    <span style={{ fontSize: 18, color: "#f0f0f0", fontWeight: 900 }}>{c.name}</span>
                   </div>
                 ))}
               </div>
 
+              <div style={{
+                textAlign: "center", background: "#4ade8018", border: "1px solid #4ade8044",
+                borderRadius: 10, padding: "12px 16px", marginBottom: 10,
+              }}>
+                <span style={{ fontSize: 15, color: "#4ade80", fontWeight: 900 }}>✅ FREE ENTRY</span>
+              </div>
+
+              <div style={{
+                textAlign: "center", background: "#f59e0b18", border: "1px solid #f59e0b44",
+                borderRadius: 10, padding: "12px 16px", marginBottom: 16,
+              }}>
+                <span style={{ fontSize: 15, color: "#fbbf24", fontWeight: 900 }}>🏆 WINNERS CONFIRMED ON STAGE</span>
+              </div>
+
               <div style={{ textAlign: "center" }}>
-                <span style={{ fontSize: 11.5, color: "#94a3b8" }}>DM your picks or drop them live in the Space. Predictions close dead at kickoff.</span>
+                <span style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 700 }}>DM your picks or drop them live in the Space. Predictions close dead at kickoff.</span>
               </div>
             </div>
           </GraphicCard>
