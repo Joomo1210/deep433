@@ -3180,21 +3180,21 @@ function MatchResultsGraphicCore({ title = "PREMIER LEAGUE", fixtures = [], show
 // options is available; exactly 4 are picked per match via dropdowns, and
 // each dropdown excludes whatever's already chosen in the other three.
 const PREDICTION_CATEGORY_POOL = [
-  { icon: "⚽", name: "Correct Score" },
-  { icon: "🎯", name: "First Goal Scorer" },
-  { icon: "🟨", name: "Yellow Cards" },
-  { icon: "🚩", name: "Corner Kicks" },
-  { icon: "🔥", name: "Over 3 Goals" },
-  { icon: "🚫", name: "No Goals" },
-  { icon: "🧊", name: "Under 2 Goals" },
-  { icon: "⏱️", name: "Team to Win First Half" },
-  { icon: "⏰", name: "Goal in Last 80-90 Mins" },
+  { icon: "⚽", name: "Correct Score?" },
+  { icon: "🎯", name: "First Goal Scorer?" },
+  { icon: "🟨", name: "Total Yellow Cards?" },
+  { icon: "🚩", name: "Total Corners?" },
+  { icon: "🔥", name: "Over 3 Goals?" },
+  { icon: "🚫", name: "No Goals?" },
+  { icon: "🧊", name: "Under 2 Goals?" },
+  { icon: "⏱️", name: "Team to Win First Half?" },
+  { icon: "⏰", name: "Goal in Last 80-90 Mins?" },
 ];
 
 function PredictionContestCardGraphic() {
   const cardRef = useRef(null);
   const [selectedFixture, setSelectedFixture] = useState(null);
-  const [picks, setPicks] = useState(["Correct Score", "First Goal Scorer", "Yellow Cards", "Corner Kicks"]);
+  const [picks, setPicks] = useState(["Correct Score?", "First Goal Scorer?", "Total Yellow Cards?", "Total Corners?"]);
   const [downloading, setDownloading] = useState(false);
 
   const updatePick = (slot, name) => {
