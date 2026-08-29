@@ -366,8 +366,13 @@ function WatchAlongPosterGraphic() {
   const [competition, setCompetition] = useState("");
   const [matchDate, setMatchDate] = useState("");
   const [kickoffTime, setKickoffTime] = useState("");
-  const [rewardText, setRewardText] = useState("Rewards for staying start to finish");
-  const [ctaText, setCtaText] = useState("DM us to lock in your spot");
+  const [ctaText, setCtaText] = useState("Tune in, drop your predictions, and be part of the conversation live.");
+  const [picks, setPicks] = useState(["Correct Score?", "First Goal Scorer?", "Total Yellow Cards?", "Total Corners?"]);
+
+  const updatePick = (slot, name) => {
+    setPicks(prev => prev.map((p, i) => i === slot ? name : p));
+  };
+  const selectedCategories = picks.map(name => PREDICTION_CATEGORY_POOL.find(c => c.name === name)).filter(Boolean);
 
   const searchTeam = async (query, setSearch, setSuggestions) => {
     setSearch(query);
@@ -391,7 +396,7 @@ function WatchAlongPosterGraphic() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Reusable Listen Along Space poster — search both teams, fill in details, download to post.</div>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Listen Along Space poster + Predict & Win categories, combined in one card — search both teams, fill in details, pick 4 categories, download to post.</div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
         <div style={{ position: "relative" }}>
@@ -439,7 +444,25 @@ function WatchAlongPosterGraphic() {
         <input value={kickoffTime} onChange={e => setKickoffTime(e.target.value)} placeholder="Kickoff (e.g. 3:00 PM BST)" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
       </div>
 
-      <input value={rewardText} onChange={e => setRewardText(e.target.value)} placeholder="Reward text" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+      <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginTop: 4 }}>Pick 4 prediction categories</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {picks.map((pick, slot) => {
+          const available = PREDICTION_CATEGORY_POOL.filter(c => c.name === pick || !picks.includes(c.name));
+          return (
+            <select
+              key={slot}
+              value={pick}
+              onChange={e => updatePick(slot, e.target.value)}
+              style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+            >
+              {available.map(c => (
+                <option key={c.name} value={c.name}>{c.icon} {c.name}</option>
+              ))}
+            </select>
+          );
+        })}
+      </div>
+
       <input value={ctaText} onChange={e => setCtaText(e.target.value)} placeholder="Call to action" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
 
       {ready && (
@@ -471,13 +494,30 @@ function WatchAlongPosterGraphic() {
                 </div>
               )}
 
-              {rewardText && (
-                <div style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)", borderRadius: 10, padding: "12px 20px", display: "inline-block", marginBottom: 20 }}>
-                  <span style={{ fontSize: 16, fontWeight: 800, color: "#0a0f2e" }}>{rewardText}</span>
+              {selectedCategories.length > 0 && (
+                <div style={{ textAlign: "left", marginBottom: 20 }}>
+                  <div style={{ fontSize: 15, fontWeight: 900, textAlign: "center", marginBottom: 12, textTransform: "uppercase", letterSpacing: 1, background: "linear-gradient(90deg,#4ade80,#818cf8,#f59e0b)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>🎯 Predict & Win</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {selectedCategories.map((c, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(74,222,128,0.08)", border: "1.5px solid rgba(74,222,128,0.3)", borderRadius: 10, padding: "10px 14px" }}>
+                        <span style={{ fontSize: 18 }}>{c.icon}</span>
+                        <span style={{ fontSize: 14, color: "#f0f0f0", fontWeight: 800 }}>{c.name}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
-              {ctaText && <div style={{ fontSize: 20, fontWeight: 900, color: "#4ade80" }}>{ctaText}</div>}
+              <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+                <div style={{ flex: 1, textAlign: "center", background: "rgba(74,222,128,0.12)", border: "1px solid rgba(74,222,128,0.35)", borderRadius: 8, padding: "9px 6px" }}>
+                  <span style={{ fontSize: 12.5, color: "#4ade80", fontWeight: 900 }}>✅ FREE ENTRY</span>
+                </div>
+                <div style={{ flex: 1, textAlign: "center", background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.35)", borderRadius: 8, padding: "9px 6px" }}>
+                  <span style={{ fontSize: 12.5, color: "#fbbf24", fontWeight: 900 }}>🏆 WINNERS ON STAGE</span>
+                </div>
+              </div>
+
+              {ctaText && <div style={{ fontSize: 16, fontWeight: 800, color: "#4ade80" }}>{ctaText}</div>}
             </div>
           </GraphicCard>
           <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
@@ -3190,118 +3230,6 @@ const PREDICTION_CATEGORY_POOL = [
   { icon: "⏱️", name: "Team to Win First Half?" },
   { icon: "⏰", name: "Goal in Last 80-90 Mins?" },
 ];
-
-function PredictionContestCardGraphic() {
-  const cardRef = useRef(null);
-  const [selectedFixture, setSelectedFixture] = useState(null);
-  const [picks, setPicks] = useState(["Correct Score?", "First Goal Scorer?", "Total Yellow Cards?", "Total Corners?"]);
-  const [downloading, setDownloading] = useState(false);
-
-  const updatePick = (slot, name) => {
-    setPicks(prev => prev.map((p, i) => i === slot ? name : p));
-  };
-
-  const download = async (transparent = false) => {
-    setDownloading(true);
-    try {
-      await downloadCardImage(cardRef.current, `deep433-predict-${selectedFixture?.home}-vs-${selectedFixture?.away}.png`, undefined, transparent);
-    } catch { alert("Download failed"); }
-    setDownloading(false);
-  };
-
-  const selectedCategories = picks.map(name => PREDICTION_CATEGORY_POOL.find(c => c.name === name)).filter(Boolean);
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Pick the fixture, then choose exactly 4 prediction categories for this match. No amounts shown on the card.</div>
-      <FixturePicker onSelect={setSelectedFixture} />
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {picks.map((pick, slot) => {
-          const available = PREDICTION_CATEGORY_POOL.filter(c => c.name === pick || !picks.includes(c.name));
-          return (
-            <select
-              key={slot}
-              value={pick}
-              onChange={e => updatePick(slot, e.target.value)}
-              style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
-            >
-              {available.map(c => (
-                <option key={c.name} value={c.name}>{c.icon} {c.name}</option>
-              ))}
-            </select>
-          );
-        })}
-      </div>
-
-      {selectedFixture && (
-        <>
-          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "44px 20px 22px" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 6 }}>
-                {LEAGUE_LOGOS[selectedFixture.leagueId] && (
-                  <img src={LEAGUE_LOGOS[selectedFixture.leagueId]} alt="" crossOrigin="anonymous" style={{ width: 16, height: 16, objectFit: "contain" }} />
-                )}
-                <span style={{ fontSize: 13, color: "#94a3b8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.2 }}>{selectedFixture.leagueLabel}</span>
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 6 }}>
-                {selectedFixture.homeLogo && <img src={selectedFixture.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 34, height: 34, objectFit: "contain" }} />}
-                <span style={{ fontSize: 19, fontWeight: 900, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
-                {selectedFixture.awayLogo && <img src={selectedFixture.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 34, height: 34, objectFit: "contain" }} />}
-              </div>
-
-              <div style={{ textAlign: "center", marginBottom: 20 }}>
-                <span style={{
-                  fontSize: 26, fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5,
-                  background: "linear-gradient(90deg,#4ade80,#818cf8,#f59e0b)",
-                  WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-                }}>🎯 Predict & Win</span>
-              </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 18 }}>
-                {selectedCategories.map((c, i) => (
-                  <div key={i} style={{
-                    display: "flex", alignItems: "center", gap: 12,
-                    background: "linear-gradient(135deg, #4ade8014, #818cf80a)",
-                    border: "1.5px solid #4ade8044", borderRadius: 12, padding: "16px 18px",
-                  }}>
-                    <span style={{ fontSize: 24 }}>{c.icon}</span>
-                    <span style={{ fontSize: 18, color: "#f0f0f0", fontWeight: 900 }}>{c.name}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div style={{
-                textAlign: "center", background: "#4ade8018", border: "1px solid #4ade8044",
-                borderRadius: 10, padding: "12px 16px", marginBottom: 10,
-              }}>
-                <span style={{ fontSize: 15, color: "#4ade80", fontWeight: 900 }}>✅ FREE ENTRY</span>
-              </div>
-
-              <div style={{
-                textAlign: "center", background: "#f59e0b18", border: "1px solid #f59e0b44",
-                borderRadius: 10, padding: "12px 16px", marginBottom: 16,
-              }}>
-                <span style={{ fontSize: 15, color: "#fbbf24", fontWeight: 900 }}>🏆 WINNERS CONFIRMED ON STAGE</span>
-              </div>
-
-              <div style={{ textAlign: "center" }}>
-                <span style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 700 }}>DM your picks or drop them live in the Space. Predictions close dead at kickoff.</span>
-              </div>
-            </div>
-          </GraphicCard>
-          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
-            {downloading ? "Generating..." : "⬇ Download PNG"}
-          </button>
-          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
-            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
-          </button>
-        </>
-      )}
-    </div>
-  );
-}
 
 function MatchFixtureGraphic() {
   const cardRef = useRef(null);
@@ -10029,7 +9957,6 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "squaddepth", label: "📊 Squad Depth Chart" },
     { id: "leaguetable", label: "🏆 League Table" },
     { id: "fixtureresults", label: "📊 Fixture Results & Projections" },
-    { id: "predictcontest", label: "🎯 Predict & Win Card" },
     { id: "watchalong", label: "🎙️ Listen Along" },
     { id: "glove",    label: "Golden Glove" },
     { id: "transfer", label: "🔄 Transfer Fit" },
@@ -10095,7 +10022,6 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "squaddepth" && <SquadDepthGraphic />}
       {activeSection === "leaguetable" && <LeagueTableGraphic />}
       {activeSection === "fixtureresults" && <MatchFixtureGraphic />}
-      {activeSection === "predictcontest" && <PredictionContestCardGraphic />}
       {activeSection === "watchalong" && <WatchAlongPosterGraphic />}
       {activeSection === "glove"    && <GoldenGloveGraphic />}
       {activeSection === "transfer" && <TransferFitGraphic />}
