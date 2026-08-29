@@ -2199,14 +2199,18 @@ function LineupSubsSuspensionsGraphic() {
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState("");
   const [showRawInjuries, setShowRawInjuries] = useState(false);
+  const [showRawLineup, setShowRawLineup] = useState(false);
 
   // silent=true is used by the background poll below — it updates state on
   // success but doesn't show a loading spinner or an error for "not out
   // yet", since that's the expected, normal state while waiting.
-  const fetchTeamNews = async (fixtureId, { silent = false } = {}) => {
+  const fetchTeamNews = async (fixtureId, homeTeam, awayTeam, { silent = false } = {}) => {
     if (!silent) setLoading(true);
     try {
-      const lineupRes = await fetch(`/api/match-lineup?fixtureId=${fixtureId}`).then(r => r.json());
+      const params = new URLSearchParams({ fixtureId });
+      if (homeTeam) params.set("homeTeam", homeTeam);
+      if (awayTeam) params.set("awayTeam", awayTeam);
+      const lineupRes = await fetch(`/api/match-lineup?${params}`).then(r => r.json());
       if (!lineupRes.available || !lineupRes.home?.players?.length) {
         if (!silent) setError("Lineup not confirmed yet — check back closer to kickoff");
         return;
@@ -2241,7 +2245,7 @@ function LineupSubsSuspensionsGraphic() {
     setInjuriesFailed(false);
     setError("");
     if (!f.fixtureId) { setError("No fixture ID available"); return; }
-    fetchTeamNews(f.fixtureId);
+    fetchTeamNews(f.fixtureId, f.home, f.away);
   };
 
   // Background auto-check — lineups are typically published by clubs/
@@ -2260,7 +2264,7 @@ function LineupSubsSuspensionsGraphic() {
       const now = Date.now();
       const withinWindow = now >= kickoff - 2 * 60 * 60 * 1000 && now <= kickoff + 15 * 60 * 1000;
       if (!withinWindow) return;
-      fetchTeamNews(selectedFixture.fixtureId, { silent: true });
+      fetchTeamNews(selectedFixture.fixtureId, selectedFixture.home, selectedFixture.away, { silent: true });
     }, 90 * 1000);
     return () => clearInterval(interval);
   }, [selectedFixture, lineup]);
@@ -2422,6 +2426,16 @@ function LineupSubsSuspensionsGraphic() {
               {JSON.stringify(injuries, null, 2)}
             </pre>
           )}
+          {lineup?._raw && (
+            <button onClick={() => setShowRawLineup(v => !v)} style={{ background: "none", border: "1px dashed #444", borderRadius: 6, color: "#818cf8", cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "6px 10px", width: "100%" }}>
+              🐛 {showRawLineup ? "Hide" : "Show"} Raw Lineup Data
+            </button>
+          )}
+          {showRawLineup && (
+            <pre style={{ background: "#0a0a12", border: "1px solid #23232f", borderRadius: 8, padding: 10, fontSize: 10, color: "#94a3b8", overflowX: "auto", whiteSpace: "pre-wrap" }}>
+              {JSON.stringify(lineup._raw, null, 2)}
+            </pre>
+          )}
           <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
           </button>
@@ -2450,7 +2464,10 @@ function MatchPitchViewGraphic() {
 
     setLoading(true);
     try {
-      const r = await fetch(`/api/match-lineup?fixtureId=${f.fixtureId}`);
+      const params = new URLSearchParams({ fixtureId: f.fixtureId });
+      if (f.home) params.set("homeTeam", f.home);
+      if (f.away) params.set("awayTeam", f.away);
+      const r = await fetch(`/api/match-lineup?${params}`);
       const d = await r.json();
       if (!d.available || !d.home?.players?.length) throw new Error("Lineup not confirmed yet — check back closer to kickoff");
       setLineup(d);
