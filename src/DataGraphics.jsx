@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import DeepInsightsPanel from "./DeepInsightsPanel"; 
+import DeepInsightsPanel from "./DeepInsightsPanel";
 
 // Country name -> ISO code, for flag images (flagcdn.com) — covers national teams
 const TEAM_FLAG_CODES = {
@@ -1453,7 +1453,7 @@ function RecapGraphic({ history = [] }) {
       homeGoals,
       awayGoals,
       keyStat,
-      competition: "FIFA World Cup 2026",
+      competition: f.leagueLabel || "Match",
       round: f.round || "",
     });
   };
