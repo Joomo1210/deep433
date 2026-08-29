@@ -2200,6 +2200,7 @@ function LineupSubsSuspensionsGraphic() {
   const [error, setError] = useState("");
   const [showRawInjuries, setShowRawInjuries] = useState(false);
   const [showRawLineup, setShowRawLineup] = useState(false);
+  const [lastRawResponse, setLastRawResponse] = useState(null);
 
   // silent=true is used by the background poll below — it updates state on
   // success but doesn't show a loading spinner or an error for "not out
@@ -2211,6 +2212,12 @@ function LineupSubsSuspensionsGraphic() {
       if (homeTeam) params.set("homeTeam", homeTeam);
       if (awayTeam) params.set("awayTeam", awayTeam);
       const lineupRes = await fetch(`/api/match-lineup?${params}`).then(r => r.json());
+      // Captured every time, success or failure — this is what actually
+      // lets a "not confirmed yet" message be diagnosed. Previously the
+      // raw response was only kept on success, so the exact moment
+      // something needs checking (a stubborn "not confirmed" that other
+      // sites have already moved past) had nothing to inspect at all.
+      setLastRawResponse(lineupRes);
       if (!lineupRes.available || !lineupRes.home?.players?.length) {
         if (!silent) setError("Lineup not confirmed yet — check back closer to kickoff");
         return;
@@ -2368,6 +2375,22 @@ function LineupSubsSuspensionsGraphic() {
             </div>
           )}
         </div>
+      )}
+      {/* Visible during the "not confirmed" state too, not just on
+          success — this is precisely when it's needed: if other sites
+          already have the lineup but this still says "not confirmed",
+          this shows exactly what API-Football is actually returning right
+          now, so it's clear whether the data itself isn't published yet
+          upstream, or something else is going wrong. */}
+      {lastRawResponse && !lineup && (
+        <button onClick={() => setShowRawLineup(v => !v)} style={{ background: "none", border: "1px dashed #f87171", borderRadius: 6, color: "#f87171", cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "6px 10px", width: "100%" }}>
+          🐛 {showRawLineup ? "Hide" : "Show"} What The API Actually Returned
+        </button>
+      )}
+      {showRawLineup && !lineup && (
+        <pre style={{ background: "#0a0a12", border: "1px solid #23232f", borderRadius: 8, padding: 10, fontSize: 10, color: "#94a3b8", overflowX: "auto", whiteSpace: "pre-wrap" }}>
+          {JSON.stringify(lastRawResponse, null, 2)}
+        </pre>
       )}
 
       {lineup && (
