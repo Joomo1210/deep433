@@ -3173,38 +3173,33 @@ function MatchResultsGraphicCore({ title = "PREMIER LEAGUE", fixtures = [], show
 // batch win/draw/loss endpoint wired yet — predict.js works per single
 // fixtureId — so this stays an optional, user-supplied field per the spec
 // rather than inventing a data source).
-// ─── PREDICTION CONTEST CARD (4-category promo card) ────────────────────────
-// Promotes the live prediction contest for a specific fixture — Correct
-// Score, First Goal Scorer, Yellow Cards, Corner Kicks, weighted 35/30/20/15
-// of a fixed pot. Purely promotional (fixture + amounts + rules summary),
-// no live data fetching needed beyond the fixture picker itself.
+// ─── PREDICTION CONTEST CARD (pick 4 categories per match) ──────────────────
+// Promotes the live prediction contest for a specific fixture. No prize
+// amounts shown anywhere on this card — categories only, since the actual
+// naira figures raised an unresolved X policy question. A pool of category
+// options is available; exactly 4 are picked per match via dropdowns, and
+// each dropdown excludes whatever's already chosen in the other three.
+const PREDICTION_CATEGORY_POOL = [
+  { icon: "⚽", name: "Correct Score" },
+  { icon: "🎯", name: "First Goal Scorer" },
+  { icon: "🟨", name: "Yellow Cards" },
+  { icon: "🚩", name: "Corner Kicks" },
+  { icon: "🔥", name: "Over 3 Goals" },
+  { icon: "🚫", name: "No Goals" },
+  { icon: "🧊", name: "Under 2 Goals" },
+  { icon: "⏱️", name: "Team to Win First Half" },
+  { icon: "⏰", name: "Goal in Last 80-90 Mins" },
+];
+
 function PredictionContestCardGraphic() {
   const cardRef = useRef(null);
   const [selectedFixture, setSelectedFixture] = useState(null);
-  const [tier, setTier] = useState("standard");
+  const [picks, setPicks] = useState(["Correct Score", "First Goal Scorer", "Yellow Cards", "Corner Kicks"]);
   const [downloading, setDownloading] = useState(false);
 
-  const POTS = {
-    standard: {
-      total: "₦50,000",
-      categories: [
-        { icon: "⚽", name: "Correct Score", amount: "₦17,500" },
-        { icon: "🎯", name: "First Goal Scorer", amount: "₦15,000" },
-        { icon: "🟨", name: "Yellow Cards", amount: "₦10,000" },
-        { icon: "🚩", name: "Corner Kicks", amount: "₦7,500" },
-      ],
-    },
-    premium: {
-      total: "₦100,000",
-      categories: [
-        { icon: "⚽", name: "Correct Score", amount: "₦35,000" },
-        { icon: "🎯", name: "First Goal Scorer", amount: "₦30,000" },
-        { icon: "🟨", name: "Yellow Cards", amount: "₦20,000" },
-        { icon: "🚩", name: "Corner Kicks", amount: "₦15,000" },
-      ],
-    },
+  const updatePick = (slot, name) => {
+    setPicks(prev => prev.map((p, i) => i === slot ? name : p));
   };
-  const pot = POTS[tier];
 
   const download = async (transparent = false) => {
     setDownloading(true);
@@ -3214,21 +3209,29 @@ function PredictionContestCardGraphic() {
     setDownloading(false);
   };
 
+  const selectedCategories = picks.map(name => PREDICTION_CATEGORY_POOL.find(c => c.name === name)).filter(Boolean);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Promo card for the live prediction contest — pick the fixture and the match tier.</div>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Pick the fixture, then choose exactly 4 prediction categories for this match. No amounts shown on the card.</div>
       <FixturePicker onSelect={setSelectedFixture} />
 
-      <div style={{ display: "flex", gap: 8 }}>
-        {["standard", "premium"].map(t => (
-          <button key={t} onClick={() => setTier(t)} style={{
-            flex: 1, background: tier === t ? "#4ade8022" : "none",
-            border: `1px solid ${tier === t ? "#4ade80" : "#2a2a3a"}`, borderRadius: 8,
-            color: tier === t ? "#4ade80" : "#e2e8f0", cursor: "pointer",
-            fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "8px",
-            textTransform: "capitalize",
-          }}>{t} {t === "premium" ? "(₦100k)" : "(₦50k)"}</button>
-        ))}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {picks.map((pick, slot) => {
+          const available = PREDICTION_CATEGORY_POOL.filter(c => c.name === pick || !picks.includes(c.name));
+          return (
+            <select
+              key={slot}
+              value={pick}
+              onChange={e => updatePick(slot, e.target.value)}
+              style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+            >
+              {available.map(c => (
+                <option key={c.name} value={c.name}>{c.icon} {c.name}</option>
+              ))}
+            </select>
+          );
+        })}
       </div>
 
       {selectedFixture && (
@@ -3257,27 +3260,15 @@ function PredictionContestCardGraphic() {
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-                {pot.categories.map((c, i) => (
+                {selectedCategories.map((c, i) => (
                   <div key={i} style={{
-                    display: "flex", alignItems: "center", justifyContent: "space-between",
-                    background: "#13131f", border: "1px solid #23232f", borderRadius: 10, padding: "10px 14px",
+                    display: "flex", alignItems: "center", gap: 10,
+                    background: "#13131f", border: "1px solid #23232f", borderRadius: 10, padding: "12px 16px",
                   }}>
-                    <span style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700 }}>{c.icon} {c.name}</span>
-                    <span style={{ fontSize: 15, color: "#fbbf24", fontWeight: 900 }}>{c.amount}</span>
+                    <span style={{ fontSize: 18 }}>{c.icon}</span>
+                    <span style={{ fontSize: 15, color: "#f0f0f0", fontWeight: 700 }}>{c.name}</span>
                   </div>
                 ))}
-              </div>
-
-              <div style={{ textAlign: "center", marginBottom: 16 }}>
-                <span style={{ fontSize: 13, color: "#94a3b8" }}>Total Pot: </span>
-                <span style={{ fontSize: 18, color: "#fbbf24", fontWeight: 900 }}>{pot.total}</span>
-              </div>
-
-              <div style={{
-                textAlign: "center", background: "#4ade8018", border: "1px solid #4ade8044",
-                borderRadius: 10, padding: "10px 14px", marginBottom: 10,
-              }}>
-                <span style={{ fontSize: 13, color: "#4ade80", fontWeight: 900 }}>✅ 100% FREE ENTRY — NO PAYMENT REQUIRED</span>
               </div>
 
               <div style={{ textAlign: "center" }}>
