@@ -655,6 +655,13 @@ export default async function handler(req, res) {
       team: s.team?.name,
       logo: s.team?.logo,
       seasonUsed,
+      // True when showing the season that's actually current right now — a
+      // fallback to the previous (fully completed) season only happens when
+      // the current one has no matches played yet. The frontend uses this
+      // to label the card "Current Stats" vs "Final Stats" correctly,
+      // instead of a hardcoded label that was wrong whenever no fallback
+      // occurred (i.e. most of the time, for any season already underway).
+      isCurrentSeason: seasonUsed === leagueSeason,
       position,
       form: s.form,
       played: s.fixtures?.played?.total,
