@@ -1323,7 +1323,7 @@ function TeamStatsGraphic() {
                 <div>
                   <div style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>{data.team}</div>
                   <div style={{ fontSize: 13, color: "#e2e8f0" }}>
-                    {LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label} {data.seasonUsed}/{parseInt(data.seasonUsed) + 1} · Final Stats
+                    {LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label} {data.seasonUsed}/{parseInt(data.seasonUsed) + 1} · {data.isCurrentSeason ? "Current Stats" : "Final Stats"}
                   </div>
                 </div>
               </div>
@@ -1348,7 +1348,7 @@ function TeamStatsGraphic() {
 
               {data.form && (
                 <div style={{ marginBottom: 14 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: 2, marginBottom: 8 }}>Final 10 Match Form</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: 2, marginBottom: 8 }}>Last {Math.min(data.form.length, 10)} Match Form</div>
                   <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                     {data.form.slice(-10).split("").map((r, i) => <div key={i}>{formDot(r)}</div>)}
                   </div>
@@ -5382,7 +5382,7 @@ function TeamStatsCompareGraphic() {
         <div>
           <div style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>{data.team}</div>
           <div style={{ fontSize: 15, color: "#e2e8f0" }}>
-            {LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label} {data.seasonUsed}/{parseInt(data.seasonUsed) + 1} · Final Stats
+            {LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label} {data.seasonUsed}/{parseInt(data.seasonUsed) + 1} · {data.isCurrentSeason ? "Current Stats" : "Final Stats"}
           </div>
         </div>
       </div>
@@ -5403,7 +5403,7 @@ function TeamStatsCompareGraphic() {
 
       {data.form && (
         <div style={{ marginBottom: 8 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 5 }}>Final 10 Match Form</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 5 }}>Last {Math.min(data.form.length, 10)} Match Form</div>
           <div style={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
             {data.form.slice(-10).split("").map((r, i) => <div key={i}>{formDot(r)}</div>)}
           </div>
