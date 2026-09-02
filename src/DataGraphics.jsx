@@ -3348,7 +3348,7 @@ function TransferAlertGraphic() {
                   fontSize: 24, fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5,
                   background: "linear-gradient(90deg,#4ade80,#818cf8,#f59e0b)",
                   WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-                }}>🚨 Transfer Alerts</span>
+                }}>Transfer/Fee/Explained</span>
               </div>
 
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16 }}>
