@@ -3235,27 +3235,67 @@ const PREDICTION_CATEGORY_POOL = [
 function TransferAlertGraphic() {
   const cardRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
+  const [loadingSquad, setLoadingSquad] = useState(false);
 
+  // Same team -> squad -> player flow as the Battle (PlayerH2HGraphic),
+  // reusing the same proven, working endpoints — the earlier version used
+  // a bare global player-name search, which turned out to be unreliable
+  // (API-Football is documented elsewhere in this file as requiring a
+  // league or team alongside a name search), so this switches to the
+  // exact mechanism that already works everywhere else in the app.
   const [search1, setSearch1] = useState("");
   const [suggestions1, setSuggestions1] = useState([]);
+  const [team1, setTeam1] = useState(null);
+  const [searching1, setSearching1] = useState(false);
+  const [squad1, setSquad1] = useState([]);
+  const [playerId1, setPlayerId1] = useState("");
   const [player1, setPlayer1] = useState(null);
   const [dest1, setDest1] = useState("");
   const [fee1, setFee1] = useState("");
 
   const [search2, setSearch2] = useState("");
   const [suggestions2, setSuggestions2] = useState([]);
+  const [team2, setTeam2] = useState(null);
+  const [searching2, setSearching2] = useState(false);
+  const [squad2, setSquad2] = useState([]);
+  const [playerId2, setPlayerId2] = useState("");
   const [player2, setPlayer2] = useState(null);
   const [dest2, setDest2] = useState("");
   const [fee2, setFee2] = useState("");
 
-  const searchPlayer = async (query, setSearch, setSuggestions) => {
-    setSearch(query);
-    if (query.length < 3) { setSuggestions([]); return; }
+  const searchTeam = async (query, slot) => {
+    if (query.length < 3) {
+      slot === 1 ? setSuggestions1([]) : setSuggestions2([]);
+      return;
+    }
+    slot === 1 ? setSearching1(true) : setSearching2(true);
     try {
-      const r = await fetch(`/api/team-stats?mode=playersearch&query=${encodeURIComponent(query)}`);
+      const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
       const d = await r.json();
-      setSuggestions(d.players || []);
+      slot === 1 ? setSuggestions1(d.teams || []) : setSuggestions2(d.teams || []);
     } catch {}
+    slot === 1 ? setSearching1(false) : setSearching2(false);
+  };
+
+  const selectTeam = async (t, slot) => {
+    setLoadingSquad(true);
+    if (slot === 1) { setTeam1(t); setSuggestions1([]); setSearch1(t.name); setPlayerId1(""); setPlayer1(null); setSquad1([]); }
+    else { setTeam2(t); setSuggestions2([]); setSearch2(t.name); setPlayerId2(""); setPlayer2(null); setSquad2([]); }
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsquad&teamId=${t.id}`);
+      const d = await r.json();
+      if (slot === 1) setSquad1(d.players || []);
+      else setSquad2(d.players || []);
+    } catch {}
+    setLoadingSquad(false);
+  };
+
+  const selectPlayer = (playerId, slot) => {
+    const squad = slot === 1 ? squad1 : squad2;
+    const chosen = squad.find(p => String(p.id) === String(playerId));
+    if (!chosen) return;
+    if (slot === 1) { setPlayerId1(playerId); setPlayer1(chosen); }
+    else { setPlayerId2(playerId); setPlayer2(chosen); }
   };
 
   const download = async (transparent = false) => {
@@ -3266,55 +3306,29 @@ function TransferAlertGraphic() {
     setDownloading(false);
   };
 
-  const PlayerBlock = ({ player, dest, setDest, fee, setFee, color }) => (
+  const PlayerBlock = ({ player, team, dest, fee, color }) => (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
       {player.photo && <img src={player.photo} alt="" crossOrigin="anonymous" style={{ width: 110, height: 110, borderRadius: "50%", objectFit: "cover", border: `3px solid ${color}` }} />}
       <span style={{ fontSize: 19, fontWeight: 900, color: "#f0f0f0", textAlign: "center" }}>{player.name}</span>
       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        {player.teamLogo && <img src={player.teamLogo} alt="" crossOrigin="anonymous" style={{ width: 18, height: 18, objectFit: "contain" }} />}
-        <span style={{ fontSize: 13, color: "#94a3b8" }}>{player.team}</span>
+        {team?.logo && <img src={team.logo} alt="" crossOrigin="anonymous" style={{ width: 18, height: 18, objectFit: "contain" }} />}
+        <span style={{ fontSize: 13, color: "#94a3b8" }}>{team?.name}</span>
       </div>
-      {dest && (
-        <div style={{ fontSize: 14, color, fontWeight: 800 }}>→ {dest}</div>
-      )}
-      {fee && (
-        <div style={{ fontSize: 13, color: "#fbbf24", fontWeight: 700 }}>{fee}</div>
-      )}
+      {dest && <div style={{ fontSize: 14, color, fontWeight: 800 }}>→ {dest}</div>}
+      {fee && <div style={{ fontSize: 13, color: "#fbbf24", fontWeight: 700 }}>{fee}</div>}
     </div>
   );
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Two transfers, one card. Search each player, then fill in their destination club and fee, since very fresh transfers won't be in the database yet.</div>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Two transfers, one card. Search the player's (old) team, pick them from the squad, then fill in their destination club and fee.</div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        <div style={{ position: "relative" }}>
-          <input value={search1} onChange={e => searchPlayer(e.target.value, setSearch1, setSuggestions1)} placeholder="Player 1..." style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
-          {suggestions1.length > 0 && (
-            <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 20, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, marginTop: 4, maxHeight: 200, overflowY: "auto" }}>
-              {suggestions1.map(p => (
-                <div key={p.id} onClick={() => { setPlayer1(p); setSuggestions1([]); setSearch1(p.name); }} style={{ padding: "8px 12px", cursor: "pointer", fontSize: 13, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 8 }}>
-                  {p.photo && <img src={p.photo} alt="" style={{ width: 20, height: 20, borderRadius: "50%", objectFit: "cover" }} />}
-                  {p.name} <span style={{ color: "#666", fontSize: 11 }}>({p.team})</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        <div style={{ position: "relative" }}>
-          <input value={search2} onChange={e => searchPlayer(e.target.value, setSearch2, setSuggestions2)} placeholder="Player 2..." style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
-          {suggestions2.length > 0 && (
-            <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 20, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, marginTop: 4, maxHeight: 200, overflowY: "auto" }}>
-              {suggestions2.map(p => (
-                <div key={p.id} onClick={() => { setPlayer2(p); setSuggestions2([]); setSearch2(p.name); }} style={{ padding: "8px 12px", cursor: "pointer", fontSize: 13, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 8 }}>
-                  {p.photo && <img src={p.photo} alt="" style={{ width: 20, height: 20, borderRadius: "50%", objectFit: "cover" }} />}
-                  {p.name} <span style={{ color: "#666", fontSize: 11 }}>({p.team})</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <TeamThenPlayerPicker label="Player 1" search={search1} setSearch={setSearch1} suggestions={suggestions1} team={team1} searching={searching1} slot={1} color="#4ade80" squad={squad1} playerId={playerId1} onSearchTeam={searchTeam} onSelectTeam={selectTeam} onSelectPlayer={selectPlayer} onClearTeam={() => setTeam1(null)} />
+        <TeamThenPlayerPicker label="Player 2" search={search2} setSearch={setSearch2} suggestions={suggestions2} team={team2} searching={searching2} slot={2} color="#f59e0b" squad={squad2} playerId={playerId2} onSearchTeam={searchTeam} onSelectTeam={selectTeam} onSelectPlayer={selectPlayer} onClearTeam={() => setTeam2(null)} />
       </div>
+
+      {loadingSquad && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 12 }}>Loading squad...</div>}
 
       {player1 && player2 && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -3338,9 +3352,9 @@ function TransferAlertGraphic() {
               </div>
 
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16 }}>
-                <PlayerBlock player={player1} dest={dest1} setDest={setDest1} fee={fee1} setFee={setFee1} color="#4ade80" />
+                <PlayerBlock player={player1} team={team1} dest={dest1} fee={fee1} color="#4ade80" />
                 <span style={{ fontSize: 28, fontWeight: 900, color: "#f0f0f0", flexShrink: 0 }}>&amp;</span>
-                <PlayerBlock player={player2} dest={dest2} setDest={setDest2} fee={fee2} setFee={setFee2} color="#f59e0b" />
+                <PlayerBlock player={player2} team={team2} dest={dest2} fee={fee2} color="#f59e0b" />
               </div>
             </div>
           </GraphicCard>
