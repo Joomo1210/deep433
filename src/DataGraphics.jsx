@@ -3252,6 +3252,7 @@ function TransferAlertGraphic() {
   const [player1, setPlayer1] = useState(null);
   const [dest1, setDest1] = useState("");
   const [fee1, setFee1] = useState("");
+  const [sellOnFee1, setSellOnFee1] = useState("");
 
   const [search2, setSearch2] = useState("");
   const [suggestions2, setSuggestions2] = useState([]);
@@ -3262,6 +3263,7 @@ function TransferAlertGraphic() {
   const [player2, setPlayer2] = useState(null);
   const [dest2, setDest2] = useState("");
   const [fee2, setFee2] = useState("");
+  const [sellOnFee2, setSellOnFee2] = useState("");
 
   const searchTeam = async (query, slot) => {
     if (query.length < 3) {
@@ -3306,7 +3308,7 @@ function TransferAlertGraphic() {
     setDownloading(false);
   };
 
-  const PlayerBlock = ({ player, team, dest, fee, color }) => (
+  const PlayerBlock = ({ player, team, dest, fee, sellOnFee, color }) => (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
       {player.photo && <img src={player.photo} alt="" crossOrigin="anonymous" style={{ width: 110, height: 110, borderRadius: "50%", objectFit: "cover", border: `3px solid ${color}` }} />}
       <span style={{ fontSize: 19, fontWeight: 900, color: "#f0f0f0", textAlign: "center" }}>{player.name}</span>
@@ -3315,13 +3317,14 @@ function TransferAlertGraphic() {
         <span style={{ fontSize: 13, color: "#94a3b8" }}>{team?.name}</span>
       </div>
       {dest && <div style={{ fontSize: 14, color, fontWeight: 800 }}>→ {dest}</div>}
-      {fee && <div style={{ fontSize: 13, color: "#fbbf24", fontWeight: 700 }}>{fee}</div>}
+      {fee && <div style={{ fontSize: 13, color: "#fbbf24", fontWeight: 700 }}>Fee: {fee}</div>}
+      {sellOnFee && <div style={{ fontSize: 11.5, color: "#94a3b8", fontWeight: 600 }}>Sell-on: {sellOnFee}</div>}
     </div>
   );
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Two transfers, one card. Search the player's (old) team, pick them from the squad, then fill in their destination club and fee.</div>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Two transfers, one card. Search the player's (old) team, pick them from the squad, then fill in their destination club, purchase fee, and sell-on fee.</div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
         <TeamThenPlayerPicker label="Player 1" search={search1} setSearch={setSearch1} suggestions={suggestions1} team={team1} searching={searching1} slot={1} color="#4ade80" squad={squad1} playerId={playerId1} onSearchTeam={searchTeam} onSelectTeam={selectTeam} onSelectPlayer={selectPlayer} onClearTeam={() => setTeam1(null)} />
@@ -3334,8 +3337,10 @@ function TransferAlertGraphic() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           <input value={dest1} onChange={e => setDest1(e.target.value)} placeholder="Destination club" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
           <input value={dest2} onChange={e => setDest2(e.target.value)} placeholder="Destination club" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
-          <input value={fee1} onChange={e => setFee1(e.target.value)} placeholder="Fee (e.g. £125m)" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
-          <input value={fee2} onChange={e => setFee2(e.target.value)} placeholder="Fee (e.g. £55.7m)" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+          <input value={fee1} onChange={e => setFee1(e.target.value)} placeholder="Purchase fee (e.g. £125m)" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+          <input value={fee2} onChange={e => setFee2(e.target.value)} placeholder="Purchase fee (e.g. £55.7m)" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+          <input value={sellOnFee1} onChange={e => setSellOnFee1(e.target.value)} placeholder="Sell-on fee (e.g. 15%)" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+          <input value={sellOnFee2} onChange={e => setSellOnFee2(e.target.value)} placeholder="Sell-on fee (e.g. 10%)" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
         </div>
       )}
 
@@ -3352,9 +3357,9 @@ function TransferAlertGraphic() {
               </div>
 
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16 }}>
-                <PlayerBlock player={player1} team={team1} dest={dest1} fee={fee1} color="#4ade80" />
+                <PlayerBlock player={player1} team={team1} dest={dest1} fee={fee1} sellOnFee={sellOnFee1} color="#4ade80" />
                 <span style={{ fontSize: 28, fontWeight: 900, color: "#f0f0f0", flexShrink: 0 }}>&amp;</span>
-                <PlayerBlock player={player2} team={team2} dest={dest2} fee={fee2} color="#f59e0b" />
+                <PlayerBlock player={player2} team={team2} dest={dest2} fee={fee2} sellOnFee={sellOnFee2} color="#f59e0b" />
               </div>
             </div>
           </GraphicCard>
