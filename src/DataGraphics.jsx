@@ -3231,6 +3231,131 @@ const PREDICTION_CATEGORY_POOL = [
   { icon: "⏰", name: "Goal in Last 80-90 Mins?" },
 ];
 
+// ─── TRANSFER ALERT CARD (two players, joined by &, not VS) ────────────────
+function TransferAlertGraphic() {
+  const cardRef = useRef(null);
+  const [downloading, setDownloading] = useState(false);
+
+  const [search1, setSearch1] = useState("");
+  const [suggestions1, setSuggestions1] = useState([]);
+  const [player1, setPlayer1] = useState(null);
+  const [dest1, setDest1] = useState("");
+  const [fee1, setFee1] = useState("");
+
+  const [search2, setSearch2] = useState("");
+  const [suggestions2, setSuggestions2] = useState([]);
+  const [player2, setPlayer2] = useState(null);
+  const [dest2, setDest2] = useState("");
+  const [fee2, setFee2] = useState("");
+
+  const searchPlayer = async (query, setSearch, setSuggestions) => {
+    setSearch(query);
+    if (query.length < 3) { setSuggestions([]); return; }
+    try {
+      const r = await fetch(`/api/team-stats?mode=playersearch&query=${encodeURIComponent(query)}`);
+      const d = await r.json();
+      setSuggestions(d.players || []);
+    } catch {}
+  };
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, `deep433-transfer-${player1?.name}-${player2?.name}.png`, "#0a0a12", transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const PlayerBlock = ({ player, dest, setDest, fee, setFee, color }) => (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
+      {player.photo && <img src={player.photo} alt="" crossOrigin="anonymous" style={{ width: 110, height: 110, borderRadius: "50%", objectFit: "cover", border: `3px solid ${color}` }} />}
+      <span style={{ fontSize: 19, fontWeight: 900, color: "#f0f0f0", textAlign: "center" }}>{player.name}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        {player.teamLogo && <img src={player.teamLogo} alt="" crossOrigin="anonymous" style={{ width: 18, height: 18, objectFit: "contain" }} />}
+        <span style={{ fontSize: 13, color: "#94a3b8" }}>{player.team}</span>
+      </div>
+      {dest && (
+        <div style={{ fontSize: 14, color, fontWeight: 800 }}>→ {dest}</div>
+      )}
+      {fee && (
+        <div style={{ fontSize: 13, color: "#fbbf24", fontWeight: 700 }}>{fee}</div>
+      )}
+    </div>
+  );
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Two transfers, one card. Search each player, then fill in their destination club and fee, since very fresh transfers won't be in the database yet.</div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <div style={{ position: "relative" }}>
+          <input value={search1} onChange={e => searchPlayer(e.target.value, setSearch1, setSuggestions1)} placeholder="Player 1..." style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+          {suggestions1.length > 0 && (
+            <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 20, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, marginTop: 4, maxHeight: 200, overflowY: "auto" }}>
+              {suggestions1.map(p => (
+                <div key={p.id} onClick={() => { setPlayer1(p); setSuggestions1([]); setSearch1(p.name); }} style={{ padding: "8px 12px", cursor: "pointer", fontSize: 13, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 8 }}>
+                  {p.photo && <img src={p.photo} alt="" style={{ width: 20, height: 20, borderRadius: "50%", objectFit: "cover" }} />}
+                  {p.name} <span style={{ color: "#666", fontSize: 11 }}>({p.team})</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div style={{ position: "relative" }}>
+          <input value={search2} onChange={e => searchPlayer(e.target.value, setSearch2, setSuggestions2)} placeholder="Player 2..." style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+          {suggestions2.length > 0 && (
+            <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 20, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, marginTop: 4, maxHeight: 200, overflowY: "auto" }}>
+              {suggestions2.map(p => (
+                <div key={p.id} onClick={() => { setPlayer2(p); setSuggestions2([]); setSearch2(p.name); }} style={{ padding: "8px 12px", cursor: "pointer", fontSize: 13, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 8 }}>
+                  {p.photo && <img src={p.photo} alt="" style={{ width: 20, height: 20, borderRadius: "50%", objectFit: "cover" }} />}
+                  {p.name} <span style={{ color: "#666", fontSize: 11 }}>({p.team})</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {player1 && player2 && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <input value={dest1} onChange={e => setDest1(e.target.value)} placeholder="Destination club" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+          <input value={dest2} onChange={e => setDest2(e.target.value)} placeholder="Destination club" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+          <input value={fee1} onChange={e => setFee1(e.target.value)} placeholder="Fee (e.g. £125m)" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+          <input value={fee2} onChange={e => setFee2(e.target.value)} placeholder="Fee (e.g. £55.7m)" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+        </div>
+      )}
+
+      {player1 && player2 && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "44px 20px 32px" }}>
+              <div style={{ textAlign: "center", marginBottom: 24 }}>
+                <span style={{
+                  fontSize: 24, fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5,
+                  background: "linear-gradient(90deg,#4ade80,#818cf8,#f59e0b)",
+                  WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+                }}>🚨 Transfer Alerts</span>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16 }}>
+                <PlayerBlock player={player1} dest={dest1} setDest={setDest1} fee={fee1} setFee={setFee1} color="#4ade80" />
+                <span style={{ fontSize: 28, fontWeight: 900, color: "#f0f0f0", flexShrink: 0 }}>&amp;</span>
+                <PlayerBlock player={player2} dest={dest2} setDest={setDest2} fee={fee2} setFee={setFee2} color="#f59e0b" />
+              </div>
+            </div>
+          </GraphicCard>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 function MatchFixtureGraphic() {
   const cardRef = useRef(null);
   const [leagueId, setLeagueId] = useState("pl");
@@ -9948,6 +10073,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "insights", label: "📊 Brief Insights" },
     { id: "pitch",    label: "⚽ Pitch View" },
     { id: "teamnews", label: "📋 Lineup, Subs & Suspensions" },
+    { id: "transferalert", label: "🚨 Transfer Alerts" },
     { id: "h2h",      label: "🆚 Player H2H" },
     { id: "matchh2h", label: "📋 Match H2H" },
     { id: "motm", label: "⭐ Man of the Match" },
@@ -10013,6 +10139,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "insights" && <DeepInsightsGraphic history={history} />}
       {activeSection === "pitch"    && <MatchPitchViewGraphic />}
       {activeSection === "teamnews" && <LineupSubsSuspensionsGraphic />}
+      {activeSection === "transferalert" && <TransferAlertGraphic />}
       {activeSection === "h2h"      && <PlayerH2HGraphic />}
       {activeSection === "matchh2h" && <MatchH2HGraphic />}
       {activeSection === "motm" && <ManOfMatchGraphic />}
