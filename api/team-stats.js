@@ -525,8 +525,15 @@ export default async function handler(req, res) {
       if (!league) return res.status(400).json({ error: "Unknown league" });
       apiUrl = `https://v3.football.api-sports.io/players?search=${encodeURIComponent(query)}&league=${league.id}&season=${league.season}`;
     } else {
-      // Global search across ALL competitions API-Football covers — just name + season
-      const season = seasonParam || 2025;
+      // Global search across ALL competitions API-Football covers — just
+      // name + season. This branch previously defaulted to a stale 2025
+      // season while the other two branches correctly used 2026 — for a
+      // genuinely global, unscoped search (used by the Transfer Alerts
+      // tool, since a transfer can involve a club from any league), a
+      // wrong season here meant it was quietly searching last season's
+      // player data and often coming back empty for anyone whose season
+      // records hadn't carried over the way the scoped branches expect.
+      const season = seasonParam || 2026;
       apiUrl = `https://v3.football.api-sports.io/players?search=${encodeURIComponent(query)}&season=${season}`;
     }
     try {
@@ -551,6 +558,16 @@ export default async function handler(req, res) {
       } else if (searchTeamId && (!data.response || data.response.length === 0)) {
         const season = parseInt(seasonParam || 2026);
         const prevUrl = `https://v3.football.api-sports.io/players?search=${encodeURIComponent(query)}&team=${searchTeamId}&season=${season - 1}`;
+        r = await fetch(prevUrl, { headers: { "x-apisports-key": apiKey } });
+        data = await r.json();
+        usedFallback = true;
+      } else if (!leagueId && !searchTeamId && (!data.response || data.response.length === 0)) {
+        // Same fallback for the global (unscoped) branch, which previously
+        // had none at all — a completely empty result here used to just be
+        // a dead end for the caller, with no retry against last season's
+        // data the way both scoped branches already got.
+        const season = parseInt(seasonParam || 2026);
+        const prevUrl = `https://v3.football.api-sports.io/players?search=${encodeURIComponent(query)}&season=${season - 1}`;
         r = await fetch(prevUrl, { headers: { "x-apisports-key": apiKey } });
         data = await r.json();
         usedFallback = true;
