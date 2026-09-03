@@ -37,18 +37,28 @@ function mapStatus(short) {
 }
 
 export default async function handler(req, res) {
-  const { leagueId, full } = req.query;
+  const { leagueId, full, season: seasonOverride } = req.query;
   if (!leagueId) return res.status(400).json({ error: "leagueId required" });
 
   const league = LEAGUE_MAP[leagueId];
   if (!league) return res.status(400).json({ error: "Unknown league" });
+
+  // Optional season override — lets the frontend request a past season's
+  // fixtures (e.g. last season) instead of always the current hardcoded
+  // year above. previousSeason=true is simpler than requiring the caller
+  // to know the exact year, since the frontend doesn't carry each league's
+  // season number, only this backend map does.
+  const { previousSeason } = req.query;
+  const seasonToUse = seasonOverride ? parseInt(seasonOverride)
+    : previousSeason === "true" ? league.season - 1
+    : league.season;
 
   const apiKey = process.env.API_FOOTBALL_KEY;
 
   // Full mode: fetch entire season in one call (for stats aggregation, e.g. clean sheets)
   if (full === "true") {
     try {
-      const r = await fetch(`https://v3.football.api-sports.io/fixtures?league=${league.id}&season=${league.season}`, {
+      const r = await fetch(`https://v3.football.api-sports.io/fixtures?league=${league.id}&season=${seasonToUse}`, {
         headers: { "x-apisports-key": apiKey }
       });
       const data = await r.json();
