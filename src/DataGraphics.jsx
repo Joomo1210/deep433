@@ -80,6 +80,7 @@ const LEAGUE_OPTIONS = [
 // ─── FIXTURE PICKER ──────────────────────────────────────────────────────────
 function FixturePicker({ onSelect }) {
   const [leagueId, setLeagueId] = useState("wc2026");
+  const [lastSeason, setLastSeason] = useState(false);
   const [fixtures, setFixtures] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
@@ -90,13 +91,17 @@ function FixturePicker({ onSelect }) {
     // full=true pulls the whole season (past and future) rather than the
     // rolling "yesterday + next 25 days" window the default mode uses —
     // this picker is used by content-creation tools that need to look back
-    // at completed matches well beyond a day or two after kickoff.
-    fetch(`/api/fixtures?leagueId=${leagueId}&full=true`)
+    // at completed matches well beyond a day or two after kickoff. The
+    // optional season param lets this same picker browse last season's
+    // fixtures instead of the current one, when that toggle is on.
+    const params = new URLSearchParams({ leagueId, full: "true" });
+    if (lastSeason) params.set("previousSeason", "true");
+    fetch(`/api/fixtures?${params}`)
       .then(r => r.json())
       .then(d => setFixtures(d.fixtures || []))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [leagueId]);
+  }, [leagueId, lastSeason]);
 
   const getDateLabel = (dateStr) => {
     const now = new Date();
@@ -136,6 +141,13 @@ function FixturePicker({ onSelect }) {
           </button>
         ))}
       </div>
+
+      {/* Season toggle — lets any tool using this picker look back at last
+          season's fixtures instead of only the current one. */}
+      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#e2e8f0" }}>
+        <input type="checkbox" checked={lastSeason} onChange={e => setLastSeason(e.target.checked)} />
+        Last season
+      </label>
 
       {/* Search */}
       <input
