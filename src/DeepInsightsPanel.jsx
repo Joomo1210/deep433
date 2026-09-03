@@ -146,7 +146,7 @@ export default function DeepInsightsPanel({ insights, homeTeam, awayTeam, showHe
       {showHeader && (
         <div>
           <div style={{ fontSize: 15, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 3 }}>📊 Brief Insights</div>
-          <div style={{ fontSize: 13, color: "#aaa", fontWeight: 600 }}>Statistical model — independent of AI verdict</div>
+          <div style={{ fontSize: 13, color: "#aaa", fontWeight: 600 }}>Statistical Model</div>
         </div>
       )}
       {(aiPrediction || userPrediction) && (
