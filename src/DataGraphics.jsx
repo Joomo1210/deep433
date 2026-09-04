@@ -5923,10 +5923,10 @@ function TeamStatsCompareGraphic() {
   const TeamBlock = ({ data, isFirst }) => (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, marginTop: isFirst ? 22 : 0 }}>
-        {data.logo && <img src={data.logo} alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, objectFit: "contain" }} />}
+        {data.logo && <img src={data.logo} alt="" crossOrigin="anonymous" style={{ width: 34, height: 34, objectFit: "contain" }} />}
         <div>
-          <div style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>{data.team}</div>
-          <div style={{ fontSize: 15, color: "#e2e8f0" }}>
+          <div style={{ fontSize: 24, fontWeight: 900, color: "#f0f0f0" }}>{data.team}</div>
+          <div style={{ fontSize: 16, color: "#e2e8f0" }}>
             {LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label} {data.seasonUsed}/{parseInt(data.seasonUsed) + 1} · {data.isCurrentSeason ? "Current Stats" : "Final Stats"}
           </div>
         </div>
@@ -5934,21 +5934,21 @@ function TeamStatsCompareGraphic() {
 
       <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 8 }}>
         {data.position && (
-          <div style={{ background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 6, padding: "4px 8px", fontSize: 14, fontWeight: 700, color: "#f0f0f0" }}>
+          <div style={{ background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 6, padding: "5px 9px", fontSize: 15, fontWeight: 700, color: "#f0f0f0" }}>
             POS: <span style={{ color: "#4ade80" }}>{data.position}{data.position === 1 ? "st" : data.position === 2 ? "nd" : data.position === 3 ? "rd" : "th"}</span>
           </div>
         )}
-        <div style={{ background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 6, padding: "4px 8px", fontSize: 14, fontWeight: 700, color: "#f0f0f0" }}>
+        <div style={{ background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 6, padding: "5px 9px", fontSize: 15, fontWeight: 700, color: "#f0f0f0" }}>
           PTS: <span style={{ color: "#4ade80" }}>{(data.wins || 0) * 3 + (data.draws || 0)}</span>
         </div>
-        <div style={{ background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 6, padding: "4px 8px", fontSize: 14, fontWeight: 700, color: "#f0f0f0" }}>
+        <div style={{ background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 6, padding: "5px 9px", fontSize: 15, fontWeight: 700, color: "#f0f0f0" }}>
           GD: <span style={{ color: (data.goalsFor - data.goalsAgainst) >= 0 ? "#4ade80" : "#f87171" }}>{(data.goalsFor - data.goalsAgainst) >= 0 ? "+" : ""}{data.goalsFor - data.goalsAgainst}</span>
         </div>
       </div>
 
       {data.form && (
         <div style={{ marginBottom: 8 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 5 }}>Last {Math.min(data.form.length, 10)} Match Form</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 5 }}>Last {Math.min(data.form.length, 10)} Match Form</div>
           <div style={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
             {data.form.slice(-10).split("").map((r, i) => <div key={i}>{formDot(r)}</div>)}
           </div>
@@ -5967,9 +5967,9 @@ function TeamStatsCompareGraphic() {
           { label: "Avg Scored",   value: data.avgGoalsFor,     color: "#4ade80" },
           { label: "Avg Conceded", value: data.avgGoalsAgainst, color: "#f87171" },
         ].map(s => (
-          <div key={s.label} style={{ background: "#13131f", borderRadius: 6, padding: "6px 4px", textAlign: "center" }}>
-            <div style={{ fontSize: 20, fontWeight: 900, color: s.color }}>{s.value ?? "—"}</div>
-            <div style={{ fontSize: 13, color: "#e2e8f0", marginTop: 1, textTransform: "uppercase", letterSpacing: 0.3 }}>{s.label}</div>
+          <div key={s.label} style={{ background: "#13131f", borderRadius: 6, padding: "7px 4px", textAlign: "center" }}>
+            <div style={{ fontSize: 23, fontWeight: 900, color: s.color }}>{s.value ?? "—"}</div>
+            <div style={{ fontSize: 14, color: "#e2e8f0", marginTop: 1, textTransform: "uppercase", letterSpacing: 0.3 }}>{s.label}</div>
           </div>
         ))}
       </div>
@@ -5997,7 +5997,7 @@ function TeamStatsCompareGraphic() {
       {(data1 || data2) && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "16px 16px 14px" }}>
+            <div style={{ padding: "44px 16px 14px" }}>
               {data1 && <TeamBlock data={data1} isFirst={true} />}
               {data1 && data2 && <div style={{ height: 1, background: "#1a1a2a", margin: "12px 0" }} />}
               {data2 && <TeamBlock data={data2} isFirst={!data1} />}
@@ -6164,7 +6164,7 @@ function CurrentSeasonTeamCompareGraphic() {
       {(data1 || data2) && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "16px 16px 14px" }}>
+            <div style={{ padding: "44px 16px 14px" }}>
               {data1 && <TeamBlock data={data1} isFirst={true} />}
               {data1 && data2 && <div style={{ height: 1, background: "#1a1a2a", margin: "12px 0" }} />}
               {data2 && <TeamBlock data={data2} isFirst={!data1} />}
