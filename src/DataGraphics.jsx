@@ -3259,9 +3259,12 @@ function WeeklyPicksResultsGraphic() {
   const [title, setTitle] = useState("This Week's Results");
   const [picks, setPicks] = useState(Array(10).fill(""));
   const [hits, setHits] = useState(Array(10).fill(null)); // null = not set, true = hit, false = miss
-  const [teams, setTeams] = useState(Array(10).fill(null));
-  const [teamSearches, setTeamSearches] = useState(Array(10).fill(""));
-  const [teamSuggestions, setTeamSuggestions] = useState(Array(10).fill([]));
+  const [teams1, setTeams1] = useState(Array(10).fill(null));
+  const [teamSearches1, setTeamSearches1] = useState(Array(10).fill(""));
+  const [teamSuggestions1, setTeamSuggestions1] = useState(Array(10).fill([]));
+  const [teams2, setTeams2] = useState(Array(10).fill(null));
+  const [teamSearches2, setTeamSearches2] = useState(Array(10).fill(""));
+  const [teamSuggestions2, setTeamSuggestions2] = useState(Array(10).fill([]));
 
   const updatePick = (i, value) => {
     setPicks(prev => prev.map((p, idx) => idx === i ? value : p));
@@ -3270,27 +3273,32 @@ function WeeklyPicksResultsGraphic() {
     setHits(prev => prev.map((h, idx) => idx === i ? value : h));
   };
 
-  const searchTeamFor = async (query, i) => {
-    setTeamSearches(prev => prev.map((s, idx) => idx === i ? query : s));
+  const searchTeamFor = async (query, i, slot) => {
+    const setSearches = slot === 1 ? setTeamSearches1 : setTeamSearches2;
+    const setSuggestions = slot === 1 ? setTeamSuggestions1 : setTeamSuggestions2;
+    setSearches(prev => prev.map((s, idx) => idx === i ? query : s));
     if (query.length < 3) {
-      setTeamSuggestions(prev => prev.map((s, idx) => idx === i ? [] : s));
+      setSuggestions(prev => prev.map((s, idx) => idx === i ? [] : s));
       return;
     }
     try {
       const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
       const d = await r.json();
-      setTeamSuggestions(prev => prev.map((s, idx) => idx === i ? (d.teams || []) : s));
+      setSuggestions(prev => prev.map((s, idx) => idx === i ? (d.teams || []) : s));
     } catch {}
   };
 
-  const selectTeamFor = (team, i) => {
-    setTeams(prev => prev.map((t, idx) => idx === i ? team : t));
-    setTeamSearches(prev => prev.map((s, idx) => idx === i ? team.name : s));
-    setTeamSuggestions(prev => prev.map((s, idx) => idx === i ? [] : s));
+  const selectTeamFor = (team, i, slot) => {
+    const setTeamsX = slot === 1 ? setTeams1 : setTeams2;
+    const setSearches = slot === 1 ? setTeamSearches1 : setTeamSearches2;
+    const setSuggestions = slot === 1 ? setTeamSuggestions1 : setTeamSuggestions2;
+    setTeamsX(prev => prev.map((t, idx) => idx === i ? team : t));
+    setSearches(prev => prev.map((s, idx) => idx === i ? team.name : s));
+    setSuggestions(prev => prev.map((s, idx) => idx === i ? [] : s));
   };
 
   const filledPicks = picks
-    .map((p, i) => ({ n: i + 1, text: p, hit: hits[i], team: teams[i] }))
+    .map((p, i) => ({ n: i + 1, text: p, hit: hits[i], team1: teams1[i], team2: teams2[i] }))
     .filter(p => p.text.trim());
   const scored = filledPicks.filter(p => p.hit !== null);
   const correctCount = filledPicks.filter(p => p.hit === true).length;
@@ -3303,9 +3311,38 @@ function WeeklyPicksResultsGraphic() {
     setDownloading(false);
   };
 
+  const CrestSearch = ({ i, slot }) => {
+    const teamsX = slot === 1 ? teams1 : teams2;
+    const searches = slot === 1 ? teamSearches1 : teamSearches2;
+    const suggestions = slot === 1 ? teamSuggestions1 : teamSuggestions2;
+    return (
+      <div style={{ position: "relative", flex: 1 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          {teamsX[i]?.logo && <img src={teamsX[i].logo} alt="" style={{ width: 16, height: 16, objectFit: "contain", flexShrink: 0 }} />}
+          <input
+            value={searches[i]}
+            onChange={e => searchTeamFor(e.target.value, i, slot)}
+            placeholder={slot === 1 ? "Team 1 crest (optional)..." : "Team 2 crest (optional)..."}
+            style={{ flex: 1, background: "#141420", border: "1px solid #23232f", borderRadius: 6, color: "#e2e8f0", fontSize: 12, padding: "6px 10px", outline: "none", fontFamily: "inherit" }}
+          />
+        </div>
+        {suggestions[i]?.length > 0 && (
+          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 20, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, marginTop: 4, maxHeight: 160, overflowY: "auto" }}>
+            {suggestions[i].map(t => (
+              <div key={t.id} onClick={() => selectTeamFor(t, i, slot)} style={{ padding: "8px 12px", cursor: "pointer", fontSize: 13, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 8 }}>
+                {t.logo && <img src={t.logo} alt="" style={{ width: 16, height: 16, objectFit: "contain" }} />}
+                {t.name}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Re-enter this week's picks, mark each one ✅ correct or ❌ missed, post once the matches have concluded. Optionally attach a team crest to each pick.</div>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Re-enter this week's picks, mark each one ✅ correct or ❌ missed, post once the matches have concluded. Optionally attach both teams' crests to each pick.</div>
 
       <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Card title" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
 
@@ -3323,26 +3360,9 @@ function WeeklyPicksResultsGraphic() {
               <button onClick={() => toggleHit(i, hits[i] === true ? null : true)} style={{ background: hits[i] === true ? "#4ade8022" : "none", border: `1.5px solid ${hits[i] === true ? "#4ade80" : "#2a2a3a"}`, borderRadius: 6, color: hits[i] === true ? "#4ade80" : "#666", cursor: "pointer", fontSize: 16, padding: "6px 10px", flexShrink: 0 }}>✅</button>
               <button onClick={() => toggleHit(i, hits[i] === false ? null : false)} style={{ background: hits[i] === false ? "#f8717122" : "none", border: `1.5px solid ${hits[i] === false ? "#f87171" : "#2a2a3a"}`, borderRadius: 6, color: hits[i] === false ? "#f87171" : "#666", cursor: "pointer", fontSize: 16, padding: "6px 10px", flexShrink: 0 }}>❌</button>
             </div>
-            <div style={{ position: "relative", marginLeft: 28 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                {teams[i]?.logo && <img src={teams[i].logo} alt="" style={{ width: 18, height: 18, objectFit: "contain", flexShrink: 0 }} />}
-                <input
-                  value={teamSearches[i]}
-                  onChange={e => searchTeamFor(e.target.value, i)}
-                  placeholder="Attach team crest (optional)..."
-                  style={{ flex: 1, background: "#141420", border: "1px solid #23232f", borderRadius: 6, color: "#e2e8f0", fontSize: 12, padding: "6px 10px", outline: "none", fontFamily: "inherit" }}
-                />
-              </div>
-              {teamSuggestions[i]?.length > 0 && (
-                <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 20, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, marginTop: 4, maxHeight: 160, overflowY: "auto" }}>
-                  {teamSuggestions[i].map(t => (
-                    <div key={t.id} onClick={() => selectTeamFor(t, i)} style={{ padding: "8px 12px", cursor: "pointer", fontSize: 13, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 8 }}>
-                      {t.logo && <img src={t.logo} alt="" style={{ width: 16, height: 16, objectFit: "contain" }} />}
-                      {t.name}
-                    </div>
-                  ))}
-                </div>
-              )}
+            <div style={{ display: "flex", gap: 8, marginLeft: 28 }}>
+              <CrestSearch i={i} slot={1} />
+              <CrestSearch i={i} slot={2} />
             </div>
           </div>
         ))}
@@ -3388,7 +3408,13 @@ function WeeklyPicksResultsGraphic() {
                       }}>
                         <span style={{ fontSize: 18, fontWeight: 900, color: "#4ade80" }}>{p.n}</span>
                       </div>
-                      {p.team?.logo && <img src={p.team.logo} alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, objectFit: "contain", flexShrink: 0 }} />}
+                      {(p.team1?.logo || p.team2?.logo) && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
+                          {p.team1?.logo && <img src={p.team1.logo} alt="" crossOrigin="anonymous" style={{ width: 28, height: 28, objectFit: "contain" }} />}
+                          {p.team1?.logo && p.team2?.logo && <span style={{ fontSize: 12, color: "#666", fontWeight: 700 }}>v</span>}
+                          {p.team2?.logo && <img src={p.team2.logo} alt="" crossOrigin="anonymous" style={{ width: 28, height: 28, objectFit: "contain" }} />}
+                        </div>
+                      )}
                       <span style={{ fontSize: 19, color: "#f0f0f0", fontWeight: 800, flex: 1, lineHeight: 1.3 }}>{p.text}</span>
                       <span style={{ fontSize: 26, flexShrink: 0 }}>{p.hit === true ? "✅" : p.hit === false ? "❌" : ""}</span>
                     </div>
@@ -3414,34 +3440,44 @@ function WeeklyPicksGraphic() {
   const [downloading, setDownloading] = useState(false);
   const [title, setTitle] = useState("This Week's Top Picks");
   const [picks, setPicks] = useState(Array(10).fill(""));
-  const [teams, setTeams] = useState(Array(10).fill(null)); // { id, name, logo } or null
-  const [teamSearches, setTeamSearches] = useState(Array(10).fill(""));
-  const [teamSuggestions, setTeamSuggestions] = useState(Array(10).fill([]));
+  // Two independent team slots per pick — a fixture has two sides, so one
+  // crest was never going to be enough for matches like "Arsenal vs Chelsea".
+  const [teams1, setTeams1] = useState(Array(10).fill(null));
+  const [teamSearches1, setTeamSearches1] = useState(Array(10).fill(""));
+  const [teamSuggestions1, setTeamSuggestions1] = useState(Array(10).fill([]));
+  const [teams2, setTeams2] = useState(Array(10).fill(null));
+  const [teamSearches2, setTeamSearches2] = useState(Array(10).fill(""));
+  const [teamSuggestions2, setTeamSuggestions2] = useState(Array(10).fill([]));
 
   const updatePick = (i, value) => {
     setPicks(prev => prev.map((p, idx) => idx === i ? value : p));
   };
 
-  const searchTeamFor = async (query, i) => {
-    setTeamSearches(prev => prev.map((s, idx) => idx === i ? query : s));
+  const searchTeamFor = async (query, i, slot) => {
+    const setSearches = slot === 1 ? setTeamSearches1 : setTeamSearches2;
+    const setSuggestions = slot === 1 ? setTeamSuggestions1 : setTeamSuggestions2;
+    setSearches(prev => prev.map((s, idx) => idx === i ? query : s));
     if (query.length < 3) {
-      setTeamSuggestions(prev => prev.map((s, idx) => idx === i ? [] : s));
+      setSuggestions(prev => prev.map((s, idx) => idx === i ? [] : s));
       return;
     }
     try {
       const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
       const d = await r.json();
-      setTeamSuggestions(prev => prev.map((s, idx) => idx === i ? (d.teams || []) : s));
+      setSuggestions(prev => prev.map((s, idx) => idx === i ? (d.teams || []) : s));
     } catch {}
   };
 
-  const selectTeamFor = (team, i) => {
-    setTeams(prev => prev.map((t, idx) => idx === i ? team : t));
-    setTeamSearches(prev => prev.map((s, idx) => idx === i ? team.name : s));
-    setTeamSuggestions(prev => prev.map((s, idx) => idx === i ? [] : s));
+  const selectTeamFor = (team, i, slot) => {
+    const setTeamsX = slot === 1 ? setTeams1 : setTeams2;
+    const setSearches = slot === 1 ? setTeamSearches1 : setTeamSearches2;
+    const setSuggestions = slot === 1 ? setTeamSuggestions1 : setTeamSuggestions2;
+    setTeamsX(prev => prev.map((t, idx) => idx === i ? team : t));
+    setSearches(prev => prev.map((s, idx) => idx === i ? team.name : s));
+    setSuggestions(prev => prev.map((s, idx) => idx === i ? [] : s));
   };
 
-  const filledPicks = picks.map((p, i) => ({ n: i + 1, text: p, team: teams[i] })).filter(p => p.text.trim());
+  const filledPicks = picks.map((p, i) => ({ n: i + 1, text: p, team1: teams1[i], team2: teams2[i] })).filter(p => p.text.trim());
 
   const download = async (transparent = false) => {
     setDownloading(true);
@@ -3451,9 +3487,38 @@ function WeeklyPicksGraphic() {
     setDownloading(false);
   };
 
+  const CrestSearch = ({ i, slot }) => {
+    const teamsX = slot === 1 ? teams1 : teams2;
+    const searches = slot === 1 ? teamSearches1 : teamSearches2;
+    const suggestions = slot === 1 ? teamSuggestions1 : teamSuggestions2;
+    return (
+      <div style={{ position: "relative", flex: 1 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          {teamsX[i]?.logo && <img src={teamsX[i].logo} alt="" style={{ width: 16, height: 16, objectFit: "contain", flexShrink: 0 }} />}
+          <input
+            value={searches[i]}
+            onChange={e => searchTeamFor(e.target.value, i, slot)}
+            placeholder={slot === 1 ? "Team 1 crest (optional)..." : "Team 2 crest (optional)..."}
+            style={{ flex: 1, background: "#141420", border: "1px solid #23232f", borderRadius: 6, color: "#e2e8f0", fontSize: 12, padding: "6px 10px", outline: "none", fontFamily: "inherit" }}
+          />
+        </div>
+        {suggestions[i]?.length > 0 && (
+          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 20, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, marginTop: 4, maxHeight: 160, overflowY: "auto" }}>
+            {suggestions[i].map(t => (
+              <div key={t.id} onClick={() => selectTeamFor(t, i, slot)} style={{ padding: "8px 12px", cursor: "pointer", fontSize: 13, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 8 }}>
+                {t.logo && <img src={t.logo} alt="" style={{ width: 16, height: 16, objectFit: "contain" }} />}
+                {t.name}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Up to 10 of your own picks for the week, free text, in whatever format you like — "Arsenal to Win", "Barcelona Win/Draw", "Over 3 Goals", etc. Optionally attach a team crest to each pick.</div>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Up to 10 of your own picks for the week, free text, in whatever format you like — "Arsenal to Win", "Barcelona Win/Draw", "Over 3 Goals", etc. Optionally attach both teams' crests to each pick.</div>
 
       <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Card title" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
 
@@ -3469,26 +3534,9 @@ function WeeklyPicksGraphic() {
                 style={{ flex: 1, background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
               />
             </div>
-            <div style={{ position: "relative", marginLeft: 28 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                {teams[i]?.logo && <img src={teams[i].logo} alt="" style={{ width: 18, height: 18, objectFit: "contain", flexShrink: 0 }} />}
-                <input
-                  value={teamSearches[i]}
-                  onChange={e => searchTeamFor(e.target.value, i)}
-                  placeholder="Attach team crest (optional)..."
-                  style={{ flex: 1, background: "#141420", border: "1px solid #23232f", borderRadius: 6, color: "#e2e8f0", fontSize: 12, padding: "6px 10px", outline: "none", fontFamily: "inherit" }}
-                />
-              </div>
-              {teamSuggestions[i]?.length > 0 && (
-                <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 20, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, marginTop: 4, maxHeight: 160, overflowY: "auto" }}>
-                  {teamSuggestions[i].map(t => (
-                    <div key={t.id} onClick={() => selectTeamFor(t, i)} style={{ padding: "8px 12px", cursor: "pointer", fontSize: 13, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 8 }}>
-                      {t.logo && <img src={t.logo} alt="" style={{ width: 16, height: 16, objectFit: "contain" }} />}
-                      {t.name}
-                    </div>
-                  ))}
-                </div>
-              )}
+            <div style={{ display: "flex", gap: 8, marginLeft: 28 }}>
+              <CrestSearch i={i} slot={1} />
+              <CrestSearch i={i} slot={2} />
             </div>
           </div>
         ))}
@@ -3522,7 +3570,13 @@ function WeeklyPicksGraphic() {
                     }}>
                       <span style={{ fontSize: 18, fontWeight: 900, color: "#4ade80" }}>{p.n}</span>
                     </div>
-                    {p.team?.logo && <img src={p.team.logo} alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, objectFit: "contain", flexShrink: 0 }} />}
+                    {(p.team1?.logo || p.team2?.logo) && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
+                        {p.team1?.logo && <img src={p.team1.logo} alt="" crossOrigin="anonymous" style={{ width: 28, height: 28, objectFit: "contain" }} />}
+                        {p.team1?.logo && p.team2?.logo && <span style={{ fontSize: 12, color: "#666", fontWeight: 700 }}>v</span>}
+                        {p.team2?.logo && <img src={p.team2.logo} alt="" crossOrigin="anonymous" style={{ width: 28, height: 28, objectFit: "contain" }} />}
+                      </div>
+                    )}
                     <span style={{ fontSize: 19, color: "#f0f0f0", fontWeight: 800, lineHeight: 1.3 }}>{p.text}</span>
                   </div>
                 ))}
