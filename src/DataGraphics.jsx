@@ -3244,6 +3244,98 @@ const PREDICTION_CATEGORY_POOL = [
 ];
 
 // ─── TRANSFER ALERT CARD (two players, joined by &, not VS) ────────────────
+// ─── WEEKLY TOP PICKS (up to 10 free-text predictions, one card) ───────────
+// Purely a content graphic for the host's own weekly picks — free text per
+// row (e.g. "Arsenal to Win", "Barcelona Win/Draw"), not tied to the live
+// prediction contest's structured categories, and not framed as betting
+// advice — this is the host's own forecast, for engagement, not a market.
+function WeeklyPicksGraphic() {
+  const cardRef = useRef(null);
+  const [downloading, setDownloading] = useState(false);
+  const [title, setTitle] = useState("This Week's Top Picks");
+  const [picks, setPicks] = useState(Array(10).fill(""));
+
+  const updatePick = (i, value) => {
+    setPicks(prev => prev.map((p, idx) => idx === i ? value : p));
+  };
+
+  const filledPicks = picks.map((p, i) => ({ n: i + 1, text: p })).filter(p => p.text.trim());
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, `deep433-weekly-picks.png`, "#0a0a12", transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Up to 10 of your own picks for the week, free text, in whatever format you like — "Arsenal to Win", "Barcelona Win/Draw", "Over 3 Goals", etc.</div>
+
+      <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Card title" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {picks.map((pick, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 13, color: "#818cf8", fontWeight: 800, width: 20, flexShrink: 0 }}>{i + 1}.</span>
+            <input
+              value={pick}
+              onChange={e => updatePick(i, e.target.value)}
+              placeholder={`Pick ${i + 1} (e.g. Arsenal to Win)`}
+              style={{ flex: 1, background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+            />
+          </div>
+        ))}
+      </div>
+
+      {filledPicks.length > 0 && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "44px 24px 32px" }}>
+              <div style={{ textAlign: "center", marginBottom: 24 }}>
+                <span style={{
+                  fontSize: 22, fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.2,
+                  background: "linear-gradient(90deg,#4ade80,#818cf8,#f59e0b)",
+                  WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+                }}>🎯 {title}</span>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {filledPicks.map(p => (
+                  <div key={p.n} style={{
+                    display: "flex", alignItems: "center", gap: 14,
+                    background: "linear-gradient(135deg, #4ade8014, #818cf80a)",
+                    border: "1.5px solid #4ade8033", borderRadius: 10, padding: "12px 16px",
+                  }}>
+                    <div style={{
+                      width: 28, height: 28, borderRadius: "50%", background: "#4ade8022",
+                      display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                    }}>
+                      <span style={{ fontSize: 14, fontWeight: 900, color: "#4ade80" }}>{p.n}</span>
+                    </div>
+                    <span style={{ fontSize: 15, color: "#f0f0f0", fontWeight: 700 }}>{p.text}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ textAlign: "center", marginTop: 20 }}>
+                <span style={{ fontSize: 11.5, color: "#94a3b8" }}>My own forecast for the week — not betting advice.</span>
+              </div>
+            </div>
+          </GraphicCard>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 function TransferAlertGraphic() {
   const cardRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
@@ -10105,6 +10197,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "pitch",    label: "⚽ Pitch View" },
     { id: "teamnews", label: "📋 Lineup, Subs & Suspensions" },
     { id: "transferalert", label: "🚨 Transfer Alerts" },
+    { id: "weeklypicks", label: "🎯 Weekly Top Picks" },
     { id: "h2h",      label: "🆚 Player H2H" },
     { id: "matchh2h", label: "📋 Match H2H" },
     { id: "motm", label: "⭐ Man of the Match" },
@@ -10171,6 +10264,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "pitch"    && <MatchPitchViewGraphic />}
       {activeSection === "teamnews" && <LineupSubsSuspensionsGraphic />}
       {activeSection === "transferalert" && <TransferAlertGraphic />}
+      {activeSection === "weeklypicks" && <WeeklyPicksGraphic />}
       {activeSection === "h2h"      && <PlayerH2HGraphic />}
       {activeSection === "matchh2h" && <MatchH2HGraphic />}
       {activeSection === "motm" && <ManOfMatchGraphic />}
