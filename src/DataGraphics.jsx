@@ -3397,7 +3397,7 @@ function WeeklyPicksResultsGraphic() {
                   const bg = p.hit === true ? "linear-gradient(135deg, #4ade801c, transparent)" : p.hit === false ? "linear-gradient(135deg, #f8717118, transparent)" : "#13131f";
                   return (
                     <div key={p.n} style={{
-                      display: "flex", alignItems: "center", gap: 16,
+                      display: "flex", alignItems: "center", gap: 16, flexWrap: "nowrap",
                       background: bg, border: `2px solid ${border}`, borderRadius: 14, padding: "16px 20px",
                     }}>
                       <div style={{
@@ -3415,7 +3415,7 @@ function WeeklyPicksResultsGraphic() {
                           {p.team2?.logo && <img src={p.team2.logo} alt="" crossOrigin="anonymous" style={{ width: 28, height: 28, objectFit: "contain" }} />}
                         </div>
                       )}
-                      <span style={{ fontSize: 19, color: "#f0f0f0", fontWeight: 800, flex: 1, lineHeight: 1.3 }}>{p.text}</span>
+                      <span style={{ fontSize: 19, color: "#f0f0f0", fontWeight: 800, flex: 1, minWidth: 0, lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.text}</span>
                       <span style={{ fontSize: 26, flexShrink: 0 }}>{p.hit === true ? "✅" : p.hit === false ? "❌" : ""}</span>
                     </div>
                   );
@@ -3557,7 +3557,7 @@ function WeeklyPicksGraphic() {
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {filledPicks.map(p => (
                   <div key={p.n} style={{
-                    display: "flex", alignItems: "center", gap: 16,
+                    display: "flex", alignItems: "center", gap: 16, flexWrap: "nowrap",
                     background: "linear-gradient(135deg, #4ade801c, #818cf80f)",
                     border: "2px solid #4ade8044", borderRadius: 14, padding: "16px 20px",
                     boxShadow: "0 2px 10px rgba(74,222,128,0.08)",
@@ -3577,7 +3577,7 @@ function WeeklyPicksGraphic() {
                         {p.team2?.logo && <img src={p.team2.logo} alt="" crossOrigin="anonymous" style={{ width: 28, height: 28, objectFit: "contain" }} />}
                       </div>
                     )}
-                    <span style={{ fontSize: 19, color: "#f0f0f0", fontWeight: 800, lineHeight: 1.3 }}>{p.text}</span>
+                    <span style={{ fontSize: 19, color: "#f0f0f0", fontWeight: 800, flex: 1, minWidth: 0, lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.text}</span>
                   </div>
                 ))}
               </div>
