@@ -3364,6 +3364,23 @@ function WeeklyPicksResultsGraphic() {
               <CrestSearch i={i} slot={1} />
               <CrestSearch i={i} slot={2} />
             </div>
+            {teams1[i] && teams2[i] && (
+              <select
+                onChange={e => { if (e.target.value) updatePick(i, e.target.value); e.target.value = ""; }}
+                value=""
+                style={{ marginLeft: 28, background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#818cf8", fontSize: 12, padding: "6px 10px", outline: "none", fontFamily: "inherit" }}
+              >
+                <option value="">Quick fill an outcome...</option>
+                <option value={`${teams1[i].name} to Win`}>{teams1[i].name} to Win</option>
+                <option value={`${teams2[i].name} to Win`}>{teams2[i].name} to Win</option>
+                <option value="Draw">Draw</option>
+                <option value={`${teams1[i].name} to Win or Draw`}>{teams1[i].name} to Win or Draw</option>
+                <option value={`${teams2[i].name} to Win or Draw`}>{teams2[i].name} to Win or Draw</option>
+                <option value="Both Teams to Score">Both Teams to Score</option>
+                <option value="Over 2.5 Goals">Over 2.5 Goals</option>
+                <option value="Under 2.5 Goals">Under 2.5 Goals</option>
+              </select>
+            )}
           </div>
         ))}
       </div>
@@ -3538,6 +3555,23 @@ function WeeklyPicksGraphic() {
               <CrestSearch i={i} slot={1} />
               <CrestSearch i={i} slot={2} />
             </div>
+            {teams1[i] && teams2[i] && (
+              <select
+                onChange={e => { if (e.target.value) updatePick(i, e.target.value); e.target.value = ""; }}
+                value=""
+                style={{ marginLeft: 28, background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#818cf8", fontSize: 12, padding: "6px 10px", outline: "none", fontFamily: "inherit" }}
+              >
+                <option value="">Quick fill an outcome...</option>
+                <option value={`${teams1[i].name} to Win`}>{teams1[i].name} to Win</option>
+                <option value={`${teams2[i].name} to Win`}>{teams2[i].name} to Win</option>
+                <option value="Draw">Draw</option>
+                <option value={`${teams1[i].name} to Win or Draw`}>{teams1[i].name} to Win or Draw</option>
+                <option value={`${teams2[i].name} to Win or Draw`}>{teams2[i].name} to Win or Draw</option>
+                <option value="Both Teams to Score">Both Teams to Score</option>
+                <option value="Over 2.5 Goals">Over 2.5 Goals</option>
+                <option value="Under 2.5 Goals">Under 2.5 Goals</option>
+              </select>
+            )}
           </div>
         ))}
       </div>
