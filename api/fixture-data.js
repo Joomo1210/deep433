@@ -113,7 +113,24 @@ export default async function handler(req, res) {
           saves:           parseStat(team, "Goalkeeper Saves"),
           passesTotal:     parseStat(team, "Total passes"),
           passesAccurate:  parseStat(team, "Passes accurate"),
-          passAccuracy:    parseStat(team, "Passes %"),
+          // "Passes %" isn't always returned by API-Football as its own stat
+          // entry for every fixture/competition — when that happens,
+          // parseStat correctly comes back null, but the frontend was
+          // displaying that as a literal "0%" instead of a missing value,
+          // even though Total Passes and Passes Completed (which ARE
+          // reliably present) contain everything needed to work the real
+          // number out directly. Falls back to computing it ourselves
+          // rather than depending on a field that isn't always there.
+          passAccuracy:    (() => {
+            const direct = parseStat(team, "Passes %");
+            if (direct !== null) return direct;
+            const total = parseStat(team, "Total passes");
+            const accurate = parseStat(team, "Passes accurate");
+            if (total && accurate !== null && Number(total) > 0) {
+              return `${Math.round((Number(accurate) / Number(total)) * 100)}%`;
+            }
+            return null;
+          })(),
         }
       }));
 
