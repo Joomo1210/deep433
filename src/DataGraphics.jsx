@@ -301,6 +301,15 @@ function useCountUp(target, duration = 900, trigger = true) {
 
 // ─── Animated comparison bar (home vs away) ──────────────────────────────────
 function AnimatedStatBar({ label, homeVal, awayVal, unit = "", animate }) {
+  // Only render if at least one side actually has real data — the previous
+  // `parseFloat(x) || 0` pattern silently turned a genuinely missing value
+  // (null/undefined) into a displayed "0", identical to a real zero. That's
+  // exactly how "0% Pass Accuracy" kept showing up even when the underlying
+  // field simply wasn't returned for a fixture, rather than truly being 0.
+  if ((homeVal === null || homeVal === undefined || homeVal === "") &&
+      (awayVal === null || awayVal === undefined || awayVal === "")) {
+    return null;
+  }
   const hv = parseFloat(homeVal) || 0;
   const av = parseFloat(awayVal) || 0;
   const total = hv + av || 1;
