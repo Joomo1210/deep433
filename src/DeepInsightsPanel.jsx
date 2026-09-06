@@ -166,6 +166,20 @@ export default function DeepInsightsPanel({ insights, homeTeam, awayTeam, showHe
               <div style={{ fontSize: 32, fontWeight: 900, color: "#4ade80", letterSpacing: -0.5 }}>{userPrediction || "—"}</div>
             </div>
           </div>
+          {(insights.outcome || insights.overUnderCall) && (
+            <div style={{ display: "flex", justifyContent: "center", gap: 10, marginTop: 10, paddingTop: 10, borderTop: "1px solid #818cf822" }}>
+              {insights.outcome && (
+                <div style={{ background: "#818cf822", borderRadius: 8, padding: "5px 12px" }}>
+                  <span style={{ fontSize: 12, color: "#818cf8", fontWeight: 700 }}>{insights.outcome}</span>
+                </div>
+              )}
+              {insights.overUnderCall && (
+                <div style={{ background: "#818cf822", borderRadius: 8, padding: "5px 12px" }}>
+                  <span style={{ fontSize: 12, color: "#818cf8", fontWeight: 700 }}>{insights.overUnderCall} Goals</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
