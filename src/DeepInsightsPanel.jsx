@@ -118,7 +118,7 @@ function getH2HResult(match, perspective) {
   return perspWon ? "W" : "L";
 }
 
-export default function DeepInsightsPanel({ insights, homeTeam, awayTeam, showHeader = true, aiPrediction, userPrediction, leagueId }) {
+export default function DeepInsightsPanel({ insights, homeTeam, awayTeam, showHeader = true, aiPrediction, userPrediction, userOutcome, userOverUnder, leagueId }) {
   const [realForm, setRealForm] = useState({ home: null, away: null });
 
   // Fetch real W/D/L form from team-stats endpoint (more accurate than the API's percentage field)
@@ -166,16 +166,34 @@ export default function DeepInsightsPanel({ insights, homeTeam, awayTeam, showHe
               <div style={{ fontSize: 32, fontWeight: 900, color: "#4ade80", letterSpacing: -0.5 }}>{userPrediction || "—"}</div>
             </div>
           </div>
-          {(insights.outcome || insights.overUnderCall) && (
-            <div style={{ display: "flex", justifyContent: "center", gap: 10, marginTop: 10, paddingTop: 10, borderTop: "1px solid #818cf822" }}>
-              {insights.outcome && (
-                <div style={{ background: "#818cf822", borderRadius: 8, padding: "5px 12px" }}>
-                  <span style={{ fontSize: 12, color: "#818cf8", fontWeight: 700 }}>{insights.outcome}</span>
+          {(insights.outcome || insights.overUnderCall || userOutcome || userOverUnder) && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 10, paddingTop: 10, borderTop: "1px solid #818cf822" }}>
+              {(insights.outcome || userOutcome) && (
+                <div style={{ display: "flex", justifyContent: "center", gap: 8, alignItems: "center" }}>
+                  {insights.outcome && (
+                    <div style={{ background: "#818cf822", borderRadius: 8, padding: "5px 12px" }}>
+                      <span style={{ fontSize: 12, color: "#818cf8", fontWeight: 700 }}>🤖 {insights.outcome}</span>
+                    </div>
+                  )}
+                  {userOutcome && (
+                    <div style={{ background: "#4ade8022", borderRadius: 8, padding: "5px 12px" }}>
+                      <span style={{ fontSize: 12, color: "#4ade80", fontWeight: 700 }}>👤 {userOutcome}</span>
+                    </div>
+                  )}
                 </div>
               )}
-              {insights.overUnderCall && (
-                <div style={{ background: "#818cf822", borderRadius: 8, padding: "5px 12px" }}>
-                  <span style={{ fontSize: 12, color: "#818cf8", fontWeight: 700 }}>{insights.overUnderCall} Goals</span>
+              {(insights.overUnderCall || userOverUnder) && (
+                <div style={{ display: "flex", justifyContent: "center", gap: 8, alignItems: "center" }}>
+                  {insights.overUnderCall && (
+                    <div style={{ background: "#818cf822", borderRadius: 8, padding: "5px 12px" }}>
+                      <span style={{ fontSize: 12, color: "#818cf8", fontWeight: 700 }}>🤖 {insights.overUnderCall} Goals</span>
+                    </div>
+                  )}
+                  {userOverUnder && (
+                    <div style={{ background: "#4ade8022", borderRadius: 8, padding: "5px 12px" }}>
+                      <span style={{ fontSize: 12, color: "#4ade80", fontWeight: 700 }}>👤 {userOverUnder} Goals</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
