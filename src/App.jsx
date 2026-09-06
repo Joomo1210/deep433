@@ -534,6 +534,8 @@ export default function FootballPredictor() {
   const [awayTeam, setAwayTeam] = useState("");
   const [userHome, setUserHome] = useState("");
   const [userAway, setUserAway] = useState("");
+  const [userOutcome, setUserOutcome] = useState("");
+  const [userOverUnder, setUserOverUnder] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [userPrediction, setUserPrediction] = useState("");
@@ -1244,7 +1246,7 @@ if (!session && !guestMode) {
                 <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Your Prediction</div>
                 <div style={{ fontSize: 20, fontWeight: 800, color: "#f0f0f0", marginBottom: 4 }}>{homeTeam} vs {awayTeam}</div>
                 <div style={{ fontSize: 16, color: "#e2e8f0", marginBottom: 28 }}>{leagueLabel}</div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 28 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 20 }}>
                   <div style={{ textAlign: "center" }}>
                     <div style={{ fontSize: 15, color: "#4ade80", fontWeight: 700, marginBottom: 8, textTransform: "uppercase" }}>{homeTeam}</div>
                     <input className="score-input" type="number" min="0" max="20" placeholder="0" value={userHome} onChange={e => setUserHome(e.target.value)} />
@@ -1253,6 +1255,50 @@ if (!session && !guestMode) {
                   <div style={{ textAlign: "center" }}>
                     <div style={{ fontSize: 15, color: "#f87171", fontWeight: 700, marginBottom: 8, textTransform: "uppercase" }}>{awayTeam}</div>
                     <input className="score-input" type="number" min="0" max="20" placeholder="0" value={userAway} onChange={e => setUserAway(e.target.value)} />
+                  </div>
+                </div>
+
+                {/* Optional — a scoreline is the only required pick, these
+                    two just let the same prediction be tracked as an
+                    outcome and a goals total too, so a near-miss on the
+                    exact score doesn't have to mean a total miss overall. */}
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6, textAlign: "center" }}>Outcome (optional)</div>
+                  <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
+                    {[
+                      { key: "Home Win", label: homeTeam },
+                      { key: "Draw", label: "Draw" },
+                      { key: "Away Win", label: awayTeam },
+                    ].map(o => (
+                      <button
+                        key={o.key}
+                        onClick={() => setUserOutcome(userOutcome === o.key ? "" : o.key)}
+                        style={{
+                          background: userOutcome === o.key ? "#4ade8022" : "none",
+                          border: `1.5px solid ${userOutcome === o.key ? "#4ade80" : "#2a2a3a"}`,
+                          borderRadius: 8, color: userOutcome === o.key ? "#4ade80" : "#e2e8f0",
+                          cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "7px 12px",
+                        }}
+                      >{o.label}</button>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6, textAlign: "center" }}>Goals (optional)</div>
+                  <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
+                    {["Over 2.5", "Under 2.5"].map(g => (
+                      <button
+                        key={g}
+                        onClick={() => setUserOverUnder(userOverUnder === g ? "" : g)}
+                        style={{
+                          background: userOverUnder === g ? "#4ade8022" : "none",
+                          border: `1.5px solid ${userOverUnder === g ? "#4ade80" : "#2a2a3a"}`,
+                          borderRadius: 8, color: userOverUnder === g ? "#4ade80" : "#e2e8f0",
+                          cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "7px 12px",
+                        }}
+                      >{g} Goals</button>
+                    ))}
                   </div>
                 </div>
                 {error && <div style={{ color: "#f87171", fontSize: 16, marginBottom: 12 }}>{error}</div>}
@@ -1374,7 +1420,7 @@ if (!session && !guestMode) {
                 )}
                 {deepInsights && (
                   <div className="card" style={{ borderColor: "#3730a322", background: "#0f0f1f" }}>
-                    <DeepInsightsPanel insights={deepInsights} homeTeam={homeTeam} awayTeam={awayTeam} aiPrediction={result?.scoreline} userPrediction={userPrediction} leagueId={selectedLeague} />
+                    <DeepInsightsPanel insights={deepInsights} homeTeam={homeTeam} awayTeam={awayTeam} aiPrediction={result?.scoreline} userPrediction={userPrediction} userOutcome={userOutcome} userOverUnder={userOverUnder} leagueId={selectedLeague} />
                   </div>
                 )}
                 <div className="card" style={{ borderColor: "#4ade8033" }}>
