@@ -30,11 +30,11 @@ export default async function handler(req, res) {
   // Every prediction this version writes is tagged with this marker; a cached
   // row missing it is treated as a cache miss so it gets regenerated fresh
   // (and the fresh, versioned result then overwrites the stale row below).
-  // Bumped to 5: version 4 fixed the scoreline margin to use attack/defence
-  // dominance, but left confidence computed only from the win-draw-away
-  // percentage gap — so a card could show "Low Confidence" right next to a
-  // fairly decisive scoreline, an open contradiction on the same card.
-  const PREDICTION_ENGINE_VERSION = 5;
+  // Bumped to 6: adds outcome-based overUnderCall and predictedTotalGoals
+  // to the response — cached rows from before this need to regenerate to
+  // pick up the new fields, otherwise the Win/Draw and Over/Under card
+  // sections would have nothing to show for any fixture already cached.
+  const PREDICTION_ENGINE_VERSION = 6;
 
   const skipCache = (req.method === 'GET' ? req.query.skipCache : req.body.skipCache) === 'true';
   if (!skipCache) {
@@ -246,6 +246,13 @@ export default async function handler(req, res) {
     // today, but kept on the object in case it's ever worth flagging.
     scorelineFromGoalsModel: homeGoals != null && awayGoals != null,
     outcome,
+    // Derived from the same finalHomeGoals/finalAwayGoals already trusted
+    // for the scoreline itself, rather than the raw under_over field below
+    // — that field can carry the same kind of unreliable betting-line
+    // value (e.g. "-3.5") that caused the original broken-scoreline bug,
+    // so it's kept on the object but not used to build this call.
+    overUnderCall: (finalHomeGoals + finalAwayGoals) > 2.5 ? 'Over 2.5' : 'Under 2.5',
+    predictedTotalGoals: finalHomeGoals + finalAwayGoals,
     confidence,
     keyBattle,
     verdict,
