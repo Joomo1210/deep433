@@ -4342,19 +4342,36 @@ function ManOfMatchGraphic() {
       {selectedPlayer && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "48px 20px 24px", textAlign: "center" }}>
-              <div style={{ fontSize: 16, color: "#fbbf24", fontWeight: 900, textTransform: "uppercase", letterSpacing: 2, marginBottom: 6 }}>⭐ Man of the Match</div>
+            <div style={{
+              padding: "48px 20px 28px", textAlign: "center",
+              background: "linear-gradient(160deg, #1a1400 0%, #0a0a12 55%)",
+            }}>
+              <div style={{
+                fontSize: 17, fontWeight: 900, textTransform: "uppercase", letterSpacing: 2.5, marginBottom: 6,
+                background: "linear-gradient(90deg,#fbbf24,#f59e0b,#fbbf24)",
+                WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+              }}>⭐ Man of the Match</div>
               <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 4 }}>{selectedFixture.home} vs {selectedFixture.away}</div>
               {selectedFixture.leagueLabel && <div style={{ fontSize: 11, color: "#818cf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 18 }}>{selectedFixture.leagueLabel}</div>}
 
-              {selectedPlayer.photo && <img src={selectedPlayer.photo} alt="" crossOrigin="anonymous" style={{ width: 120, height: 120, borderRadius: "50%", objectFit: "cover", border: "4px solid #fbbf24", margin: "0 auto 14px" }} />}
-              <div style={{ fontSize: 26, fontWeight: 900, color: "#f0f0f0", marginBottom: 6 }}>{selectedPlayer.name}</div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 20 }}>
+              {selectedPlayer.photo && (
+                <div style={{ position: "relative", width: 130, height: 130, margin: "0 auto 14px" }}>
+                  <div style={{ position: "absolute", inset: -4, borderRadius: "50%", background: "linear-gradient(135deg,#fbbf24,#f59e0b)", filter: "blur(6px)", opacity: 0.6 }} />
+                  <img src={selectedPlayer.photo} alt="" crossOrigin="anonymous" style={{ position: "relative", width: 130, height: 130, borderRadius: "50%", objectFit: "cover", border: "4px solid #fbbf24" }} />
+                </div>
+              )}
+              <div style={{ fontSize: 27, fontWeight: 900, color: "#f0f0f0", marginBottom: 6 }}>{selectedPlayer.name}</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
                 {selectedPlayer.teamLogo && <img src={selectedPlayer.teamLogo} alt="" crossOrigin="anonymous" style={{ width: 28, height: 28, objectFit: "contain" }} />}
                 <span style={{ fontSize: 15, color: "#e2e8f0", fontWeight: 600 }}>{selectedPlayer.team} · {selectedPlayer.position}</span>
+                {selectedPlayer.minutesPlayed != null && (
+                  <span style={{ fontSize: 12, color: "#fbbf24", fontWeight: 700, background: "#fbbf2422", borderRadius: 6, padding: "2px 8px" }}>
+                    ⏱ {selectedPlayer.minutesPlayed}&apos;
+                  </span>
+                )}
               </div>
 
-              <div style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)", borderRadius: 12, padding: "12px 26px", display: "inline-block", marginBottom: 20 }}>
+              <div style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)", borderRadius: 12, padding: "12px 26px", display: "inline-block", marginBottom: 22, boxShadow: "0 4px 18px rgba(251,191,36,0.25)" }}>
                 <div style={{ fontSize: 10, color: "#0a0f0a", fontWeight: 700, textTransform: "uppercase" }}>Rating</div>
                 <input
                   type="number" step="0.01" min="0" max="10"
@@ -4366,9 +4383,12 @@ function ManOfMatchGraphic() {
 
               <div style={{ display: "grid", gridTemplateColumns: `repeat(${motmStatsForPosition(selectedPlayer).length}, 1fr)`, gap: 10, textAlign: "left", maxWidth: motmStatsForPosition(selectedPlayer).length === 1 ? 160 : "100%", margin: "0 auto" }}>
                 {motmStatsForPosition(selectedPlayer).map(s => (
-                  <div key={s.label} style={{ background: "#13131f", borderRadius: 10, padding: "10px 6px", textAlign: "center" }}>
-                    <div style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>{s.value ?? "—"}</div>
-                    <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2, textTransform: "uppercase" }}>{s.label}</div>
+                  <div key={s.label} style={{
+                    background: "linear-gradient(135deg, #fbbf2414, #13131f)",
+                    border: "1px solid #fbbf2433", borderRadius: 10, padding: "11px 6px", textAlign: "center",
+                  }}>
+                    <div style={{ fontSize: 21, fontWeight: 900, color: "#fbbf24" }}>{s.value ?? "—"}</div>
+                    <div style={{ fontSize: 11, color: "#e2e8f0", marginTop: 2, textTransform: "uppercase" }}>{s.label}</div>
                   </div>
                 ))}
               </div>
