@@ -3265,12 +3265,184 @@ const PREDICTION_CATEGORY_POOL = [
   { icon: "⏰", name: "Goal in Last 80-90 Mins?" },
 ];
 
-// ─── TRANSFER ALERT CARD (two players, joined by &, not VS) ────────────────
-// ─── WEEKLY TOP PICKS (up to 10 free-text predictions, one card) ───────────
-// Purely a content graphic for the host's own weekly picks — free text per
-// row (e.g. "Arsenal to Win", "Barcelona Win/Draw"), not tied to the live
-// prediction contest's structured categories, and not framed as betting
-// advice — this is the host's own forecast, for engagement, not a market.
+// ─── AWARD RACE COMPARISON (up to 10 named nominees, season stats) ─────────
+// For comparing named award nominees (Goalkeeper of the Year, Ballon d'Or
+// shortlists, etc.) side by side on real season numbers — search each
+// player via their team, same proven flow as the Battle and Transfer
+// Alerts cards, then pull real season stats for each one automatically.
+function AwardRaceGraphic() {
+  const cardRef = useRef(null);
+  const [downloading, setDownloading] = useState(false);
+  const [title, setTitle] = useState("Award Race — Season Numbers");
+  const NUM_SLOTS = 10;
+
+  const [searches, setSearches] = useState(Array(NUM_SLOTS).fill(""));
+  const [suggestions, setSuggestions] = useState(Array(NUM_SLOTS).fill([]));
+  const [teams, setTeams] = useState(Array(NUM_SLOTS).fill(null));
+  const [squads, setSquads] = useState(Array(NUM_SLOTS).fill([]));
+  const [playerIds, setPlayerIds] = useState(Array(NUM_SLOTS).fill(""));
+  const [players, setPlayers] = useState(Array(NUM_SLOTS).fill(null));
+  const [loadingSlot, setLoadingSlot] = useState(null);
+
+  const searchTeam = async (query, i) => {
+    setSearches(prev => prev.map((s, idx) => idx === i ? query : s));
+    if (query.length < 3) {
+      setSuggestions(prev => prev.map((s, idx) => idx === i ? [] : s));
+      return;
+    }
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(query)}`);
+      const d = await r.json();
+      setSuggestions(prev => prev.map((s, idx) => idx === i ? (d.teams || []) : s));
+    } catch {}
+  };
+
+  const selectTeam = async (t, i) => {
+    setLoadingSlot(i);
+    setTeams(prev => prev.map((x, idx) => idx === i ? t : x));
+    setSuggestions(prev => prev.map((x, idx) => idx === i ? [] : x));
+    setSearches(prev => prev.map((x, idx) => idx === i ? t.name : x));
+    setPlayerIds(prev => prev.map((x, idx) => idx === i ? "" : x));
+    setPlayers(prev => prev.map((x, idx) => idx === i ? null : x));
+    try {
+      const r = await fetch(`/api/team-stats?mode=teamsquad&teamId=${t.id}`);
+      const d = await r.json();
+      setSquads(prev => prev.map((x, idx) => idx === i ? (d.players || []) : x));
+    } catch {}
+    setLoadingSlot(null);
+  };
+
+  const selectPlayer = async (playerId, i) => {
+    setPlayerIds(prev => prev.map((x, idx) => idx === i ? playerId : x));
+    const squadPlayer = squads[i].find(p => String(p.id) === String(playerId));
+    if (!squadPlayer) return;
+    setLoadingSlot(i);
+    try {
+      const r = await fetch(`/api/team-stats?mode=playerseason&playerId=${playerId}&season=2026`);
+      const d = await r.json();
+      if (d.available) {
+        setPlayers(prev => prev.map((x, idx) => idx === i ? d : x));
+      }
+    } catch {}
+    setLoadingSlot(null);
+  };
+
+  const filledPlayers = players.filter(Boolean);
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, `deep433-award-race.png`, "#0a0a12", transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Compare up to 10 named nominees on real season numbers. Search each one's team, pick them from the squad, their season stats load automatically.</div>
+
+      <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Card title (e.g. Goalkeeper of the Year — Season Numbers)" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {Array.from({ length: NUM_SLOTS }).map((_, i) => (
+          <div key={i} style={{ display: "flex", flexDirection: "column", gap: 6, borderBottom: "1px solid #23232f", paddingBottom: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, width: 18, flexShrink: 0 }}>{i + 1}.</span>
+              <div style={{ position: "relative", flex: 1 }}>
+                <input
+                  value={searches[i]}
+                  onChange={e => searchTeam(e.target.value, i)}
+                  placeholder="Search their team..."
+                  style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+                />
+                {suggestions[i]?.length > 0 && (
+                  <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 20, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, marginTop: 4, maxHeight: 160, overflowY: "auto" }}>
+                    {suggestions[i].map(t => (
+                      <div key={t.id} onClick={() => selectTeam(t, i)} style={{ padding: "8px 12px", cursor: "pointer", fontSize: 13, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 8 }}>
+                        {t.logo && <img src={t.logo} alt="" style={{ width: 16, height: 16, objectFit: "contain" }} />}
+                        {t.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            {teams[i] && (
+              <select
+                value={playerIds[i]}
+                onChange={e => selectPlayer(e.target.value, i)}
+                style={{ marginLeft: 26, background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "6px 10px", outline: "none", fontFamily: "inherit" }}
+              >
+                <option value="">{squads[i].length ? "— Select player —" : "Loading squad..."}</option>
+                {squads[i].map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            )}
+            {loadingSlot === i && <span style={{ marginLeft: 26, fontSize: 11, color: "#94a3b8" }}>Loading...</span>}
+          </div>
+        ))}
+      </div>
+
+      {filledPlayers.length > 0 && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "44px 20px 28px" }}>
+              <div style={{ textAlign: "center", marginBottom: 22 }}>
+                <span style={{
+                  fontSize: 22, fontWeight: 900, textTransform: "uppercase", letterSpacing: 1,
+                  background: "linear-gradient(90deg,#4ade80,#818cf8,#f59e0b)",
+                  WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+                }}>🏆 {title}</span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {filledPlayers.map((p, idx) => (
+                  <div key={idx} style={{ display: "flex", alignItems: "center", gap: 12, background: "#13131f", border: "1px solid #23232f", borderRadius: 10, padding: "10px 14px", flexWrap: "nowrap" }}>
+                    {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />}
+                    <div style={{ minWidth: 0, flex: "0 0 120px" }}>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                      <div style={{ fontSize: 11, color: "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.team}</div>
+                    </div>
+                    <div style={{ display: "flex", gap: 10, flex: 1, justifyContent: "flex-end", flexWrap: "wrap" }}>
+                      {(p.position === "Goalkeeper") ? (
+                        <>
+                          <StatChip label="Saves" value={p.saves} />
+                          <StatChip label="Conceded" value={p.goalsConceded} />
+                          <StatChip label="Apps" value={p.appearances} />
+                        </>
+                      ) : (
+                        <>
+                          <StatChip label="Goals" value={p.goals} />
+                          <StatChip label="Assists" value={p.assists} />
+                          <StatChip label="Rating" value={p.rating != null ? parseFloat(p.rating).toFixed(1) : null} />
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </GraphicCard>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+function StatChip({ label, value }) {
+  if (value == null) return null;
+  return (
+    <div style={{ textAlign: "center" }}>
+      <div style={{ fontSize: 16, fontWeight: 900, color: "#4ade80" }}>{value}</div>
+      <div style={{ fontSize: 10, color: "#94a3b8", textTransform: "uppercase" }}>{label}</div>
+    </div>
+  );
+}
+
 // ─── WEEKLY PICKS RESULTS (same up to 10 picks, hit/miss marked) ────────────
 // Companion to WeeklyPicksGraphic, posted after the matches conclude —
 // re-enter (or paste) the same picks and mark each one correct or missed,
@@ -10538,6 +10710,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "transferalert", label: "🚨 Transfer Alerts" },
     { id: "weeklypicks", label: "🎯 Weekly Top Picks" },
     { id: "weeklyresults", label: "📊 Weekly Picks Results" },
+    { id: "awardrace", label: "🏆 Award Race Comparison" },
     { id: "h2h",      label: "🆚 Player H2H" },
     { id: "matchh2h", label: "📋 Match H2H" },
     { id: "motm", label: "⭐ Man of the Match" },
@@ -10606,6 +10779,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "transferalert" && <TransferAlertGraphic />}
       {activeSection === "weeklypicks" && <WeeklyPicksGraphic />}
       {activeSection === "weeklyresults" && <WeeklyPicksResultsGraphic />}
+      {activeSection === "awardrace" && <AwardRaceGraphic />}
       {activeSection === "h2h"      && <PlayerH2HGraphic />}
       {activeSection === "matchh2h" && <MatchH2HGraphic />}
       {activeSection === "motm" && <ManOfMatchGraphic />}
