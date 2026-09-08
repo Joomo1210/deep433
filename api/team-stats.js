@@ -476,6 +476,13 @@ export default async function handler(req, res) {
             keyPasses: s.passes?.key,
             passAccuracy: s.passes?.accuracy,
             rating: s.games?.rating,
+            // Added so goalkeeper stats can actually be diagnosed — every
+            // other field here (tackles, key passes, duels) is near-
+            // meaningless for a keeper, which made their stats look broken
+            // when really the two fields that matter for their role just
+            // weren't visible in this debug view at all.
+            saves: s.goals?.saves,
+            goalsConceded: s.goals?.conceded,
           })),
         });
       }
@@ -518,6 +525,13 @@ export default async function handler(req, res) {
         duelsWon: sum("duels.won"),
         yellowCards: sum("cards.yellow"),
         redCards: sum("cards.red"),
+        // Added for goalkeeper comparisons specifically — API-Football
+        // nests these oddly under "goals" even though they're clearly
+        // goalkeeping stats, not scoring ones. Not independently verified
+        // this session; worth confirming the field paths return real
+        // numbers once deployed, same caution as the new league IDs.
+        saves: sum("goals.saves"),
+        goalsConceded: sum("goals.conceded"),
         competitions: statsArr.length,
       });
     } catch (err) {
