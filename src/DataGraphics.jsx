@@ -75,6 +75,19 @@ const LEAGUE_OPTIONS = [
   { id: "serieb", label: "Serie B" },
   { id: "npfl", label: "NPFL" },
   { id: "scotprem", label: "Scotland Premiership" },
+  { id: "primeiraliga", label: "Primeira Liga (Portugal)" },
+  { id: "eredivisie", label: "Eredivisie (Netherlands)" },
+  { id: "belgianpro", label: "Belgian Pro League" },
+  { id: "austrianbl", label: "Austrian Bundesliga" },
+  { id: "superleaguegr", label: "Super League Greece" },
+  { id: "superlig", label: "Süper Lig (Turkey)" },
+  { id: "ukraine", label: "Ukrainian Premier League" },
+  { id: "swisssl", label: "Swiss Super League" },
+  { id: "czechfl", label: "Czech First League" },
+  { id: "croatiahnl", label: "Croatian HNL" },
+  { id: "danishsl", label: "Danish Superliga" },
+  { id: "eliteserien", label: "Eliteserien (Norway)" },
+  { id: "serbiasl", label: "Serbian SuperLiga" },
 ];
 
 // ─── FIXTURE PICKER ──────────────────────────────────────────────────────────
