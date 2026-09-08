@@ -23,6 +23,25 @@ const LEAGUE_MAP = {
   npfl:         { id: 399, season: 2026 }, // Nigeria
   scotprem:     { id: 179, season: 2026 }, // Scotland
   segunda:      { id: 141, season: 2026 }, // Spain Segunda División
+  // Additional European leagues whose clubs regularly play Champions
+  // League football — added to fixtures.js and the frontend selector
+  // earlier, but missed here, this file's own separate league map, which
+  // is why "Load Team Stats" failed for every one of them despite the
+  // fixture picker itself working fine. IDs kept identical to fixtures.js
+  // for consistency.
+  primeiraliga: { id: 94,  season: 2026 },
+  eredivisie:   { id: 88,  season: 2026 },
+  belgianpro:   { id: 144, season: 2026 },
+  austrianbl:   { id: 218, season: 2026 },
+  superleaguegr:{ id: 197, season: 2026 },
+  superlig:     { id: 203, season: 2026 },
+  ukraine:      { id: 333, season: 2026 },
+  swisssl:      { id: 207, season: 2026 },
+  czechfl:      { id: 345, season: 2026 },
+  croatiahnl:   { id: 210, season: 2026 },
+  danishsl:     { id: 119, season: 2026 },
+  eliteserien:  { id: 103, season: 2026 },
+  serbiasl:     { id: 286, season: 2026 },
 };
 
 export default async function handler(req, res) {
