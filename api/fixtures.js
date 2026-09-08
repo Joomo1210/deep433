@@ -26,6 +26,23 @@ const LEAGUE_MAP = {
   serieb:       { id: 136, season: 2026 },
   npfl:         { id: 399, season: 2026 },
   scotprem:     { id: 179, season: 2026 },
+  // Additional European leagues whose clubs regularly play Champions
+  // League football, beyond the big 5 already covered above. League IDs
+  // are from general knowledge, not independently verified this session —
+  // worth confirming each one pulls real fixtures once deployed.
+  primeiraliga: { id: 94,  season: 2026 }, // Portugal — Porto, Sporting, Benfica
+  eredivisie:   { id: 88,  season: 2026 }, // Netherlands — Ajax, PSV, Feyenoord
+  belgianpro:   { id: 144, season: 2026 }, // Belgium — Club Brugge, Union SG
+  austrianbl:   { id: 218, season: 2026 }, // Austria — Lask, Red Bull Salzburg
+  superleaguegr:{ id: 197, season: 2026 }, // Greece — AEK Athens, Olympiacos, PAOK
+  superlig:     { id: 203, season: 2026 }, // Turkey — Galatasaray, Fenerbahce
+  ukraine:      { id: 333, season: 2026 }, // Ukraine — Shakhtar Donetsk
+  swisssl:      { id: 207, season: 2026 }, // Switzerland — Young Boys, Basel
+  czechfl:      { id: 345, season: 2026 }, // Czech Republic — Slavia Prague, Sparta Prague
+  croatiahnl:   { id: 210, season: 2026 }, // Croatia — Dinamo Zagreb
+  danishsl:     { id: 119, season: 2026 }, // Denmark — FC Copenhagen
+  eliteserien:  { id: 103, season: 2026 }, // Norway — Bodo/Glimt
+  serbiasl:     { id: 286, season: 2026 }, // Serbia — Red Star Belgrade
 };
 
 function mapStatus(short) {
