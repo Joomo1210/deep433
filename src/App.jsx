@@ -826,16 +826,25 @@ useEffect(() => {
       setStep(3);
       const aiPrediction = (parsed.scoreline || "").replace(" - ", "-").replace(" – ", "-");
       if (session) {
-        const { data: saved } = await supabase.from("predictions").insert({
+        const basePayload = {
           user_id: session.user.id, home_team: homeTeam, away_team: awayTeam,
           user_prediction: up, ai_prediction: aiPrediction, ai_verdict: parsed.verdict,
-          // Added — these were being collected on the submission form but
-          // never actually saved, so any later view of a past prediction
-          // (like the Graphics tab's Brief Insights card) had no way to
-          // show what outcome or goals total was picked, only the scoreline.
-          user_outcome: userOutcome || null, user_over_under: userOverUnder || null,
           ai_data: parsed,
+        };
+        // Try saving with the new outcome/over-under fields first. If the
+        // database columns for those don't exist yet, Supabase rejects the
+        // whole insert — which was silently breaking prediction-saving
+        // entirely, not just the two new fields. Falls back to the
+        // original, known-working payload so saving a prediction can never
+        // be fully blocked by this addition, whether or not the columns
+        // have been created yet.
+        let { data: saved, error: saveError } = await supabase.from("predictions").insert({
+          ...basePayload,
+          user_outcome: userOutcome || null, user_over_under: userOverUnder || null,
         }).select().single();
+        if (saveError) {
+          ({ data: saved } = await supabase.from("predictions").insert(basePayload).select().single());
+        }
         if (saved) {
           setHistory(prev => [saved, ...prev]);
           setSavedPredictionId(saved.id);
