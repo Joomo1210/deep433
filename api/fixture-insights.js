@@ -102,6 +102,16 @@ export default async function handler(req, res) {
       homeTeamId: pred.teams?.home?.id,
       awayTeamId: pred.teams?.away?.id,
       h2h: h2hSummary,
+      // Added — mirrors the same fields added to predict.js. Derived
+      // directly from the goalsHome/goalsAway already shown as the AI
+      // Verdict scoreline on this card, not a separate, unverified field,
+      // so this can never disagree with the scoreline it's shown next to.
+      outcome: (goalsHome != null && goalsAway != null)
+        ? (goalsHome > goalsAway ? 'Home Win' : goalsAway > goalsHome ? 'Away Win' : 'Draw')
+        : null,
+      overUnderCall: (goalsHome != null && goalsAway != null)
+        ? ((goalsHome + goalsAway) > 2.5 ? 'Over 2.5' : 'Under 2.5')
+        : null,
     });
   } catch (err) {
     return res.status(200).json({ available: false, error: err.message });
