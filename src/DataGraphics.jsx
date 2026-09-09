@@ -2235,7 +2235,9 @@ function DeepInsightsGraphic({ history = [] }) {
                         awayTeam={away}
                         aiPrediction={pred?.ai_prediction}
                         userPrediction={pred?.user_prediction}
-                        leagueId="wc2026"
+                        userOutcome={pred?.user_outcome}
+                        userOverUnder={pred?.user_over_under}
+                        leagueId={selectedFixture.leagueId}
                       />
                     );
                   })()}
@@ -8623,6 +8625,7 @@ function TeamOfWeekGraphic() {
   const [midCount, setMidCount] = useState(3);
   const [attCount, setAttCount] = useState(3);
   const [downloading, setDownloading] = useState(false);
+  const [ratings, setRatings] = useState({});
 
   const buildSlotKeys = (defN, midN, attN) => {
     const keys = ["gk"];
@@ -8745,23 +8748,33 @@ function TeamOfWeekGraphic() {
           const label = key === "gk" ? "GK" : key.startsWith("d") ? `DEF ${key.slice(1)}` : key.startsWith("m") ? `MID ${key.slice(1)}` : `ATT ${key.slice(1)}`;
           const slot = slots[key] || { search: "", suggestions: [], team: null, searching: false, squad: [], playerId: "", player: null };
           return (
-            <TeamThenPlayerPicker
-              key={key}
-              label={label}
-              search={slot.search}
-              setSearch={(v) => updateSlot(key, { search: v })}
-              suggestions={slot.suggestions}
-              team={slot.team}
-              searching={slot.searching}
-              slot={key}
-              color="#4ade80"
-              squad={slot.squad}
-              playerId={slot.playerId}
-              onSearchTeam={searchTeam}
-              onSelectTeam={selectTeam}
-              onSelectPlayer={selectPlayer}
-              onClearTeam={() => updateSlot(key, { team: null })}
-            />
+            <div key={key} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <TeamThenPlayerPicker
+                label={label}
+                search={slot.search}
+                setSearch={(v) => updateSlot(key, { search: v })}
+                suggestions={slot.suggestions}
+                team={slot.team}
+                searching={slot.searching}
+                slot={key}
+                color="#4ade80"
+                squad={slot.squad}
+                playerId={slot.playerId}
+                onSearchTeam={searchTeam}
+                onSelectTeam={selectTeam}
+                onSelectPlayer={selectPlayer}
+                onClearTeam={() => updateSlot(key, { team: null })}
+              />
+              {slot.player && (
+                <input
+                  type="number" step="0.1" min="0" max="10"
+                  value={ratings[key] ?? ""}
+                  onChange={e => setRatings(prev => ({ ...prev, [key]: e.target.value }))}
+                  placeholder="Rating (e.g. 8.2)"
+                  style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#fbbf24", fontSize: 12, padding: "6px 10px", outline: "none", fontFamily: "inherit" }}
+                />
+              )}
+            </div>
           );
         })}
       </div>
@@ -8771,7 +8784,11 @@ function TeamOfWeekGraphic() {
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "20px 18px" }}>
               <div style={{ textAlign: "center", marginTop: 30, marginBottom: 4 }}>
-                <span style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>Team of the Week</span>
+                <span style={{
+                  fontSize: 23, fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.5,
+                  background: "linear-gradient(90deg,#4ade80,#818cf8,#fbbf24)",
+                  WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+                }}>⭐ Team of the Week</span>
               </div>
               {gameweek && (
                 <div style={{ textAlign: "center", marginBottom: 16 }}>
@@ -8781,26 +8798,61 @@ function TeamOfWeekGraphic() {
 
               <div style={{ position: "relative", maxWidth: 320, margin: "0 auto" }}>
                 <svg viewBox="0 0 420 680" xmlns="http://www.w3.org/2000/svg" style={{ display: "block", width: "100%" }}>
-                  <rect x="2" y="2" width="416" height="676" fill="#0d2818" stroke="#2a4a3a" strokeWidth="2" rx="4" />
-                  <line x1="2" y1="340" x2="418" y2="340" stroke="#2a4a3a" strokeWidth="2" />
-                  <circle cx="210" cy="340" r="60" fill="none" stroke="#2a4a3a" strokeWidth="2" />
-                  <rect x="110" y="20" width="200" height="90" fill="none" stroke="#2a4a3a" strokeWidth="2" />
-                  <rect x="110" y="570" width="200" height="90" fill="none" stroke="#2a4a3a" strokeWidth="2" />
+                  <defs>
+                    <linearGradient id="pitchGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#164d2e" />
+                      <stop offset="50%" stopColor="#0d3a20" />
+                      <stop offset="100%" stopColor="#164d2e" />
+                    </linearGradient>
+                  </defs>
+                  {/* Mown-stripe effect — alternating shade bands */}
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <rect key={i} x="2" y={2 + i * 84.5} width="416" height="84.5" fill={i % 2 === 0 ? "#ffffff06" : "transparent"} />
+                  ))}
+                  <rect x="2" y="2" width="416" height="676" fill="url(#pitchGrad)" stroke="#4ade8055" strokeWidth="2.5" rx="6" />
+                  <line x1="2" y1="340" x2="418" y2="340" stroke="#4ade8055" strokeWidth="2" />
+                  <circle cx="210" cy="340" r="60" fill="none" stroke="#4ade8055" strokeWidth="2" />
+                  <circle cx="210" cy="340" r="3" fill="#4ade8055" />
+                  <rect x="110" y="20" width="200" height="90" fill="none" stroke="#4ade8055" strokeWidth="2" />
+                  <rect x="150" y="20" width="120" height="40" fill="none" stroke="#4ade8055" strokeWidth="2" />
+                  <rect x="110" y="570" width="200" height="90" fill="none" stroke="#4ade8055" strokeWidth="2" />
+                  <rect x="150" y="620" width="120" height="40" fill="none" stroke="#4ade8055" strokeWidth="2" />
+                  <path d="M 2 2 A 14 14 0 0 1 16 2" fill="none" stroke="#4ade8055" strokeWidth="2" />
+                  <path d="M 418 2 A 14 14 0 0 0 404 2" fill="none" stroke="#4ade8055" strokeWidth="2" />
+                  <path d="M 2 678 A 14 14 0 0 0 16 678" fill="none" stroke="#4ade8055" strokeWidth="2" />
+                  <path d="M 418 678 A 14 14 0 0 1 404 678" fill="none" stroke="#4ade8055" strokeWidth="2" />
                 </svg>
 
                 {slotKeys.map(key => {
                   const p = slots[key]?.player;
                   const pos = positions[key];
+                  const rating = ratings[key];
                   if (!pos) return null;
                   const leftPct = (pos.x / 420) * 100;
                   const topPct = (pos.y / 680) * 100;
                   return (
-                    <div key={key} style={{ position: "absolute", left: `${leftPct}%`, top: `${topPct}%`, transform: "translate(-50%, -50%)", textAlign: "center", width: 68 }}>
+                    <div key={key} style={{ position: "absolute", left: `${leftPct}%`, top: `${topPct}%`, transform: "translate(-50%, -50%)", textAlign: "center", width: 78 }}>
                       {p ? (
                         <>
-                          {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade80", margin: "0 auto 2px", display: "block" }} />}
-                          <div style={{ fontSize: 9, fontWeight: 800, color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,0.8)", lineHeight: 1.1 }}>{p.name?.split(" ").slice(-1)[0]}</div>
-                          <div style={{ fontSize: 7, color: "#4ade80", textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>{p.team}</div>
+                          <div style={{ position: "relative", width: 44, height: 44, margin: "0 auto 3px" }}>
+                            <div style={{ position: "absolute", inset: -3, borderRadius: "50%", background: "linear-gradient(135deg,#4ade80,#22c55e)", filter: "blur(4px)", opacity: 0.55 }} />
+                            {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ position: "relative", width: 44, height: 44, borderRadius: "50%", objectFit: "cover", border: "2.5px solid #4ade80", display: "block" }} />}
+                          </div>
+                          <div style={{
+                            display: "inline-block", background: "rgba(10,15,10,0.75)", borderRadius: 5,
+                            padding: "1px 6px", marginBottom: 2,
+                          }}>
+                            <div style={{ fontSize: 10, fontWeight: 800, color: "#fff", lineHeight: 1.2 }}>{p.name?.split(" ").slice(-1)[0]}</div>
+                          </div>
+                          <div style={{ fontSize: 8, color: "#86efac", textShadow: "0 1px 3px rgba(0,0,0,0.9)", marginBottom: rating ? 2 : 0 }}>{p.team}</div>
+                          {rating && (
+                            <div style={{
+                              display: "inline-block", background: "linear-gradient(135deg,#fbbf24,#f59e0b)",
+                              borderRadius: 5, padding: "1px 7px", boxShadow: "0 2px 6px rgba(251,191,36,0.4)",
+                            }}>
+                              <span style={{ fontSize: 10, fontWeight: 900, color: "#0a0f0a" }}>{parseFloat(rating).toFixed(1)}</span>
+                            </div>
+                          )}
                         </>
                       ) : (
                         <div style={{ fontSize: 9, fontWeight: 700, color: "#4ade8088" }}>{key === "gk" ? "GK" : ""}</div>
