@@ -829,6 +829,11 @@ useEffect(() => {
         const { data: saved } = await supabase.from("predictions").insert({
           user_id: session.user.id, home_team: homeTeam, away_team: awayTeam,
           user_prediction: up, ai_prediction: aiPrediction, ai_verdict: parsed.verdict,
+          // Added — these were being collected on the submission form but
+          // never actually saved, so any later view of a past prediction
+          // (like the Graphics tab's Brief Insights card) had no way to
+          // show what outcome or goals total was picked, only the scoreline.
+          user_outcome: userOutcome || null, user_over_under: userOverUnder || null,
           ai_data: parsed,
         }).select().single();
         if (saved) {
