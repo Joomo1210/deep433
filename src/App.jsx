@@ -1492,8 +1492,42 @@ if (!session && !guestMode) {
             {liveData.map((f, i) => {
               const isLive = f.status === "live";
               const isFinished = f.status === "finished";
+              const isUpcoming = !isLive && !isFinished;
               const statusColor = isLive ? "#ef4444" : isFinished ? "#e2e8f0" : "#4ade80";
               const statusLabel = isLive ? `🔴 ${getTimeLabel(f.statusRaw, f.elapsed)}` : isFinished ? (f.statusRaw === "AET" ? "AET" : f.statusRaw === "PEN" ? "PEN" : "FT") : "Soon";
+
+              // Upcoming fixtures get a compact single-line row instead of
+              // the full tall card below — with 30+ fixtures on a matchday,
+              // the tall format made a screenshot of the whole list far too
+              // long to actually use as a clean fixtures announcement.
+              // Live and finished matches keep the richer layout, since
+              // that detail (events, live score) matters when watching
+              // actively, not just browsing what's coming up.
+              if (isUpcoming) {
+                return (
+                  <div key={i} style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    background: "linear-gradient(135deg, #4ade8010, #13131f)",
+                    border: "1px solid #1e1e30", borderRadius: 10, padding: "10px 14px",
+                  }}>
+                    {f.leagueLabel && (
+                      <span style={{ fontSize: 9.5, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.4, width: 62, flexShrink: 0, lineHeight: 1.2 }}>{f.leagueLabel}</span>
+                    )}
+                    <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 6, justifyContent: "flex-end", minWidth: 0 }}>
+                      <span style={{ fontSize: 13.5, color: "#f0f0f0", fontWeight: 800, textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.home}</span>
+                      <TeamFlag team={f.home} logo={f.homeLogo} size={18} />
+                    </div>
+                    <div style={{ minWidth: 56, textAlign: "center", flexShrink: 0 }}>
+                      <span style={{ fontSize: 12.5, color: "#4ade80", fontWeight: 900 }}>{new Date(f.kickoff).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</span>
+                    </div>
+                    <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                      <TeamFlag team={f.away} logo={f.awayLogo} size={18} />
+                      <span style={{ fontSize: 13.5, color: "#f0f0f0", fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.away}</span>
+                    </div>
+                  </div>
+                );
+              }
+
               return (
                 <div key={i} style={{ background: "#13131f", border: `1px solid ${isLive ? "#ef444433" : "#1e1e30"}`, borderRadius: 12, overflow: "hidden" }}>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", padding: "14px 16px", gap: 8 }}>
