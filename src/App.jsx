@@ -557,8 +557,9 @@ export default function FootballPredictor() {
   const [userRole, setUserRole] = useState("user");
   const [fixtures, setFixtures] = useState([]);
   const [fixturesLoading, setFixturesLoading] = useState(false);
-  const [bracketRounds, setBracketRounds] = useState([]);
-  const [bracketLoading, setBracketLoading] = useState(false);
+  // Removed: bracketRounds/bracketLoading state, only ever used by the
+  // now-removed standalone Bracket tab. Season Awards has its own separate
+  // bracket fetch (below) using a local variable, unaffected by this.
   const [awardsLeague, setAwardsLeague] = useState("wc2026");
   const [remainingTeams, setRemainingTeams] = useState([]);
   const [awardsLoading, setAwardsLoading] = useState(false);
@@ -627,16 +628,6 @@ export default function FootballPredictor() {
     });
     return () => subscription.unsubscribe();
   }, []);
-  useEffect(() => {
-    if (tab !== "bracket" || !session) return;
-    setBracketLoading(true);
-    setBracketRounds([]);
-    fetch(`/api/bracket?leagueId=${selectedLeague}`)
-      .then(r => r.json())
-      .then(d => setBracketRounds(d.rounds || []))
-      .catch(() => {})
-      .finally(() => setBracketLoading(false));
-  }, [tab, selectedLeague, session]);
   useEffect(() => {
     if (tab !== "awards" || !session) return;
     setAwardsLoading(true);
@@ -998,7 +989,6 @@ useEffect(() => {
   ] : [
     { id: "predict",   label: "⚡ Predict" },
     { id: "scores",    label: "🔴 Scores" },
-    { id: "bracket",   label: "🏆 Bracket" },
     { id: "awards",    label: "🎖 Season Awards" },
     ...(userRole === "admin" ? [{ id: "graphics", label: "📊 Graphics" }] : []),
     { id: "standings", label: "🏆 You vs AI" },
@@ -1577,114 +1567,6 @@ if (!session && !guestMode) {
                 </div>
               );
             })}
-          </>
-        )}
-        {tab === "bracket" && (
-          <>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {[
-                { id: "wc2026",     label: "World Cup 2026" },
-                { id: "ucl",        label: "Champions League" },
-                { id: "uel",        label: "Europa League" },
-                { id: "facup",      label: "FA Cup" },
-                { id: "copadelrey", label: "Copa del Rey" },
-                { id: "afcon",      label: "AFCON" },
-                { id: "copamerica", label: "Copa America" },
-              ].map(l => (
-                <button key={l.id} className={`league-btn${selectedLeague === l.id ? " active" : ""}`}
-                  onClick={() => setSelectedLeague(l.id)}>
-                  {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt={l.label} style={{ width: 16, height: 16, objectFit: "contain", marginRight: 5, verticalAlign: "middle" }} crossOrigin="anonymous" />}
-                  {l.label}
-                </button>
-              ))}
-            </div>
-            {bracketLoading && (
-              <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 16, padding: "40px 0" }}>Loading bracket...</div>
-            )}
-            {!bracketLoading && bracketRounds.length === 0 && (
-              <div style={{ textAlign: "center", color: "#444", fontSize: 16, padding: "40px 0" }}>No knockout fixtures found for this competition</div>
-            )}
-            <div style={{ overflowX: "auto", paddingBottom: 8 }}>
-              <div style={{ display: "flex", gap: 16, minWidth: "max-content", alignItems: "flex-start" }}>
-                {bracketRounds.map((round, ri) => (
-                  <div key={round.round} style={{ display: "flex", flexDirection: "column", gap: 12, minWidth: 200 }}>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: "#4ade80", textTransform: "uppercase", letterSpacing: 1.5, textAlign: "center", padding: "6px 0", borderBottom: "1px solid #1a1a2a" }}>
-                      {round.round}
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-around", gap: 8, flex: 1 }}>
-                      {round.matches.map((m, mi) => {
-                        const isLive = m.status === "live";
-                        const isFinished = m.status === "finished";
-                        const homeWon = isFinished && m.score.home > m.score.away;
-                        const awayWon = isFinished && m.score.away > m.score.home;
-                        const norm = s => (s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
-                        const userPred = history.find(h =>
-                          (norm(h.home_team) === norm(m.home) && norm(h.away_team) === norm(m.away)) ||
-                          (norm(h.home_team) === norm(m.away) && norm(h.away_team) === norm(m.home))
-                        );
-                        return (
-                          <div key={m.fixtureId} style={{
-                            background: "#13131f",
-                            border: `1px solid ${isLive ? "#ef4444" : userPred ? "#4ade8044" : "#1e1e30"}`,
-                            borderRadius: 10,
-                            overflow: "hidden",
-                            position: "relative",
-                          }}>
-                            {isLive && (
-                              <div style={{ background: "#ef4444", height: 2, width: "100%" }} />
-                            )}
-                            <div style={{
-                              display: "flex", alignItems: "center", gap: 8, padding: "8px 10px",
-                              background: homeWon ? "#4ade8010" : "transparent",
-                              borderBottom: "1px solid #0f0f1a"
-                            }}>
-                              {m.homeLogo
-                                ? <img src={m.homeLogo} alt="" style={{ width: 20, height: 20, objectFit: "contain", flexShrink: 0 }} />
-                                : <div style={{ width: 20, height: 20, background: "#1a1a2a", borderRadius: "50%", flexShrink: 0 }} />
-                              }
-                              <span style={{ fontSize: 15, fontWeight: homeWon ? 800 : 600, color: homeWon ? "#4ade80" : "#f0f0f0", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                {m.home || "TBD"}
-                              </span>
-                              {(isLive || isFinished) && (
-                                <span style={{ fontSize: 17, fontWeight: 900, color: homeWon ? "#4ade80" : "#e2e8f0", minWidth: 16, textAlign: "right" }}>
-                                  {m.score.home ?? 0}
-                                </span>
-                              )}
-                            </div>
-                            <div style={{
-                              display: "flex", alignItems: "center", gap: 8, padding: "8px 10px",
-                              background: awayWon ? "#4ade8010" : "transparent",
-                            }}>
-                              {m.awayLogo
-                                ? <img src={m.awayLogo} alt="" style={{ width: 20, height: 20, objectFit: "contain", flexShrink: 0 }} />
-                                : <div style={{ width: 20, height: 20, background: "#1a1a2a", borderRadius: "50%", flexShrink: 0 }} />
-                              }
-                              <span style={{ fontSize: 15, fontWeight: awayWon ? 800 : 600, color: awayWon ? "#4ade80" : "#f0f0f0", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                {m.away || "TBD"}
-                              </span>
-                              {(isLive || isFinished) && (
-                                <span style={{ fontSize: 17, fontWeight: 900, color: awayWon ? "#4ade80" : "#e2e8f0", minWidth: 16, textAlign: "right" }}>
-                                  {m.score.away ?? 0}
-                                </span>
-                              )}
-                            </div>
-                            <div style={{ padding: "4px 10px", background: "#0d0d18", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                              <span style={{ fontSize: 12, color: isLive ? "#ef4444" : isFinished ? "#e2e8f0" : "#e2e8f0", fontWeight: 700 }}>
-                                {isLive ? `🔴 ${getTimeLabel(m.statusRaw, m.elapsed)}` : isFinished ? m.statusRaw : new Date(m.kickoff).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
-                              </span>
-                              {userPred && <span style={{ fontSize: 12, color: "#4ade80" }}>✓ Predicted</span>}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div style={{ fontSize: 14, color: "#e2e8f0", textAlign: "center" }}>
-              Scroll horizontally to see all rounds · Green border = your prediction
-            </div>
           </>
         )}
         {tab === "awards" && (
