@@ -8,6 +8,18 @@ const supabase = createClient(
   "https://idisdztwpvedtnroiian.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlkaXNkenR3cHZlZHRucm9paWFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NTczOTQsImV4cCI6MjA5NzAzMzM5NH0.YmF0DqWmopuJs9Ci1hdFi0XDMoWRD0yfVwOuuG7WVyE"
 );
+// Builds a YYYY-MM-DD string from LOCAL date parts, not toISOString(),
+// which converts to UTC first. That conversion can silently shift the
+// calendar date depending on the user's time zone and time of day — e.g.
+// late evening in a UTC+1 zone can roll over to the next UTC day, making
+// "today" mean tomorrow. This was the actual cause of the date-picker
+// buttons appearing one day off from the real local date.
+function getLocalDateString(date = new Date()) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
 const LEAGUE_LOGOS = {
   wc2026:     "https://media.api-sports.io/football/leagues/1.png",
   pl:         "https://media.api-sports.io/football/leagues/39.png",
@@ -549,7 +561,7 @@ export default function FootballPredictor() {
   const [fixtureSearch, setFixtureSearch] = useState("");
   const [historySearch, setHistorySearch] = useState("");
   const [liveData, setLiveData] = useState([]);
-  const [scoresDate, setScoresDate] = useState(new Date().toISOString().split("T")[0]);
+  const [scoresDate, setScoresDate] = useState(getLocalDateString());
   const [liveEvents, setLiveEvents] = useState({});
   const [expandedLive, setExpandedLive] = useState(null);
   const [showShareCard, setShowShareCard] = useState(false);
@@ -742,7 +754,7 @@ useEffect(() => {
   // Only auto-refresh every 3 minutes while looking at today — a future or
   // past date's fixtures don't change minute to minute the way a live
   // match does, so polling them on the same interval was pointless.
-  const isToday = scoresDate === new Date().toISOString().split("T")[0];
+  const isToday = scoresDate === getLocalDateString();
   if (!isToday) return;
   const interval = setInterval(fetchLive, 3 * 60 * 1000);
   return () => clearInterval(interval);
@@ -930,9 +942,9 @@ useEffect(() => {
     })();
     const now = new Date();
     const dates = [
-      new Date(now.getTime() - 86400000).toISOString().split("T")[0],
-      now.toISOString().split("T")[0],
-      new Date(now.getTime() + 86400000).toISOString().split("T")[0],
+      getLocalDateString(new Date(now.getTime() - 86400000)),
+      getLocalDateString(now),
+      getLocalDateString(new Date(now.getTime() + 86400000)),
     ];
     for (const date of dates) {
       try {
@@ -1484,7 +1496,7 @@ if (!session && !guestMode) {
               {[0, 1, 2].map(offset => {
                 const d = new Date();
                 d.setDate(d.getDate() + offset);
-                const dateStr = d.toISOString().split("T")[0];
+                const dateStr = getLocalDateString(d);
                 const label = offset === 0 ? "Today" : offset === 1 ? "Tomorrow" : d.toLocaleDateString("en-GB", { weekday: "short" });
                 return (
                   <button
@@ -1507,7 +1519,7 @@ if (!session && !guestMode) {
               />
             </div>
             <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>
-              {scoresDate === new Date().toISOString().split("T")[0] ? "Today's Fixtures" : `Fixtures — ${new Date(scoresDate).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}`}
+              {scoresDate === getLocalDateString() ? "Today's Fixtures" : `Fixtures — ${new Date(scoresDate).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}`}
             </div>
             {liveData.length === 0 && (
               <div style={{ textAlign: "center", color: "#444", fontSize: 17, padding: "40px 0" }}>No fixtures today — check back on matchday</div>
