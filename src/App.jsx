@@ -549,6 +549,7 @@ export default function FootballPredictor() {
   const [fixtureSearch, setFixtureSearch] = useState("");
   const [historySearch, setHistorySearch] = useState("");
   const [liveData, setLiveData] = useState([]);
+  const [scoresDate, setScoresDate] = useState(new Date().toISOString().split("T")[0]);
   const [liveEvents, setLiveEvents] = useState({});
   const [expandedLive, setExpandedLive] = useState(null);
   const [showShareCard, setShowShareCard] = useState(false);
@@ -720,12 +721,11 @@ const SCORES_TAB_LEAGUES = [
 ];
 useEffect(() => {
   const fetchLive = async () => {
-    const today = new Date().toISOString().split("T")[0];
     try {
       const allFixtures = [];
       for (const league of SCORES_TAB_LEAGUES) {
         try {
-          const res = await fetch(`/api/live-scores?leagueId=${league.id}&date=${today}`);
+          const res = await fetch(`/api/live-scores?leagueId=${league.id}&date=${scoresDate}`);
           if (res.ok) {
             const data = await res.json();
             const tagged = (data.fixtures || []).map(f => ({ ...f, leagueLabel: league.label }));
@@ -739,9 +739,14 @@ useEffect(() => {
     }
   };
   fetchLive();
+  // Only auto-refresh every 3 minutes while looking at today — a future or
+  // past date's fixtures don't change minute to minute the way a live
+  // match does, so polling them on the same interval was pointless.
+  const isToday = scoresDate === new Date().toISOString().split("T")[0];
+  if (!isToday) return;
   const interval = setInterval(fetchLive, 3 * 60 * 1000);
   return () => clearInterval(interval);
-}, [session]);
+}, [session, scoresDate]);
 
 useEffect(() => {
   if (!liveData.length || !history.length) return;
@@ -1475,7 +1480,35 @@ if (!session && !guestMode) {
                 </div>
               </div>
             )}
-            <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Today's Fixtures</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              {[0, 1, 2].map(offset => {
+                const d = new Date();
+                d.setDate(d.getDate() + offset);
+                const dateStr = d.toISOString().split("T")[0];
+                const label = offset === 0 ? "Today" : offset === 1 ? "Tomorrow" : d.toLocaleDateString("en-GB", { weekday: "short" });
+                return (
+                  <button
+                    key={offset}
+                    onClick={() => setScoresDate(dateStr)}
+                    style={{
+                      background: scoresDate === dateStr ? "#4ade8022" : "none",
+                      border: `1.5px solid ${scoresDate === dateStr ? "#4ade80" : "#2a2a3a"}`,
+                      borderRadius: 8, color: scoresDate === dateStr ? "#4ade80" : "#e2e8f0",
+                      cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "6px 12px",
+                    }}
+                  >{label}</button>
+                );
+              })}
+              <input
+                type="date"
+                value={scoresDate}
+                onChange={e => setScoresDate(e.target.value)}
+                style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#e2e8f0", fontSize: 13, padding: "6px 10px", outline: "none", fontFamily: "inherit" }}
+              />
+            </div>
+            <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>
+              {scoresDate === new Date().toISOString().split("T")[0] ? "Today's Fixtures" : `Fixtures — ${new Date(scoresDate).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}`}
+            </div>
             {liveData.length === 0 && (
               <div style={{ textAlign: "center", color: "#444", fontSize: 17, padding: "40px 0" }}>No fixtures today — check back on matchday</div>
             )}
