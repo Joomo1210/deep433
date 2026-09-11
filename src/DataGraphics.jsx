@@ -3272,6 +3272,145 @@ const PREDICTION_CATEGORY_POOL = [
 // shortlists, etc.) side by side on real season numbers — search each
 // player via their team, same proven flow as the Battle and Transfer
 // Alerts cards, then pull real season stats for each one automatically.
+// ─── WEEKLY NOTICE BOARD (mix of live Space matches + offline predictions) ──
+// A single schedule graphic for the week — each entry tagged as either a
+// live Space prediction match or an offline (X-only) prediction, free text
+// per entry so any fixture, time, or note can be added flexibly.
+function NoticeBoardGraphic() {
+  const cardRef = useRef(null);
+  const [downloading, setDownloading] = useState(false);
+  const [title, setTitle] = useState("This Week on Deep433");
+  const NUM_SLOTS = 10;
+  // Each entry: { type, fixture } — fixture is the full object FixturePicker
+  // returns (home, away, homeLogo, awayLogo, date, kickoff, leagueLabel),
+  // not free text, so crest, date/time, and league all come from real data.
+  const [entries, setEntries] = useState(Array(NUM_SLOTS).fill(null).map(() => ({ type: "live", fixture: null })));
+  const [pickingSlot, setPickingSlot] = useState(null);
+
+  const updateEntry = (i, patch) => {
+    setEntries(prev => prev.map((e, idx) => idx === i ? { ...e, ...patch } : e));
+  };
+
+  const filledEntries = entries.filter(e => e.fixture);
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, `deep433-notice-board.png`, "#0a0a12", transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const TYPE_META = {
+    live: { icon: "🎙️", label: "Live Space", color: "#4ade80" },
+    offline: { icon: "📋", label: "Offline Prediction", color: "#818cf8" },
+  };
+
+  const formatKickoff = (fixture) => {
+    if (!fixture?.kickoff) return fixture?.date || "";
+    const d = new Date(fixture.kickoff);
+    const datePart = d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+    const timePart = d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+    return `${datePart} · ${timePart}`;
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Build the week's schedule — up to 10 real fixtures, each tagged as a live Space prediction match or an offline (X-only) prediction. Crest, date, time, and league all pull from real fixture data.</div>
+
+      <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Card title" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {entries.map((entry, i) => (
+          <div key={i} style={{ display: "flex", flexDirection: "column", gap: 6, borderBottom: "1px solid #23232f", paddingBottom: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, width: 18, flexShrink: 0 }}>{i + 1}.</span>
+              <select
+                value={entry.type}
+                onChange={e => updateEntry(i, { type: e.target.value })}
+                style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: TYPE_META[entry.type].color, fontSize: 12, padding: "9px 6px", outline: "none", fontFamily: "inherit", flexShrink: 0 }}
+              >
+                <option value="live">🎙️ Live Space</option>
+                <option value="offline">📋 Offline</option>
+              </select>
+              {entry.fixture ? (
+                <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, padding: "6px 10px" }}>
+                  {entry.fixture.homeLogo && <img src={entry.fixture.homeLogo} alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />}
+                  <span style={{ fontSize: 13, color: "#f0f0f0", fontWeight: 700, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{entry.fixture.home} vs {entry.fixture.away}</span>
+                  {entry.fixture.awayLogo && <img src={entry.fixture.awayLogo} alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />}
+                  <button onClick={() => setPickingSlot(pickingSlot === i ? null : i)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontSize: 11, padding: "3px 8px", flexShrink: 0 }}>Change</button>
+                </div>
+              ) : (
+                <button onClick={() => setPickingSlot(pickingSlot === i ? null : i)} style={{ flex: 1, background: "#1a1a24", border: "1.5px dashed #2a2a3a", borderRadius: 8, color: "#94a3b8", cursor: "pointer", fontSize: 13, padding: "9px 12px", fontFamily: "inherit", textAlign: "left" }}>
+                  {pickingSlot === i ? "Pick a fixture below..." : "+ Add fixture"}
+                </button>
+              )}
+            </div>
+            {pickingSlot === i && (
+              <div style={{ marginLeft: 26 }}>
+                <FixturePicker onSelect={(f) => { updateEntry(i, { fixture: f }); setPickingSlot(null); }} />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {filledEntries.length > 0 && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "44px 22px 30px" }}>
+              <div style={{ textAlign: "center", marginBottom: 22 }}>
+                <span style={{
+                  fontSize: 24, fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.2,
+                  background: "linear-gradient(90deg,#4ade80,#818cf8,#f59e0b)",
+                  WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+                }}>📌 {title}</span>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {filledEntries.map((e, idx) => {
+                  const meta = TYPE_META[e.type];
+                  const f = e.fixture;
+                  return (
+                    <div key={idx} style={{
+                      display: "flex", alignItems: "center", gap: 12, flexWrap: "nowrap",
+                      background: `${meta.color}14`, border: `1.5px solid ${meta.color}44`,
+                      borderRadius: 10, padding: "12px 16px",
+                    }}>
+                      <span style={{ fontSize: 20, flexShrink: 0 }}>{meta.icon}</span>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ fontSize: 10, color: meta.color, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 3 }}>
+                          {meta.label}{f.leagueLabel ? ` · ${f.leagueLabel}` : ""}
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                          {f.homeLogo && <img src={f.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 20, height: 20, objectFit: "contain", flexShrink: 0 }} />}
+                          <span style={{ fontSize: 14, color: "#f0f0f0", fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.home} vs {f.away}</span>
+                          {f.awayLogo && <img src={f.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 20, height: 20, objectFit: "contain", flexShrink: 0 }} />}
+                        </div>
+                        <div style={{ fontSize: 11.5, color: "#94a3b8" }}>{formatKickoff(f)}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div style={{ textAlign: "center", marginTop: 20 }}>
+                <span style={{ fontSize: 11.5, color: "#94a3b8" }}>Predict smartly. Look closely at the stats.</span>
+              </div>
+            </div>
+          </GraphicCard>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 function AwardRaceGraphic() {
   const cardRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
@@ -10763,6 +10902,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "weeklypicks", label: "🎯 Weekly Top Picks" },
     { id: "weeklyresults", label: "📊 Weekly Picks Results" },
     { id: "awardrace", label: "🏆 Award Race Comparison" },
+    { id: "noticeboard", label: "📌 Weekly Notice Board" },
     { id: "h2h",      label: "🆚 Player H2H" },
     { id: "matchh2h", label: "📋 Match H2H" },
     { id: "motm", label: "⭐ Man of the Match" },
@@ -10832,6 +10972,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "weeklypicks" && <WeeklyPicksGraphic />}
       {activeSection === "weeklyresults" && <WeeklyPicksResultsGraphic />}
       {activeSection === "awardrace" && <AwardRaceGraphic />}
+      {activeSection === "noticeboard" && <NoticeBoardGraphic />}
       {activeSection === "h2h"      && <PlayerH2HGraphic />}
       {activeSection === "matchh2h" && <MatchH2HGraphic />}
       {activeSection === "motm" && <ManOfMatchGraphic />}
