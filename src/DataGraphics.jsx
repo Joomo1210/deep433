@@ -3379,15 +3379,15 @@ function NoticeBoardGraphic() {
                     }}>
                       <span style={{ fontSize: 20, flexShrink: 0 }}>{meta.icon}</span>
                       <div style={{ minWidth: 0, flex: 1 }}>
-                        <div style={{ fontSize: 10, color: meta.color, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 3 }}>
+                        <div style={{ fontSize: 10, color: meta.color, fontWeight: 900, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 3 }}>
                           {meta.label}{f.leagueLabel ? ` · ${f.leagueLabel}` : ""}
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
                           {f.homeLogo && <img src={f.homeLogo} alt="" crossOrigin="anonymous" style={{ width: 20, height: 20, objectFit: "contain", flexShrink: 0 }} />}
-                          <span style={{ fontSize: 14, color: "#f0f0f0", fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.home} vs {f.away}</span>
+                          <span style={{ fontSize: 14, color: "#f0f0f0", fontWeight: 900, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.home} vs {f.away}</span>
                           {f.awayLogo && <img src={f.awayLogo} alt="" crossOrigin="anonymous" style={{ width: 20, height: 20, objectFit: "contain", flexShrink: 0 }} />}
                         </div>
-                        <div style={{ fontSize: 11.5, color: "#94a3b8" }}>{formatKickoff(f)}</div>
+                        <div style={{ fontSize: 11.5, color: "#e2e8f0", fontWeight: 700 }}>{formatKickoff(f)}</div>
                       </div>
                     </div>
                   );
@@ -3395,7 +3395,7 @@ function NoticeBoardGraphic() {
               </div>
 
               <div style={{ textAlign: "center", marginTop: 20 }}>
-                <span style={{ fontSize: 11.5, color: "#94a3b8" }}>Predict smartly. Look closely at the stats.</span>
+                <span style={{ fontSize: 11.5, color: "#e2e8f0", fontWeight: 700 }}>Predict smartly. Look closely at the stats.</span>
               </div>
             </div>
           </GraphicCard>
