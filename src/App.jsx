@@ -562,6 +562,7 @@ export default function FootballPredictor() {
   const [historySearch, setHistorySearch] = useState("");
   const [liveData, setLiveData] = useState([]);
   const [scoresDate, setScoresDate] = useState(getLocalDateString());
+  const [scoresLeagueFilter, setScoresLeagueFilter] = useState("all");
   const [liveEvents, setLiveEvents] = useState({});
   const [expandedLive, setExpandedLive] = useState(null);
   const [showShareCard, setShowShareCard] = useState(false);
@@ -747,6 +748,7 @@ useEffect(() => {
         await new Promise(resolve => setTimeout(resolve, 150));
       }
       setLiveData(allFixtures);
+      setScoresLeagueFilter("all");
     } catch {
     }
   };
@@ -1521,10 +1523,28 @@ if (!session && !guestMode) {
             <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>
               {scoresDate === getLocalDateString() ? "Today's Fixtures" : `Fixtures — ${new Date(scoresDate).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}`}
             </div>
+            {/* League filter tabs — with 30+ fixtures across 6+ leagues on a
+                full Saturday, one continuous list stopped being scannable.
+                Lets the user narrow to one league at a time instead of
+                scrolling past everything else to find it. */}
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
+              {["all", ...new Set(liveData.map(f => f.leagueLabel).filter(Boolean))].map(lg => (
+                <button
+                  key={lg}
+                  onClick={() => setScoresLeagueFilter(lg)}
+                  style={{
+                    background: scoresLeagueFilter === lg ? "#4ade8022" : "none",
+                    border: `1.5px solid ${scoresLeagueFilter === lg ? "#4ade80" : "#2a2a3a"}`,
+                    borderRadius: 8, color: scoresLeagueFilter === lg ? "#4ade80" : "#e2e8f0",
+                    cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "5px 11px",
+                  }}
+                >{lg === "all" ? "All" : lg}</button>
+              ))}
+            </div>
             {liveData.length === 0 && (
               <div style={{ textAlign: "center", color: "#444", fontSize: 17, padding: "40px 0" }}>No fixtures today — check back on matchday</div>
             )}
-            {liveData.map((f, i) => {
+            {liveData.filter(f => scoresLeagueFilter === "all" || f.leagueLabel === scoresLeagueFilter).map((f, i) => {
               const isLive = f.status === "live";
               const isFinished = f.status === "finished";
               const isUpcoming = !isLive && !isFinished;
