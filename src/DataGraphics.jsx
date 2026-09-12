@@ -3588,6 +3588,39 @@ function StatChip({ label, value }) {
 // Companion to WeeklyPicksGraphic, posted after the matches conclude —
 // re-enter (or paste) the same picks and mark each one correct or missed,
 // with a running tally shown on the card.
+// Extracted to a real top-level component instead of being defined inside
+// WeeklyPicksGraphic/WeeklyPicksResultsGraphic — a component defined inside
+// another component's function body gets recreated on every render, which
+// makes React treat it as a brand new component each time and forces a
+// full unmount + remount of its DOM, including its <input>. That's exactly
+// why typing a single character into this search box lost focus straight
+// away: the input was being torn down and rebuilt after every keystroke.
+function CrestSearch({ i, slot, team, search, suggestions, onSearch, onSelect }) {
+  return (
+    <div style={{ position: "relative", flex: 1 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        {team?.logo && <img src={team.logo} alt="" style={{ width: 16, height: 16, objectFit: "contain", flexShrink: 0 }} />}
+        <input
+          value={search}
+          onChange={e => onSearch(e.target.value, i, slot)}
+          placeholder={slot === 1 ? "Team 1 crest (optional)..." : "Team 2 crest (optional)..."}
+          style={{ flex: 1, background: "#141420", border: "1px solid #23232f", borderRadius: 6, color: "#e2e8f0", fontSize: 12, padding: "6px 10px", outline: "none", fontFamily: "inherit" }}
+        />
+      </div>
+      {suggestions?.length > 0 && (
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 20, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, marginTop: 4, maxHeight: 160, overflowY: "auto" }}>
+          {suggestions.map(t => (
+            <div key={t.id} onClick={() => onSelect(t, i, slot)} style={{ padding: "8px 12px", cursor: "pointer", fontSize: 13, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 8 }}>
+              {t.logo && <img src={t.logo} alt="" style={{ width: 16, height: 16, objectFit: "contain" }} />}
+              {t.name}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function WeeklyPicksResultsGraphic() {
   const cardRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
@@ -3646,35 +3679,6 @@ function WeeklyPicksResultsGraphic() {
     setDownloading(false);
   };
 
-  const CrestSearch = ({ i, slot }) => {
-    const teamsX = slot === 1 ? teams1 : teams2;
-    const searches = slot === 1 ? teamSearches1 : teamSearches2;
-    const suggestions = slot === 1 ? teamSuggestions1 : teamSuggestions2;
-    return (
-      <div style={{ position: "relative", flex: 1 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          {teamsX[i]?.logo && <img src={teamsX[i].logo} alt="" style={{ width: 16, height: 16, objectFit: "contain", flexShrink: 0 }} />}
-          <input
-            value={searches[i]}
-            onChange={e => searchTeamFor(e.target.value, i, slot)}
-            placeholder={slot === 1 ? "Team 1 crest (optional)..." : "Team 2 crest (optional)..."}
-            style={{ flex: 1, background: "#141420", border: "1px solid #23232f", borderRadius: 6, color: "#e2e8f0", fontSize: 12, padding: "6px 10px", outline: "none", fontFamily: "inherit" }}
-          />
-        </div>
-        {suggestions[i]?.length > 0 && (
-          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 20, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, marginTop: 4, maxHeight: 160, overflowY: "auto" }}>
-            {suggestions[i].map(t => (
-              <div key={t.id} onClick={() => selectTeamFor(t, i, slot)} style={{ padding: "8px 12px", cursor: "pointer", fontSize: 13, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 8 }}>
-                {t.logo && <img src={t.logo} alt="" style={{ width: 16, height: 16, objectFit: "contain" }} />}
-                {t.name}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ fontSize: 11, color: "#e2e8f0" }}>Re-enter this week's picks, mark each one ✅ correct or ❌ missed, post once the matches have concluded. Optionally attach both teams' crests to each pick.</div>
@@ -3696,8 +3700,8 @@ function WeeklyPicksResultsGraphic() {
               <button onClick={() => toggleHit(i, hits[i] === false ? null : false)} style={{ background: hits[i] === false ? "#f8717122" : "none", border: `1.5px solid ${hits[i] === false ? "#f87171" : "#2a2a3a"}`, borderRadius: 6, color: hits[i] === false ? "#f87171" : "#666", cursor: "pointer", fontSize: 16, padding: "6px 10px", flexShrink: 0 }}>❌</button>
             </div>
             <div style={{ display: "flex", gap: 8, marginLeft: 28 }}>
-              <CrestSearch i={i} slot={1} />
-              <CrestSearch i={i} slot={2} />
+              <CrestSearch i={i} slot={1} team={teams1[i]} search={teamSearches1[i]} suggestions={teamSuggestions1[i]} onSearch={searchTeamFor} onSelect={selectTeamFor} />
+              <CrestSearch i={i} slot={2} team={teams2[i]} search={teamSearches2[i]} suggestions={teamSuggestions2[i]} onSearch={searchTeamFor} onSelect={selectTeamFor} />
             </div>
             {teams1[i] && teams2[i] && (
               <select
@@ -3839,35 +3843,6 @@ function WeeklyPicksGraphic() {
     setDownloading(false);
   };
 
-  const CrestSearch = ({ i, slot }) => {
-    const teamsX = slot === 1 ? teams1 : teams2;
-    const searches = slot === 1 ? teamSearches1 : teamSearches2;
-    const suggestions = slot === 1 ? teamSuggestions1 : teamSuggestions2;
-    return (
-      <div style={{ position: "relative", flex: 1 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          {teamsX[i]?.logo && <img src={teamsX[i].logo} alt="" style={{ width: 16, height: 16, objectFit: "contain", flexShrink: 0 }} />}
-          <input
-            value={searches[i]}
-            onChange={e => searchTeamFor(e.target.value, i, slot)}
-            placeholder={slot === 1 ? "Team 1 crest (optional)..." : "Team 2 crest (optional)..."}
-            style={{ flex: 1, background: "#141420", border: "1px solid #23232f", borderRadius: 6, color: "#e2e8f0", fontSize: 12, padding: "6px 10px", outline: "none", fontFamily: "inherit" }}
-          />
-        </div>
-        {suggestions[i]?.length > 0 && (
-          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 20, background: "#13131f", border: "1px solid #2a2a3a", borderRadius: 8, marginTop: 4, maxHeight: 160, overflowY: "auto" }}>
-            {suggestions[i].map(t => (
-              <div key={t.id} onClick={() => selectTeamFor(t, i, slot)} style={{ padding: "8px 12px", cursor: "pointer", fontSize: 13, color: "#f0f0f0", display: "flex", alignItems: "center", gap: 8 }}>
-                {t.logo && <img src={t.logo} alt="" style={{ width: 16, height: 16, objectFit: "contain" }} />}
-                {t.name}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ fontSize: 11, color: "#e2e8f0" }}>Up to 10 of your own picks for the week, free text, in whatever format you like — "Arsenal to Win", "Barcelona Win/Draw", "Over 3 Goals", etc. Optionally attach both teams' crests to each pick.</div>
@@ -3887,8 +3862,8 @@ function WeeklyPicksGraphic() {
               />
             </div>
             <div style={{ display: "flex", gap: 8, marginLeft: 28 }}>
-              <CrestSearch i={i} slot={1} />
-              <CrestSearch i={i} slot={2} />
+              <CrestSearch i={i} slot={1} team={teams1[i]} search={teamSearches1[i]} suggestions={teamSuggestions1[i]} onSearch={searchTeamFor} onSelect={selectTeamFor} />
+              <CrestSearch i={i} slot={2} team={teams2[i]} search={teamSearches2[i]} suggestions={teamSuggestions2[i]} onSearch={searchTeamFor} onSelect={selectTeamFor} />
             </div>
             {teams1[i] && teams2[i] && (
               <select
