@@ -1009,7 +1009,7 @@ useEffect(() => {
     { id: "predict",   label: "⚡ Predict" },
     { id: "scores",    label: "🔴 Scores" },
     { id: "awards",    label: "🎖 Season Awards" },
-    ...(userRole === "admin" ? [{ id: "graphics", label: "📊 Graphics" }] : []),
+    ...(userRole === "admin" ? [{ id: "graphics", label: "📊 Stats Lab" }] : []),
     { id: "standings", label: "🏆 You vs AI" },
     { id: "badges",    label: "🏅 Badges" },
     { id: "history",   label: "📋 History" },
