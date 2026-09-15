@@ -1216,7 +1216,7 @@ function TopScorersGraphic() {
                         </svg>
                       ) : (
                         <span style={{ fontSize: isTop3 ? 16 : 12, color: rankColor(i), fontWeight: 900 }}>
-                          {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
+                          {i + 1}
                         </span>
                       )}
                     </div>
