@@ -569,6 +569,10 @@ export default function FootballPredictor() {
   const [selectedHomeLogo, setSelectedHomeLogo] = useState(null);
   const [selectedAwayLogo, setSelectedAwayLogo] = useState(null);
   const [userRole, setUserRole] = useState("user");
+  const [username, setUsername] = useState("");
+  const [usernameDraft, setUsernameDraft] = useState("");
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   const [fixtures, setFixtures] = useState([]);
   const [fixturesLoading, setFixturesLoading] = useState(false);
   // Removed: bracketRounds/bracketLoading state, only ever used by the
@@ -664,6 +668,83 @@ export default function FootballPredictor() {
       if (predResult.data) setTournamentPred(predResult.data);
     }).catch(() => setAwardsError("Failed to load teams")).finally(() => setAwardsLoading(false));
   }, [tab, awardsLeague, session]);
+  useEffect(() => {
+    if (tab !== "leaderboard") return;
+    setLeaderboardLoading(true);
+    setLeaderboard([]);
+    (async () => {
+      // Current calendar month, from the 1st through now — this resets
+      // naturally each month rather than needing any manual "reset" step.
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const { data: preds } = await supabase
+        .from("predictions")
+        .select("user_id, user_prediction, user_outcome, user_over_under, actual_score")
+        .gte("created_at", monthStart)
+        .not("actual_score", "is", null);
+      if (!preds || preds.length === 0) { setLeaderboardLoading(false); return; }
+
+      // Points system: exact scoreline = 5, correct outcome without the
+      // exact score = 3, correct over/under = 1 (additive, on top of
+      // whichever of the above applies). "Player to score" isn't scored
+      // here at all — the prediction form has no field for it yet, so
+      // there's nothing stored to check it against. That would need a new
+      // input added first, the same way outcome and over/under were.
+      const byUser = {};
+      preds.forEach(p => {
+        if (!byUser[p.user_id]) byUser[p.user_id] = { total: 0, points: 0, exact: 0, outcomeOnly: 0, overUnderHits: 0 };
+        byUser[p.user_id].total += 1;
+
+        const [actualHome, actualAway] = (p.actual_score || "").split("-").map(n => parseInt(n));
+        const hasActual = !Number.isNaN(actualHome) && !Number.isNaN(actualAway);
+        const actualOutcome = hasActual
+          ? (actualHome > actualAway ? "Home Win" : actualAway > actualHome ? "Away Win" : "Draw")
+          : null;
+        const actualOverUnder = hasActual
+          ? ((actualHome + actualAway) > 2.5 ? "Over 2.5" : "Under 2.5")
+          : null;
+
+        let points = 0;
+        if (p.user_prediction === p.actual_score) {
+          points += 5;
+          byUser[p.user_id].exact += 1;
+        } else if (p.user_outcome && actualOutcome && p.user_outcome === actualOutcome) {
+          points += 3;
+          byUser[p.user_id].outcomeOnly += 1;
+        }
+        if (p.user_over_under && actualOverUnder && p.user_over_under === actualOverUnder) {
+          points += 1;
+          byUser[p.user_id].overUnderHits += 1;
+        }
+        byUser[p.user_id].points += points;
+      });
+
+      const userIds = Object.keys(byUser);
+      const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("id, username")
+        .in("id", userIds);
+      const nameById = {};
+      (profilesData || []).forEach(p => { nameById[p.id] = p.username; });
+
+      const rows = userIds
+        .map(id => ({
+          userId: id,
+          name: nameById[id] || null, // null = never set a display name
+          total: byUser[id].total,
+          points: byUser[id].points,
+          exact: byUser[id].exact,
+          outcomeOnly: byUser[id].outcomeOnly,
+          overUnderHits: byUser[id].overUnderHits,
+        }))
+        .filter(r => r.name) // leave out anyone without a display name rather than show a raw ID
+        .sort((a, b) => b.points - a.points)
+        .slice(0, 20);
+
+      setLeaderboard(rows);
+      setLeaderboardLoading(false);
+    })();
+  }, [tab, session]);
   const downloadAwardsCard = async () => {
     if (!awardsCardRef.current) return;
     setAwardsDownloading(true);
@@ -779,8 +860,16 @@ useEffect(() => {
     if (data) setHistory(data);
   };
   const loadUserRole = async (userId) => {
-    const { data } = await supabase.from("profiles").select("role").eq("id", userId).single();
+    const { data } = await supabase.from("profiles").select("role, username").eq("id", userId).single();
     if (data?.role) setUserRole(data.role);
+    setUsername(data?.username || "");
+  };
+  const saveUsername = async (name) => {
+    if (!session || !name.trim()) return;
+    // upsert since a profiles row may or may not already exist for this
+    // user depending on when they first signed up
+    await supabase.from("profiles").upsert({ id: session.user.id, username: name.trim() }, { onConflict: "id" });
+    setUsername(name.trim());
   };
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -1013,6 +1102,7 @@ useEffect(() => {
     { id: "standings", label: "🏆 You vs AI" },
     { id: "badges",    label: "🏅 Badges" },
     { id: "history",   label: "📋 History" },
+    { id: "leaderboard", label: "🏅 Leaderboard" },
   ];
   if (authLoading) return (
     <div style={{ minHeight: "100vh", background: "#0a0a0f", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -1097,6 +1187,23 @@ if (!session && !guestMode) {
           {TABS.map(t => <button key={t.id} className={`nav-tab${tab === t.id ? " active" : ""}`} onClick={() => setTab(t.id)}>{t.label}</button>)}
         </div>
       </div>
+      {/* One-time prompt to set a display name — predictions were only ever
+          linked to an internal user ID, meaningless on a public leaderboard.
+          Shown until the user actually sets one, then never again. */}
+      {session && !username && (
+        <div style={{ background: "#1a1400", borderBottom: "1px solid #4ade8033", padding: "10px 20px" }}>
+          <div style={{ maxWidth: 600, margin: "0 auto", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 13, color: "#fbbf24", fontWeight: 700 }}>Set a display name to appear on the leaderboard:</span>
+            <input
+              value={usernameDraft}
+              onChange={e => setUsernameDraft(e.target.value)}
+              placeholder="Your name..."
+              style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 13, padding: "5px 10px", outline: "none", fontFamily: "inherit" }}
+            />
+            <button onClick={() => saveUsername(usernameDraft)} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "5px 12px" }}>Save</button>
+          </div>
+        </div>
+      )}
       {liveData.filter(f => f.status === "live").length > 0 && (
         <div style={{ background: "#0f0f0f", borderBottom: "1px solid #1a0000" }}>
           {liveData.filter(f => f.status === "live").map(f => (
@@ -2036,6 +2143,35 @@ if (!session && !guestMode) {
               </div>
             )}
           </div>
+        </div>
+      )}
+      {tab === "leaderboard" && (
+        <div style={{ maxWidth: 600, margin: "0 auto", padding: "20px 16px" }}>
+          <div style={{ fontSize: 18, fontWeight: 900, color: "#f0f0f0", marginBottom: 4 }}>🏅 Monthly Leaderboard</div>
+          <div style={{ fontSize: 13, color: "#e2e8f0", marginBottom: 4 }}>
+            {new Date().toLocaleDateString("en-GB", { month: "long", year: "numeric" })} — ranked by points
+          </div>
+          <div style={{ fontSize: 11, color: "#666", marginBottom: 16 }}>
+            Exact score: 5pts · Correct outcome only: 3pts · Correct Over/Under: +1pt
+          </div>
+          {leaderboardLoading && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 15, padding: "30px 0" }}>Loading...</div>}
+          {!leaderboardLoading && leaderboard.length === 0 && (
+            <div style={{ textAlign: "center", color: "#666", fontSize: 15, padding: "30px 0" }}>No confirmed results yet this month.</div>
+          )}
+          {leaderboard.map((row, i) => (
+            <div key={row.userId} style={{
+              display: "flex", alignItems: "center", gap: 12,
+              background: "#0d0d18", border: "1px solid #1a1a2e", borderRadius: 10,
+              padding: "12px 16px", marginBottom: 8,
+            }}>
+              <span style={{ fontSize: 15, fontWeight: 900, color: "#818cf8", width: 24, flexShrink: 0 }}>{i + 1}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0" }}>{row.name}</div>
+                <div style={{ fontSize: 11, color: "#94a3b8" }}>{row.exact} exact · {row.outcomeOnly} outcome · {row.overUnderHits} O/U · {row.total} predictions</div>
+              </div>
+              <span style={{ fontSize: 18, color: "#fbbf24", fontWeight: 900 }}>{row.points}</span>
+            </div>
+          ))}
         </div>
       )}
       {viewingAnalysis && (
