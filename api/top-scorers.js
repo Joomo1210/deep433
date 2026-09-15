@@ -35,7 +35,13 @@ export default async function handler(req, res) {
   const endpointMap = {
     scorers: "topscorers",
     assists: "topassists",
-    cards:   "topcards",
+    // Was "topcards", which isn't a real API-Football endpoint at all —
+    // the actual documented path for cards is "topyellowcards". Calling a
+    // nonexistent endpoint would return no usable data, which is likely
+    // why "Most Booked" ended up showing the same player order as Top
+    // Scorers, whatever fallback or cached response was being served
+    // instead wasn't the real cards leaderboard.
+    cards:   "topyellowcards",
   };
   const endpoint = endpointMap[type] || "topscorers";
 
@@ -79,6 +85,23 @@ export default async function handler(req, res) {
     const sorted = players
       .sort((a, b) => (b[sortKey] || 0) - (a[sortKey] || 0))
       .slice(0, 10);
+
+    if (req.query.debug === "true") {
+      return res.status(200).json({
+        debug: true,
+        type,
+        endpointCalled: endpoint,
+        seasonUsed,
+        rawResponseCount: data.response?.length || 0,
+        firstThreeRaw: (data.response || []).slice(0, 3).map(p => ({
+          name: p.player?.name,
+          goals: p.statistics?.[0]?.goals?.total,
+          assists: p.statistics?.[0]?.goals?.assists,
+          yellowCards: p.statistics?.[0]?.cards?.yellow,
+        })),
+        sortedPreview: sorted.slice(0, 3).map(p => ({ name: p.name, [sortKey]: p[sortKey] })),
+      });
+    }
 
     res.status(200).json({ available: sorted.length > 0, type, seasonUsed, players: sorted });
   } catch (err) {
