@@ -2063,7 +2063,12 @@ if (!session && !guestMode) {
         )}
         {tab === "history" && (
           <>
-            <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Prediction History</div>
+            <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }}>Prediction History</div>
+            {history.filter(h => !h.actual_score).length > 0 && (
+              <div style={{ fontSize: 13, color: "#818cf8", fontWeight: 700, marginBottom: 10 }}>
+                ⏳ {history.filter(h => !h.actual_score).length} prediction{history.filter(h => !h.actual_score).length === 1 ? "" : "s"} still pending a result
+              </div>
+            )}
             <input className="search-input" placeholder="🔍 Search by team..." value={historySearch} onChange={e => setHistorySearch(e.target.value)} />
             {history.length === 0 && <div style={{ textAlign: "center", color: "#444", fontSize: 17, padding: "40px 0" }}>No predictions yet — go predict a match!</div>}
             {history.filter(h => !historySearch.trim() || h.home_team.toLowerCase().includes(historySearch.toLowerCase()) || h.away_team.toLowerCase().includes(historySearch.toLowerCase())).map((h) => {
@@ -2103,6 +2108,17 @@ if (!session && !guestMode) {
                       </div>
                     )}
                   </div>
+                  {(h.user_outcome || h.user_over_under) && (
+                    <div style={{ display: "flex", gap: 6, justifyContent: "center", marginBottom: 8, flexWrap: "wrap" }}>
+                      {h.user_outcome && <div style={{ background: "#4ade8018", border: "1px solid #4ade8044", borderRadius: 6, padding: "3px 9px", fontSize: 12, color: "#4ade80", fontWeight: 700 }}>{h.user_outcome}</div>}
+                      {h.user_over_under && <div style={{ background: "#4ade8018", border: "1px solid #4ade8044", borderRadius: 6, padding: "3px 9px", fontSize: 12, color: "#4ade80", fontWeight: 700 }}>{h.user_over_under}</div>}
+                    </div>
+                  )}
+                  {!h.actual_score && matchStatus !== "live" && (
+                    <div style={{ textAlign: "center", padding: "6px", background: "#818cf811", border: "1px solid #818cf833", borderRadius: 8, fontSize: 13, fontWeight: 700, color: "#818cf8", marginBottom: 8 }}>
+                      ⏳ Pending — waiting on kickoff and a final result
+                    </div>
+                  )}
                   {h.result && (
                     <div style={{ textAlign: "center", padding: "8px", background: wc + "11", border: `1px solid ${wc}33`, borderRadius: 8, fontSize: 16, fontWeight: 700, color: wc, marginBottom: 8 }}>
                       {h.result === "user" ? "🏆 You beat the AI!" : h.result === "ai" ? "🤖 AI wins this one" : "🤝 It's a tie"}
