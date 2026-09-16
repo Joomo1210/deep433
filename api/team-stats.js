@@ -23,6 +23,7 @@ const LEAGUE_MAP = {
   npfl:         { id: 399, season: 2026 }, // Nigeria
   scotprem:     { id: 179, season: 2026 }, // Scotland
   segunda:      { id: 141, season: 2026 }, // Spain Segunda División
+  leaguecup:    { id: 48,  season: 2026 }, // EFL Cup (League Cup), England
   // Additional European leagues whose clubs regularly play Champions
   // League football — added to fixtures.js and the frontend selector
   // earlier, but missed here, this file's own separate league map, which
