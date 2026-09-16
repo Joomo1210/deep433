@@ -2342,12 +2342,30 @@ if (!session && !guestMode) {
           {userRole === "admin" && (
             <div style={{ background: "#0d0d18", border: "1px solid #2a2a3a", borderRadius: 8, padding: "10px", marginBottom: 14 }}>
               <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 700, marginBottom: 6 }}>Matches counting toward the leaderboard (admin)</div>
-              <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
-                <input value={newFixtureHome} onChange={e => setNewFixtureHome(e.target.value)} placeholder="Home team" style={{ flex: 1, minWidth: 90, background: "#1a1a24", border: "1px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "5px 8px", outline: "none", fontFamily: "inherit" }} />
-                <input value={newFixtureAway} onChange={e => setNewFixtureAway(e.target.value)} placeholder="Away team" style={{ flex: 1, minWidth: 90, background: "#1a1a24", border: "1px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "5px 8px", outline: "none", fontFamily: "inherit" }} />
-                <button onClick={addLeaderboardFixture} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "5px 10px" }}>Add</button>
+              <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 8 }}>
+                Pick from real fixtures for the league currently selected on the Predict tab ({LEAGUE_OPTIONS.find(l => l.id === selectedLeague)?.label || selectedLeague}) — typing team names by hand was the actual cause of matches silently not scoring: "Man UTD" and "Manchester United" don't match as the same team, even though a real prediction stores the full name. Picking from here guarantees the exact same spelling predictions use.
               </div>
-              {leaderboardFixtures.length === 0 && <div style={{ fontSize: 11, color: "#666" }}>No matches added yet — nothing will score until at least one is added, using the exact team names as typed on the prediction form.</div>}
+              <select
+                onChange={e => {
+                  const fx = fixtures.find(f => `${f.home}|${f.away}` === e.target.value);
+                  if (fx) { setNewFixtureHome(fx.home); setNewFixtureAway(fx.away); }
+                  e.target.value = "";
+                }}
+                value=""
+                style={{ width: "100%", background: "#1a1a24", border: "1px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "6px 8px", outline: "none", fontFamily: "inherit", marginBottom: 8 }}
+              >
+                <option value="">{fixtures.length ? "Select a fixture..." : "No fixtures loaded for this league yet"}</option>
+                {fixtures.map((f, i) => (
+                  <option key={i} value={`${f.home}|${f.away}`}>{f.home} vs {f.away}</option>
+                ))}
+              </select>
+              {newFixtureHome && newFixtureAway && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, fontSize: 12, color: "#4ade80" }}>
+                  <span style={{ flex: 1 }}>Selected: {newFixtureHome} vs {newFixtureAway}</span>
+                  <button onClick={addLeaderboardFixture} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "5px 10px" }}>Add</button>
+                </div>
+              )}
+              {leaderboardFixtures.length === 0 && <div style={{ fontSize: 11, color: "#666" }}>No matches added yet — nothing will score until at least one is added.</div>}
               {leaderboardFixtures.map(f => (
                 <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#e2e8f0", padding: "4px 0" }}>
                   <span style={{ flex: 1 }}>{f.home_team} vs {f.away_team}</span>
