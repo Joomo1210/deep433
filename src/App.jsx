@@ -743,15 +743,17 @@ export default function FootballPredictor() {
     const userIds = Object.keys(byUser);
     const { data: profilesData } = await supabase
       .from("profiles")
-      .select("id, username")
+      .select("id, username, role")
       .in("id", userIds);
     const nameById = {};
-    (profilesData || []).forEach(p => { nameById[p.id] = p.username; });
+    const roleById = {};
+    (profilesData || []).forEach(p => { nameById[p.id] = p.username; roleById[p.id] = p.role; });
 
     const rows = userIds
       .map(id => ({
         userId: id,
         name: nameById[id] || null, // null = never set a display name
+        role: roleById[id],
         total: byUser[id].total,
         points: byUser[id].points,
         exact: byUser[id].exact,
@@ -759,6 +761,10 @@ export default function FootballPredictor() {
         overUnderHits: byUser[id].overUnderHits,
       }))
       .filter(r => r.name) // leave out anyone without a display name rather than show a raw ID
+      // The admin runs the contest and picks which matches count — letting
+      // that account also compete on the same board it controls isn't a
+      // fair contest, so it's excluded regardless of its own points.
+      .filter(r => r.role !== "admin")
       .sort((a, b) => b.points - a.points)
       .slice(0, 20);
 
