@@ -1233,6 +1233,9 @@ if (!session && !guestMode) {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {rank && <div style={{ textAlign: "right" }}><div style={{ fontSize: 17 }}>{rank.icon}</div><div style={{ fontSize: 13, color: rank.color, fontWeight: 700 }}>{rank.name}</div></div>}
+            {session && username && (
+              <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 700 }}>👤 {username}</div>
+            )}
             {session ? (
               <button onClick={signOut} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "5px 10px" }}>Sign out</button>
             ) : (
