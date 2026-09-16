@@ -864,11 +864,20 @@ useEffect(() => {
     if (data?.role) setUserRole(data.role);
     setUsername(data?.username || "");
   };
+  const [usernameError, setUsernameError] = useState("");
   const saveUsername = async (name) => {
     if (!session || !name.trim()) return;
+    setUsernameError("");
     // upsert since a profiles row may or may not already exist for this
     // user depending on when they first signed up
-    await supabase.from("profiles").upsert({ id: session.user.id, username: name.trim() }, { onConflict: "id" });
+    const { error } = await supabase.from("profiles").upsert({ id: session.user.id, username: name.trim() }, { onConflict: "id" });
+    if (error) {
+      // Most likely cause: a Row Level Security policy on profiles that
+      // allows reading but not updating. The save was failing completely
+      // silently before this, with nothing telling the user why.
+      setUsernameError(error.message || "Save failed — check Supabase RLS policy on profiles allows UPDATE.");
+      return;
+    }
     setUsername(name.trim());
   };
   const signOut = async () => {
@@ -1201,6 +1210,9 @@ if (!session && !guestMode) {
               style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 13, padding: "5px 10px", outline: "none", fontFamily: "inherit" }}
             />
             <button onClick={() => saveUsername(usernameDraft)} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "5px 12px" }}>Save</button>
+            {usernameError && (
+              <div style={{ width: "100%", fontSize: 12, color: "#f87171", fontWeight: 600 }}>{usernameError}</div>
+            )}
           </div>
         </div>
       )}
