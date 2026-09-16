@@ -16,6 +16,7 @@ const LEAGUE_MAP = {
   afcon:       { id: 6,   season: 2025 },
   copamerica:  { id: 9,   season: 2024 },
   communityshield: { id: 528, season: 2026 },
+  leaguecup: { id: 48, season: 2026 }, // EFL Cup (League Cup), England
   dflsupercup:     { id: 529, season: 2026 },
   tropheedeschampions: { id: 526, season: 2026 },
   supercoppa:      { id: 547, season: 2026 },
