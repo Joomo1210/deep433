@@ -55,6 +55,7 @@ const LEAGUES = [
   { id: "afcon", label: "AFCON", short: "AFCON" },
   { id: "copamerica", label: "Copa America", short: "Copa America" },
   { id: "communityshield", label: "Community Shield", short: "Community Shield" },
+  { id: "leaguecup", label: "EFL Cup (League Cup)", short: "League Cup" },
   { id: "dflsupercup", label: "DFL-Supercup", short: "DFL-Supercup" },
   { id: "tropheedeschampions", label: "Trophée des Champions", short: "Trophée des Champions" },
   { id: "supercoppa", label: "Supercoppa Italiana", short: "Supercoppa Italiana" },
@@ -836,6 +837,7 @@ const SCORES_TAB_LEAGUES = [
   { id: "ucl", label: "Champions League" },
   { id: "championship", label: "Championship" },
   { id: "communityshield", label: "Community Shield" },
+  { id: "leaguecup", label: "League Cup" },
 ];
 useEffect(() => {
   const fetchLive = async () => {
