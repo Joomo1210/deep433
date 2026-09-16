@@ -673,14 +673,20 @@ export default function FootballPredictor() {
     setLeaderboardLoading(true);
     setLeaderboard([]);
     (async () => {
-      // Current calendar month, from the 1st through now — this resets
-      // naturally each month rather than needing any manual "reset" step.
+      // Fixed launch date for the points-based leaderboard, not "start of
+      // month" — the scoring system just changed, and predictions made
+      // before it existed shouldn't carry pre-earned points into it. Uses
+      // whichever is later, the launch date or the start of the current
+      // month, so this behaves like a normal monthly reset again once
+      // we're past the launch month, without needing further edits.
+      const LEADERBOARD_START_DATE = new Date("2026-09-16");
       const now = new Date();
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const calendarMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const cutoff = (calendarMonthStart > LEADERBOARD_START_DATE ? calendarMonthStart : LEADERBOARD_START_DATE).toISOString();
       const { data: preds } = await supabase
         .from("predictions")
         .select("user_id, user_prediction, user_outcome, user_over_under, actual_score")
-        .gte("created_at", monthStart)
+        .gte("created_at", cutoff)
         .not("actual_score", "is", null);
       if (!preds || preds.length === 0) { setLeaderboardLoading(false); return; }
 
@@ -872,10 +878,17 @@ useEffect(() => {
     // user depending on when they first signed up
     const { error } = await supabase.from("profiles").upsert({ id: session.user.id, username: name.trim() }, { onConflict: "id" });
     if (error) {
-      // Most likely cause: a Row Level Security policy on profiles that
-      // allows reading but not updating. The save was failing completely
-      // silently before this, with nothing telling the user why.
-      setUsernameError(error.message || "Save failed — check Supabase RLS policy on profiles allows UPDATE.");
+      // Postgres unique-constraint violations carry code 23505 — surfaced
+      // here as a plain, friendly message instead of the raw database
+      // error, since "duplicate key value violates unique constraint"
+      // means nothing to someone just trying to pick a name.
+      if (error.code === "23505") {
+        setUsernameError("That name is already taken — try another one.");
+      } else {
+        // Most likely cause otherwise: a Row Level Security policy on
+        // profiles that allows reading but not updating.
+        setUsernameError(error.message || "Save failed — check Supabase RLS policy on profiles allows UPDATE.");
+      }
       return;
     }
     setUsername(name.trim());
@@ -2158,30 +2171,27 @@ if (!session && !guestMode) {
         </div>
       )}
       {tab === "leaderboard" && (
-        <div style={{ maxWidth: 600, margin: "0 auto", padding: "20px 16px" }}>
-          <div style={{ fontSize: 18, fontWeight: 900, color: "#f0f0f0", marginBottom: 4 }}>🏅 Monthly Leaderboard</div>
-          <div style={{ fontSize: 13, color: "#e2e8f0", marginBottom: 4 }}>
-            {new Date().toLocaleDateString("en-GB", { month: "long", year: "numeric" })} — ranked by points
+        <div style={{ maxWidth: 600, margin: "0 auto", padding: "14px 12px" }}>
+          <div style={{ fontSize: 16, fontWeight: 900, color: "#f0f0f0", marginBottom: 2 }}>🏅 Leaderboard</div>
+          <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 10 }}>
+            Exact: 5pts · Outcome only: 3pts · O/U: +1pt
           </div>
-          <div style={{ fontSize: 11, color: "#666", marginBottom: 16 }}>
-            Exact score: 5pts · Correct outcome only: 3pts · Correct Over/Under: +1pt
-          </div>
-          {leaderboardLoading && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 15, padding: "30px 0" }}>Loading...</div>}
+          {leaderboardLoading && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 14, padding: "20px 0" }}>Loading...</div>}
           {!leaderboardLoading && leaderboard.length === 0 && (
-            <div style={{ textAlign: "center", color: "#666", fontSize: 15, padding: "30px 0" }}>No confirmed results yet this month.</div>
+            <div style={{ textAlign: "center", color: "#666", fontSize: 14, padding: "20px 0" }}>No confirmed results yet.</div>
           )}
           {leaderboard.map((row, i) => (
             <div key={row.userId} style={{
-              display: "flex", alignItems: "center", gap: 12,
-              background: "#0d0d18", border: "1px solid #1a1a2e", borderRadius: 10,
-              padding: "12px 16px", marginBottom: 8,
+              display: "flex", alignItems: "center", gap: 8,
+              background: "#0d0d18", border: "1px solid #1a1a2e", borderRadius: 8,
+              padding: "8px 10px", marginBottom: 5,
             }}>
-              <span style={{ fontSize: 15, fontWeight: 900, color: "#818cf8", width: 24, flexShrink: 0 }}>{i + 1}</span>
+              <span style={{ fontSize: 13, fontWeight: 900, color: "#818cf8", width: 18, flexShrink: 0 }}>{i + 1}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0" }}>{row.name}</div>
-                <div style={{ fontSize: 11, color: "#94a3b8" }}>{row.exact} exact · {row.outcomeOnly} outcome · {row.overUnderHits} O/U · {row.total} predictions</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.name}</div>
+                <div style={{ fontSize: 10, color: "#94a3b8" }}>{row.exact}E · {row.outcomeOnly}O · {row.overUnderHits}OU · {row.total} preds</div>
               </div>
-              <span style={{ fontSize: 18, color: "#fbbf24", fontWeight: 900 }}>{row.points}</span>
+              <span style={{ fontSize: 15, color: "#fbbf24", fontWeight: 900, flexShrink: 0 }}>{row.points}</span>
             </div>
           ))}
         </div>
