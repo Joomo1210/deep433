@@ -2343,7 +2343,7 @@ if (!session && !guestMode) {
             <div style={{ background: "#0d0d18", border: "1px solid #2a2a3a", borderRadius: 8, padding: "10px", marginBottom: 14 }}>
               <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 700, marginBottom: 6 }}>Matches counting toward the leaderboard (admin)</div>
               <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 8 }}>
-                Pick from real fixtures for the league currently selected on the Predict tab ({LEAGUE_OPTIONS.find(l => l.id === selectedLeague)?.label || selectedLeague}) — typing team names by hand was the actual cause of matches silently not scoring: "Man UTD" and "Manchester United" don't match as the same team, even though a real prediction stores the full name. Picking from here guarantees the exact same spelling predictions use.
+                Pick from real fixtures for the league currently selected on the Predict tab ({LEAGUES.find(l => l.id === selectedLeague)?.label || selectedLeague}) — typing team names by hand was the actual cause of matches silently not scoring: "Man UTD" and "Manchester United" don't match as the same team, even though a real prediction stores the full name. Picking from here guarantees the exact same spelling predictions use.
               </div>
               <select
                 onChange={e => {
