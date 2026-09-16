@@ -623,6 +623,59 @@ export default function FootballPredictor() {
       (normalize(f.home) === a && normalize(f.away) === h)
     );
   };
+  // Actively checks for a specific pending prediction's result, rather than
+  // depending on whatever liveData already happens to be loaded (which
+  // only ever reflects whatever date the Scores tab currently has open —
+  // the actual reason so many older predictions were stuck pending: they
+  // were never checked against their own real match date at all).
+  const [checkingResultId, setCheckingResultId] = useState(null);
+  const checkResultManually = async (h) => {
+    setCheckingResultId(h.id);
+    try {
+      const created = new Date(h.created_at);
+      // Check the creation date and the following day, since a prediction
+      // is usually made shortly before kickoff and some matches finish
+      // past midnight local time.
+      const datesToCheck = [
+        getLocalDateString(created),
+        getLocalDateString(new Date(created.getTime() + 86400000)),
+      ];
+      for (const dateStr of datesToCheck) {
+        for (const league of SCORES_TAB_LEAGUES) {
+          try {
+            const res = await fetch(`/api/live-scores?leagueId=${league.id}&date=${dateStr}`);
+            if (!res.ok) continue;
+            const data = await res.json();
+            const match = (data.fixtures || []).find(f => {
+              const fh = normalize(f.home), fa = normalize(f.away);
+              const hh = normalize(h.home_team), ha = normalize(h.away_team);
+              return (fh === hh && fa === ha) || (fh === ha && fa === hh);
+            });
+            if (match && match.status === "finished" && match.score?.home != null && match.score?.away != null) {
+              await logResult(h.id, `${match.score.home}-${match.score.away}`);
+              setCheckingResultId(null);
+              return;
+            }
+          } catch {}
+        }
+      }
+      alert("No finished result found for this match yet — it may still be pending, or you can enter the score manually.");
+    } finally {
+      setCheckingResultId(null);
+    }
+  };
+  const [manualEntryId, setManualEntryId] = useState(null);
+  const [manualScoreDraft, setManualScoreDraft] = useState("");
+  const submitManualResult = async (id) => {
+    const cleaned = manualScoreDraft.trim().replace(/\s/g, "");
+    if (!/^\d+-\d+$/.test(cleaned)) {
+      alert("Enter the score as two numbers separated by a dash, e.g. 2-1");
+      return;
+    }
+    await logResult(id, cleaned);
+    setManualEntryId(null);
+    setManualScoreDraft("");
+  };
   const getMatchStatus = (homeTeam, awayTeam) => {
     const live = findLiveFixture(homeTeam, awayTeam);
     if (live) return live.status;
@@ -2123,8 +2176,36 @@ if (!session && !guestMode) {
                     </div>
                   )}
                   {!h.actual_score && matchStatus !== "live" && (
-                    <div style={{ textAlign: "center", padding: "6px", background: "#818cf811", border: "1px solid #818cf833", borderRadius: 8, fontSize: 13, fontWeight: 700, color: "#818cf8", marginBottom: 8 }}>
-                      ⏳ Pending — waiting on kickoff and a final result
+                    <div style={{ padding: "6px", background: "#818cf811", border: "1px solid #818cf833", borderRadius: 8, marginBottom: 8 }}>
+                      <div style={{ textAlign: "center", fontSize: 13, fontWeight: 700, color: "#818cf8", marginBottom: 6 }}>
+                        ⏳ Pending — waiting on kickoff and a final result
+                      </div>
+                      <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
+                        <button
+                          onClick={() => checkResultManually(h)}
+                          disabled={checkingResultId === h.id}
+                          style={{ background: "none", border: "1px solid #818cf855", borderRadius: 6, color: "#818cf8", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "4px 10px" }}
+                        >
+                          {checkingResultId === h.id ? "Checking..." : "🔄 Check for result"}
+                        </button>
+                        <button
+                          onClick={() => { setManualEntryId(manualEntryId === h.id ? null : h.id); setManualScoreDraft(""); }}
+                          style={{ background: "none", border: "1px solid #4ade8055", borderRadius: 6, color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "4px 10px" }}
+                        >
+                          ✍️ Enter manually
+                        </button>
+                      </div>
+                      {manualEntryId === h.id && (
+                        <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 8 }}>
+                          <input
+                            value={manualScoreDraft}
+                            onChange={e => setManualScoreDraft(e.target.value)}
+                            placeholder="e.g. 2-1"
+                            style={{ width: 80, background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 13, padding: "5px 8px", outline: "none", fontFamily: "inherit", textAlign: "center" }}
+                          />
+                          <button onClick={() => submitManualResult(h.id)} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "5px 12px" }}>Save</button>
+                        </div>
+                      )}
                     </div>
                   )}
                   {h.result && (
