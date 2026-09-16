@@ -65,6 +65,7 @@ const LEAGUE_OPTIONS = [
   { id: "afcon",  label: "AFCON" },
   { id: "copamerica", label: "Copa America" },
   { id: "communityshield", label: "Community Shield" },
+  { id: "leaguecup", label: "EFL Cup (League Cup)" },
   { id: "dflsupercup", label: "DFL-Supercup" },
   { id: "tropheedeschampions", label: "Trophée des Champions" },
   { id: "supercoppa", label: "Supercoppa Italiana" },
