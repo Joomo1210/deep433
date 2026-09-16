@@ -1084,9 +1084,27 @@ useEffect(() => {
       const [uh, ua] = item.user_prediction.split("-").map(Number);
       const [ah, aa] = item.ai_prediction.split("-").map(Number);
       const [rh, ra] = score.split("-").map(Number);
+      const outcomeOf = (h, a) => h > a ? "home" : a > h ? "away" : "draw";
+      const actualOutcome = outcomeOf(rh, ra);
+      const userOutcomeRight = outcomeOf(uh, ua) === actualOutcome;
+      const aiOutcomeRight = outcomeOf(ah, aa) === actualOutcome;
+      const userExact = uh === rh && ua === ra;
+      const aiExact = ah === rh && aa === ra;
       const userDiff = Math.abs(uh-rh)+Math.abs(ua-ra);
       const aiDiff = Math.abs(ah-rh)+Math.abs(aa-ra);
-      const r = userDiff < aiDiff ? "user" : aiDiff < userDiff ? "ai" : "tie";
+      // Getting the actual outcome right (who won, or a draw) always beats
+      // getting the outcome wrong, no matter how numerically "close" the
+      // wrong prediction's raw goal count happens to land — a home-win
+      // prediction on a match that finished as an away win is a genuine
+      // miss regardless of how the digits compare. Only when both sides
+      // match on outcome (or both miss it) does exact-score, then raw
+      // distance, decide it.
+      let r;
+      if (userOutcomeRight && !aiOutcomeRight) r = "user";
+      else if (aiOutcomeRight && !userOutcomeRight) r = "ai";
+      else if (userExact && !aiExact) r = "user";
+      else if (aiExact && !userExact) r = "ai";
+      else r = userDiff < aiDiff ? "user" : aiDiff < userDiff ? "ai" : "tie";
       await supabase.from("predictions").update({ actual_score: score, result: r }).eq("id", id);
       setHistory(prev => prev.map(h => h.id === id ? { ...h, actual_score: score, result: r } : h));
     } catch {}
