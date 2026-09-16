@@ -572,6 +572,9 @@ export default function FootballPredictor() {
   const [username, setUsername] = useState("");
   const [usernameDraft, setUsernameDraft] = useState("");
   const [leaderboard, setLeaderboard] = useState([]);
+  const [leaderboardFixtures, setLeaderboardFixtures] = useState([]);
+  const [newFixtureHome, setNewFixtureHome] = useState("");
+  const [newFixtureAway, setNewFixtureAway] = useState("");
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   const [fixtures, setFixtures] = useState([]);
   const [fixturesLoading, setFixturesLoading] = useState(false);
@@ -668,88 +671,103 @@ export default function FootballPredictor() {
       if (predResult.data) setTournamentPred(predResult.data);
     }).catch(() => setAwardsError("Failed to load teams")).finally(() => setAwardsLoading(false));
   }, [tab, awardsLeague, session]);
-  useEffect(() => {
-    if (tab !== "leaderboard") return;
+  const computeLeaderboard = async () => {
     setLeaderboardLoading(true);
     setLeaderboard([]);
-    (async () => {
-      // Fixed launch date for the points-based leaderboard, not "start of
-      // month" — the scoring system just changed, and predictions made
-      // before it existed shouldn't carry pre-earned points into it. Uses
-      // whichever is later, the launch date or the start of the current
-      // month, so this behaves like a normal monthly reset again once
-      // we're past the launch month, without needing further edits.
-      const LEADERBOARD_START_DATE = new Date("2026-09-16");
-      const now = new Date();
-      const calendarMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const cutoff = (calendarMonthStart > LEADERBOARD_START_DATE ? calendarMonthStart : LEADERBOARD_START_DATE).toISOString();
-      const { data: preds } = await supabase
-        .from("predictions")
-        .select("user_id, user_prediction, user_outcome, user_over_under, actual_score")
-        .gte("created_at", cutoff)
-        .not("actual_score", "is", null);
-      if (!preds || preds.length === 0) { setLeaderboardLoading(false); return; }
+    // Fixed launch date for the points-based leaderboard, not "start of
+    // month" — the scoring system just changed, and predictions made
+    // before it existed shouldn't carry pre-earned points into it. Uses
+    // whichever is later, the launch date or the start of the current
+    // month, so this behaves like a normal monthly reset again once
+    // we're past the launch month, without needing further edits.
+    const LEADERBOARD_START_DATE = new Date("2026-09-16");
+    const now = new Date();
+    const calendarMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const cutoff = (calendarMonthStart > LEADERBOARD_START_DATE ? calendarMonthStart : LEADERBOARD_START_DATE).toISOString();
+    const { data: preds } = await supabase
+      .from("predictions")
+      .select("user_id, home_team, away_team, user_prediction, user_outcome, user_over_under, actual_score")
+      .gte("created_at", cutoff)
+      .not("actual_score", "is", null);
+    if (!preds || preds.length === 0) { setLeaderboardLoading(false); return; }
 
-      // Points system: exact scoreline = 5, correct outcome without the
-      // exact score = 3, correct over/under = 1 (additive, on top of
-      // whichever of the above applies). "Player to score" isn't scored
-      // here at all — the prediction form has no field for it yet, so
-      // there's nothing stored to check it against. That would need a new
-      // input added first, the same way outcome and over/under were.
-      const byUser = {};
-      preds.forEach(p => {
-        if (!byUser[p.user_id]) byUser[p.user_id] = { total: 0, points: 0, exact: 0, outcomeOnly: 0, overUnderHits: 0 };
-        byUser[p.user_id].total += 1;
+    // Only count predictions for matches deliberately curated for the
+    // leaderboard, not every prediction anyone happens to submit through
+    // the app. Matched by team name pair (case-insensitive), since
+    // predictions store plain team name text, not a fixture ID.
+    const { data: fixturesData } = await supabase.from("leaderboard_fixtures").select("home_team, away_team");
+    const eligibleKeys = new Set(
+      (fixturesData || []).map(f => `${f.home_team.toLowerCase()}|${f.away_team.toLowerCase()}`)
+    );
+    const eligiblePreds = preds.filter(p =>
+      eligibleKeys.has(`${(p.home_team || "").toLowerCase()}|${(p.away_team || "").toLowerCase()}`)
+    );
+    if (eligiblePreds.length === 0) { setLeaderboardLoading(false); return; }
 
-        const [actualHome, actualAway] = (p.actual_score || "").split("-").map(n => parseInt(n));
-        const hasActual = !Number.isNaN(actualHome) && !Number.isNaN(actualAway);
-        const actualOutcome = hasActual
-          ? (actualHome > actualAway ? "Home Win" : actualAway > actualHome ? "Away Win" : "Draw")
-          : null;
-        const actualOverUnder = hasActual
-          ? ((actualHome + actualAway) > 2.5 ? "Over 2.5" : "Under 2.5")
-          : null;
+    // Points system: exact scoreline = 5, correct outcome without the
+    // exact score = 3, correct over/under = 1 (additive, on top of
+    // whichever of the above applies). "Player to score" isn't scored
+    // here at all — the prediction form has no field for it yet, so
+    // there's nothing stored to check it against. That would need a new
+    // input added first, the same way outcome and over/under were.
+    const byUser = {};
+    eligiblePreds.forEach(p => {
+      if (!byUser[p.user_id]) byUser[p.user_id] = { total: 0, points: 0, exact: 0, outcomeOnly: 0, overUnderHits: 0 };
+      byUser[p.user_id].total += 1;
 
-        let points = 0;
-        if (p.user_prediction === p.actual_score) {
-          points += 5;
-          byUser[p.user_id].exact += 1;
-        } else if (p.user_outcome && actualOutcome && p.user_outcome === actualOutcome) {
-          points += 3;
-          byUser[p.user_id].outcomeOnly += 1;
-        }
-        if (p.user_over_under && actualOverUnder && p.user_over_under === actualOverUnder) {
-          points += 1;
-          byUser[p.user_id].overUnderHits += 1;
-        }
-        byUser[p.user_id].points += points;
-      });
+      const [actualHome, actualAway] = (p.actual_score || "").split("-").map(n => parseInt(n));
+      const hasActual = !Number.isNaN(actualHome) && !Number.isNaN(actualAway);
+      const actualOutcome = hasActual
+        ? (actualHome > actualAway ? "Home Win" : actualAway > actualHome ? "Away Win" : "Draw")
+        : null;
+      const actualOverUnder = hasActual
+        ? ((actualHome + actualAway) > 2.5 ? "Over 2.5" : "Under 2.5")
+        : null;
 
-      const userIds = Object.keys(byUser);
-      const { data: profilesData } = await supabase
-        .from("profiles")
-        .select("id, username")
-        .in("id", userIds);
-      const nameById = {};
-      (profilesData || []).forEach(p => { nameById[p.id] = p.username; });
+      let points = 0;
+      if (p.user_prediction === p.actual_score) {
+        points += 5;
+        byUser[p.user_id].exact += 1;
+      } else if (p.user_outcome && actualOutcome && p.user_outcome === actualOutcome) {
+        points += 3;
+        byUser[p.user_id].outcomeOnly += 1;
+      }
+      if (p.user_over_under && actualOverUnder && p.user_over_under === actualOverUnder) {
+        points += 1;
+        byUser[p.user_id].overUnderHits += 1;
+      }
+      byUser[p.user_id].points += points;
+    });
 
-      const rows = userIds
-        .map(id => ({
-          userId: id,
-          name: nameById[id] || null, // null = never set a display name
-          total: byUser[id].total,
-          points: byUser[id].points,
-          exact: byUser[id].exact,
-          outcomeOnly: byUser[id].outcomeOnly,
-          overUnderHits: byUser[id].overUnderHits,
-        }))
-        .filter(r => r.name) // leave out anyone without a display name rather than show a raw ID
-        .sort((a, b) => b.points - a.points)
-        .slice(0, 20);
+    const userIds = Object.keys(byUser);
+    const { data: profilesData } = await supabase
+      .from("profiles")
+      .select("id, username")
+      .in("id", userIds);
+    const nameById = {};
+    (profilesData || []).forEach(p => { nameById[p.id] = p.username; });
 
-      setLeaderboard(rows);
-      setLeaderboardLoading(false);
-    })();
+    const rows = userIds
+      .map(id => ({
+        userId: id,
+        name: nameById[id] || null, // null = never set a display name
+        total: byUser[id].total,
+        points: byUser[id].points,
+        exact: byUser[id].exact,
+        outcomeOnly: byUser[id].outcomeOnly,
+        overUnderHits: byUser[id].overUnderHits,
+      }))
+      .filter(r => r.name) // leave out anyone without a display name rather than show a raw ID
+      .sort((a, b) => b.points - a.points)
+      .slice(0, 20);
+
+    setLeaderboard(rows);
+    setLeaderboardLoading(false);
+  };
+  useEffect(() => {
+    if (tab !== "leaderboard") return;
+    if (userRole === "admin") loadLeaderboardFixtures();
+    computeLeaderboard();
   }, [tab, session]);
   const downloadAwardsCard = async () => {
     if (!awardsCardRef.current) return;
@@ -892,6 +910,25 @@ useEffect(() => {
       return;
     }
     setUsername(name.trim());
+  };
+  const loadLeaderboardFixtures = async () => {
+    const { data } = await supabase.from("leaderboard_fixtures").select("*").order("created_at", { ascending: false });
+    setLeaderboardFixtures(data || []);
+  };
+  const addLeaderboardFixture = async () => {
+    if (!newFixtureHome.trim() || !newFixtureAway.trim()) return;
+    await supabase.from("leaderboard_fixtures").insert({
+      home_team: newFixtureHome.trim(),
+      away_team: newFixtureAway.trim(),
+    });
+    setNewFixtureHome(""); setNewFixtureAway("");
+    loadLeaderboardFixtures();
+    computeLeaderboard();
+  };
+  const removeLeaderboardFixture = async (id) => {
+    await supabase.from("leaderboard_fixtures").delete().eq("id", id);
+    loadLeaderboardFixtures();
+    computeLeaderboard();
   };
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -2176,6 +2213,23 @@ if (!session && !guestMode) {
           <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 10 }}>
             Exact: 5pts · Outcome only: 3pts · O/U: +1pt
           </div>
+          {userRole === "admin" && (
+            <div style={{ background: "#0d0d18", border: "1px solid #2a2a3a", borderRadius: 8, padding: "10px", marginBottom: 14 }}>
+              <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 700, marginBottom: 6 }}>Matches counting toward the leaderboard (admin)</div>
+              <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
+                <input value={newFixtureHome} onChange={e => setNewFixtureHome(e.target.value)} placeholder="Home team" style={{ flex: 1, minWidth: 90, background: "#1a1a24", border: "1px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "5px 8px", outline: "none", fontFamily: "inherit" }} />
+                <input value={newFixtureAway} onChange={e => setNewFixtureAway(e.target.value)} placeholder="Away team" style={{ flex: 1, minWidth: 90, background: "#1a1a24", border: "1px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "5px 8px", outline: "none", fontFamily: "inherit" }} />
+                <button onClick={addLeaderboardFixture} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "5px 10px" }}>Add</button>
+              </div>
+              {leaderboardFixtures.length === 0 && <div style={{ fontSize: 11, color: "#666" }}>No matches added yet — nothing will score until at least one is added, using the exact team names as typed on the prediction form.</div>}
+              {leaderboardFixtures.map(f => (
+                <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#e2e8f0", padding: "4px 0" }}>
+                  <span style={{ flex: 1 }}>{f.home_team} vs {f.away_team}</span>
+                  <button onClick={() => removeLeaderboardFixture(f.id)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 4, color: "#f87171", cursor: "pointer", fontSize: 11, padding: "2px 6px" }}>Remove</button>
+                </div>
+              ))}
+            </div>
+          )}
           {leaderboardLoading && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 14, padding: "20px 0" }}>Loading...</div>}
           {!leaderboardLoading && leaderboard.length === 0 && (
             <div style={{ textAlign: "center", color: "#666", fontSize: 14, padding: "20px 0" }}>No confirmed results yet.</div>
