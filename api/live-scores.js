@@ -23,10 +23,9 @@ const LEAGUE_MAP = {
   npfl:         { id: 399, season: 2026 },
   scotprem:     { id: 179, season: 2026 },
   communityshield: { id: 528, season: 2026 },
-  dflsupercup:     { id: 529, season: 2026 },
-  tropheedeschampions: { id: 526, season: 2026 },
-  supercoppa:      { id: 547, season: 2026 },
+  leaguecup:    { id: 48,  season: 2026 }, // EFL Cup (League Cup), England
 };
+
 function mapStatus(shortStatus) {
   const live = ["1H", "HT", "2H", "ET", "BT", "P", "INT"];
   const finished = ["FT", "AET", "PEN"];
