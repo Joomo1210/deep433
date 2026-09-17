@@ -1237,9 +1237,21 @@ useEffect(() => {
       else if (userExact && !aiExact) r = "user";
       else if (aiExact && !userExact) r = "ai";
       else r = userDiff < aiDiff ? "user" : aiDiff < userDiff ? "ai" : "tie";
-      await supabase.from("predictions").update({ actual_score: score, result: r }).eq("id", id);
+      const { error } = await supabase.from("predictions").update({ actual_score: score, result: r }).eq("id", id);
+      if (error) {
+        // Almost certainly the same class of RLS issue as elsewhere this
+        // session — the predictions table's UPDATE policy very likely only
+        // lets a user update their OWN rows, which silently blocks admin
+        // from resolving anyone else's pending prediction through this
+        // panel. The empty catch below was hiding this completely.
+        alert(`Couldn't save this result: ${error.message}`);
+        setLoggingIdx(null); setLogScore("");
+        return;
+      }
       setHistory(prev => prev.map(h => h.id === id ? { ...h, actual_score: score, result: r } : h));
-    } catch {}
+    } catch (e) {
+      alert(`Couldn't save this result: ${e.message || "unknown error"}`);
+    }
     setLoggingIdx(null); setLogScore("");
   };
   const deletePredict = async (id) => {
