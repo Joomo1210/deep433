@@ -574,6 +574,8 @@ export default function FootballPredictor() {
   const [usernameDraft, setUsernameDraft] = useState("");
   const [leaderboard, setLeaderboard] = useState([]);
   const [leaderboardFixtures, setLeaderboardFixtures] = useState([]);
+  const [allPendingPredictions, setAllPendingPredictions] = useState([]);
+  const [allPendingLoading, setAllPendingLoading] = useState(false);
   const [newFixtureHome, setNewFixtureHome] = useState("");
   const [adminFixtureLeague, setAdminFixtureLeague] = useState("pl");
   const [adminFixtureOptions, setAdminFixtureOptions] = useState([]);
@@ -895,7 +897,7 @@ export default function FootballPredictor() {
   };
   useEffect(() => {
     if (tab !== "leaderboard") return;
-    if (userRole === "admin") loadLeaderboardFixtures();
+    if (userRole === "admin") { loadLeaderboardFixtures(); loadAllPendingPredictions(); }
     computeLeaderboard();
   }, [tab, session]);
   const downloadAwardsCard = async () => {
@@ -1055,6 +1057,23 @@ useEffect(() => {
     const { data } = await supabase.from("leaderboard_fixtures").select("*").order("created_at", { ascending: false });
     setLeaderboardFixtures(data || []);
   };
+  // Lets admin resolve anyone's pending prediction directly, without ever
+  // needing that person's login — admin should never need or have access
+  // to another user's account credentials to do this.
+  const loadAllPendingPredictions = async () => {
+    setAllPendingLoading(true);
+    const { data: preds } = await supabase
+      .from("predictions")
+      .select("*")
+      .is("actual_score", null)
+      .order("created_at", { ascending: false });
+    const userIds = [...new Set((preds || []).map(p => p.user_id))];
+    const { data: profilesData } = await supabase.from("profiles").select("id, username").in("id", userIds);
+    const nameById = {};
+    (profilesData || []).forEach(p => { nameById[p.id] = p.username; });
+    setAllPendingPredictions((preds || []).map(p => ({ ...p, predictorName: nameById[p.user_id] || "(no display name)" })));
+    setAllPendingLoading(false);
+  };
   const [fixtureAdminError, setFixtureAdminError] = useState("");
   const addLeaderboardFixture = async () => {
     if (!newFixtureHome.trim() || !newFixtureAway.trim()) return;
@@ -1172,7 +1191,15 @@ useEffect(() => {
     setSelectedFixtureId(null); setDeepInsights(null); setSelectedHomeLogo(null); setSelectedAwayLogo(null);
   };
   const logResult = async (id, score) => {
-    const item = history.find(h => h.id === id);
+    // Falls back to a direct Supabase lookup when the prediction isn't in
+    // this account's own local history — needed for the admin panel that
+    // resolves *other* users' pending predictions, which were never loaded
+    // into the admin's own history in the first place.
+    let item = history.find(h => h.id === id);
+    if (!item) {
+      const { data } = await supabase.from("predictions").select("*").eq("id", id).single();
+      item = data;
+    }
     if (!item) return;
     try {
       const [uh, ua] = item.user_prediction.split("-").map(Number);
@@ -2489,6 +2516,56 @@ if (!session && !guestMode) {
                 <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#e2e8f0", padding: "4px 0" }}>
                   <span style={{ flex: 1 }}>{f.home_team} vs {f.away_team}</span>
                   <button onClick={() => removeLeaderboardFixture(f.id)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 4, color: "#f87171", cursor: "pointer", fontSize: 11, padding: "2px 6px" }}>Remove</button>
+                </div>
+              ))}
+            </div>
+          )}
+          {userRole === "admin" && (
+            <div style={{ background: "#0d0d18", border: "1px solid #2a2a3a", borderRadius: 8, padding: "10px", marginBottom: 14 }}>
+              <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 700, marginBottom: 6 }}>
+                Everyone's pending predictions ({allPendingPredictions.length}) — resolve any user's result directly, no need to log in as them
+              </div>
+              {allPendingLoading && <div style={{ fontSize: 11, color: "#94a3b8" }}>Loading...</div>}
+              {!allPendingLoading && allPendingPredictions.length === 0 && (
+                <div style={{ fontSize: 11, color: "#666" }}>No pending predictions right now.</div>
+              )}
+              {allPendingPredictions.map(p => (
+                <div key={p.id} style={{ borderBottom: "1px solid #1a1a2a", padding: "8px 0" }}>
+                  <div style={{ fontSize: 12, color: "#f0f0f0", fontWeight: 700 }}>{p.home_team} vs {p.away_team}</div>
+                  <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6 }}>
+                    {p.predictorName} predicted {p.user_prediction}
+                    {p.user_outcome ? ` · ${p.user_outcome}` : ""}
+                    {p.user_over_under ? ` · ${p.user_over_under}` : ""}
+                  </div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button
+                      onClick={async () => { await checkResultManually(p); loadAllPendingPredictions(); computeLeaderboard(); }}
+                      disabled={checkingResultId === p.id}
+                      style={{ background: "none", border: "1px solid #818cf855", borderRadius: 6, color: "#818cf8", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "4px 9px" }}
+                    >
+                      {checkingResultId === p.id ? "Checking..." : "🔄 Check for result"}
+                    </button>
+                    <button
+                      onClick={() => { setManualEntryId(manualEntryId === p.id ? null : p.id); setManualScoreDraft(""); }}
+                      style={{ background: "none", border: "1px solid #4ade8055", borderRadius: 6, color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "4px 9px" }}
+                    >
+                      ✍️ Enter manually
+                    </button>
+                  </div>
+                  {manualEntryId === p.id && (
+                    <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                      <input
+                        value={manualScoreDraft}
+                        onChange={e => setManualScoreDraft(e.target.value)}
+                        placeholder="e.g. 2-1"
+                        style={{ width: 80, background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "5px 8px", outline: "none", fontFamily: "inherit", textAlign: "center" }}
+                      />
+                      <button
+                        onClick={async () => { await submitManualResult(p.id); loadAllPendingPredictions(); computeLeaderboard(); }}
+                        style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "5px 10px" }}
+                      >Save</button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
