@@ -728,6 +728,7 @@ export default function FootballPredictor() {
       if (predResult.data) setTournamentPred(predResult.data);
     }).catch(() => setAwardsError("Failed to load teams")).finally(() => setAwardsLoading(false));
   }, [tab, awardsLeague, session]);
+  const [leaderboardDebug, setLeaderboardDebug] = useState(null);
   const computeLeaderboard = async () => {
     setLeaderboardLoading(true);
     setLeaderboard([]);
@@ -741,25 +742,49 @@ export default function FootballPredictor() {
     const now = new Date();
     const calendarMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const cutoff = (calendarMonthStart > LEADERBOARD_START_DATE ? calendarMonthStart : LEADERBOARD_START_DATE).toISOString();
-    const { data: preds } = await supabase
+    const { data: preds, error: predsError } = await supabase
       .from("predictions")
       .select("user_id, home_team, away_team, user_prediction, user_outcome, user_over_under, actual_score")
       .gte("created_at", cutoff)
       .not("actual_score", "is", null);
-    if (!preds || preds.length === 0) { setLeaderboardLoading(false); return; }
+    if (predsError) {
+      setLeaderboardDebug({ step: "fetching predictions", error: predsError.message });
+      setLeaderboardLoading(false);
+      return;
+    }
+    if (!preds || preds.length === 0) {
+      setLeaderboardDebug({ step: "fetching predictions", predsFetched: 0, note: "No resolved predictions found on or after the cutoff date." });
+      setLeaderboardLoading(false); return;
+    }
 
     // Only count predictions for matches deliberately curated for the
     // leaderboard, not every prediction anyone happens to submit through
     // the app. Matched by team name pair (case-insensitive), since
     // predictions store plain team name text, not a fixture ID.
-    const { data: fixturesData } = await supabase.from("leaderboard_fixtures").select("home_team, away_team");
+    const { data: fixturesData, error: fixturesError } = await supabase.from("leaderboard_fixtures").select("home_team, away_team");
+    if (fixturesError) {
+      setLeaderboardDebug({ step: "fetching curated fixtures", error: fixturesError.message });
+      setLeaderboardLoading(false);
+      return;
+    }
     const eligibleKeys = new Set(
       (fixturesData || []).map(f => `${f.home_team.toLowerCase()}|${f.away_team.toLowerCase()}`)
     );
     const eligiblePreds = preds.filter(p =>
       eligibleKeys.has(`${(p.home_team || "").toLowerCase()}|${(p.away_team || "").toLowerCase()}`)
     );
-    if (eligiblePreds.length === 0) { setLeaderboardLoading(false); return; }
+    if (eligiblePreds.length === 0) {
+      setLeaderboardDebug({
+        step: "matching against curated fixtures",
+        predsFetched: preds.length,
+        curatedFixturesCount: (fixturesData || []).length,
+        note: "None of the fetched predictions matched a curated fixture.",
+        samplePredKeys: preds.slice(0, 5).map(p => `${(p.home_team||"").toLowerCase()}|${(p.away_team||"").toLowerCase()}`),
+        curatedKeys: Array.from(eligibleKeys),
+      });
+      setLeaderboardLoading(false); return;
+    }
+    setLeaderboardDebug({ step: "OK", predsFetched: preds.length, eligibleCount: eligiblePreds.length, curatedFixturesCount: (fixturesData || []).length });
 
     // Points system: exact scoreline = 5, correct outcome without the
     // exact score = 3, correct over/under = 1 (additive, on top of
@@ -2365,6 +2390,14 @@ if (!session && !guestMode) {
           <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 10 }}>
             Exact: 5pts · Outcome only: 3pts · O/U: +1pt
           </div>
+          {userRole === "admin" && (
+            <div style={{ fontSize: 10, color: "#4ade80", marginBottom: 8 }}>build marker: leaderboard-debug-v1</div>
+          )}
+          {userRole === "admin" && leaderboardDebug && (
+            <div style={{ background: leaderboardDebug.error ? "#f8717118" : leaderboardDebug.step === "OK" ? "#4ade8018" : "#fbbf2418", border: `1px solid ${leaderboardDebug.error ? "#f8717155" : leaderboardDebug.step === "OK" ? "#4ade8055" : "#fbbf2455"}`, borderRadius: 8, padding: 10, marginBottom: 12, fontSize: 11, color: "#e2e8f0", fontFamily: "monospace", whiteSpace: "pre-wrap", overflowX: "auto" }}>
+              {JSON.stringify(leaderboardDebug, null, 2)}
+            </div>
+          )}
           {userRole === "admin" && (
             <div style={{ background: "#0d0d18", border: "1px solid #2a2a3a", borderRadius: 8, padding: "10px", marginBottom: 14 }}>
               <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 700, marginBottom: 6 }}>Matches counting toward the leaderboard (admin)</div>
