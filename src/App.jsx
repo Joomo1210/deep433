@@ -670,6 +670,11 @@ export default function FootballPredictor() {
   const [manualEntryId, setManualEntryId] = useState(null);
   const [manualScoreDraft, setManualScoreDraft] = useState("");
   const submitManualResult = async (id) => {
+    // Guarded here too, not just by hiding the button — someone predicting
+    // their own match could otherwise type in whatever score matches their
+    // own guess and hand themselves points. Only admin can override a
+    // result manually; everyone else gets the automated lookup only.
+    if (userRole !== "admin") return;
     const cleaned = manualScoreDraft.trim().replace(/\s/g, "");
     if (!/^\d+-\d+$/.test(cleaned)) {
       alert("Enter the score as two numbers separated by a dash, e.g. 2-1");
@@ -2300,14 +2305,16 @@ if (!session && !guestMode) {
                         >
                           {checkingResultId === h.id ? "Checking..." : "🔄 Check for result"}
                         </button>
-                        <button
-                          onClick={() => { setManualEntryId(manualEntryId === h.id ? null : h.id); setManualScoreDraft(""); }}
-                          style={{ background: "none", border: "1px solid #4ade8055", borderRadius: 6, color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "4px 10px" }}
-                        >
-                          ✍️ Enter manually
-                        </button>
+                        {userRole === "admin" && (
+                          <button
+                            onClick={() => { setManualEntryId(manualEntryId === h.id ? null : h.id); setManualScoreDraft(""); }}
+                            style={{ background: "none", border: "1px solid #4ade8055", borderRadius: 6, color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "4px 10px" }}
+                          >
+                            ✍️ Enter manually (admin)
+                          </button>
+                        )}
                       </div>
-                      {manualEntryId === h.id && (
+                      {userRole === "admin" && manualEntryId === h.id && (
                         <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 8 }}>
                           <input
                             value={manualScoreDraft}
