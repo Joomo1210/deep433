@@ -1117,6 +1117,8 @@ useEffect(() => {
   };
   const submitAndReveal = async () => {
     if (userHome === "" || userAway === "") { setError("Enter your predicted score."); return; }
+    if (!userOutcome) { setError("Pick an outcome — home win, away win, or draw."); return; }
+    if (!userOverUnder) { setError("Pick Over 2.5 or Under 2.5 goals."); return; }
     const up = `${userHome}-${userAway}`;
     setUserPrediction(up);
     setError(""); setLoading(true); setResult(null);
@@ -1619,15 +1621,17 @@ if (!session && !guestMode) {
                   </div>
                 </div>
 
-                {/* Optional — a scoreline is the only required pick, these
-                    two just let the same prediction be tracked as an
-                    outcome and a goals total too, so a near-miss on the
-                    exact score doesn't have to mean a total miss overall. */}
+                {/* Required as of this change — leaving these optional meant
+                    people who skipped them lost every fallback point on a
+                    missed exact score, without realizing that's what
+                    "optional" was costing them. Requiring both keeps
+                    scoring fair across everyone predicting, not just
+                    whoever happened to notice these mattered. */}
                 <div style={{ textAlign: "center", fontSize: 11, color: "#fbbf24", marginBottom: 8 }}>
-                  🏅 Fill these in too — they earn extra leaderboard points even if the exact score misses
+                  🏅 Required — these are what earn points if the exact score misses
                 </div>
                 <div style={{ marginBottom: 14 }}>
-                  <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6, textAlign: "center" }}>Outcome (optional)</div>
+                  <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6, textAlign: "center" }}>Outcome</div>
                   <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
                     {[
                       { key: "Home Win", label: homeTeam },
@@ -1649,7 +1653,7 @@ if (!session && !guestMode) {
                 </div>
 
                 <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6, textAlign: "center" }}>Goals (optional)</div>
+                  <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6, textAlign: "center" }}>Goals</div>
                   <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
                     {["Over 2.5", "Under 2.5"].map(g => (
                       <button
