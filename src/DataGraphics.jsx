@@ -3277,6 +3277,134 @@ const PREDICTION_CATEGORY_POOL = [
 // A single schedule graphic for the week — each entry tagged as either a
 // live Space prediction match or an offline (X-only) prediction, free text
 // per entry so any fixture, time, or note can be added flexibly.
+// ─── LEADERBOARD SHARE CARD (downloadable standings graphic) ───────────────
+// Reuses the same scoring rules as the in-app Leaderboard tab (exact score
+// 5pts, correct outcome only 3pts, correct Over/Under +1pt, curated
+// matches only), but renders as a clean, shareable card for posting
+// standings publicly, rather than a live in-app management view.
+function LeaderboardGraphic({ supabase }) {
+  const cardRef = useRef(null);
+  const [downloading, setDownloading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [title, setTitle] = useState("Leaderboard Standings");
+  const [rows, setRows] = useState([]);
+
+  const loadStandings = async () => {
+    setLoading(true);
+    try {
+      const LEADERBOARD_START_DATE = new Date("2026-09-16");
+      const now = new Date();
+      const calendarMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const cutoff = (calendarMonthStart > LEADERBOARD_START_DATE ? calendarMonthStart : LEADERBOARD_START_DATE).toISOString();
+
+      const { data: preds } = await supabase
+        .from("predictions")
+        .select("user_id, home_team, away_team, user_prediction, user_outcome, user_over_under, actual_score")
+        .gte("created_at", cutoff)
+        .not("actual_score", "is", null);
+      if (!preds || preds.length === 0) { setRows([]); setLoading(false); return; }
+
+      const { data: fixturesData } = await supabase.from("leaderboard_fixtures").select("home_team, away_team");
+      const eligibleKeys = new Set((fixturesData || []).map(f => `${f.home_team.toLowerCase()}|${f.away_team.toLowerCase()}`));
+      const eligiblePreds = preds.filter(p => eligibleKeys.has(`${(p.home_team || "").toLowerCase()}|${(p.away_team || "").toLowerCase()}`));
+      if (eligiblePreds.length === 0) { setRows([]); setLoading(false); return; }
+
+      const byUser = {};
+      eligiblePreds.forEach(p => {
+        if (!byUser[p.user_id]) byUser[p.user_id] = { total: 0, points: 0 };
+        byUser[p.user_id].total += 1;
+        const [ah, aa] = (p.actual_score || "").split("-").map(n => parseInt(n));
+        const hasActual = !Number.isNaN(ah) && !Number.isNaN(aa);
+        const actualOutcome = hasActual ? (ah > aa ? "Home Win" : aa > ah ? "Away Win" : "Draw") : null;
+        const actualOverUnder = hasActual ? ((ah + aa) > 2.5 ? "Over 2.5" : "Under 2.5") : null;
+        let points = 0;
+        if (p.user_prediction === p.actual_score) points += 5;
+        else if (p.user_outcome && actualOutcome && p.user_outcome === actualOutcome) points += 3;
+        if (p.user_over_under && actualOverUnder && p.user_over_under === actualOverUnder) points += 1;
+        byUser[p.user_id].points += points;
+      });
+
+      const userIds = Object.keys(byUser);
+      const { data: profilesData } = await supabase.from("profiles").select("id, username, role").in("id", userIds);
+      const nameById = {}, roleById = {};
+      (profilesData || []).forEach(p => { nameById[p.id] = p.username; roleById[p.id] = p.role; });
+
+      const finalRows = userIds
+        .map(id => ({ name: nameById[id], role: roleById[id], points: byUser[id].points, total: byUser[id].total }))
+        .filter(r => r.name && r.role !== "admin")
+        .sort((a, b) => b.points - a.points)
+        .slice(0, 10);
+      setRows(finalRows);
+    } catch {}
+    setLoading(false);
+  };
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, `deep433-leaderboard.png`, "#0a0a12", transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>A clean, downloadable snapshot of the current leaderboard standings, same scoring as the live tab, ready to post.</div>
+
+      <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Card title" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+
+      <button onClick={loadStandings} disabled={loading} style={{ background: "linear-gradient(135deg,#818cf8,#6366f1)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
+        {loading ? "Loading standings..." : "Load Current Standings"}
+      </button>
+
+      {rows.length > 0 && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "44px 22px 30px" }}>
+              <div style={{ textAlign: "center", marginBottom: 4 }}>
+                <span style={{
+                  fontSize: 24, fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.2,
+                  background: "linear-gradient(90deg,#4ade80,#818cf8,#f59e0b)",
+                  WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+                }}>🏅 {title}</span>
+              </div>
+              <div style={{ textAlign: "center", fontSize: 11.5, color: "#e2e8f0", fontWeight: 700, marginBottom: 20 }}>
+                Exact: 5pts · Outcome only: 3pts · O/U: +1pt
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {rows.map((r, i) => (
+                  <div key={i} style={{
+                    display: "flex", alignItems: "center", gap: 12,
+                    background: "#13131f", border: "1px solid #23232f", borderRadius: 10, padding: "10px 14px",
+                  }}>
+                    <span style={{ fontSize: 15, fontWeight: 900, color: "#818cf8", width: 20, textAlign: "center", flexShrink: 0 }}>{i + 1}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</div>
+                      <div style={{ fontSize: 11, color: "#94a3b8" }}>{r.total} predictions</div>
+                    </div>
+                    <span style={{ fontSize: 19, color: "#fbbf24", fontWeight: 900, flexShrink: 0 }}>{r.points}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ textAlign: "center", marginTop: 20 }}>
+                <span style={{ fontSize: 11.5, color: "#e2e8f0", fontWeight: 700 }}>Predict smartly. Look closely at the stats.</span>
+              </div>
+            </div>
+          </GraphicCard>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 function NoticeBoardGraphic() {
   const cardRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
@@ -10879,6 +11007,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "weeklyresults", label: "📊 Weekly Picks Results" },
     { id: "awardrace", label: "🏆 Award Race Comparison" },
     { id: "noticeboard", label: "📌 Weekly Notice Board" },
+    { id: "leaderboardshare", label: "🏅 Leaderboard Share Card" },
     { id: "h2h",      label: "🆚 Player H2H" },
     { id: "matchh2h", label: "📋 Match H2H" },
     { id: "motm", label: "⭐ Man of the Match" },
@@ -10949,6 +11078,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "weeklyresults" && <WeeklyPicksResultsGraphic />}
       {activeSection === "awardrace" && <AwardRaceGraphic />}
       {activeSection === "noticeboard" && <NoticeBoardGraphic />}
+      {activeSection === "leaderboardshare" && <LeaderboardGraphic supabase={supabase} />}
       {activeSection === "h2h"      && <PlayerH2HGraphic />}
       {activeSection === "matchh2h" && <MatchH2HGraphic />}
       {activeSection === "motm" && <ManOfMatchGraphic />}
