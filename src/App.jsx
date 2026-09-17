@@ -989,18 +989,31 @@ useEffect(() => {
     const { data } = await supabase.from("leaderboard_fixtures").select("*").order("created_at", { ascending: false });
     setLeaderboardFixtures(data || []);
   };
+  const [fixtureAdminError, setFixtureAdminError] = useState("");
   const addLeaderboardFixture = async () => {
     if (!newFixtureHome.trim() || !newFixtureAway.trim()) return;
-    await supabase.from("leaderboard_fixtures").insert({
+    setFixtureAdminError("");
+    const { error } = await supabase.from("leaderboard_fixtures").insert({
       home_team: newFixtureHome.trim(),
       away_team: newFixtureAway.trim(),
     });
+    if (error) {
+      // This was failing completely silently before — the button appeared
+      // to work, loadLeaderboardFixtures ran, but if the insert itself was
+      // rejected (an RLS policy, a constraint, anything) nothing was ever
+      // actually saved, which is consistent with the table coming back
+      // empty despite going through this "Add" flow multiple times.
+      setFixtureAdminError(error.message || "Failed to save this fixture.");
+      return;
+    }
     setNewFixtureHome(""); setNewFixtureAway("");
     loadLeaderboardFixtures();
     computeLeaderboard();
   };
   const removeLeaderboardFixture = async (id) => {
-    await supabase.from("leaderboard_fixtures").delete().eq("id", id);
+    setFixtureAdminError("");
+    const { error } = await supabase.from("leaderboard_fixtures").delete().eq("id", id);
+    if (error) { setFixtureAdminError(error.message || "Failed to remove this fixture."); return; }
     loadLeaderboardFixtures();
     computeLeaderboard();
   };
@@ -2384,6 +2397,9 @@ if (!session && !guestMode) {
                   <span style={{ flex: 1 }}>Selected: {newFixtureHome} vs {newFixtureAway}</span>
                   <button onClick={addLeaderboardFixture} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "5px 10px" }}>Add</button>
                 </div>
+              )}
+              {fixtureAdminError && (
+                <div style={{ fontSize: 12, color: "#f87171", fontWeight: 600, marginBottom: 8 }}>⚠️ {fixtureAdminError}</div>
               )}
               {leaderboardFixtures.length === 0 && <div style={{ fontSize: 11, color: "#666" }}>No matches added yet — nothing will score until at least one is added.</div>}
               {leaderboardFixtures.map(f => (
