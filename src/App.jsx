@@ -2599,19 +2599,27 @@ if (!session && !guestMode) {
           )}
           {leaderboard.map((row, i) => (
             <div key={row.userId} style={{
-              display: "flex", alignItems: "center", gap: 8,
-              background: "#0d0d18", border: "1px solid #1a1a2e", borderRadius: 8,
-              padding: "8px 10px", marginBottom: 5,
+              display: "flex", alignItems: "center", gap: 12,
+              background: "#0d0d18", border: "1px solid #1a1a2e", borderRadius: 10,
+              padding: "10px 12px", marginBottom: 6,
             }}>
-              <span style={{ fontSize: 13, fontWeight: 900, color: "#818cf8", width: 18, flexShrink: 0 }}>{i + 1}</span>
+              <span style={{ fontSize: 15, fontWeight: 900, color: "#818cf8", width: 20, flexShrink: 0, textAlign: "center" }}>{i + 1}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.name}</div>
-                <div style={{ fontSize: 10, color: "#94a3b8" }}>{row.exact}E · {row.outcomeOnly}O · {row.overUnderHits}OU · {row.total} preds</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 4 }}>{row.name}</div>
+                <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#4ade80", background: "#4ade8018", border: "1px solid #4ade8033", borderRadius: 5, padding: "2px 6px" }}>{row.exact} E</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#818cf8", background: "#818cf818", border: "1px solid #818cf833", borderRadius: 5, padding: "2px 6px" }}>{row.outcomeOnly} O</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#fbbf24", background: "#fbbf2418", border: "1px solid #fbbf2433", borderRadius: 5, padding: "2px 6px" }}>{row.overUnderHits} OU</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8" }}>{row.total} preds</span>
+                </div>
                 {userRole === "admin" && (
-                  <div style={{ fontSize: 9, color: "#666", fontFamily: "monospace" }}>id: {row.userId}</div>
+                  <div style={{ fontSize: 9, color: "#666", fontFamily: "monospace", marginTop: 3 }}>id: {row.userId}</div>
                 )}
               </div>
-              <span style={{ fontSize: 15, color: "#fbbf24", fontWeight: 900, flexShrink: 0 }}>{row.points}</span>
+              <div style={{ textAlign: "center", flexShrink: 0 }}>
+                <div style={{ fontSize: 20, color: "#fbbf24", fontWeight: 900, lineHeight: 1 }}>{row.points}</div>
+                <div style={{ fontSize: 9, color: "#666", textTransform: "uppercase", letterSpacing: 0.3 }}>pts</div>
+              </div>
             </div>
           ))}
         </div>
