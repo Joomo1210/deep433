@@ -784,8 +784,6 @@ export default function FootballPredictor() {
       });
       setLeaderboardLoading(false); return;
     }
-    setLeaderboardDebug({ step: "OK", predsFetched: preds.length, eligibleCount: eligiblePreds.length, curatedFixturesCount: (fixturesData || []).length });
-
     // Points system: exact scoreline = 5, correct outcome without the
     // exact score = 3, correct over/under = 1 (additive, on top of
     // whichever of the above applies). "Player to score" isn't scored
@@ -835,7 +833,13 @@ export default function FootballPredictor() {
         pointsAwarded: points,
       });
     });
-    if (userRole === "admin") setLeaderboardDebug(prev => ({ ...prev, scoringTrace }));
+    setLeaderboardDebug({
+      step: "OK",
+      predsFetched: preds.length,
+      eligibleCount: eligiblePreds.length,
+      curatedFixturesCount: (fixturesData || []).length,
+      scoringTrace,
+    });
 
     const userIds = Object.keys(byUser);
     const { data: profilesData } = await supabase
