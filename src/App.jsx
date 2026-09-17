@@ -851,7 +851,7 @@ export default function FootballPredictor() {
     const roleById = {};
     (profilesData || []).forEach(p => { nameById[p.id] = p.username; roleById[p.id] = p.role; });
 
-    const rows = userIds
+    const allRows = userIds
       .map(id => ({
         userId: id,
         name: nameById[id] || null, // null = never set a display name
@@ -861,7 +861,8 @@ export default function FootballPredictor() {
         exact: byUser[id].exact,
         outcomeOnly: byUser[id].outcomeOnly,
         overUnderHits: byUser[id].overUnderHits,
-      }))
+      }));
+    const rows = allRows
       .filter(r => r.name) // leave out anyone without a display name rather than show a raw ID
       // The admin runs the contest and picks which matches count — letting
       // that account also compete on the same board it controls isn't a
@@ -869,6 +870,20 @@ export default function FootballPredictor() {
       .filter(r => r.role !== "admin")
       .sort((a, b) => b.points - a.points)
       .slice(0, 20);
+
+    // Full visibility into every user who had eligible predictions this
+    // period, including anyone left off the final board and why — instead
+    // of asking someone to check identities by hand, this shows every
+    // exclusion reason directly, no username, or role === admin.
+    if (userRole === "admin") {
+      setLeaderboardDebug(prev => ({
+        ...prev,
+        allComputedUsers: allRows.map(r => ({
+          userId: r.userId, name: r.name, role: r.role, points: r.points, total: r.total,
+          excludedReason: !r.name ? "no display name set" : r.role === "admin" ? "role is admin" : null,
+        })),
+      }));
+    }
 
     setLeaderboard(rows);
     setLeaderboardLoading(false);
@@ -2481,6 +2496,9 @@ if (!session && !guestMode) {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.name}</div>
                 <div style={{ fontSize: 10, color: "#94a3b8" }}>{row.exact}E · {row.outcomeOnly}O · {row.overUnderHits}OU · {row.total} preds</div>
+                {userRole === "admin" && (
+                  <div style={{ fontSize: 9, color: "#666", fontFamily: "monospace" }}>id: {row.userId}</div>
+                )}
               </div>
               <span style={{ fontSize: 15, color: "#fbbf24", fontWeight: 900, flexShrink: 0 }}>{row.points}</span>
             </div>
