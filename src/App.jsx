@@ -1067,11 +1067,22 @@ useEffect(() => {
       .select("*")
       .is("actual_score", null)
       .order("created_at", { ascending: false });
-    const userIds = [...new Set((preds || []).map(p => p.user_id))];
+    // Only ever concerned with curated matches — this panel exists to
+    // resolve leaderboard results, not every pending prediction anyone's
+    // ever made through the app, most of which were never eligible to
+    // score at all and just make it harder to find the ones that matter.
+    const { data: fixturesData } = await supabase.from("leaderboard_fixtures").select("home_team, away_team");
+    const curatedKeys = new Set(
+      (fixturesData || []).map(f => `${f.home_team.toLowerCase()}|${f.away_team.toLowerCase()}`)
+    );
+    const curatedPending = (preds || []).filter(p =>
+      curatedKeys.has(`${(p.home_team || "").toLowerCase()}|${(p.away_team || "").toLowerCase()}`)
+    );
+    const userIds = [...new Set(curatedPending.map(p => p.user_id))];
     const { data: profilesData } = await supabase.from("profiles").select("id, username").in("id", userIds);
     const nameById = {};
     (profilesData || []).forEach(p => { nameById[p.id] = p.username; });
-    setAllPendingPredictions((preds || []).map(p => ({ ...p, predictorName: nameById[p.user_id] || "(no display name)" })));
+    setAllPendingPredictions(curatedPending.map(p => ({ ...p, predictorName: nameById[p.user_id] || "(no display name)" })));
     setAllPendingLoading(false);
   };
   const [fixtureAdminError, setFixtureAdminError] = useState("");
@@ -2523,7 +2534,7 @@ if (!session && !guestMode) {
           {userRole === "admin" && (
             <div style={{ background: "#0d0d18", border: "1px solid #2a2a3a", borderRadius: 8, padding: "10px", marginBottom: 14 }}>
               <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 700, marginBottom: 6 }}>
-                Everyone's pending predictions ({allPendingPredictions.length}) — resolve any user's result directly, no need to log in as them
+                Pending curated-match predictions ({allPendingPredictions.length}) — resolve any user's result directly, no need to log in as them
               </div>
               {allPendingLoading && <div style={{ fontSize: 11, color: "#94a3b8" }}>Loading...</div>}
               {!allPendingLoading && allPendingPredictions.length === 0 && (
