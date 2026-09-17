@@ -823,6 +823,7 @@ export default function FootballPredictor() {
       // directly rather than guessed at — exactly what was compared
       // against what, and what it produced.
       scoringTrace.push({
+        user_id: p.user_id,
         home: p.home_team, away: p.away_team,
         user_prediction: p.user_prediction, actual_score: p.actual_score,
         exactMatch: p.user_prediction === p.actual_score,
@@ -1607,6 +1608,9 @@ if (!session && !guestMode) {
                     two just let the same prediction be tracked as an
                     outcome and a goals total too, so a near-miss on the
                     exact score doesn't have to mean a total miss overall. */}
+                <div style={{ textAlign: "center", fontSize: 11, color: "#fbbf24", marginBottom: 8 }}>
+                  🏅 Fill these in too — they earn extra leaderboard points even if the exact score misses
+                </div>
                 <div style={{ marginBottom: 14 }}>
                   <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6, textAlign: "center" }}>Outcome (optional)</div>
                   <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
