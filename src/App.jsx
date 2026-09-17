@@ -793,6 +793,7 @@ export default function FootballPredictor() {
     // there's nothing stored to check it against. That would need a new
     // input added first, the same way outcome and over/under were.
     const byUser = {};
+    const scoringTrace = [];
     eligiblePreds.forEach(p => {
       if (!byUser[p.user_id]) byUser[p.user_id] = { total: 0, points: 0, exact: 0, outcomeOnly: 0, overUnderHits: 0 };
       byUser[p.user_id].total += 1;
@@ -819,7 +820,22 @@ export default function FootballPredictor() {
         byUser[p.user_id].overUnderHits += 1;
       }
       byUser[p.user_id].points += points;
+
+      // Full per-prediction trace so a scoring mismatch can be seen
+      // directly rather than guessed at — exactly what was compared
+      // against what, and what it produced.
+      scoringTrace.push({
+        home: p.home_team, away: p.away_team,
+        user_prediction: p.user_prediction, actual_score: p.actual_score,
+        exactMatch: p.user_prediction === p.actual_score,
+        stored_user_outcome: p.user_outcome, computed_actualOutcome: actualOutcome,
+        outcomeMatch: p.user_outcome === actualOutcome,
+        stored_user_over_under: p.user_over_under, computed_actualOverUnder: actualOverUnder,
+        ouMatch: p.user_over_under === actualOverUnder,
+        pointsAwarded: points,
+      });
     });
+    if (userRole === "admin") setLeaderboardDebug(prev => ({ ...prev, scoringTrace }));
 
     const userIds = Object.keys(byUser);
     const { data: profilesData } = await supabase
