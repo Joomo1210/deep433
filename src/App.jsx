@@ -736,6 +736,7 @@ export default function FootballPredictor() {
     }).catch(() => setAwardsError("Failed to load teams")).finally(() => setAwardsLoading(false));
   }, [tab, awardsLeague, session]);
   const [leaderboardDebug, setLeaderboardDebug] = useState(null);
+  const [showLeaderboardDebug, setShowLeaderboardDebug] = useState(false);
   const computeLeaderboard = async () => {
     setLeaderboardLoading(true);
     setLeaderboard([]);
@@ -2491,10 +2492,15 @@ if (!session && !guestMode) {
             Exact: 5pts · Outcome only: 3pts · O/U: +1pt
           </div>
           {userRole === "admin" && (
-            <div style={{ fontSize: 10, color: "#4ade80", marginBottom: 8 }}>build marker: leaderboard-debug-v1</div>
+            <button
+              onClick={() => setShowLeaderboardDebug(v => !v)}
+              style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "4px 9px", marginBottom: 8 }}
+            >
+              {showLeaderboardDebug ? "▲ Hide debug info" : "▼ Show debug info"}
+            </button>
           )}
-          {userRole === "admin" && leaderboardDebug && (
-            <div style={{ background: leaderboardDebug.error ? "#f8717118" : leaderboardDebug.step === "OK" ? "#4ade8018" : "#fbbf2418", border: `1px solid ${leaderboardDebug.error ? "#f8717155" : leaderboardDebug.step === "OK" ? "#4ade8055" : "#fbbf2455"}`, borderRadius: 8, padding: 10, marginBottom: 12, fontSize: 11, color: "#e2e8f0", fontFamily: "monospace", whiteSpace: "pre-wrap", overflowX: "auto" }}>
+          {userRole === "admin" && showLeaderboardDebug && leaderboardDebug && (
+            <div style={{ background: leaderboardDebug.error ? "#f8717118" : leaderboardDebug.step === "OK" ? "#4ade8018" : "#fbbf2418", border: `1px solid ${leaderboardDebug.error ? "#f8717155" : leaderboardDebug.step === "OK" ? "#4ade8055" : "#fbbf2455"}`, borderRadius: 8, padding: 10, marginBottom: 12, fontSize: 11, color: "#e2e8f0", fontFamily: "monospace", whiteSpace: "pre-wrap", overflowX: "auto", maxHeight: 300, overflowY: "auto" }}>
               {JSON.stringify(leaderboardDebug, null, 2)}
             </div>
           )}
