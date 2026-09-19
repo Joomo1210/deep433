@@ -1155,6 +1155,25 @@ useEffect(() => {
     if (userHome === "" || userAway === "") { setError("Enter your predicted score."); return; }
     if (!userOutcome) { setError("Pick an outcome — home win, away win, or draw."); return; }
     if (!userOverUnder) { setError("Pick Over 2.5 or Under 2.5 goals."); return; }
+    // Caps each user at 30 CURATED-match predictions for the contest
+    // period, matching the "winner after 30 matches" framing. Fetched
+    // fresh here rather than relying on the admin-only leaderboardFixtures
+    // state, since that's never populated for a regular user submitting a
+    // prediction. Matched the same case-insensitive home|away key
+    // comparison already used for leaderboard scoring, for consistency.
+    const CONTEST_START_DATE = new Date("2026-09-16");
+    const { data: curatedFixturesForCap } = await supabase.from("leaderboard_fixtures").select("home_team, away_team");
+    const curatedKeysForCap = new Set(
+      (curatedFixturesForCap || []).map(f => `${f.home_team.toLowerCase()}|${f.away_team.toLowerCase()}`)
+    );
+    const contestPredictionsCount = history.filter(h =>
+      new Date(h.created_at) >= CONTEST_START_DATE &&
+      curatedKeysForCap.has(`${(h.home_team || "").toLowerCase()}|${(h.away_team || "").toLowerCase()}`)
+    ).length;
+    if (contestPredictionsCount >= 30) {
+      setError("You've reached the 30 curated-match prediction limit for this contest round.");
+      return;
+    }
     const up = `${userHome}-${userAway}`;
     setUserPrediction(up);
     setError(""); setLoading(true); setResult(null);
