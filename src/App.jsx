@@ -890,6 +890,15 @@ export default function FootballPredictor() {
           userId: r.userId, name: r.name, role: r.role, points: r.points, total: r.total,
           excludedReason: !r.name ? "no display name set" : r.role === "admin" ? "role is admin" : null,
         })),
+        // Adds the display name onto each per-prediction trace entry too —
+        // built after nameById exists, since scoringTrace itself was set
+        // earlier in this function before usernames were even fetched.
+        // This is what lets a specific person's performance be pulled and
+        // posted after a round without cross-referencing raw user IDs.
+        scoringTrace: (prev.scoringTrace || []).map(t => ({
+          predictorName: nameById[t.user_id] || "(no display name)",
+          ...t,
+        })),
       }));
     }
 
