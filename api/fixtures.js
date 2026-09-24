@@ -64,6 +64,35 @@ function mapStatus(short) {
 
 export default async function handler(req, res) {
   const { leagueId, full, season: seasonOverride } = req.query;
+
+  // League-name search — looks up API-Football's own league directory
+  // directly, returning the real names and IDs that actually match. Exists
+  // specifically to replace guessing a numeric league ID from general
+  // knowledge, which already produced one wrong mapping (a CONCACAF youth
+  // competition instead of the senior Nations League) — this asks
+  // API-Football itself instead of guessing again.
+  if (req.query.searchLeague) {
+    const apiKeySearch = process.env.API_FOOTBALL_KEY;
+    try {
+      const r = await fetch(`https://v3.football.api-sports.io/leagues?search=${encodeURIComponent(req.query.searchLeague)}`, {
+        headers: { "x-apisports-key": apiKeySearch }
+      });
+      const raw = await r.json();
+      return res.status(200).json({
+        query: req.query.searchLeague,
+        matches: (raw.response || []).map(l => ({
+          id: l.league?.id,
+          name: l.league?.name,
+          type: l.league?.type,
+          country: l.country?.name,
+          seasons: (l.seasons || []).map(s => s.year),
+        })),
+      });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
   if (!leagueId) return res.status(400).json({ error: "leagueId required" });
 
   const league = LEAGUE_MAP[leagueId];
