@@ -69,6 +69,32 @@ export default async function handler(req, res) {
   const league = LEAGUE_MAP[leagueId];
   if (!league) return res.status(400).json({ error: "Unknown league" });
 
+  // Debug mode — a raw, single-call probe against API-Football for this
+  // exact league/season combination, returning whatever it says verbatim
+  // (including its own "errors" field). Added specifically because a wrong
+  // numeric league ID or season fails completely silently through the
+  // normal day-by-day fetch below — it just looks like "no fixtures",
+  // indistinguishable from a real, quiet international window.
+  if (req.query.debug === "true") {
+    const apiKeyDebug = process.env.API_FOOTBALL_KEY;
+    try {
+      const r = await fetch(`https://v3.football.api-sports.io/fixtures?league=${league.id}&season=${league.season}`, {
+        headers: { "x-apisports-key": apiKeyDebug }
+      });
+      const raw = await r.json();
+      return res.status(200).json({
+        leagueId, mappedTo: league,
+        apiErrors: raw.errors,
+        resultsCount: raw.results,
+        sampleFixtures: (raw.response || []).slice(0, 3).map(f => ({
+          home: f.teams?.home?.name, away: f.teams?.away?.name, date: f.fixture?.date,
+        })),
+      });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
   // Optional season override — lets the frontend request a past season's
   // fixtures (e.g. last season) instead of always the current hardcoded
   // year above. previousSeason=true is simpler than requiring the caller
