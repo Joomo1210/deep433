@@ -3292,7 +3292,7 @@ function LeaderboardGraphic({ supabase }) {
   const loadStandings = async () => {
     setLoading(true);
     try {
-      const LEADERBOARD_START_DATE = new Date("2026-09-16");
+      const LEADERBOARD_START_DATE = new Date("2026-09-24");
       const now = new Date();
       const calendarMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       const cutoff = (calendarMonthStart > LEADERBOARD_START_DATE ? calendarMonthStart : LEADERBOARD_START_DATE).toISOString();
