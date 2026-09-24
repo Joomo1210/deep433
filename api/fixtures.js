@@ -44,6 +44,14 @@ const LEAGUE_MAP = {
   danishsl:     { id: 119, season: 2026 }, // Denmark — FC Copenhagen
   eliteserien:  { id: 103, season: 2026 }, // Norway — Bodo/Glimt
   serbiasl:     { id: 286, season: 2026 }, // Serbia — Red Star Belgrade
+  // International-break competitions, added specifically to keep the
+  // platform active while club leagues pause. League IDs below are from
+  // general knowledge of API-Football's standard scheme, not independently
+  // verified this session — worth confirming each one actually pulls real
+  // fixtures once deployed, the same caution as the batch above.
+  uefanationsleague:  { id: 5,   season: 2026 }, // UEFA Nations League
+  afconqualifiers:    { id: 26,  season: 2026 }, // Africa Cup of Nations Qualification
+  concacafnationsleague: { id: 537, season: 2026 }, // CONCACAF Nations League
 };
 
 function mapStatus(short) {
