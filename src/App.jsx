@@ -1102,6 +1102,18 @@ useEffect(() => {
   const addLeaderboardFixture = async () => {
     if (!newFixtureHome.trim() || !newFixtureAway.trim()) return;
     setFixtureAdminError("");
+    // Checked against the already-loaded list before inserting — nothing
+    // stopped the same fixture being added twice before this, which the
+    // scoring itself would silently absorb (it dedupes internally), but
+    // left the admin list itself cluttered and confusing to review.
+    const alreadyAdded = leaderboardFixtures.some(f =>
+      f.home_team.toLowerCase() === newFixtureHome.trim().toLowerCase() &&
+      f.away_team.toLowerCase() === newFixtureAway.trim().toLowerCase()
+    );
+    if (alreadyAdded) {
+      setFixtureAdminError("This fixture is already on the curated list.");
+      return;
+    }
     const { error } = await supabase.from("leaderboard_fixtures").insert({
       home_team: newFixtureHome.trim(),
       away_team: newFixtureAway.trim(),
