@@ -50,8 +50,8 @@ const LEAGUE_MAP = {
   // verified this session — worth confirming each one actually pulls real
   // fixtures once deployed, the same caution as the batch above.
   uefanationsleague:  { id: 5,   season: 2026 }, // UEFA Nations League
-  afconqualifiers:    { id: 26,  season: 2026 }, // Africa Cup of Nations Qualification
-  concacafnationsleague: { id: 537, season: 2026 }, // CONCACAF Nations League
+  afconqualifiers:    { id: 36,  season: 2027 }, // Africa Cup of Nations Qualification — verified via searchLeague; tracked under the *next* tournament year, not the calendar year, so 2026 fixtures live under season 2027
+  concacafnationsleague: { id: 536, season: 2025 }, // CONCACAF Nations League — verified via searchLeague (537 was actually the U20 competition); 2025 is the latest season API-Football has for this, not yet 2026
 };
 
 function mapStatus(short) {
