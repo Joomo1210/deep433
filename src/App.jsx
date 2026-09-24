@@ -749,7 +749,7 @@ export default function FootballPredictor() {
     // whichever is later, the launch date or the start of the current
     // month, so this behaves like a normal monthly reset again once
     // we're past the launch month, without needing further edits.
-    const LEADERBOARD_START_DATE = new Date("2026-09-16");
+    const LEADERBOARD_START_DATE = new Date("2026-09-24");
     const now = new Date();
     const calendarMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const cutoff = (calendarMonthStart > LEADERBOARD_START_DATE ? calendarMonthStart : LEADERBOARD_START_DATE).toISOString();
@@ -1173,7 +1173,7 @@ useEffect(() => {
     // state, since that's never populated for a regular user submitting a
     // prediction. Matched the same case-insensitive home|away key
     // comparison already used for leaderboard scoring, for consistency.
-    const CONTEST_START_DATE = new Date("2026-09-16");
+    const CONTEST_START_DATE = new Date("2026-09-24");
     const { data: curatedFixturesForCap } = await supabase.from("leaderboard_fixtures").select("home_team, away_team");
     const curatedKeysForCap = new Set(
       (curatedFixturesForCap || []).map(f => `${f.home_team.toLowerCase()}|${f.away_team.toLowerCase()}`)
