@@ -24,6 +24,9 @@ const LEAGUE_MAP = {
   scotprem:     { id: 179, season: 2026 },
   communityshield: { id: 528, season: 2026 },
   leaguecup:    { id: 48,  season: 2026 }, // EFL Cup (League Cup), England
+  uefanationsleague:  { id: 5,   season: 2026 }, // UEFA Nations League
+  afconqualifiers:    { id: 36,  season: 2027 }, // Africa Cup of Nations Qualification — tracked under the next tournament year, verified via searchLeague
+  concacafnationsleague: { id: 536, season: 2025 }, // CONCACAF Nations League — verified via searchLeague; 536 is the senior competition, not 537 (that's the U20 competition)
 };
 
 function mapStatus(shortStatus) {
