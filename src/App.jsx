@@ -991,6 +991,9 @@ const SCORES_TAB_LEAGUES = [
   { id: "championship", label: "Championship" },
   { id: "communityshield", label: "Community Shield" },
   { id: "leaguecup", label: "League Cup" },
+  { id: "uefanationsleague", label: "UEFA Nations League" },
+  { id: "afconqualifiers", label: "AFCON Qualification" },
+  { id: "concacafnationsleague", label: "CONCACAF Nations League" },
 ];
 useEffect(() => {
   const fetchLive = async () => {
