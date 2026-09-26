@@ -779,10 +779,10 @@ export default function FootballPredictor() {
       return;
     }
     const eligibleKeys = new Set(
-      (fixturesData || []).map(f => `${f.home_team.toLowerCase()}|${f.away_team.toLowerCase()}`)
+      (fixturesData || []).map(f => `${f.home_team.trim().toLowerCase()}|${f.away_team.trim().toLowerCase()}`)
     );
     const eligiblePreds = preds.filter(p =>
-      eligibleKeys.has(`${(p.home_team || "").toLowerCase()}|${(p.away_team || "").toLowerCase()}`)
+      eligibleKeys.has(`${(p.home_team || "").trim().toLowerCase()}|${(p.away_team || "").trim().toLowerCase()}`)
     );
     if (eligiblePreds.length === 0) {
       setLeaderboardDebug({
@@ -790,7 +790,7 @@ export default function FootballPredictor() {
         predsFetched: preds.length,
         curatedFixturesCount: (fixturesData || []).length,
         note: "None of the fetched predictions matched a curated fixture.",
-        samplePredKeys: preds.slice(0, 5).map(p => `${(p.home_team||"").toLowerCase()}|${(p.away_team||"").toLowerCase()}`),
+        samplePredKeys: preds.slice(0, 5).map(p => `${(p.home_team||"").trim().toLowerCase()}|${(p.away_team||"").trim().toLowerCase()}`),
         curatedKeys: Array.from(eligibleKeys),
       });
       setLeaderboardLoading(false); return;
@@ -1089,10 +1089,10 @@ useEffect(() => {
     // score at all and just make it harder to find the ones that matter.
     const { data: fixturesData } = await supabase.from("leaderboard_fixtures").select("home_team, away_team");
     const curatedKeys = new Set(
-      (fixturesData || []).map(f => `${f.home_team.toLowerCase()}|${f.away_team.toLowerCase()}`)
+      (fixturesData || []).map(f => `${f.home_team.trim().toLowerCase()}|${f.away_team.trim().toLowerCase()}`)
     );
     const curatedPending = (preds || []).filter(p =>
-      curatedKeys.has(`${(p.home_team || "").toLowerCase()}|${(p.away_team || "").toLowerCase()}`)
+      curatedKeys.has(`${(p.home_team || "").trim().toLowerCase()}|${(p.away_team || "").trim().toLowerCase()}`)
     );
     const userIds = [...new Set(curatedPending.map(p => p.user_id))];
     const { data: profilesData } = await supabase.from("profiles").select("id, username").in("id", userIds);
@@ -1110,8 +1110,8 @@ useEffect(() => {
     // scoring itself would silently absorb (it dedupes internally), but
     // left the admin list itself cluttered and confusing to review.
     const alreadyAdded = leaderboardFixtures.some(f =>
-      f.home_team.toLowerCase() === newFixtureHome.trim().toLowerCase() &&
-      f.away_team.toLowerCase() === newFixtureAway.trim().toLowerCase()
+      f.home_team.trim().toLowerCase() === newFixtureHome.trim().toLowerCase() &&
+      f.away_team.trim().toLowerCase() === newFixtureAway.trim().toLowerCase()
     );
     if (alreadyAdded) {
       setFixtureAdminError("This fixture is already on the curated list.");
@@ -1191,11 +1191,11 @@ useEffect(() => {
     const CONTEST_START_DATE = new Date("2026-09-24");
     const { data: curatedFixturesForCap } = await supabase.from("leaderboard_fixtures").select("home_team, away_team");
     const curatedKeysForCap = new Set(
-      (curatedFixturesForCap || []).map(f => `${f.home_team.toLowerCase()}|${f.away_team.toLowerCase()}`)
+      (curatedFixturesForCap || []).map(f => `${f.home_team.trim().toLowerCase()}|${f.away_team.trim().toLowerCase()}`)
     );
     const contestPredictionsCount = history.filter(h =>
       new Date(h.created_at) >= CONTEST_START_DATE &&
-      curatedKeysForCap.has(`${(h.home_team || "").toLowerCase()}|${(h.away_team || "").toLowerCase()}`)
+      curatedKeysForCap.has(`${(h.home_team || "").trim().toLowerCase()}|${(h.away_team || "").trim().toLowerCase()}`)
     ).length;
     if (contestPredictionsCount >= 30) {
       setError("You've reached the 30 curated-match prediction limit for this contest round.");
