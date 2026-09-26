@@ -39,7 +39,6 @@ const LEAGUE_MAP = {
   superlig:     { id: 203, season: 2026 }, // Turkey — Galatasaray, Fenerbahce
   ukraine:      { id: 333, season: 2026 }, // Ukraine — Shakhtar Donetsk
   swisssl:      { id: 207, season: 2026 }, // Switzerland — Young Boys, Basel
-  austriabl:    { id: 218, season: 2026 }, // Austria Bundesliga — Salzburg, Rapid Wien; verified via searchLeague
   czechfl:      { id: 345, season: 2026 }, // Czech Republic — Slavia Prague, Sparta Prague
   croatiahnl:   { id: 210, season: 2026 }, // Croatia — Dinamo Zagreb
   danishsl:     { id: 119, season: 2026 }, // Denmark — FC Copenhagen
