@@ -69,6 +69,7 @@ const LEAGUES = [
   { id: "uefanationsleague", label: "UEFA Nations League", short: "UEFA Nations League" },
   { id: "afconqualifiers", label: "AFCON Qualification", short: "AFCON Qualification" },
   { id: "concacafnationsleague", label: "CONCACAF Nations League", short: "CONCACAF Nations League" },
+  { id: "austriabl", label: "Austria Bundesliga", short: "Austria Bundesliga" },
 ];
 const BADGE_DEFS = [
   { icon: "⚽", name: "Sunday League Scout", desc: "First prediction made", color: "#e2e8f0", condition: (s) => s.total >= 1 },
