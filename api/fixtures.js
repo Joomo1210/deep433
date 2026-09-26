@@ -39,6 +39,7 @@ const LEAGUE_MAP = {
   superlig:     { id: 203, season: 2026 }, // Turkey — Galatasaray, Fenerbahce
   ukraine:      { id: 333, season: 2026 }, // Ukraine — Shakhtar Donetsk
   swisssl:      { id: 207, season: 2026 }, // Switzerland — Young Boys, Basel
+  austriabl:    { id: 218, season: 2026 }, // Austria Bundesliga — Salzburg, Rapid Wien; verified via searchLeague
   czechfl:      { id: 345, season: 2026 }, // Czech Republic — Slavia Prague, Sparta Prague
   croatiahnl:   { id: 210, season: 2026 }, // Croatia — Dinamo Zagreb
   danishsl:     { id: 119, season: 2026 }, // Denmark — FC Copenhagen
@@ -111,13 +112,30 @@ export default async function handler(req, res) {
         headers: { "x-apisports-key": apiKeyDebug }
       });
       const raw = await r.json();
+      const allFixtures = (raw.response || []).map(f => ({
+        home: f.teams?.home?.name, away: f.teams?.away?.name, date: f.fixture?.date,
+      }));
+      // Optional findTeam param — searches every fixture actually returned
+      // for this league/season, not just a 3-item sample. Added because a
+      // team can be genuinely missing from a small sample while still
+      // being somewhere in the full response, or genuinely absent from the
+      // whole thing — this tells the two apart directly instead of
+      // guessing from 3 random entries.
+      const findTeam = req.query.findTeam;
+      const matchingFixtures = findTeam
+        ? allFixtures.filter(f =>
+            (f.home || "").toLowerCase().includes(findTeam.toLowerCase()) ||
+            (f.away || "").toLowerCase().includes(findTeam.toLowerCase())
+          )
+        : null;
       return res.status(200).json({
         leagueId, mappedTo: league,
         apiErrors: raw.errors,
         resultsCount: raw.results,
-        sampleFixtures: (raw.response || []).slice(0, 3).map(f => ({
-          home: f.teams?.home?.name, away: f.teams?.away?.name, date: f.fixture?.date,
-        })),
+        totalFixturesReturned: allFixtures.length,
+        ...(findTeam
+          ? { findTeam, matchingFixtures, foundCount: matchingFixtures.length }
+          : { sampleFixtures: allFixtures.slice(0, 3) }),
       });
     } catch (err) {
       return res.status(500).json({ error: err.message });
