@@ -1181,7 +1181,7 @@ useEffect(() => {
     );
   };
   const goToStep2 = () => {
-    if (!homeTeam || !awayTeam) { setError("Enter both team names."); return; }
+    if (!homeTeam || !awayTeam) { setError("Select a fixture first."); return; }
     if (hasExistingPrediction(homeTeam, awayTeam)) {
       setError("You've already predicted this match — check History to edit it.");
       return;
@@ -1656,19 +1656,10 @@ if (!session && !guestMode) {
                     </button>
                   ))}
                 </div>
-                <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Set Up The Match</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 8, marginBottom: 16, alignItems: "center" }}>
-                  <div>
-                    <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Home / Team 1</div>
-                    <input className="team-input" placeholder="e.g. Brazil" value={homeTeam} onChange={e => setHomeTeam(e.target.value)} />
-                  </div>
-                  <div style={{ color: "#333", fontWeight: 700, textAlign: "center", marginTop: 20 }}>vs</div>
-                  <div>
-                    <div style={{ fontSize: 13, color: "#f87171", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Away / Team 2</div>
-                    <input className="team-input away" placeholder="e.g. Argentina" value={awayTeam} onChange={e => setAwayTeam(e.target.value)} />
-                  </div>
+                <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Pick The Match</div>
+                <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 12 }}>
+                  Search and select the real fixture below — typing team names by hand used to be the single biggest cause of predictions silently not scoring, since even a small spelling difference from the official name stops it from being recognized.
                 </div>
-                <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Or pick a fixture</div>
                 <input className="search-input" placeholder="🔍 Search team..." value={fixtureSearch} onChange={e => setFixtureSearch(e.target.value)} style={{ marginBottom: 12 }} />
                 {fixturesLoading && (
                   <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 16, padding: "20px 0" }}>Loading fixtures...</div>
