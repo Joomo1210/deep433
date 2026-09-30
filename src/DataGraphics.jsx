@@ -3405,6 +3405,165 @@ function LeaderboardGraphic({ supabase }) {
   );
 }
 
+// ─── TOP 5 EXPLAINED (downloadable, with a legend for newcomers) ───────────
+// Same live scoring as the main Leaderboard Share Card, but limited to the
+// top 5 and with each person's exact/outcome/O-U breakdown shown alongside
+// their points, plus a plain-language legend underneath so someone new to
+// the leaderboard can understand what E, O, OU and Pts actually mean
+// without having to ask.
+function Top5ExplainedGraphic({ supabase }) {
+  const cardRef = useRef(null);
+  const [downloading, setDownloading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [title, setTitle] = useState("Top 5 Leaderboard");
+  const [rows, setRows] = useState([]);
+
+  const loadStandings = async () => {
+    setLoading(true);
+    try {
+      const LEADERBOARD_START_DATE = new Date("2026-09-24");
+      const now = new Date();
+      const calendarMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const cutoff = (calendarMonthStart > LEADERBOARD_START_DATE ? calendarMonthStart : LEADERBOARD_START_DATE).toISOString();
+
+      const { data: preds } = await supabase
+        .from("predictions")
+        .select("user_id, home_team, away_team, user_prediction, user_outcome, user_over_under, actual_score")
+        .gte("created_at", cutoff)
+        .not("actual_score", "is", null);
+      if (!preds || preds.length === 0) { setRows([]); setLoading(false); return; }
+
+      const { data: fixturesData } = await supabase.from("leaderboard_fixtures").select("home_team, away_team");
+      const eligibleKeys = new Set((fixturesData || []).map(f => `${f.home_team.trim().toLowerCase()}|${f.away_team.trim().toLowerCase()}`));
+      const eligiblePreds = preds.filter(p => eligibleKeys.has(`${(p.home_team || "").trim().toLowerCase()}|${(p.away_team || "").trim().toLowerCase()}`));
+      if (eligiblePreds.length === 0) { setRows([]); setLoading(false); return; }
+
+      const byUser = {};
+      eligiblePreds.forEach(p => {
+        if (!byUser[p.user_id]) byUser[p.user_id] = { total: 0, points: 0, exact: 0, outcomeOnly: 0, overUnderHits: 0 };
+        byUser[p.user_id].total += 1;
+        const [ah, aa] = (p.actual_score || "").split("-").map(n => parseInt(n));
+        const hasActual = !Number.isNaN(ah) && !Number.isNaN(aa);
+        const actualOutcome = hasActual ? (ah > aa ? "Home Win" : aa > ah ? "Away Win" : "Draw") : null;
+        const actualOverUnder = hasActual ? ((ah + aa) > 2.5 ? "Over 2.5" : "Under 2.5") : null;
+        let points = 0;
+        if (p.user_prediction === p.actual_score) { points += 5; byUser[p.user_id].exact += 1; }
+        else if (p.user_outcome && actualOutcome && p.user_outcome === actualOutcome) { points += 3; byUser[p.user_id].outcomeOnly += 1; }
+        if (p.user_over_under && actualOverUnder && p.user_over_under === actualOverUnder) { points += 1; byUser[p.user_id].overUnderHits += 1; }
+        byUser[p.user_id].points += points;
+      });
+
+      const userIds = Object.keys(byUser);
+      const { data: profilesData } = await supabase.from("profiles").select("id, username, role").in("id", userIds);
+      const nameById = {}, roleById = {};
+      (profilesData || []).forEach(p => { nameById[p.id] = p.username; roleById[p.id] = p.role; });
+
+      const finalRows = userIds
+        .map(id => ({ name: nameById[id], role: roleById[id], ...byUser[id] }))
+        .filter(r => r.name && r.role !== "admin")
+        .sort((a, b) => b.points - a.points)
+        .slice(0, 5);
+      setRows(finalRows);
+    } catch {}
+    setLoading(false);
+  };
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, `deep433-top5-explained.png`, "#0a0a12", transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Top 5 standings with each person's scoring breakdown, plus a plain legend underneath explaining E, O, OU and Pts for anyone new.</div>
+
+      <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Card title" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+
+      <button onClick={loadStandings} disabled={loading} style={{ background: "linear-gradient(135deg,#818cf8,#6366f1)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
+        {loading ? "Loading standings..." : "Load Top 5"}
+      </button>
+
+      {rows.length > 0 && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <div style={{ padding: "40px 22px 28px" }}>
+              <div style={{ textAlign: "center", marginBottom: 4 }}>
+                <span style={{
+                  fontSize: 26, fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.2,
+                  background: "linear-gradient(90deg,#4ade80,#818cf8,#f59e0b)",
+                  WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+                }}>🏅 {title}</span>
+              </div>
+              <div style={{ textAlign: "center", fontSize: 12, color: "#e2e8f0", fontWeight: 700, marginBottom: 22 }}>
+                Exact: 5pts · Outcome only: 3pts · O/U: +1pt
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {rows.map((r, i) => (
+                  <div key={i} style={{
+                    display: "flex", alignItems: "center", gap: 14,
+                    background: "#13131f", border: "1px solid #23232f", borderRadius: 12, padding: "12px 16px",
+                  }}>
+                    <span style={{ fontSize: 22, fontWeight: 900, color: "#818cf8", width: 28, textAlign: "center", flexShrink: 0 }}>{i + 1}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 5 }}>{r.name}</div>
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 12, fontWeight: 800, color: "#4ade80", background: "#4ade8020", border: "1px solid #4ade8044", borderRadius: 6, padding: "3px 8px" }}>{r.exact} E</span>
+                        <span style={{ fontSize: 12, fontWeight: 800, color: "#818cf8", background: "#818cf820", border: "1px solid #818cf844", borderRadius: 6, padding: "3px 8px" }}>{r.outcomeOnly} O</span>
+                        <span style={{ fontSize: 12, fontWeight: 800, color: "#fbbf24", background: "#fbbf2420", border: "1px solid #fbbf2444", borderRadius: 6, padding: "3px 8px" }}>{r.overUnderHits} OU</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: "#94a3b8" }}>{r.total} preds</span>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "center", flexShrink: 0 }}>
+                      <div style={{ fontSize: 24, color: "#fbbf24", fontWeight: 900, lineHeight: 1 }}>{r.points}</div>
+                      <div style={{ fontSize: 9, color: "#666", textTransform: "uppercase", letterSpacing: 0.3 }}>pts</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ marginTop: 24, background: "#13131f", border: "1px solid #23232f", borderRadius: 12, padding: "14px 16px" }}>
+                <div style={{ fontSize: 11.5, fontWeight: 800, color: "#e2e8f0", textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 10, textAlign: "center" }}>What the letters mean</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#4ade80", background: "#4ade8020", border: "1px solid #4ade8044", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>E</span>
+                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Exact scoreline correct — 5 points each</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#818cf8", background: "#818cf820", border: "1px solid #818cf844", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>O</span>
+                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Outcome only correct, score wrong — 3 points each</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#fbbf24", background: "#fbbf2420", border: "1px solid #fbbf2444", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>OU</span>
+                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Over/Under goals correct — +1 point each, always additive</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#fbbf24", background: "#fbbf2420", border: "1px solid #fbbf2444", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Pts</span>
+                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Total points — the number that decides the ranking</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ textAlign: "center", marginTop: 20 }}>
+                <span style={{ fontSize: 11.5, color: "#e2e8f0", fontWeight: 700 }}>Predict smartly. Look closely at the stats.</span>
+              </div>
+            </div>
+          </GraphicCard>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 function NoticeBoardGraphic() {
   const cardRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
@@ -11008,6 +11167,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "awardrace", label: "🏆 Award Race Comparison" },
     { id: "noticeboard", label: "📌 Weekly Notice Board" },
     { id: "leaderboardshare", label: "🏅 Leaderboard Share Card" },
+    { id: "top5explained", label: "🏅 Top 5 Explained" },
     { id: "h2h",      label: "🆚 Player H2H" },
     { id: "matchh2h", label: "📋 Match H2H" },
     { id: "motm", label: "⭐ Man of the Match" },
@@ -11079,6 +11239,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "awardrace" && <AwardRaceGraphic />}
       {activeSection === "noticeboard" && <NoticeBoardGraphic />}
       {activeSection === "leaderboardshare" && <LeaderboardGraphic supabase={supabase} />}
+      {activeSection === "top5explained" && <Top5ExplainedGraphic supabase={supabase} />}
       {activeSection === "h2h"      && <PlayerH2HGraphic />}
       {activeSection === "matchh2h" && <MatchH2HGraphic />}
       {activeSection === "motm" && <ManOfMatchGraphic />}
