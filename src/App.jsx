@@ -2610,7 +2610,12 @@ if (!session && !guestMode) {
               )}
               {allPendingPredictions.map(p => (
                 <div key={p.id} style={{ borderBottom: "1px solid #1a1a2a", padding: "8px 0" }}>
-                  <div style={{ fontSize: 12, color: "#f0f0f0", fontWeight: 700 }}>{p.home_team} vs {p.away_team}</div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 12, color: "#f0f0f0", fontWeight: 700 }}>{p.home_team} vs {p.away_team}</span>
+                    <span style={{ fontSize: 10.5, color: "#666", fontWeight: 600 }}>
+                      predicted {new Date(p.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                    </span>
+                  </div>
                   <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6 }}>
                     {p.predictorName} predicted {p.user_prediction}
                     {p.user_outcome ? ` · ${p.user_outcome}` : ""}
