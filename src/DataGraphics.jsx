@@ -3501,26 +3501,33 @@ function Top5ExplainedGraphic({ supabase }) {
                 Exact: 5pts · Outcome only: 3pts · O/U: +1pt
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ border: "1px solid #23232f", borderRadius: 12, overflow: "hidden" }}>
+                <div style={{
+                  display: "grid", gridTemplateColumns: "34px 1fr 44px 44px 44px 44px 52px",
+                  background: "#1a1a28", padding: "10px 12px", gap: 4,
+                }}>
+                  <span style={{ fontSize: 10.5, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase" }}>Pos</span>
+                  <span style={{ fontSize: 10.5, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase" }}>Player</span>
+                  <span style={{ fontSize: 10.5, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", textAlign: "center" }}>P</span>
+                  <span style={{ fontSize: 10.5, fontWeight: 900, color: "#4ade80", textTransform: "uppercase", textAlign: "center" }}>E</span>
+                  <span style={{ fontSize: 10.5, fontWeight: 900, color: "#818cf8", textTransform: "uppercase", textAlign: "center" }}>O</span>
+                  <span style={{ fontSize: 10.5, fontWeight: 900, color: "#fbbf24", textTransform: "uppercase", textAlign: "center" }}>OU</span>
+                  <span style={{ fontSize: 10.5, fontWeight: 900, color: "#e2e8f0", textTransform: "uppercase", textAlign: "center" }}>Pts</span>
+                </div>
                 {rows.map((r, i) => (
                   <div key={i} style={{
-                    display: "flex", alignItems: "center", gap: 14,
-                    background: "#13131f", border: "1px solid #23232f", borderRadius: 12, padding: "12px 16px",
+                    display: "grid", gridTemplateColumns: "34px 1fr 44px 44px 44px 44px 52px",
+                    alignItems: "center", gap: 4, padding: "12px 12px",
+                    background: i % 2 === 0 ? "#13131f" : "#0f0f18",
+                    borderTop: "1px solid #1e1e2a",
                   }}>
-                    <span style={{ fontSize: 22, fontWeight: 900, color: "#818cf8", width: 28, textAlign: "center", flexShrink: 0 }}>{i + 1}</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 16, fontWeight: 800, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 5 }}>{r.name}</div>
-                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                        <span style={{ fontSize: 12, fontWeight: 800, color: "#4ade80", background: "#4ade8020", border: "1px solid #4ade8044", borderRadius: 6, padding: "3px 8px" }}>{r.exact} E</span>
-                        <span style={{ fontSize: 12, fontWeight: 800, color: "#818cf8", background: "#818cf820", border: "1px solid #818cf844", borderRadius: 6, padding: "3px 8px" }}>{r.outcomeOnly} O</span>
-                        <span style={{ fontSize: 12, fontWeight: 800, color: "#fbbf24", background: "#fbbf2420", border: "1px solid #fbbf2444", borderRadius: 6, padding: "3px 8px" }}>{r.overUnderHits} OU</span>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: "#94a3b8" }}>{r.total} preds</span>
-                      </div>
-                    </div>
-                    <div style={{ textAlign: "center", flexShrink: 0 }}>
-                      <div style={{ fontSize: 24, color: "#fbbf24", fontWeight: 900, lineHeight: 1 }}>{r.points}</div>
-                      <div style={{ fontSize: 9, color: "#666", textTransform: "uppercase", letterSpacing: 0.3 }}>pts</div>
-                    </div>
+                    <span style={{ fontSize: 15, fontWeight: 900, color: "#818cf8" }}>{i + 1}</span>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#94a3b8", textAlign: "center" }}>{r.total}</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: "#4ade80", textAlign: "center" }}>{r.exact}</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: "#818cf8", textAlign: "center" }}>{r.outcomeOnly}</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: "#fbbf24", textAlign: "center" }}>{r.overUnderHits}</span>
+                    <span style={{ fontSize: 17, fontWeight: 900, color: "#fbbf24", textAlign: "center" }}>{r.points}</span>
                   </div>
                 ))}
               </div>
