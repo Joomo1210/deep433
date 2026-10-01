@@ -756,16 +756,15 @@ export default function FootballPredictor() {
   const computeLeaderboard = async () => {
     setLeaderboardLoading(true);
     setLeaderboard([]);
-    // Fixed launch date for the points-based leaderboard, not "start of
-    // month" — the scoring system just changed, and predictions made
-    // before it existed shouldn't carry pre-earned points into it. Uses
-    // whichever is later, the launch date or the start of the current
-    // month, so this behaves like a normal monthly reset again once
-    // we're past the launch month, without needing further edits.
+    // Fixed round-start date — this used to also roll forward to the 1st
+    // of the current month automatically, intended as a "fresh month"
+    // reset, but that silently wiped out every prediction for an entire
+    // ongoing round the moment the calendar flipped to October, with no
+    // warning and nothing to undo it. A round's cutoff should only ever
+    // move when someone deliberately changes this line for a genuinely
+    // new round, never on its own just because the month changed.
     const LEADERBOARD_START_DATE = new Date("2026-09-24");
-    const now = new Date();
-    const calendarMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const cutoff = (calendarMonthStart > LEADERBOARD_START_DATE ? calendarMonthStart : LEADERBOARD_START_DATE).toISOString();
+    const cutoff = LEADERBOARD_START_DATE.toISOString();
     const { data: preds, error: predsError } = await supabase
       .from("predictions")
       .select("user_id, home_team, away_team, user_prediction, user_outcome, user_over_under, actual_score")
