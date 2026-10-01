@@ -3292,10 +3292,12 @@ function LeaderboardGraphic({ supabase }) {
   const loadStandings = async () => {
     setLoading(true);
     try {
+      // Fixed round-start date — no longer auto-advances to the 1st of
+      // the current month, that silently excluded every September
+      // prediction for this still-ongoing round the moment it became
+      // October. Only moves when deliberately changed for a new round.
       const LEADERBOARD_START_DATE = new Date("2026-09-24");
-      const now = new Date();
-      const calendarMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const cutoff = (calendarMonthStart > LEADERBOARD_START_DATE ? calendarMonthStart : LEADERBOARD_START_DATE).toISOString();
+      const cutoff = LEADERBOARD_START_DATE.toISOString();
 
       const { data: preds } = await supabase
         .from("predictions")
@@ -3421,10 +3423,12 @@ function Top5ExplainedGraphic({ supabase }) {
   const loadStandings = async () => {
     setLoading(true);
     try {
+      // Fixed round-start date — no longer auto-advances to the 1st of
+      // the current month, that silently excluded every September
+      // prediction for this still-ongoing round the moment it became
+      // October. Only moves when deliberately changed for a new round.
       const LEADERBOARD_START_DATE = new Date("2026-09-24");
-      const now = new Date();
-      const calendarMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const cutoff = (calendarMonthStart > LEADERBOARD_START_DATE ? calendarMonthStart : LEADERBOARD_START_DATE).toISOString();
+      const cutoff = LEADERBOARD_START_DATE.toISOString();
 
       const { data: preds } = await supabase
         .from("predictions")
