@@ -3307,8 +3307,8 @@ function LeaderboardGraphic({ supabase }) {
       if (!preds || preds.length === 0) { setRows([]); setLoading(false); return; }
 
       const { data: fixturesData } = await supabase.from("leaderboard_fixtures").select("home_team, away_team");
-      const eligibleKeys = new Set((fixturesData || []).map(f => `${f.home_team.toLowerCase()}|${f.away_team.toLowerCase()}`));
-      const eligiblePreds = preds.filter(p => eligibleKeys.has(`${(p.home_team || "").toLowerCase()}|${(p.away_team || "").toLowerCase()}`));
+      const eligibleKeys = new Set((fixturesData || []).map(f => `${f.home_team.trim().toLowerCase()}|${f.away_team.trim().toLowerCase()}`));
+      const eligiblePreds = preds.filter(p => eligibleKeys.has(`${(p.home_team || "").trim().toLowerCase()}|${(p.away_team || "").trim().toLowerCase()}`));
       if (eligiblePreds.length === 0) { setRows([]); setLoading(false); return; }
 
       const byUser = {};
