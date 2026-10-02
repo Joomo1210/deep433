@@ -3282,11 +3282,17 @@ const PREDICTION_CATEGORY_POOL = [
 // 5pts, correct outcome only 3pts, correct Over/Under +1pt, curated
 // matches only), but renders as a clean, shareable card for posting
 // standings publicly, rather than a live in-app management view.
+// Shares its scoring logic exactly with Top5ExplainedGraphic below — kept
+// as one shared implementation (same table layout, same legend), only the
+// row count and default title differ. Two separate near-identical copies
+// of this logic is exactly what caused them to silently drift apart and
+// disagree earlier (one had a bug fix the other never received) — this
+// mirrors Top5ExplainedGraphic deliberately so that can't happen again.
 function LeaderboardGraphic({ supabase }) {
   const cardRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [title, setTitle] = useState("Leaderboard Standings");
+  const [title, setTitle] = useState("Top 10 Leaderboard");
   const [rows, setRows] = useState([]);
 
   const loadStandings = async () => {
@@ -3313,16 +3319,16 @@ function LeaderboardGraphic({ supabase }) {
 
       const byUser = {};
       eligiblePreds.forEach(p => {
-        if (!byUser[p.user_id]) byUser[p.user_id] = { total: 0, points: 0 };
+        if (!byUser[p.user_id]) byUser[p.user_id] = { total: 0, points: 0, exact: 0, outcomeOnly: 0, overUnderHits: 0 };
         byUser[p.user_id].total += 1;
         const [ah, aa] = (p.actual_score || "").split("-").map(n => parseInt(n));
         const hasActual = !Number.isNaN(ah) && !Number.isNaN(aa);
         const actualOutcome = hasActual ? (ah > aa ? "Home Win" : aa > ah ? "Away Win" : "Draw") : null;
         const actualOverUnder = hasActual ? ((ah + aa) > 2.5 ? "Over 2.5" : "Under 2.5") : null;
         let points = 0;
-        if (p.user_prediction === p.actual_score) points += 5;
-        else if (p.user_outcome && actualOutcome && p.user_outcome === actualOutcome) points += 3;
-        if (p.user_over_under && actualOverUnder && p.user_over_under === actualOverUnder) points += 1;
+        if (p.user_prediction === p.actual_score) { points += 5; byUser[p.user_id].exact += 1; }
+        else if (p.user_outcome && actualOutcome && p.user_outcome === actualOutcome) { points += 3; byUser[p.user_id].outcomeOnly += 1; }
+        if (p.user_over_under && actualOverUnder && p.user_over_under === actualOverUnder) { points += 1; byUser[p.user_id].overUnderHits += 1; }
         byUser[p.user_id].points += points;
       });
 
@@ -3332,7 +3338,7 @@ function LeaderboardGraphic({ supabase }) {
       (profilesData || []).forEach(p => { nameById[p.id] = p.username; roleById[p.id] = p.role; });
 
       const finalRows = userIds
-        .map(id => ({ name: nameById[id], role: roleById[id], points: byUser[id].points, total: byUser[id].total }))
+        .map(id => ({ name: nameById[id], role: roleById[id], ...byUser[id] }))
         .filter(r => r.name && r.role !== "admin")
         .sort((a, b) => b.points - a.points)
         .slice(0, 10);
@@ -3351,43 +3357,80 @@ function LeaderboardGraphic({ supabase }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#e2e8f0" }}>A clean, downloadable snapshot of the current leaderboard standings, same scoring as the live tab, ready to post.</div>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Top 10 standings with each person's scoring breakdown, plus a plain legend underneath explaining E, O, OU and Pts for anyone new.</div>
 
       <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Card title" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
 
       <button onClick={loadStandings} disabled={loading} style={{ background: "linear-gradient(135deg,#818cf8,#6366f1)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
-        {loading ? "Loading standings..." : "Load Current Standings"}
+        {loading ? "Loading standings..." : "Load Top 10"}
       </button>
 
       {rows.length > 0 && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "44px 22px 30px" }}>
+            <div style={{ padding: "40px 22px 28px" }}>
               <div style={{ textAlign: "center", marginBottom: 4 }}>
                 <span style={{
-                  fontSize: 24, fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.2,
+                  fontSize: 26, fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.2,
                   background: "linear-gradient(90deg,#4ade80,#818cf8,#f59e0b)",
                   WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
                 }}>🏅 {title}</span>
               </div>
-              <div style={{ textAlign: "center", fontSize: 11.5, color: "#e2e8f0", fontWeight: 700, marginBottom: 20 }}>
+              <div style={{ textAlign: "center", fontSize: 12, color: "#e2e8f0", fontWeight: 700, marginBottom: 22 }}>
                 Exact: 5pts · Outcome only: 3pts · O/U: +1pt
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ border: "1px solid #23232f", borderRadius: 12, overflow: "hidden" }}>
+                <div style={{
+                  display: "grid", gridTemplateColumns: "34px 1fr 44px 44px 44px 44px 52px",
+                  background: "#1a1a28", padding: "10px 12px", gap: 4,
+                }}>
+                  <span style={{ fontSize: 10.5, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase" }}>Pos</span>
+                  <span style={{ fontSize: 10.5, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase" }}>Player</span>
+                  <span style={{ fontSize: 10.5, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", textAlign: "center" }}>P</span>
+                  <span style={{ fontSize: 10.5, fontWeight: 900, color: "#4ade80", textTransform: "uppercase", textAlign: "center" }}>E</span>
+                  <span style={{ fontSize: 10.5, fontWeight: 900, color: "#818cf8", textTransform: "uppercase", textAlign: "center" }}>O</span>
+                  <span style={{ fontSize: 10.5, fontWeight: 900, color: "#fbbf24", textTransform: "uppercase", textAlign: "center" }}>OU</span>
+                  <span style={{ fontSize: 10.5, fontWeight: 900, color: "#e2e8f0", textTransform: "uppercase", textAlign: "center" }}>Pts</span>
+                </div>
                 {rows.map((r, i) => (
                   <div key={i} style={{
-                    display: "flex", alignItems: "center", gap: 12,
-                    background: "#13131f", border: "1px solid #23232f", borderRadius: 10, padding: "10px 14px",
+                    display: "grid", gridTemplateColumns: "34px 1fr 44px 44px 44px 44px 52px",
+                    alignItems: "center", gap: 4, padding: "12px 12px",
+                    background: i % 2 === 0 ? "#13131f" : "#0f0f18",
+                    borderTop: "1px solid #1e1e2a",
                   }}>
-                    <span style={{ fontSize: 15, fontWeight: 900, color: "#818cf8", width: 20, textAlign: "center", flexShrink: 0 }}>{i + 1}</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</div>
-                      <div style={{ fontSize: 11, color: "#94a3b8" }}>{r.total} predictions</div>
-                    </div>
-                    <span style={{ fontSize: 19, color: "#fbbf24", fontWeight: 900, flexShrink: 0 }}>{r.points}</span>
+                    <span style={{ fontSize: 15, fontWeight: 900, color: "#818cf8" }}>{i + 1}</span>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#94a3b8", textAlign: "center" }}>{r.total}</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: "#4ade80", textAlign: "center" }}>{r.exact}</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: "#818cf8", textAlign: "center" }}>{r.outcomeOnly}</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: "#fbbf24", textAlign: "center" }}>{r.overUnderHits}</span>
+                    <span style={{ fontSize: 17, fontWeight: 900, color: "#fbbf24", textAlign: "center" }}>{r.points}</span>
                   </div>
                 ))}
+              </div>
+
+              <div style={{ marginTop: 24, background: "#13131f", border: "1px solid #23232f", borderRadius: 12, padding: "14px 16px" }}>
+                <div style={{ fontSize: 11.5, fontWeight: 800, color: "#e2e8f0", textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 10, textAlign: "center" }}>What the letters mean</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#4ade80", background: "#4ade8020", border: "1px solid #4ade8044", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>E</span>
+                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Exact scoreline correct — 5 points each</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#818cf8", background: "#818cf820", border: "1px solid #818cf844", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>O</span>
+                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Outcome only correct, score wrong — 3 points each</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#fbbf24", background: "#fbbf2420", border: "1px solid #fbbf2444", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>OU</span>
+                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Over/Under goals correct — +1 point each, always additive</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#fbbf24", background: "#fbbf2420", border: "1px solid #fbbf2444", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Pts</span>
+                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Total points — the number that decides the ranking</span>
+                  </div>
+                </div>
               </div>
 
               <div style={{ textAlign: "center", marginTop: 20 }}>
