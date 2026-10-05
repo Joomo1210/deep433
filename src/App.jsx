@@ -597,6 +597,12 @@ export default function FootballPredictor() {
   const [adminFixtureOptions, setAdminFixtureOptions] = useState([]);
   const [adminFixturesLoading, setAdminFixturesLoading] = useState(false);
   const [newFixtureAway, setNewFixtureAway] = useState("");
+  // Kickoff time and league label captured from the real fixture at the
+  // moment it's picked, so the curated list (and the downloadable curated
+  // matches cards) can show when and where each match is played.
+  const [newFixtureKickoff, setNewFixtureKickoff] = useState("");
+  const [newFixtureLeagueLabel, setNewFixtureLeagueLabel] = useState("");
+  const [adminUpcomingOnly, setAdminUpcomingOnly] = useState(true);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   const [fixtures, setFixtures] = useState([]);
   const [fixturesLoading, setFixturesLoading] = useState(false);
@@ -1129,10 +1135,25 @@ useEffect(() => {
       setFixtureAdminError("This fixture is already on the curated list.");
       return;
     }
-    const { error } = await supabase.from("leaderboard_fixtures").insert({
+    let { error } = await supabase.from("leaderboard_fixtures").insert({
       home_team: newFixtureHome.trim(),
       away_team: newFixtureAway.trim(),
+      kickoff: newFixtureKickoff || null,
+      league_label: newFixtureLeagueLabel || null,
     });
+    if (error && /kickoff|league_label|column/i.test(error.message || "")) {
+      // The two new columns haven't been created in Supabase yet. Save the
+      // match anyway so adding one is never blocked, but say so plainly
+      // instead of silently dropping the date and league.
+      const retry = await supabase.from("leaderboard_fixtures").insert({
+        home_team: newFixtureHome.trim(),
+        away_team: newFixtureAway.trim(),
+      });
+      error = retry.error;
+      if (!retry.error) {
+        setFixtureAdminError("Saved, but WITHOUT its date and league — the kickoff and league_label columns don't exist in Supabase yet. Run the SQL first, then re-add this match.");
+      }
+    }
     if (error) {
       // This was failing completely silently before — the button appeared
       // to work, loadLeaderboardFixtures ran, but if the insert itself was
@@ -1143,9 +1164,19 @@ useEffect(() => {
       return;
     }
     setNewFixtureHome(""); setNewFixtureAway("");
+    setNewFixtureKickoff(""); setNewFixtureLeagueLabel("");
     loadLeaderboardFixtures();
     computeLeaderboard();
   };
+  // The admin dropdown's fixtures, soonest first, with upcoming-only on by
+  // default — a season-long unsorted list is unusable when picking dozens
+  // of matches for one weekend.
+  const adminFixtureList = [...adminFixtureOptions]
+    .filter(f => !adminUpcomingOnly || f.status === "upcoming")
+    .sort((a, b) => new Date(a.kickoff || 0) - new Date(b.kickoff || 0));
+  const fmtAdminKickoff = (k) => k
+    ? new Date(k).toLocaleString("en-GB", { weekday: "short", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })
+    : "";
   const removeLeaderboardFixture = async (id) => {
     setFixtureAdminError("");
     const { error } = await supabase.from("leaderboard_fixtures").delete().eq("id", id);
@@ -1192,8 +1223,14 @@ useEffect(() => {
   };
   const submitAndReveal = async () => {
     if (userHome === "" || userAway === "") { setError("Enter your predicted score."); return; }
-    if (!userOutcome) { setError("Pick an outcome — home win, away win, or draw."); return; }
-    if (!userOverUnder) { setError("Pick Over 2.5 or Under 2.5 goals."); return; }
+    // Outcome and Over/Under come straight from the scoreline now, never a
+    // separate pick, so the two can't contradict each other.
+    const hGoals = parseInt(userHome), aGoals = parseInt(userAway);
+    if (Number.isNaN(hGoals) || Number.isNaN(aGoals)) { setError("Enter your predicted score."); return; }
+    const derivedOutcome = hGoals > aGoals ? "Home Win" : aGoals > hGoals ? "Away Win" : "Draw";
+    const derivedOverUnder = (hGoals + aGoals) > 2.5 ? "Over 2.5" : "Under 2.5";
+    setUserOutcome(derivedOutcome);
+    setUserOverUnder(derivedOverUnder);
     // Caps each user at 30 CURATED-match predictions for the contest
     // period, matching the "winner after 30 matches" framing. Fetched
     // fresh here rather than relying on the admin-only leaderboardFixtures
@@ -1242,7 +1279,7 @@ useEffect(() => {
         // have been created yet.
         let { data: saved, error: saveError } = await supabase.from("predictions").insert({
           ...basePayload,
-          user_outcome: userOutcome || null, user_over_under: userOverUnder || null,
+          user_outcome: derivedOutcome, user_over_under: derivedOverUnder,
         }).select().single();
         if (saveError) {
           ({ data: saved } = await supabase.from("predictions").insert(basePayload).select().single());
@@ -1318,8 +1355,18 @@ useEffect(() => {
     setHistory(prev => prev.filter(h => h.id !== id));
   };
   const editPredict = async (id, newScore) => {
-    await supabase.from("predictions").update({ user_prediction: newScore }).eq("id", id);
-    setHistory(prev => prev.map(h => h.id === id ? { ...h, user_prediction: newScore } : h));
+    // Outcome and Over/Under are always derived from the scoreline, so they
+    // have to be re-derived when the scoreline is edited — otherwise an edit
+    // would quietly leave the old outcome behind and recreate exactly the
+    // scoreline-versus-outcome contradiction the separate pickers allowed.
+    const [eh, ea] = (newScore || "").split("-").map(n => parseInt(n));
+    const changes = { user_prediction: newScore };
+    if (!Number.isNaN(eh) && !Number.isNaN(ea)) {
+      changes.user_outcome = eh > ea ? "Home Win" : ea > eh ? "Away Win" : "Draw";
+      changes.user_over_under = (eh + ea) > 2.5 ? "Over 2.5" : "Under 2.5";
+    }
+    await supabase.from("predictions").update(changes).eq("id", id);
+    setHistory(prev => prev.map(h => h.id === id ? { ...h, ...changes } : h));
     setLoggingIdx(null); setLogScore("");
   };
   const shareText = result && userPrediction ? `⚽ DEEP433 — YOU vs AI\n${leagueLabel}: ${homeTeam} vs ${awayTeam}\n\nMy prediction: ${userPrediction}\nAI prediction: ${result.scoreline || "N/A"}\n\n"${result.verdict?.slice(0, 100)}..."\n\nChallenge the AI at deep433.com` : "";
@@ -1726,53 +1773,27 @@ if (!session && !guestMode) {
                   </div>
                 </div>
 
-                {/* Required as of this change — leaving these optional meant
-                    people who skipped them lost every fallback point on a
-                    missed exact score, without realizing that's what
-                    "optional" was costing them. Requiring both keeps
-                    scoring fair across everyone predicting, not just
-                    whoever happened to notice these mattered. */}
-                <div style={{ textAlign: "center", fontSize: 11, color: "#fbbf24", marginBottom: 8 }}>
-                  🏅 Required — these are what earn points if the exact score misses
-                </div>
-                <div style={{ marginBottom: 14 }}>
-                  <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6, textAlign: "center" }}>Outcome</div>
-                  <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
-                    {[
-                      { key: "Home Win", label: homeTeam },
-                      { key: "Draw", label: "Draw" },
-                      { key: "Away Win", label: awayTeam },
-                    ].map(o => (
-                      <button
-                        key={o.key}
-                        onClick={() => setUserOutcome(userOutcome === o.key ? "" : o.key)}
-                        style={{
-                          background: userOutcome === o.key ? "#4ade8022" : "none",
-                          border: `1.5px solid ${userOutcome === o.key ? "#4ade80" : "#2a2a3a"}`,
-                          borderRadius: 8, color: userOutcome === o.key ? "#4ade80" : "#e2e8f0",
-                          cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "7px 12px",
-                        }}
-                      >{o.label}</button>
-                    ))}
-                  </div>
-                </div>
-
-                <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6, textAlign: "center" }}>Goals</div>
-                  <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
-                    {["Over 2.5", "Under 2.5"].map(g => (
-                      <button
-                        key={g}
-                        onClick={() => setUserOverUnder(userOverUnder === g ? "" : g)}
-                        style={{
-                          background: userOverUnder === g ? "#4ade8022" : "none",
-                          border: `1.5px solid ${userOverUnder === g ? "#4ade80" : "#2a2a3a"}`,
-                          borderRadius: 8, color: userOverUnder === g ? "#4ade80" : "#e2e8f0",
-                          cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "7px 12px",
-                        }}
-                      >{g} Goals</button>
-                    ))}
-                  </div>
+                {/* No separate Outcome / Goals pickers any more. The outcome and
+                    the Over/Under are worked out from the scoreline itself, so
+                    everyone is scored on one coherent pick and nobody can hedge
+                    with a scoreline and an outcome that contradict each other. */}
+                <div style={{ textAlign: "center", marginBottom: 18 }}>
+                  {userHome !== "" && userAway !== "" ? (
+                    <div style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 700 }}>
+                      Your scoreline means:{" "}
+                      <span style={{ color: "#4ade80" }}>
+                        {parseInt(userHome) > parseInt(userAway) ? `${homeTeam} win` : parseInt(userAway) > parseInt(userHome) ? `${awayTeam} win` : "Draw"}
+                      </span>
+                      {" · "}
+                      <span style={{ color: "#fbbf24" }}>
+                        {(parseInt(userHome) + parseInt(userAway)) > 2.5 ? "Over 2.5 goals" : "Under 2.5 goals"}
+                      </span>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 12, color: "#94a3b8" }}>
+                      Your outcome and goals pick are read from your scoreline — just enter the score.
+                    </div>
+                  )}
                 </div>
                 {error && <div style={{ color: "#f87171", fontSize: 16, marginBottom: 12 }}>{error}</div>}
                 <button className="predict-btn" onClick={submitAndReveal} disabled={loading} style={{ marginBottom: 10 }}>
@@ -2568,21 +2589,29 @@ if (!session && !guestMode) {
               </select>
               <select
                 onChange={e => {
-                  const fx = adminFixtureOptions.find(f => `${f.home}|${f.away}` === e.target.value);
-                  if (fx) { setNewFixtureHome(fx.home); setNewFixtureAway(fx.away); }
+                  const fx = adminFixtureList[parseInt(e.target.value)];
+                  if (fx) {
+                    setNewFixtureHome(fx.home); setNewFixtureAway(fx.away);
+                    setNewFixtureKickoff(fx.kickoff || "");
+                    setNewFixtureLeagueLabel(LEAGUES.find(l => l.id === adminFixtureLeague)?.label || "");
+                  }
                   e.target.value = "";
                 }}
                 value=""
                 style={{ width: "100%", background: "#1a1a24", border: "1px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "6px 8px", outline: "none", fontFamily: "inherit", marginBottom: 8 }}
               >
-                <option value="">{adminFixturesLoading ? "Loading fixtures..." : adminFixtureOptions.length ? "Select a fixture..." : "No fixtures found for this league"}</option>
-                {adminFixtureOptions.map((f, i) => (
-                  <option key={i} value={`${f.home}|${f.away}`}>{f.home} vs {f.away}</option>
+                <option value="">{adminFixturesLoading ? "Loading fixtures..." : adminFixtureList.length ? "Select a fixture..." : "No fixtures found for this league"}</option>
+                {adminFixtureList.map((f, i) => (
+                  <option key={i} value={i}>{fmtAdminKickoff(f.kickoff)} · {f.home} vs {f.away}</option>
                 ))}
               </select>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "#94a3b8", marginBottom: 8, cursor: "pointer" }}>
+                <input type="checkbox" checked={adminUpcomingOnly} onChange={e => setAdminUpcomingOnly(e.target.checked)} />
+                Upcoming matches only (untick to find a match that has already been played)
+              </label>
               {newFixtureHome && newFixtureAway && (
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, fontSize: 12, color: "#4ade80" }}>
-                  <span style={{ flex: 1 }}>Selected: {newFixtureHome} vs {newFixtureAway}</span>
+                  <span style={{ flex: 1 }}>Selected: {newFixtureHome} vs {newFixtureAway}{newFixtureKickoff ? ` · ${fmtAdminKickoff(newFixtureKickoff)}` : ""}</span>
                   <button onClick={addLeaderboardFixture} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "5px 10px" }}>Add</button>
                 </div>
               )}
@@ -2592,7 +2621,12 @@ if (!session && !guestMode) {
               {leaderboardFixtures.length === 0 && <div style={{ fontSize: 11, color: "#666" }}>No matches added yet — nothing will score until at least one is added.</div>}
               {leaderboardFixtures.map(f => (
                 <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#e2e8f0", padding: "4px 0" }}>
-                  <span style={{ flex: 1 }}>{f.home_team} vs {f.away_team}</span>
+                  <span style={{ flex: 1 }}>
+                    {f.home_team} vs {f.away_team}
+                    {(f.kickoff || f.league_label) && (
+                      <span style={{ color: "#94a3b8", fontSize: 11 }}> · {[fmtAdminKickoff(f.kickoff), f.league_label].filter(Boolean).join(" · ")}</span>
+                    )}
+                  </span>
                   <button onClick={() => removeLeaderboardFixture(f.id)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 4, color: "#f87171", cursor: "pointer", fontSize: 11, padding: "2px 6px" }}>Remove</button>
                 </div>
               ))}
