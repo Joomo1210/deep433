@@ -3618,6 +3618,199 @@ function Top5ExplainedGraphic({ supabase }) {
   );
 }
 
+// ─── CURATED MATCHES CARDS (downloadable, up to 4 cards, date/time + league) ─
+// Reads the curated list straight from the leaderboard_fixtures table (no
+// fixture-API calls) and splits it evenly across up to four tall cards, so
+// 60 matches stay readable at a large font instead of being crammed onto one
+// image. Needs the kickoff and league_label columns — matches added before
+// those existed show under "Date to be confirmed".
+function CuratedMatchesGraphic({ supabase }) {
+  const cardRefs = useRef([]);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState("");
+  const [rows, setRows] = useState([]);
+  const [title, setTitle] = useState("Curated Matches");
+  const [tz, setTz] = useState("Europe/London");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [loaded, setLoaded] = useState(false);
+
+  const MAX_CARDS = 4;
+  const PER_CARD_TARGET = 15;
+
+  const loadMatches = async () => {
+    setLoading(true); setError(""); setLoaded(false);
+    try {
+      let { data, error: err } = await supabase
+        .from("leaderboard_fixtures")
+        .select("home_team, away_team, kickoff, league_label");
+      if (err && /kickoff|league_label|column/i.test(err.message || "")) {
+        // Columns not created yet — still show the matches, but say why
+        // there are no dates instead of failing with a blank card.
+        const retry = await supabase.from("leaderboard_fixtures").select("home_team, away_team");
+        data = retry.data; err = retry.error;
+        if (!err) setError("The kickoff and league_label columns don't exist in Supabase yet, so no dates or leagues can show. Run the SQL, then re-add the matches.");
+      }
+      if (err) { setError(err.message || "Couldn't load the curated matches."); setRows([]); }
+      else setRows(data || []);
+      setLoaded(true);
+    } catch (e) {
+      setError(e.message || "Couldn't load the curated matches.");
+    }
+    setLoading(false);
+  };
+
+  const dayKeyOf = (k) => new Date(k).toLocaleDateString("en-CA", { timeZone: tz });
+  const dayLabelOf = (k) => new Date(k).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: tz });
+  const timeOf = (k) => new Date(k).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: tz });
+
+  // Filter by date range (in the chosen time zone), soonest first, undated last.
+  const filtered = rows
+    .filter(r => {
+      if (!r.kickoff) return !fromDate && !toDate;
+      const dk = dayKeyOf(r.kickoff);
+      if (fromDate && dk < fromDate) return false;
+      if (toDate && dk > toDate) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      if (!a.kickoff && !b.kickoff) return 0;
+      if (!a.kickoff) return 1;
+      if (!b.kickoff) return -1;
+      return new Date(a.kickoff) - new Date(b.kickoff);
+    });
+
+  const capped = filtered.slice(0, MAX_CARDS * PER_CARD_TARGET);
+  const cardCount = Math.min(MAX_CARDS, Math.max(1, Math.ceil(capped.length / PER_CARD_TARGET)));
+  const perCard = Math.ceil(capped.length / cardCount) || 1;
+  const cards = Array.from({ length: cardCount }, (_, i) => capped.slice(i * perCard, (i + 1) * perCard)).filter(c => c.length > 0);
+  const undated = rows.filter(r => !r.kickoff).length;
+
+  const downloadOne = async (i) => {
+    await downloadCardImage(cardRefs.current[i], `deep433-curated-${i + 1}-of-${cards.length}.png`, "#0a0a12", false);
+  };
+  const downloadAll = async () => {
+    setDownloading(true);
+    try {
+      for (let i = 0; i < cards.length; i++) {
+        await downloadOne(i);
+        await new Promise(r => setTimeout(r, 600));
+      }
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const tzLabel = tz === "Africa/Lagos" ? "Nigeria time (WAT)" : "UK time";
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>
+        Every curated match with its date, kickoff time and league, split across up to {MAX_CARDS} cards so it stays readable at a large font. Reads the live curated list, so add the matches in the Leaderboard tab first.
+      </div>
+
+      <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Card title" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <label style={{ fontSize: 11, color: "#94a3b8", flex: 1, minWidth: 120 }}>From date
+          <input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} style={{ display: "block", width: "100%", marginTop: 3, background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "7px 8px", fontFamily: "inherit" }} />
+        </label>
+        <label style={{ fontSize: 11, color: "#94a3b8", flex: 1, minWidth: 120 }}>To date
+          <input type="date" value={toDate} onChange={e => setToDate(e.target.value)} style={{ display: "block", width: "100%", marginTop: 3, background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "7px 8px", fontFamily: "inherit" }} />
+        </label>
+        <label style={{ fontSize: 11, color: "#94a3b8", flex: 1, minWidth: 120 }}>Show times in
+          <select value={tz} onChange={e => setTz(e.target.value)} style={{ display: "block", width: "100%", marginTop: 3, background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "8px 8px", fontFamily: "inherit" }}>
+            <option value="Europe/London">UK time</option>
+            <option value="Africa/Lagos">Nigeria time (WAT)</option>
+          </select>
+        </label>
+      </div>
+      <div style={{ fontSize: 11, color: "#94a3b8" }}>Leave both dates empty to include every curated match. Set them to this round's Friday–Sunday to leave out older matches still on the list.</div>
+
+      <button onClick={loadMatches} disabled={loading} style={{ background: "linear-gradient(135deg,#818cf8,#6366f1)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
+        {loading ? "Loading matches..." : "Load Curated Matches"}
+      </button>
+
+      {error && <div style={{ fontSize: 12, color: "#f87171", fontWeight: 600 }}>⚠️ {error}</div>}
+
+      {loaded && (
+        <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700 }}>
+          {filtered.length} match{filtered.length === 1 ? "" : "es"} in range · {cards.length} card{cards.length === 1 ? "" : "s"}
+          {filtered.length > capped.length ? ` · showing the first ${capped.length}, the rest don't fit in ${MAX_CARDS} cards` : ""}
+          {undated > 0 ? ` · ${undated} on the list ${undated === 1 ? "has" : "have"} no date saved` : ""}
+        </div>
+      )}
+      {loaded && filtered.length === 0 && !error && (
+        <div style={{ fontSize: 12, color: "#94a3b8" }}>Nothing to show. Add matches in the Leaderboard tab, or widen the date range.</div>
+      )}
+
+      {cards.map((card, ci) => {
+        // Group this card's matches under a date header.
+        const groups = [];
+        card.forEach(r => {
+          const key = r.kickoff ? dayKeyOf(r.kickoff) : "tbc";
+          const last = groups[groups.length - 1];
+          if (last && last.key === key) last.items.push(r);
+          else groups.push({ key, label: r.kickoff ? dayLabelOf(r.kickoff) : "Date to be confirmed", items: [r] });
+        });
+        const startNo = ci * perCard + 1;
+        return (
+          <div key={ci}>
+            <GraphicCard cardRef={el => (cardRefs.current[ci] = el)} label={`Card ${ci + 1} of ${cards.length}`}>
+              <div style={{ padding: "44px 18px 22px" }}>
+                <div style={{ textAlign: "center", marginBottom: 2 }}>
+                  <span style={{
+                    fontSize: 24, fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.1,
+                    background: "linear-gradient(90deg,#4ade80,#818cf8,#f59e0b)",
+                    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+                  }}>📋 {title}</span>
+                </div>
+                <div style={{ textAlign: "center", fontSize: 12.5, color: "#e2e8f0", fontWeight: 800, marginBottom: 16 }}>
+                  Part {ci + 1} of {cards.length} · Matches {startNo}–{startNo + card.length - 1}
+                </div>
+
+                {groups.map((g, gi) => (
+                  <div key={gi} style={{ marginBottom: 10 }}>
+                    <div style={{ background: "#1a1a28", border: "1px solid #2a2a3a", borderRadius: 8, padding: "6px 12px", marginBottom: 6 }}>
+                      <span style={{ fontSize: 13.5, fontWeight: 900, color: "#fbbf24", textTransform: "uppercase", letterSpacing: 0.5 }}>{g.label}</span>
+                    </div>
+                    {g.items.map((r, ri) => (
+                      <div key={ri} style={{
+                        display: "grid", gridTemplateColumns: "56px 1fr", alignItems: "center", gap: 10,
+                        padding: "8px 10px", background: ri % 2 === 0 ? "#13131f" : "#0f0f18", borderRadius: 8, marginBottom: 3,
+                      }}>
+                        <span style={{ fontSize: 16, fontWeight: 900, color: "#4ade80", textAlign: "center" }}>{r.kickoff ? timeOf(r.kickoff) : "--:--"}</span>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 15.5, fontWeight: 800, color: "#f0f0f0", lineHeight: 1.25 }}>{r.home_team} vs {r.away_team}</div>
+                          {r.league_label && <div style={{ fontSize: 11.5, fontWeight: 800, color: "#818cf8", textTransform: "uppercase", letterSpacing: 0.4, marginTop: 2 }}>{r.league_label}</div>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+
+                <div style={{ textAlign: "center", marginTop: 14 }}>
+                  <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 800 }}>Only these matches count toward the leaderboard.</div>
+                  <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 700, marginTop: 3 }}>All times shown in {tzLabel}</div>
+                </div>
+              </div>
+            </GraphicCard>
+            <button onClick={async () => { setDownloading(true); try { await downloadOne(ci); } catch { alert("Download failed"); } setDownloading(false); }} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 800, padding: "10px", width: "100%", marginTop: 8 }}>
+              {downloading ? "Generating..." : `⬇ Download card ${ci + 1}`}
+            </button>
+          </div>
+        );
+      })}
+
+      {cards.length > 1 && (
+        <button onClick={downloadAll} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "10px", width: "100%" }}>
+          {downloading ? "Generating..." : `⬇ Download all ${cards.length} cards`}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function NoticeBoardGraphic() {
   const cardRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
@@ -11222,6 +11415,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "noticeboard", label: "📌 Weekly Notice Board" },
     { id: "leaderboardshare", label: "🏅 Leaderboard Share Card" },
     { id: "top5explained", label: "🏅 Top 5 Explained" },
+    { id: "curatedmatches", label: "📋 Curated Matches Cards" },
     { id: "h2h",      label: "🆚 Player H2H" },
     { id: "matchh2h", label: "📋 Match H2H" },
     { id: "motm", label: "⭐ Man of the Match" },
@@ -11294,6 +11488,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "noticeboard" && <NoticeBoardGraphic />}
       {activeSection === "leaderboardshare" && <LeaderboardGraphic supabase={supabase} />}
       {activeSection === "top5explained" && <Top5ExplainedGraphic supabase={supabase} />}
+      {activeSection === "curatedmatches" && <CuratedMatchesGraphic supabase={supabase} />}
       {activeSection === "h2h"      && <PlayerH2HGraphic />}
       {activeSection === "matchh2h" && <MatchH2HGraphic />}
       {activeSection === "motm" && <ManOfMatchGraphic />}
