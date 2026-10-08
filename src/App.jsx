@@ -20,6 +20,60 @@ function getLocalDateString(date = new Date()) {
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
 }
+// ─── Past leaderboard rounds (display only) ──────────────────────────────────
+// Saved round results come from the leaderboard_round_results table. If the
+// table is missing or empty, these built-in results for the first two rounds
+// are shown instead, so the section never breaks.
+const FALLBACK_PAST_ROUNDS = [
+  { label: "League round", rows: [
+    { name: "Isaa", points: 76, exact: 3, outcome_only: 13, ou_hits: 22, preds: 30 },
+    { name: "Lumifootballhub", points: 69, exact: 4, outcome_only: 9, ou_hits: 22, preds: 30 },
+    { name: "TUSH", points: 69, exact: 3, outcome_only: 12, ou_hits: 18, preds: 30 },
+    { name: "FAWAZ", points: 65, exact: 1, outcome_only: 15, ou_hits: 15, preds: 30 },
+    { name: "Monez✨", points: 63, exact: 0, outcome_only: 15, ou_hits: 18, preds: 29 },
+    { name: "Hayzey FC", points: 63, exact: 4, outcome_only: 10, ou_hits: 13, preds: 22 },
+  ] },
+  { label: "International break round", rows: [
+    { name: "Mustee", points: 91, exact: 6, outcome_only: 14, ou_hits: 19, preds: 29 },
+    { name: "Blockezekiel", points: 83, exact: 6, outcome_only: 12, ou_hits: 17, preds: 30 },
+    { name: "Giant of London", points: 79, exact: 3, outcome_only: 16, ou_hits: 16, preds: 30 },
+    { name: "That United Guy", points: 78, exact: 4, outcome_only: 13, ou_hits: 19, preds: 30 },
+    { name: "Lumifootballhub", points: 78, exact: 2, outcome_only: 18, ou_hits: 14, preds: 30 },
+    { name: "FAWAZ", points: 78, exact: 2, outcome_only: 17, ou_hits: 17, preds: 30 },
+  ] },
+];
+// Groups table rows into rounds ordered oldest to newest.
+const groupRounds = (data) => {
+  const map = {};
+  (data || []).forEach(r => {
+    if (!map[r.round_label]) map[r.round_label] = { label: r.round_label, order: r.round_order, rows: [] };
+    map[r.round_label].rows.push({ name: r.player_name, points: r.points, exact: r.exact, outcome_only: r.outcome_only, ou_hits: r.ou_hits, preds: r.preds });
+  });
+  return Object.values(map).sort((a, b) => a.order - b.order);
+};
+// Paid places are the top five places (ties share a place), with averages.
+const summariseRound = (rows) => {
+  const placed = rows.map(r => ({
+    ...r,
+    place: 1 + rows.filter(o => o.points > r.points).length,
+    tie: rows.filter(o => o.points === r.points).length > 1,
+  }));
+  const paid = placed.filter(r => r.place <= 5).sort((a, b) => b.points - a.points);
+  const n = paid.length || 1;
+  const avg = (f) => paid.reduce((s, r) => s + f(r), 0) / n;
+  return {
+    paid,
+    avgPoints: avg(r => r.points),
+    avgExact: avg(r => r.exact),
+    avgOutcomeOnly: avg(r => r.outcome_only),
+    avgOU: avg(r => r.ou_hits),
+    ptsE: avg(r => 5 * r.exact),
+    ptsO: avg(r => 3 * r.outcome_only),
+    ptsOU: avg(r => r.ou_hits),
+  };
+};
+const signed = (d) => `${d >= 0 ? "+" : "-"}${Math.abs(d).toFixed(1)}`;
+
 const LEAGUE_LOGOS = {
   wc2026:     "https://media.api-sports.io/football/leagues/1.png",
   pl:         "https://media.api-sports.io/football/leagues/39.png",
@@ -595,6 +649,7 @@ export default function FootballPredictor() {
   const [curatedBadgeKeys, setCuratedBadgeKeys] = useState(() => new Set());
   // Display only: toggles the "Last two rounds" comparison on the Leaderboard tab.
   const [showPastRounds, setShowPastRounds] = useState(false);
+  const [pastRoundsData, setPastRoundsData] = useState(null);
   const [allPendingPredictions, setAllPendingPredictions] = useState([]);
   const [allPendingLoading, setAllPendingLoading] = useState(false);
   const [newFixtureHome, setNewFixtureHome] = useState("");
@@ -947,6 +1002,21 @@ export default function FootballPredictor() {
         if (cancelled || !data) return;
         setCuratedBadgeKeys(new Set(data.map(f => `${(f.home_team || "").trim().toLowerCase()}|${(f.away_team || "").trim().toLowerCase()}`)));
       } catch (e) { /* no badges, nothing else affected */ }
+    })();
+    return () => { cancelled = true; };
+  }, [tab]);
+  // Display only: load saved round results for the "Last two rounds" section.
+  // Any problem leaves the built-in fallback in place.
+  useEffect(() => {
+    if (tab !== "leaderboard") return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data, error } = await supabase.from("leaderboard_round_results").select("*").order("round_order", { ascending: true });
+        if (cancelled || error || !data || data.length === 0) return;
+        const grouped = groupRounds(data);
+        if (grouped.length >= 2) setPastRoundsData(grouped);
+      } catch (e) { /* keep fallback */ }
     })();
     return () => { cancelled = true; };
   }, [tab]);
@@ -2802,36 +2872,35 @@ if (!session && !guestMode) {
               </div>
             </div>
           ))}
-          {/* Last two rounds comparison. Static results from the signed off rounds. Display only. */}
+          {/* Last two rounds comparison. Reads saved rounds from leaderboard_round_results. Display only. */}
           {(() => {
-            const LEAGUE = [["Isaa", 76], ["Lumifootballhub", 69], ["TUSH", 69], ["FAWAZ", 65], ["Monez", 63], ["Hayzey FC", 63]];
-            const INTL = [["Mustee", 91], ["Blockezekiel", 83], ["Giant of London", 79], ["That United Guy", 78], ["Lumifootballhub", 78], ["FAWAZ", 78]];
-            const placeOf = (list, pts) => 1 + list.filter(r => r[1] > pts).length;
-            const isTie = (list, pts) => list.filter(r => r[1] === pts).length > 1;
+            const rounds = (pastRoundsData && pastRoundsData.length >= 2 ? pastRoundsData : FALLBACK_PAST_ROUNDS).slice(-2);
+            const [rA, rB] = rounds;
+            const sA = summariseRound(rA.rows), sB = summariseRound(rB.rows);
+            const maxPts = Math.max(1, ...sA.paid.map(r => r.points), ...sB.paid.map(r => r.points));
+            const diff = sB.avgPoints - sA.avgPoints;
+            const outA = sA.avgExact + sA.avgOutcomeOnly, outB = sB.avgExact + sB.avgOutcomeOnly;
             const Block = ({ title, list, accent }) => (
               <div style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2, color: "#94a3b8", marginBottom: 6 }}>{title}</div>
-                {list.map(([name, pts]) => {
-                  const place = placeOf(list, pts);
-                  return (
-                    <div key={title + name} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
-                      <span style={{ width: 28, fontSize: 12, fontWeight: 800, color: "#94a3b8" }}>{isTie(list, pts) ? "=" : ""}{place}</span>
-                      <span style={{ width: 118, fontSize: 12, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
-                      <div style={{ flex: 1, height: 12, background: "#1a1a2e", borderRadius: 4, overflow: "hidden" }}>
-                        <div style={{ width: `${Math.round((pts / 91) * 100)}%`, height: "100%", background: place === 1 ? "#c8ff4d" : accent }} />
-                      </div>
-                      <span style={{ width: 26, textAlign: "right", fontSize: 13, fontWeight: 900, color: "#fbbf24" }}>{pts}</span>
+                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2, color: "#94a3b8", marginBottom: 6, textTransform: "uppercase" }}>{title}</div>
+                {list.map((r) => (
+                  <div key={title + r.name} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
+                    <span style={{ width: 28, fontSize: 12, fontWeight: 800, color: "#94a3b8" }}>{r.tie ? "=" : ""}{r.place}</span>
+                    <span style={{ width: 118, fontSize: 12, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
+                    <div style={{ flex: 1, height: 12, background: "#1a1a2e", borderRadius: 4, overflow: "hidden" }}>
+                      <div style={{ width: `${Math.round((r.points / maxPts) * 100)}%`, height: "100%", background: r.place === 1 ? "#c8ff4d" : accent }} />
                     </div>
-                  );
-                })}
+                    <span style={{ width: 26, textAlign: "right", fontSize: 13, fontWeight: 900, color: "#fbbf24" }}>{r.points}</span>
+                  </div>
+                ))}
               </div>
             );
             const Stack = ({ label, avg, parts }) => (
               <div style={{ marginBottom: 12 }}>
-                <div style={{ fontSize: 12, color: "#cbd5e1", fontWeight: 700, marginBottom: 4 }}>{label} <span style={{ color: "#f0f0f0", fontWeight: 900 }}>avg {avg}</span></div>
-                <div style={{ display: "flex", height: 26, borderRadius: 6, overflow: "hidden", width: `${Math.round((avg / 90) * 100)}%`, minWidth: 220 }}>
+                <div style={{ fontSize: 12, color: "#cbd5e1", fontWeight: 700, marginBottom: 4 }}>{label} <span style={{ color: "#f0f0f0", fontWeight: 900 }}>avg {avg.toFixed(1)}</span></div>
+                <div style={{ display: "flex", height: 26, borderRadius: 6, overflow: "hidden", width: `${Math.max(30, Math.round((avg / Math.max(sA.avgPoints, sB.avgPoints, 1)) * 100))}%`, minWidth: 220 }}>
                   {parts.map(([v, c]) => (
-                    <div key={c} style={{ flex: v, background: c, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 900, color: "#0a1f17" }}>{v.toFixed(1)}</div>
+                    <div key={c} style={{ flex: Math.max(v, 0.01), background: c, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 900, color: "#0a1f17" }}>{v.toFixed(1)}</div>
                   ))}
                 </div>
               </div>
@@ -2850,20 +2919,22 @@ if (!session && !guestMode) {
                 </button>
                 {showPastRounds && (
                   <div style={{ marginTop: 12 }}>
-                    <Block title="LEAGUE ROUND" list={LEAGUE} accent="#2f8f66" />
-                    <Block title="INTERNATIONAL BREAK ROUND" list={INTL} accent="#4ade80" />
-                    <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2, color: "#94a3b8", margin: "4px 0 8px" }}>WHERE THE EXTRA 14 POINTS CAME FROM</div>
+                    <Block title={rA.label} list={sA.paid} accent="#2f8f66" />
+                    <Block title={rB.label} list={sB.paid} accent="#4ade80" />
+                    <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2, color: "#94a3b8", margin: "4px 0 8px" }}>
+                      {diff >= 0 ? `WHERE THE EXTRA ${Math.round(diff)} POINTS CAME FROM` : `WHERE THE ${Math.round(-diff)} FEWER POINTS CAME FROM`}
+                    </div>
                     <div style={{ display: "flex", gap: 12, fontSize: 11, color: "#cbd5e1", fontWeight: 700, marginBottom: 8, flexWrap: "wrap" }}>
                       <span><b style={{ color: "#c8ff4d" }}>■</b> Exact scores</span>
                       <span><b style={{ color: "#4ade80" }}>■</b> Outcomes</span>
                       <span><b style={{ color: "#2f8f66" }}>■</b> Over/Under</span>
                     </div>
-                    <Stack label="League round" avg={67.5} parts={[[12.5, "#c8ff4d"], [37.0, "#4ade80"], [18.0, "#2f8f66"]]} />
-                    <Stack label="International break round" avg={81.2} parts={[[19.2, "#c8ff4d"], [45.0, "#4ade80"], [17.0, "#2f8f66"]]} />
+                    <Stack label={rA.label} avg={sA.avgPoints} parts={[[sA.ptsE, "#c8ff4d"], [sA.ptsO, "#4ade80"], [sA.ptsOU, "#2f8f66"]]} />
+                    <Stack label={rB.label} avg={sB.avgPoints} parts={[[sB.ptsE, "#c8ff4d"], [sB.ptsO, "#4ade80"], [sB.ptsOU, "#2f8f66"]]} />
                     <div style={{ fontSize: 12, color: "#cbd5e1", lineHeight: 1.7 }}>
-                      <div><b style={{ color: "#c8ff4d" }}>+4.0</b> correct outcomes per player (14.8 to 18.8)</div>
-                      <div><b style={{ color: "#c8ff4d" }}>+1.3</b> exact scores per player (2.5 to 3.8)</div>
-                      <div><b style={{ color: "#c8ff4d" }}>-1.0</b> Over/Under hits per player (18.0 to 17.0)</div>
+                      <div><b style={{ color: "#c8ff4d" }}>{signed(outB - outA)}</b> correct outcomes per player ({outA.toFixed(1)} to {outB.toFixed(1)})</div>
+                      <div><b style={{ color: "#c8ff4d" }}>{signed(sB.avgExact - sA.avgExact)}</b> exact scores per player ({sA.avgExact.toFixed(1)} to {sB.avgExact.toFixed(1)})</div>
+                      <div><b style={{ color: "#c8ff4d" }}>{signed(sB.avgOU - sA.avgOU)}</b> Over/Under hits per player ({sA.avgOU.toFixed(1)} to {sB.avgOU.toFixed(1)})</div>
                     </div>
                     <div style={{ fontSize: 10, color: "#666", marginTop: 8 }}>Average of the paid places in each round.</div>
                   </div>
