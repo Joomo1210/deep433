@@ -72,6 +72,8 @@ const summariseRound = (rows) => {
     ptsOU: avg(r => r.ou_hits),
   };
 };
+const ROUND_COL_A = { main: "#818cf8", top: "#c4b5fd", parts: ["#ddd6fe", "#a78bfa", "#7c3aed"], text: ["#1e1b4b", "#1e1b4b", "#ffffff"] };
+const ROUND_COL_B = { main: "#4ade80", top: "#c8ff4d", parts: ["#c8ff4d", "#4ade80", "#2f8f66"], text: ["#0a1f17", "#0a1f17", "#0a1f17"] };
 const signed = (d) => `${d >= 0 ? "+" : "-"}${Math.abs(d).toFixed(1)}`;
 
 const LEAGUE_LOGOS = {
@@ -2880,27 +2882,27 @@ if (!session && !guestMode) {
             const maxPts = Math.max(1, ...sA.paid.map(r => r.points), ...sB.paid.map(r => r.points));
             const diff = sB.avgPoints - sA.avgPoints;
             const outA = sA.avgExact + sA.avgOutcomeOnly, outB = sB.avgExact + sB.avgOutcomeOnly;
-            const Block = ({ title, list, accent }) => (
+            const Block = ({ title, list, col }) => (
               <div style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2, color: "#94a3b8", marginBottom: 6, textTransform: "uppercase" }}>{title}</div>
+                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2, color: col.main, marginBottom: 6, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 9, height: 9, borderRadius: 3, background: col.main, display: "inline-block" }} />{title}</div>
                 {list.map((r) => (
                   <div key={title + r.name} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
                     <span style={{ width: 28, fontSize: 12, fontWeight: 800, color: "#94a3b8" }}>{r.tie ? "=" : ""}{r.place}</span>
                     <span style={{ width: 118, fontSize: 12, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
                     <div style={{ flex: 1, height: 12, background: "#1a1a2e", borderRadius: 4, overflow: "hidden" }}>
-                      <div style={{ width: `${Math.round((r.points / maxPts) * 100)}%`, height: "100%", background: r.place === 1 ? "#c8ff4d" : accent }} />
+                      <div style={{ width: `${Math.round((r.points / maxPts) * 100)}%`, height: "100%", background: r.place === 1 ? col.top : col.main }} />
                     </div>
                     <span style={{ width: 26, textAlign: "right", fontSize: 13, fontWeight: 900, color: "#fbbf24" }}>{r.points}</span>
                   </div>
                 ))}
               </div>
             );
-            const Stack = ({ label, avg, parts }) => (
+            const Stack = ({ label, avg, parts, col }) => (
               <div style={{ marginBottom: 12 }}>
-                <div style={{ fontSize: 12, color: "#cbd5e1", fontWeight: 700, marginBottom: 4 }}>{label} <span style={{ color: "#f0f0f0", fontWeight: 900 }}>avg {avg.toFixed(1)}</span></div>
+                <div style={{ fontSize: 12, color: col.main, fontWeight: 800, marginBottom: 4 }}>{label} <span style={{ color: "#f0f0f0", fontWeight: 900 }}>avg {avg.toFixed(1)}</span></div>
                 <div style={{ display: "flex", height: 26, borderRadius: 6, overflow: "hidden", width: `${Math.max(30, Math.round((avg / Math.max(sA.avgPoints, sB.avgPoints, 1)) * 100))}%`, minWidth: 220 }}>
-                  {parts.map(([v, c]) => (
-                    <div key={c} style={{ flex: Math.max(v, 0.01), background: c, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 900, color: "#0a1f17" }}>{v.toFixed(1)}</div>
+                  {parts.map(([v, c], i) => (
+                    <div key={c} style={{ flex: Math.max(v, 0.01), background: c, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 900, color: col.text[i] }}>{v.toFixed(1)}</div>
                   ))}
                 </div>
               </div>
@@ -2919,18 +2921,19 @@ if (!session && !guestMode) {
                 </button>
                 {showPastRounds && (
                   <div style={{ marginTop: 12 }}>
-                    <Block title={rA.label} list={sA.paid} accent="#2f8f66" />
-                    <Block title={rB.label} list={sB.paid} accent="#4ade80" />
+                    <Block title={rA.label} list={sA.paid} col={ROUND_COL_A} />
+                    <Block title={rB.label} list={sB.paid} col={ROUND_COL_B} />
                     <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2, color: "#94a3b8", margin: "4px 0 8px" }}>
                       {diff >= 0 ? `WHERE THE EXTRA ${Math.round(diff)} POINTS CAME FROM` : `WHERE THE ${Math.round(-diff)} FEWER POINTS CAME FROM`}
                     </div>
                     <div style={{ display: "flex", gap: 12, fontSize: 11, color: "#cbd5e1", fontWeight: 700, marginBottom: 8, flexWrap: "wrap" }}>
-                      <span><b style={{ color: "#c8ff4d" }}>■</b> Exact scores</span>
-                      <span><b style={{ color: "#4ade80" }}>■</b> Outcomes</span>
-                      <span><b style={{ color: "#2f8f66" }}>■</b> Over/Under</span>
+                                            <span><b style={{ color: "#e2e8f0" }}>■</b> Exact scores</span>
+                      <span><b style={{ color: "#94a3b8" }}>■</b> Outcomes</span>
+                      <span><b style={{ color: "#475569" }}>■</b> Over/Under</span>
+                      <span style={{ color: "#94a3b8" }}>(left to right)</span>
                     </div>
-                    <Stack label={rA.label} avg={sA.avgPoints} parts={[[sA.ptsE, "#c8ff4d"], [sA.ptsO, "#4ade80"], [sA.ptsOU, "#2f8f66"]]} />
-                    <Stack label={rB.label} avg={sB.avgPoints} parts={[[sB.ptsE, "#c8ff4d"], [sB.ptsO, "#4ade80"], [sB.ptsOU, "#2f8f66"]]} />
+                    <Stack label={rA.label} avg={sA.avgPoints} parts={[[sA.ptsE, ROUND_COL_A.parts[0]], [sA.ptsO, ROUND_COL_A.parts[1]], [sA.ptsOU, ROUND_COL_A.parts[2]]]} col={ROUND_COL_A} />
+                    <Stack label={rB.label} avg={sB.avgPoints} parts={[[sB.ptsE, ROUND_COL_B.parts[0]], [sB.ptsO, ROUND_COL_B.parts[1]], [sB.ptsOU, ROUND_COL_B.parts[2]]]} col={ROUND_COL_B} />
                     <div style={{ fontSize: 12, color: "#cbd5e1", lineHeight: 1.7 }}>
                       <div><b style={{ color: "#c8ff4d" }}>{signed(outB - outA)}</b> correct outcomes per player ({outA.toFixed(1)} to {outB.toFixed(1)})</div>
                       <div><b style={{ color: "#c8ff4d" }}>{signed(sB.avgExact - sA.avgExact)}</b> exact scores per player ({sA.avgExact.toFixed(1)} to {sB.avgExact.toFixed(1)})</div>
