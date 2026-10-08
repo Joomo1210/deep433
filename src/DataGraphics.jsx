@@ -11494,7 +11494,7 @@ function PositionRadarGraphic() {
 }
 
 // ─── LAST TWO ROUNDS COMPARISON (downloadable) ─────────────────────────────
-// Compares the paid places of any two saved rounds (defaults to the latest
+// Compares the top 5 of any two saved rounds (defaults to the latest
 // two) and shows where the points difference came from. Reads saved rounds
 // from leaderboard_round_results, so it updates when a new round is saved.
 const ROUND_COL_A = { main: "#818cf8", top: "#c4b5fd", parts: ["#ddd6fe", "#a78bfa", "#7c3aed"], text: ["#1e1b4b", "#1e1b4b", "#ffffff"] };
@@ -11563,7 +11563,7 @@ function RoundCompareGraphic({ supabase }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ fontSize: 11, color: "#e2e8f0" }}>
-        Compares the paid places of two finished rounds and shows where the points difference came from. {fromSaved ? "Using saved rounds." : "Using the built-in first two rounds. Save rounds from the Leaderboard Share Card to add more."}
+        Compares the top 5 of two finished rounds and shows where the points difference came from. {fromSaved ? "Using saved rounds." : "Using the built-in first two rounds. Save rounds from the Leaderboard Share Card to add more."}
       </div>
       <div style={{ display: "flex", gap: 8 }}>
         <select value={idxA} onChange={e => setIdxA(Number(e.target.value))} style={sel}>
