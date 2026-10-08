@@ -17,6 +17,22 @@ const TEAM_FLAG_CODES = {
   "Ghana": "gh", "Panama": "pa", "Uzbekistan": "uz", "Colombia": "co",
 };
 
+// ─── New round head start (display + scoring) ──────────────────────────────
+// Carried over from the previous LEAGUE round's top 5 into the round that
+// starts on 2026-10-09: 1st 5 points, 2nd 3, 3rd 2, 4th and 5th 1 each.
+// Players tied on a place each get that place's value (Lumifootballhub and
+// TUSH tied 2nd, so 3 each; Monez and Hayzey FC tied 5th, so 1 each).
+// Keyed by user id. Delete this table (set to {}) when the round after this
+// one begins.
+const ROUND_HEAD_START = {
+  "947279b9-aa94-4250-854a-c24f5e387570": 5, // Isaa, 1st
+  "15afd7bf-e570-40c7-aa4a-57fb8d84badd": 3, // Lumifootballhub, 2nd (tied)
+  "1697e623-2ef5-4484-9555-6a670abc6d59": 3, // TUSH, 2nd (tied)
+  "40a5032c-9702-4107-9660-5707b212c4b9": 1, // FAWAZ, 4th
+  "31178f5a-aa03-4e15-8e30-320a3bc40722": 1, // Monez, 5th (tied)
+  "fbb8a523-b75b-40b1-bfde-afa3851f0cc0": 1, // Hayzey FC, 5th (tied)
+};
+
 // ─── Past leaderboard rounds (display only) ──────────────────────────────────
 // Saved round results come from the leaderboard_round_results table. If the
 // table is missing or empty, these built-in results for the first two rounds
@@ -67,6 +83,8 @@ const summariseRound = (rows) => {
     ptsE: avg(r => 5 * r.exact),
     ptsO: avg(r => 3 * r.outcome_only),
     ptsOU: avg(r => r.ou_hits),
+    // Points not explained by exact, outcome and Over/Under hits, i.e. any head start.
+    ptsHead: Math.max(0, avg(r => r.points) - avg(r => 5 * r.exact) - avg(r => 3 * r.outcome_only) - avg(r => r.ou_hits)),
   };
 };
 const signed = (d) => `${d >= 0 ? "+" : "-"}${Math.abs(d).toFixed(1)}`;
@@ -3386,7 +3404,7 @@ function LeaderboardGraphic({ supabase }) {
       // the current month, that silently excluded every September
       // prediction for this still-ongoing round the moment it became
       // October. Only moves when deliberately changed for a new round.
-      const LEADERBOARD_START_DATE = new Date("2026-09-24");
+      const LEADERBOARD_START_DATE = new Date("2026-10-09");
       const cutoff = LEADERBOARD_START_DATE.toISOString();
 
       const { data: preds } = await supabase
@@ -3422,7 +3440,7 @@ function LeaderboardGraphic({ supabase }) {
       (profilesData || []).forEach(p => { nameById[p.id] = p.username; roleById[p.id] = p.role; });
 
       const finalRows = userIds
-        .map(id => ({ name: nameById[id], role: roleById[id], ...byUser[id] }))
+        .map(id => ({ name: nameById[id], role: roleById[id], ...byUser[id], headStart: ROUND_HEAD_START[id] || 0, points: byUser[id].points + (ROUND_HEAD_START[id] || 0) }))
         .filter(r => r.name && r.role !== "admin")
         .sort((a, b) => b.points - a.points)
         .slice(0, 10);
@@ -3512,7 +3530,7 @@ function LeaderboardGraphic({ supabase }) {
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 11, fontWeight: 800, color: "#fbbf24", background: "#fbbf2420", border: "1px solid #fbbf2444", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Pts</span>
-                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Total points — the number that decides the ranking</span>
+                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Total points{rows.some(r => r.headStart > 0) ? ", including any head start from the last league round" : ""} — the number that decides the ranking</span>
                   </div>
                 </div>
               </div>
@@ -3563,7 +3581,7 @@ function Top5ExplainedGraphic({ supabase }) {
       // the current month, that silently excluded every September
       // prediction for this still-ongoing round the moment it became
       // October. Only moves when deliberately changed for a new round.
-      const LEADERBOARD_START_DATE = new Date("2026-09-24");
+      const LEADERBOARD_START_DATE = new Date("2026-10-09");
       const cutoff = LEADERBOARD_START_DATE.toISOString();
 
       const { data: preds } = await supabase
@@ -3599,7 +3617,7 @@ function Top5ExplainedGraphic({ supabase }) {
       (profilesData || []).forEach(p => { nameById[p.id] = p.username; roleById[p.id] = p.role; });
 
       const finalRows = userIds
-        .map(id => ({ name: nameById[id], role: roleById[id], ...byUser[id] }))
+        .map(id => ({ name: nameById[id], role: roleById[id], ...byUser[id], headStart: ROUND_HEAD_START[id] || 0, points: byUser[id].points + (ROUND_HEAD_START[id] || 0) }))
         .filter(r => r.name && r.role !== "admin")
         .sort((a, b) => b.points - a.points)
         .slice(0, 5);
@@ -3689,7 +3707,7 @@ function Top5ExplainedGraphic({ supabase }) {
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 11, fontWeight: 800, color: "#fbbf24", background: "#fbbf2420", border: "1px solid #fbbf2444", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Pts</span>
-                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Total points — the number that decides the ranking</span>
+                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Total points{rows.some(r => r.headStart > 0) ? ", including any head start from the last league round" : ""} — the number that decides the ranking</span>
                   </div>
                 </div>
               </div>
@@ -11497,8 +11515,8 @@ function PositionRadarGraphic() {
 // Compares the top 5 of any two saved rounds (defaults to the latest
 // two) and shows where the points difference came from. Reads saved rounds
 // from leaderboard_round_results, so it updates when a new round is saved.
-const ROUND_COL_A = { main: "#818cf8", top: "#c4b5fd", parts: ["#ddd6fe", "#a78bfa", "#7c3aed"], text: ["#1e1b4b", "#1e1b4b", "#ffffff"] };
-const ROUND_COL_B = { main: "#4ade80", top: "#c8ff4d", parts: ["#c8ff4d", "#4ade80", "#2f8f66"], text: ["#0a1f17", "#0a1f17", "#0a1f17"] };
+const ROUND_COL_A = { main: "#818cf8", top: "#c4b5fd", parts: ["#ddd6fe", "#a78bfa", "#7c3aed"], text: ["#1e1b4b", "#1e1b4b", "#ffffff", "#ffffff"] };
+const ROUND_COL_B = { main: "#4ade80", top: "#c8ff4d", parts: ["#c8ff4d", "#4ade80", "#2f8f66"], text: ["#0a1f17", "#0a1f17", "#0a1f17", "#ffffff"] };
 function RoundCompareGraphic({ supabase }) {
   const cardRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
@@ -11597,8 +11615,8 @@ function RoundCompareGraphic({ supabase }) {
               <span><b style={{ color: "#475569" }}>■</b> Over/Under</span>
               <span style={{ color: "#94a3b8" }}>(left to right)</span>
             </div>
-            <Stack label={rA.label} avg={sA.avgPoints} parts={[[sA.ptsE, ROUND_COL_A.parts[0]], [sA.ptsO, ROUND_COL_A.parts[1]], [sA.ptsOU, ROUND_COL_A.parts[2]]]} col={ROUND_COL_A} />
-            <Stack label={rB.label} avg={sB.avgPoints} parts={[[sB.ptsE, ROUND_COL_B.parts[0]], [sB.ptsO, ROUND_COL_B.parts[1]], [sB.ptsOU, ROUND_COL_B.parts[2]]]} col={ROUND_COL_B} />
+            <Stack label={rA.label} avg={sA.avgPoints} parts={[[sA.ptsE, ROUND_COL_A.parts[0]], [sA.ptsO, ROUND_COL_A.parts[1]], [sA.ptsOU, ROUND_COL_A.parts[2]], ...(sA.ptsHead > 0.05 ? [[sA.ptsHead, "#64748b"]] : [])]} col={ROUND_COL_A} />
+            <Stack label={rB.label} avg={sB.avgPoints} parts={[[sB.ptsE, ROUND_COL_B.parts[0]], [sB.ptsO, ROUND_COL_B.parts[1]], [sB.ptsOU, ROUND_COL_B.parts[2]], ...(sB.ptsHead > 0.05 ? [[sB.ptsHead, "#64748b"]] : [])]} col={ROUND_COL_B} />
             <div style={{ fontSize: 12, color: "#e2e8f0", lineHeight: 1.8 }}>
               <div><b style={{ color: "#c8ff4d" }}>{signed(outB - outA)}</b> correct outcomes per player ({outA.toFixed(1)} to {outB.toFixed(1)})</div>
               <div><b style={{ color: "#c8ff4d" }}>{signed(sB.avgExact - sA.avgExact)}</b> exact scores per player ({sA.avgExact.toFixed(1)} to {sB.avgExact.toFixed(1)})</div>
