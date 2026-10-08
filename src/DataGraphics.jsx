@@ -11583,9 +11583,7 @@ function RoundCompareGraphic({ supabase }) {
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
             }}>🏅 Two Rounds Compared</span>
           </div>
-          <div style={{ textAlign: "center", fontSize: 12, color: "#e2e8f0", fontWeight: 700, marginBottom: 20 }}>
-            Paid places in each round
-          </div>
+          <div style={{ marginBottom: 20 }} />
           <Block title={rA.label} list={sA.paid} col={ROUND_COL_A} />
           <Block title={rB.label} list={sB.paid} col={ROUND_COL_B} />
 
@@ -11606,9 +11604,6 @@ function RoundCompareGraphic({ supabase }) {
               <div><b style={{ color: "#c8ff4d" }}>{signed(sB.avgExact - sA.avgExact)}</b> exact scores per player ({sA.avgExact.toFixed(1)} to {sB.avgExact.toFixed(1)})</div>
               <div><b style={{ color: "#c8ff4d" }}>{signed(sB.avgOU - sA.avgOU)}</b> Over/Under hits per player ({sA.avgOU.toFixed(1)} to {sB.avgOU.toFixed(1)})</div>
             </div>
-          </div>
-          <div style={{ textAlign: "center", marginTop: 16 }}>
-            <span style={{ fontSize: 11, color: "#e2e8f0", fontWeight: 700 }}>Average of the paid places in each round.</span>
           </div>
         </div>
       </GraphicCard>
