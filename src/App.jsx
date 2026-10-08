@@ -1678,7 +1678,7 @@ if (!session && !guestMode) {
           <div style={{ maxWidth: 600, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
             <div>
               <div style={{ fontSize: 13, fontWeight: 800, color: "#fbbf24" }}>🏆 Predict free. Win up to $100</div>
-              <div style={{ fontSize: 11, color: "#94a3b8" }}>Free to enter · Skill based · Top 5 paid every round</div>
+              <div style={{ fontSize: 11, color: "#94a3b8" }}>Free to enter · Skill based · Top 5 win every round</div>
             </div>
             <span style={{ fontSize: 12, fontWeight: 700, color: "#4ade80", whiteSpace: "nowrap" }}>See board →</span>
           </div>
@@ -2676,7 +2676,7 @@ if (!session && !guestMode) {
             Exact: 5pts · Outcome only: 3pts · O/U: +1pt
           </div>
           <div style={{ fontSize: 12, fontWeight: 800, color: "#fbbf24", marginBottom: 10 }}>
-            🏆 Predict free. Win up to $100 · Top 5 paid every round
+            🏆 Predict free. Win up to $100 · Top 5 win every round
           </div>
           {userRole === "admin" && (
             <button
@@ -2939,7 +2939,7 @@ if (!session && !guestMode) {
                       <div><b style={{ color: "#c8ff4d" }}>{signed(sB.avgExact - sA.avgExact)}</b> exact scores per player ({sA.avgExact.toFixed(1)} to {sB.avgExact.toFixed(1)})</div>
                       <div><b style={{ color: "#c8ff4d" }}>{signed(sB.avgOU - sA.avgOU)}</b> Over/Under hits per player ({sA.avgOU.toFixed(1)} to {sB.avgOU.toFixed(1)})</div>
                     </div>
-                    <div style={{ fontSize: 10, color: "#666", marginTop: 8 }}>Average of the paid places in each round.</div>
+                    <div style={{ fontSize: 10, color: "#666", marginTop: 8 }}>Average of the top 5 in each round.</div>
                   </div>
                 )}
               </div>
