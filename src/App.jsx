@@ -593,6 +593,8 @@ export default function FootballPredictor() {
   // Display only: set of curated match keys (lowercased home|away) used to
   // badge fixtures that count toward the leaderboard. Never used for scoring.
   const [curatedBadgeKeys, setCuratedBadgeKeys] = useState(() => new Set());
+  // Display only: toggles the "Last two rounds" comparison on the Leaderboard tab.
+  const [showPastRounds, setShowPastRounds] = useState(false);
   const [allPendingPredictions, setAllPendingPredictions] = useState([]);
   const [allPendingLoading, setAllPendingLoading] = useState(false);
   const [newFixtureHome, setNewFixtureHome] = useState("");
@@ -1603,7 +1605,7 @@ if (!session && !guestMode) {
         >
           <div style={{ maxWidth: 600, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: "#fbbf24" }}>🏆 Predict free. Win up to ₦100,000</div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: "#fbbf24" }}>🏆 Predict free. Win up to $100</div>
               <div style={{ fontSize: 11, color: "#94a3b8" }}>Free to enter · Skill based · Top 5 paid every round</div>
             </div>
             <span style={{ fontSize: 12, fontWeight: 700, color: "#4ade80", whiteSpace: "nowrap" }}>See board →</span>
@@ -1741,7 +1743,7 @@ if (!session && !guestMode) {
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#fbbf24", background: "#fbbf2418", border: "1px solid #fbbf2433", borderRadius: 5, padding: "2px 7px" }}>Over/Under +1</span>
                 </div>
                 <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 12 }}>
-                  Search and select the real fixture below — typing team names by hand used to be the single biggest cause of predictions silently not scoring, since even a small spelling difference from the official name stops it from being recognized.
+                  Pick a league above, then choose a match marked 🏅 Leaderboard to play for the prize. Select it from the list so your prediction is recognised and scored.
                 </div>
                 <input className="search-input" placeholder="🔍 Search team..." value={fixtureSearch} onChange={e => setFixtureSearch(e.target.value)} style={{ marginBottom: 12 }} />
                 {fixturesLoading && (
@@ -2602,7 +2604,7 @@ if (!session && !guestMode) {
             Exact: 5pts · Outcome only: 3pts · O/U: +1pt
           </div>
           <div style={{ fontSize: 12, fontWeight: 800, color: "#fbbf24", marginBottom: 10 }}>
-            🏆 Predict free. Win up to ₦100,000 · Top 5 paid every round
+            🏆 Predict free. Win up to $100 · Top 5 paid every round
           </div>
           {userRole === "admin" && (
             <button
@@ -2800,6 +2802,75 @@ if (!session && !guestMode) {
               </div>
             </div>
           ))}
+          {/* Last two rounds comparison. Static results from the signed off rounds. Display only. */}
+          {(() => {
+            const LEAGUE = [["Isaa", 76], ["Lumifootballhub", 69], ["TUSH", 69], ["FAWAZ", 65], ["Monez", 63], ["Hayzey FC", 63]];
+            const INTL = [["Mustee", 91], ["Blockezekiel", 83], ["Giant of London", 79], ["That United Guy", 78], ["Lumifootballhub", 78], ["FAWAZ", 78]];
+            const placeOf = (list, pts) => 1 + list.filter(r => r[1] > pts).length;
+            const isTie = (list, pts) => list.filter(r => r[1] === pts).length > 1;
+            const Block = ({ title, list, accent }) => (
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2, color: "#94a3b8", marginBottom: 6 }}>{title}</div>
+                {list.map(([name, pts]) => {
+                  const place = placeOf(list, pts);
+                  return (
+                    <div key={title + name} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
+                      <span style={{ width: 28, fontSize: 12, fontWeight: 800, color: "#94a3b8" }}>{isTie(list, pts) ? "=" : ""}{place}</span>
+                      <span style={{ width: 118, fontSize: 12, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
+                      <div style={{ flex: 1, height: 12, background: "#1a1a2e", borderRadius: 4, overflow: "hidden" }}>
+                        <div style={{ width: `${Math.round((pts / 91) * 100)}%`, height: "100%", background: place === 1 ? "#c8ff4d" : accent }} />
+                      </div>
+                      <span style={{ width: 26, textAlign: "right", fontSize: 13, fontWeight: 900, color: "#fbbf24" }}>{pts}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+            const Stack = ({ label, avg, parts }) => (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 12, color: "#cbd5e1", fontWeight: 700, marginBottom: 4 }}>{label} <span style={{ color: "#f0f0f0", fontWeight: 900 }}>avg {avg}</span></div>
+                <div style={{ display: "flex", height: 26, borderRadius: 6, overflow: "hidden", width: `${Math.round((avg / 90) * 100)}%`, minWidth: 220 }}>
+                  {parts.map(([v, c]) => (
+                    <div key={c} style={{ flex: v, background: c, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 900, color: "#0a1f17" }}>{v.toFixed(1)}</div>
+                  ))}
+                </div>
+              </div>
+            );
+            return (
+              <div style={{ marginTop: 18, background: "#0d0d18", border: "1px solid #1a1a2e", borderRadius: 10, padding: "12px" }}>
+                <button
+                  onClick={() => setShowPastRounds(v => !v)}
+                  style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", padding: 0 }}
+                >
+                  <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <img src="/deep433.jpg" alt="" style={{ width: 22, height: 22, borderRadius: "50%", objectFit: "cover" }} />
+                    <span style={{ fontSize: 14, fontWeight: 900, color: "#f0f0f0" }}>Last two rounds compared</span>
+                  </span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "#4ade80" }}>{showPastRounds ? "Hide ▲" : "Show ▼"}</span>
+                </button>
+                {showPastRounds && (
+                  <div style={{ marginTop: 12 }}>
+                    <Block title="LEAGUE ROUND" list={LEAGUE} accent="#2f8f66" />
+                    <Block title="INTERNATIONAL BREAK ROUND" list={INTL} accent="#4ade80" />
+                    <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2, color: "#94a3b8", margin: "4px 0 8px" }}>WHERE THE EXTRA 14 POINTS CAME FROM</div>
+                    <div style={{ display: "flex", gap: 12, fontSize: 11, color: "#cbd5e1", fontWeight: 700, marginBottom: 8, flexWrap: "wrap" }}>
+                      <span><b style={{ color: "#c8ff4d" }}>■</b> Exact scores</span>
+                      <span><b style={{ color: "#4ade80" }}>■</b> Outcomes</span>
+                      <span><b style={{ color: "#2f8f66" }}>■</b> Over/Under</span>
+                    </div>
+                    <Stack label="League round" avg={67.5} parts={[[12.5, "#c8ff4d"], [37.0, "#4ade80"], [18.0, "#2f8f66"]]} />
+                    <Stack label="International break round" avg={81.2} parts={[[19.2, "#c8ff4d"], [45.0, "#4ade80"], [17.0, "#2f8f66"]]} />
+                    <div style={{ fontSize: 12, color: "#cbd5e1", lineHeight: 1.7 }}>
+                      <div><b style={{ color: "#c8ff4d" }}>+4.0</b> correct outcomes per player (14.8 to 18.8)</div>
+                      <div><b style={{ color: "#c8ff4d" }}>+1.3</b> exact scores per player (2.5 to 3.8)</div>
+                      <div><b style={{ color: "#c8ff4d" }}>-1.0</b> Over/Under hits per player (18.0 to 17.0)</div>
+                    </div>
+                    <div style={{ fontSize: 10, color: "#666", marginTop: 8 }}>Average of the paid places in each round.</div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       )}
       {viewingAnalysis && (
