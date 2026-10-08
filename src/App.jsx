@@ -20,6 +20,22 @@ function getLocalDateString(date = new Date()) {
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
 }
+// ─── New round head start (display + scoring) ──────────────────────────────
+// Carried over from the previous LEAGUE round's top 5 into the round that
+// starts on 2026-10-09: 1st 5 points, 2nd 3, 3rd 2, 4th and 5th 1 each.
+// Players tied on a place each get that place's value (Lumifootballhub and
+// TUSH tied 2nd, so 3 each; Monez and Hayzey FC tied 5th, so 1 each).
+// Keyed by user id. Delete this table (set to {}) when the round after this
+// one begins.
+const ROUND_HEAD_START = {
+  "947279b9-aa94-4250-854a-c24f5e387570": 5, // Isaa, 1st
+  "15afd7bf-e570-40c7-aa4a-57fb8d84badd": 3, // Lumifootballhub, 2nd (tied)
+  "1697e623-2ef5-4484-9555-6a670abc6d59": 3, // TUSH, 2nd (tied)
+  "40a5032c-9702-4107-9660-5707b212c4b9": 1, // FAWAZ, 4th
+  "31178f5a-aa03-4e15-8e30-320a3bc40722": 1, // Monez, 5th (tied)
+  "fbb8a523-b75b-40b1-bfde-afa3851f0cc0": 1, // Hayzey FC, 5th (tied)
+};
+
 // ─── Past leaderboard rounds (display only) ──────────────────────────────────
 // Saved round results come from the leaderboard_round_results table. If the
 // table is missing or empty, these built-in results for the first two rounds
@@ -70,10 +86,12 @@ const summariseRound = (rows) => {
     ptsE: avg(r => 5 * r.exact),
     ptsO: avg(r => 3 * r.outcome_only),
     ptsOU: avg(r => r.ou_hits),
+    // Points not explained by exact, outcome and Over/Under hits, i.e. any head start.
+    ptsHead: Math.max(0, avg(r => r.points) - avg(r => 5 * r.exact) - avg(r => 3 * r.outcome_only) - avg(r => r.ou_hits)),
   };
 };
-const ROUND_COL_A = { main: "#818cf8", top: "#c4b5fd", parts: ["#ddd6fe", "#a78bfa", "#7c3aed"], text: ["#1e1b4b", "#1e1b4b", "#ffffff"] };
-const ROUND_COL_B = { main: "#4ade80", top: "#c8ff4d", parts: ["#c8ff4d", "#4ade80", "#2f8f66"], text: ["#0a1f17", "#0a1f17", "#0a1f17"] };
+const ROUND_COL_A = { main: "#818cf8", top: "#c4b5fd", parts: ["#ddd6fe", "#a78bfa", "#7c3aed"], text: ["#1e1b4b", "#1e1b4b", "#ffffff", "#ffffff"] };
+const ROUND_COL_B = { main: "#4ade80", top: "#c8ff4d", parts: ["#c8ff4d", "#4ade80", "#2f8f66"], text: ["#0a1f17", "#0a1f17", "#0a1f17", "#ffffff"] };
 const signed = (d) => `${d >= 0 ? "+" : "-"}${Math.abs(d).toFixed(1)}`;
 
 const LEAGUE_LOGOS = {
@@ -831,7 +849,7 @@ export default function FootballPredictor() {
     // warning and nothing to undo it. A round's cutoff should only ever
     // move when someone deliberately changes this line for a genuinely
     // new round, never on its own just because the month changed.
-    const LEADERBOARD_START_DATE = new Date("2026-09-24");
+    const LEADERBOARD_START_DATE = new Date("2026-10-09");
     const cutoff = LEADERBOARD_START_DATE.toISOString();
     const { data: preds, error: predsError } = await supabase
       .from("predictions")
@@ -948,7 +966,8 @@ export default function FootballPredictor() {
         name: nameById[id] || null, // null = never set a display name
         role: roleById[id],
         total: byUser[id].total,
-        points: byUser[id].points,
+        points: byUser[id].points + (ROUND_HEAD_START[id] || 0),
+        headStart: ROUND_HEAD_START[id] || 0,
         exact: byUser[id].exact,
         outcomeOnly: byUser[id].outcomeOnly,
         overUnderHits: byUser[id].overUnderHits,
@@ -1328,7 +1347,7 @@ useEffect(() => {
     // state, since that's never populated for a regular user submitting a
     // prediction. Matched the same case-insensitive home|away key
     // comparison already used for leaderboard scoring, for consistency.
-    const CONTEST_START_DATE = new Date("2026-09-24");
+    const CONTEST_START_DATE = new Date("2026-10-09");
     const { data: curatedFixturesForCap } = await supabase.from("leaderboard_fixtures").select("home_team, away_team");
     const curatedKeysForCap = new Set(
       (curatedFixturesForCap || []).map(f => `${f.home_team.trim().toLowerCase()}|${f.away_team.trim().toLowerCase()}`)
@@ -2863,6 +2882,7 @@ if (!session && !guestMode) {
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#818cf8", background: "#818cf818", border: "1px solid #818cf833", borderRadius: 5, padding: "2px 6px" }}>{row.outcomeOnly} O</span>
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#fbbf24", background: "#fbbf2418", border: "1px solid #fbbf2433", borderRadius: 5, padding: "2px 6px" }}>{row.overUnderHits} OU</span>
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8" }}>{row.total} preds</span>
+                  {row.headStart > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: "#c4b5fd", background: "#818cf818", border: "1px solid #818cf833", borderRadius: 5, padding: "2px 6px" }}>+{row.headStart} head start</span>}
                 </div>
                 {userRole === "admin" && (
                   <div style={{ fontSize: 9, color: "#666", fontFamily: "monospace", marginTop: 3 }}>id: {row.userId}</div>
@@ -2932,8 +2952,8 @@ if (!session && !guestMode) {
                       <span><b style={{ color: "#475569" }}>■</b> Over/Under</span>
                       <span style={{ color: "#94a3b8" }}>(left to right)</span>
                     </div>
-                    <Stack label={rA.label} avg={sA.avgPoints} parts={[[sA.ptsE, ROUND_COL_A.parts[0]], [sA.ptsO, ROUND_COL_A.parts[1]], [sA.ptsOU, ROUND_COL_A.parts[2]]]} col={ROUND_COL_A} />
-                    <Stack label={rB.label} avg={sB.avgPoints} parts={[[sB.ptsE, ROUND_COL_B.parts[0]], [sB.ptsO, ROUND_COL_B.parts[1]], [sB.ptsOU, ROUND_COL_B.parts[2]]]} col={ROUND_COL_B} />
+                    <Stack label={rA.label} avg={sA.avgPoints} parts={[[sA.ptsE, ROUND_COL_A.parts[0]], [sA.ptsO, ROUND_COL_A.parts[1]], [sA.ptsOU, ROUND_COL_A.parts[2]], ...(sA.ptsHead > 0.05 ? [[sA.ptsHead, "#64748b"]] : [])]} col={ROUND_COL_A} />
+                    <Stack label={rB.label} avg={sB.avgPoints} parts={[[sB.ptsE, ROUND_COL_B.parts[0]], [sB.ptsO, ROUND_COL_B.parts[1]], [sB.ptsOU, ROUND_COL_B.parts[2]], ...(sB.ptsHead > 0.05 ? [[sB.ptsHead, "#64748b"]] : [])]} col={ROUND_COL_B} />
                     <div style={{ fontSize: 12, color: "#cbd5e1", lineHeight: 1.7 }}>
                       <div><b style={{ color: "#c8ff4d" }}>{signed(outB - outA)}</b> correct outcomes per player ({outA.toFixed(1)} to {outB.toFixed(1)})</div>
                       <div><b style={{ color: "#c8ff4d" }}>{signed(sB.avgExact - sA.avgExact)}</b> exact scores per player ({sA.avgExact.toFixed(1)} to {sB.avgExact.toFixed(1)})</div>
