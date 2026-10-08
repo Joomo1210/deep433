@@ -17,6 +17,60 @@ const TEAM_FLAG_CODES = {
   "Ghana": "gh", "Panama": "pa", "Uzbekistan": "uz", "Colombia": "co",
 };
 
+// ─── Past leaderboard rounds (display only) ──────────────────────────────────
+// Saved round results come from the leaderboard_round_results table. If the
+// table is missing or empty, these built-in results for the first two rounds
+// are shown instead, so the section never breaks.
+const FALLBACK_PAST_ROUNDS = [
+  { label: "League round", rows: [
+    { name: "Isaa", points: 76, exact: 3, outcome_only: 13, ou_hits: 22, preds: 30 },
+    { name: "Lumifootballhub", points: 69, exact: 4, outcome_only: 9, ou_hits: 22, preds: 30 },
+    { name: "TUSH", points: 69, exact: 3, outcome_only: 12, ou_hits: 18, preds: 30 },
+    { name: "FAWAZ", points: 65, exact: 1, outcome_only: 15, ou_hits: 15, preds: 30 },
+    { name: "Monez✨", points: 63, exact: 0, outcome_only: 15, ou_hits: 18, preds: 29 },
+    { name: "Hayzey FC", points: 63, exact: 4, outcome_only: 10, ou_hits: 13, preds: 22 },
+  ] },
+  { label: "International break round", rows: [
+    { name: "Mustee", points: 91, exact: 6, outcome_only: 14, ou_hits: 19, preds: 29 },
+    { name: "Blockezekiel", points: 83, exact: 6, outcome_only: 12, ou_hits: 17, preds: 30 },
+    { name: "Giant of London", points: 79, exact: 3, outcome_only: 16, ou_hits: 16, preds: 30 },
+    { name: "That United Guy", points: 78, exact: 4, outcome_only: 13, ou_hits: 19, preds: 30 },
+    { name: "Lumifootballhub", points: 78, exact: 2, outcome_only: 18, ou_hits: 14, preds: 30 },
+    { name: "FAWAZ", points: 78, exact: 2, outcome_only: 17, ou_hits: 17, preds: 30 },
+  ] },
+];
+// Groups table rows into rounds ordered oldest to newest.
+const groupRounds = (data) => {
+  const map = {};
+  (data || []).forEach(r => {
+    if (!map[r.round_label]) map[r.round_label] = { label: r.round_label, order: r.round_order, rows: [] };
+    map[r.round_label].rows.push({ name: r.player_name, points: r.points, exact: r.exact, outcome_only: r.outcome_only, ou_hits: r.ou_hits, preds: r.preds });
+  });
+  return Object.values(map).sort((a, b) => a.order - b.order);
+};
+// Paid places are the top five places (ties share a place), with averages.
+const summariseRound = (rows) => {
+  const placed = rows.map(r => ({
+    ...r,
+    place: 1 + rows.filter(o => o.points > r.points).length,
+    tie: rows.filter(o => o.points === r.points).length > 1,
+  }));
+  const paid = placed.filter(r => r.place <= 5).sort((a, b) => b.points - a.points);
+  const n = paid.length || 1;
+  const avg = (f) => paid.reduce((s, r) => s + f(r), 0) / n;
+  return {
+    paid,
+    avgPoints: avg(r => r.points),
+    avgExact: avg(r => r.exact),
+    avgOutcomeOnly: avg(r => r.outcome_only),
+    avgOU: avg(r => r.ou_hits),
+    ptsE: avg(r => 5 * r.exact),
+    ptsO: avg(r => 3 * r.outcome_only),
+    ptsOU: avg(r => r.ou_hits),
+  };
+};
+const signed = (d) => `${d >= 0 ? "+" : "-"}${Math.abs(d).toFixed(1)}`;
+
 // ─── Shared mobile-safe download function ────────────────────────────────────
 // Uses the Web Share API on devices that support it (iOS Safari/Chrome) since
 // the standard `download` attribute doesn't reliably work on iOS — it just
@@ -3294,6 +3348,36 @@ function LeaderboardGraphic({ supabase }) {
   const [loading, setLoading] = useState(false);
   const [title, setTitle] = useState("Top 10 Leaderboard");
   const [rows, setRows] = useState([]);
+  const [roundLabel, setRoundLabel] = useState("");
+  const [savingRound, setSavingRound] = useState(false);
+  const [saveMsg, setSaveMsg] = useState("");
+
+  // Stores the loaded standings as a finished round so the "Last Two Rounds"
+  // comparison (here and on the site) picks it up automatically. Does not
+  // touch predictions, scoring or the leaderboard itself.
+  const saveRound = async () => {
+    const label = roundLabel.trim();
+    if (!label) { setSaveMsg("Type a round name first."); return; }
+    setSavingRound(true); setSaveMsg("");
+    try {
+      const { data: existing, error: exErr } = await supabase.from("leaderboard_round_results").select("round_label, round_order");
+      if (exErr) throw exErr;
+      if ((existing || []).some(r => (r.round_label || "").toLowerCase() === label.toLowerCase())) {
+        setSaveMsg("A round with that name is already saved."); setSavingRound(false); return;
+      }
+      const nextOrder = Math.max(0, ...(existing || []).map(r => r.round_order || 0)) + 1;
+      const payload = rows.map(r => ({
+        round_label: label, round_order: nextOrder, player_name: r.name,
+        points: r.points, exact: r.exact, outcome_only: r.outcomeOnly, ou_hits: r.overUnderHits, preds: r.total,
+      }));
+      const { error } = await supabase.from("leaderboard_round_results").insert(payload);
+      if (error) throw error;
+      setSaveMsg(`Saved "${label}" with ${payload.length} players.`);
+    } catch (e) {
+      setSaveMsg("Could not save: " + ((e && e.message) || "unknown error") + ". Has the leaderboard_round_results table been created?");
+    }
+    setSavingRound(false);
+  };
 
   const loadStandings = async () => {
     setLoading(true);
@@ -3444,6 +3528,15 @@ function LeaderboardGraphic({ supabase }) {
           <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
             {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
           </button>
+          <div style={{ background: "#0d0d18", border: "1px solid #2a2a3a", borderRadius: 10, padding: 12, marginTop: 6 }}>
+            <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 800, marginBottom: 6 }}>Round finished? Save these standings</div>
+            <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 8 }}>Do this before changing the cutoff date for the next round. It feeds the Last Two Rounds comparison.</div>
+            <input value={roundLabel} onChange={e => setRoundLabel(e.target.value)} placeholder="Round name, e.g. October league round" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "8px 10px", outline: "none", fontFamily: "inherit", marginBottom: 8 }} />
+            <button onClick={saveRound} disabled={savingRound} style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px", width: "100%" }}>
+              {savingRound ? "Saving..." : "💾 Save this round"}
+            </button>
+            {saveMsg && <div style={{ fontSize: 12, color: saveMsg.startsWith("Saved") ? "#4ade80" : "#f87171", marginTop: 8 }}>{saveMsg}</div>}
+          </div>
         </>
       )}
     </div>
@@ -3737,7 +3830,7 @@ function CuratedMatchesGraphic({ supabase }) {
         <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700 }}>
           {filtered.length} match{filtered.length === 1 ? "" : "es"} in range · {cards.length} card{cards.length === 1 ? "" : "s"}
           {filtered.length > capped.length ? ` · showing the first ${capped.length}, the rest don't fit in ${MAX_CARDS} cards` : ""}
-          {undated > 0 ? ` · ${undated} on the list ${undated === 1 ? "has" : "have"} no date saved` : ""}
+          {undated > 0 ? ` · ${undated} on the list ${undated === 1 ? "has" : "have"} no date saved${(fromDate || toDate) ? ` and ${undated === 1 ? "is" : "are"} hidden while a date range is set` : ""}` : ""}
         </div>
       )}
       {loaded && filtered.length === 0 && !error && (
@@ -11400,6 +11493,132 @@ function PositionRadarGraphic() {
   );
 }
 
+// ─── LAST TWO ROUNDS COMPARISON (downloadable) ─────────────────────────────
+// Compares the paid places of any two saved rounds (defaults to the latest
+// two) and shows where the points difference came from. Reads saved rounds
+// from leaderboard_round_results, so it updates when a new round is saved.
+function RoundCompareGraphic({ supabase }) {
+  const cardRef = useRef(null);
+  const [downloading, setDownloading] = useState(false);
+  const [rounds, setRounds] = useState(FALLBACK_PAST_ROUNDS);
+  const [fromSaved, setFromSaved] = useState(false);
+  const [idxA, setIdxA] = useState(0);
+  const [idxB, setIdxB] = useState(1);
+
+  useEffect(() => {
+    if (!supabase) return;
+    (async () => {
+      try {
+        const { data, error } = await supabase.from("leaderboard_round_results").select("*").order("round_order", { ascending: true });
+        if (error || !data || data.length === 0) return;
+        const g = groupRounds(data);
+        if (g.length >= 2) { setRounds(g); setFromSaved(true); setIdxA(g.length - 2); setIdxB(g.length - 1); }
+      } catch {}
+    })();
+  }, []);
+
+  const rA = rounds[idxA] || rounds[0], rB = rounds[idxB] || rounds[rounds.length - 1];
+  const sA = summariseRound(rA.rows), sB = summariseRound(rB.rows);
+  const maxPts = Math.max(1, ...sA.paid.map(r => r.points), ...sB.paid.map(r => r.points));
+  const diff = sB.avgPoints - sA.avgPoints;
+  const outA = sA.avgExact + sA.avgOutcomeOnly, outB = sB.avgExact + sB.avgOutcomeOnly;
+  const maxAvg = Math.max(sA.avgPoints, sB.avgPoints, 1);
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try { await downloadCardImage(cardRef.current, "deep433-round-comparison.png", "#0a0a12", transparent); }
+    catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const sel = { width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "8px 10px", outline: "none", fontFamily: "inherit" };
+  const Block = ({ title, list, accent }) => (
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.6, color: "#94a3b8", marginBottom: 8, textTransform: "uppercase" }}>{title}</div>
+      {list.map(r => (
+        <div key={title + r.name} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+          <span style={{ width: 26, fontSize: 12, fontWeight: 800, color: "#94a3b8" }}>{r.tie ? "=" : ""}{r.place}</span>
+          <span style={{ width: 112, fontSize: 12.5, fontWeight: 800, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
+          <div style={{ flex: 1, height: 14, background: "#1a1a28", borderRadius: 4, overflow: "hidden" }}>
+            <div style={{ width: `${Math.round((r.points / maxPts) * 100)}%`, height: "100%", background: r.place === 1 ? "#c8ff4d" : accent }} />
+          </div>
+          <span style={{ width: 28, textAlign: "right", fontSize: 14, fontWeight: 900, color: "#fbbf24" }}>{r.points}</span>
+        </div>
+      ))}
+    </div>
+  );
+  const Stack = ({ label, avg, parts }) => (
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ fontSize: 12, color: "#cbd5e1", fontWeight: 700, marginBottom: 4 }}>{label} <span style={{ color: "#f0f0f0", fontWeight: 900 }}>avg {avg.toFixed(1)}</span></div>
+      <div style={{ display: "flex", height: 26, borderRadius: 6, overflow: "hidden", width: `${Math.max(30, Math.round((avg / maxAvg) * 100))}%`, minWidth: 200 }}>
+        {parts.map(([v, c]) => (
+          <div key={c} style={{ flex: Math.max(v, 0.01), background: c, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 900, color: "#0a1f17" }}>{v.toFixed(1)}</div>
+        ))}
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>
+        Compares the paid places of two finished rounds and shows where the points difference came from. {fromSaved ? "Using saved rounds." : "Using the built-in first two rounds. Save rounds from the Leaderboard Share Card to add more."}
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <select value={idxA} onChange={e => setIdxA(Number(e.target.value))} style={sel}>
+          {rounds.map((r, i) => <option key={r.label} value={i}>{r.label}</option>)}
+        </select>
+        <select value={idxB} onChange={e => setIdxB(Number(e.target.value))} style={sel}>
+          {rounds.map((r, i) => <option key={r.label} value={i}>{r.label}</option>)}
+        </select>
+      </div>
+
+      <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+        <div style={{ padding: "40px 22px 26px" }}>
+          <div style={{ textAlign: "center", marginBottom: 4 }}>
+            <span style={{
+              fontSize: 24, fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.2,
+              background: "linear-gradient(90deg,#4ade80,#818cf8,#f59e0b)",
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+            }}>🏅 Two Rounds Compared</span>
+          </div>
+          <div style={{ textAlign: "center", fontSize: 12, color: "#e2e8f0", fontWeight: 700, marginBottom: 20 }}>
+            Paid places in each round
+          </div>
+          <Block title={rA.label} list={sA.paid} accent="#2f8f66" />
+          <Block title={rB.label} list={sB.paid} accent="#4ade80" />
+
+          <div style={{ border: "1px solid #23232f", borderRadius: 12, background: "#13131f", padding: "14px 14px 10px", marginTop: 6 }}>
+            <div style={{ fontSize: 11.5, fontWeight: 800, color: "#e2e8f0", textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 10, textAlign: "center" }}>
+              {Math.abs(diff) < 0.5 ? "Where the rounds differ" : diff >= 0 ? `Where the extra ${Math.round(diff)} points came from` : `Where the ${Math.round(-diff)} fewer points came from`}
+            </div>
+            <div style={{ display: "flex", gap: 12, fontSize: 11, color: "#cbd5e1", fontWeight: 700, marginBottom: 8, flexWrap: "wrap", justifyContent: "center" }}>
+              <span><b style={{ color: "#c8ff4d" }}>■</b> Exact scores</span>
+              <span><b style={{ color: "#4ade80" }}>■</b> Outcomes</span>
+              <span><b style={{ color: "#2f8f66" }}>■</b> Over/Under</span>
+            </div>
+            <Stack label={rA.label} avg={sA.avgPoints} parts={[[sA.ptsE, "#c8ff4d"], [sA.ptsO, "#4ade80"], [sA.ptsOU, "#2f8f66"]]} />
+            <Stack label={rB.label} avg={sB.avgPoints} parts={[[sB.ptsE, "#c8ff4d"], [sB.ptsO, "#4ade80"], [sB.ptsOU, "#2f8f66"]]} />
+            <div style={{ fontSize: 12, color: "#e2e8f0", lineHeight: 1.8 }}>
+              <div><b style={{ color: "#c8ff4d" }}>{signed(outB - outA)}</b> correct outcomes per player ({outA.toFixed(1)} to {outB.toFixed(1)})</div>
+              <div><b style={{ color: "#c8ff4d" }}>{signed(sB.avgExact - sA.avgExact)}</b> exact scores per player ({sA.avgExact.toFixed(1)} to {sB.avgExact.toFixed(1)})</div>
+              <div><b style={{ color: "#c8ff4d" }}>{signed(sB.avgOU - sA.avgOU)}</b> Over/Under hits per player ({sA.avgOU.toFixed(1)} to {sB.avgOU.toFixed(1)})</div>
+            </div>
+          </div>
+          <div style={{ textAlign: "center", marginTop: 16 }}>
+            <span style={{ fontSize: 11, color: "#e2e8f0", fontWeight: 700 }}>Average of the paid places in each round.</span>
+          </div>
+        </div>
+      </GraphicCard>
+      <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+        {downloading ? "Generating..." : "⬇ Download PNG"}
+      </button>
+      <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%" }}>
+        {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+      </button>
+    </div>
+  );
+}
+
 export default function DataGraphics({ history = [], supabase }) {
   const [activeSection, setActiveSection] = useState("match");
   const [sectionMenuOpen, setSectionMenuOpen] = useState(false);
@@ -11415,6 +11634,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "noticeboard", label: "📌 Weekly Notice Board" },
     { id: "leaderboardshare", label: "🏅 Leaderboard Share Card" },
     { id: "top5explained", label: "🏅 Top 5 Explained" },
+    { id: "roundcompare", label: "📊 Last Two Rounds Compared" },
     { id: "curatedmatches", label: "📋 Curated Matches Cards" },
     { id: "h2h",      label: "🆚 Player H2H" },
     { id: "matchh2h", label: "📋 Match H2H" },
@@ -11488,6 +11708,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "noticeboard" && <NoticeBoardGraphic />}
       {activeSection === "leaderboardshare" && <LeaderboardGraphic supabase={supabase} />}
       {activeSection === "top5explained" && <Top5ExplainedGraphic supabase={supabase} />}
+      {activeSection === "roundcompare" && <RoundCompareGraphic supabase={supabase} />}
       {activeSection === "curatedmatches" && <CuratedMatchesGraphic supabase={supabase} />}
       {activeSection === "h2h"      && <PlayerH2HGraphic />}
       {activeSection === "matchh2h" && <MatchH2HGraphic />}
