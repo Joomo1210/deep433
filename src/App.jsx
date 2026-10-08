@@ -590,6 +590,9 @@ export default function FootballPredictor() {
   const [usernameDraft, setUsernameDraft] = useState("");
   const [leaderboard, setLeaderboard] = useState([]);
   const [leaderboardFixtures, setLeaderboardFixtures] = useState([]);
+  // Display only: set of curated match keys (lowercased home|away) used to
+  // badge fixtures that count toward the leaderboard. Never used for scoring.
+  const [curatedBadgeKeys, setCuratedBadgeKeys] = useState(() => new Set());
   const [allPendingPredictions, setAllPendingPredictions] = useState([]);
   const [allPendingLoading, setAllPendingLoading] = useState(false);
   const [newFixtureHome, setNewFixtureHome] = useState("");
@@ -931,6 +934,20 @@ export default function FootballPredictor() {
     if (userRole === "admin") { loadLeaderboardFixtures(); loadAllPendingPredictions(); }
     computeLeaderboard();
   }, [tab, session]);
+  // Display only: load curated keys so the Predict tab can badge fixtures
+  // that count toward the leaderboard. Any failure just means no badges.
+  useEffect(() => {
+    if (tab !== "predict") return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabase.from("leaderboard_fixtures").select("home_team, away_team");
+        if (cancelled || !data) return;
+        setCuratedBadgeKeys(new Set(data.map(f => `${(f.home_team || "").trim().toLowerCase()}|${(f.away_team || "").trim().toLowerCase()}`)));
+      } catch (e) { /* no badges, nothing else affected */ }
+    })();
+    return () => { cancelled = true; };
+  }, [tab]);
   const downloadAwardsCard = async () => {
     if (!awardsCardRef.current) return;
     setAwardsDownloading(true);
@@ -1578,6 +1595,21 @@ if (!session && !guestMode) {
           {TABS.map(t => <button key={t.id} className={`nav-tab${tab === t.id ? " active" : ""}`} onClick={() => setTab(t.id)}>{t.label}</button>)}
         </div>
       </div>
+      {/* Leaderboard teaser strip. Display only. Change the prize text here. */}
+      {tab === "predict" && (
+        <div
+          onClick={() => setTab("leaderboard")}
+          style={{ background: "linear-gradient(90deg,#1a1400,#0f1a0f)", borderBottom: "1px solid #fbbf2433", padding: "9px 16px", cursor: "pointer" }}
+        >
+          <div style={{ maxWidth: 600, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: "#fbbf24" }}>🏆 Predict free. Win up to ₦100,000</div>
+              <div style={{ fontSize: 11, color: "#94a3b8" }}>Free to enter · Skill based · Top 5 paid every round</div>
+            </div>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#4ade80", whiteSpace: "nowrap" }}>See board →</span>
+          </div>
+        </div>
+      )}
       {/* One-time prompt to set a display name — predictions were only ever
           linked to an internal user ID, meaningless on a public leaderboard.
           Shown until the user actually sets one, then never again. */}
@@ -1703,6 +1735,11 @@ if (!session && !guestMode) {
                   ))}
                 </div>
                 <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Pick The Match</div>
+                <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 10 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#4ade80", background: "#4ade8018", border: "1px solid #4ade8033", borderRadius: 5, padding: "2px 7px" }}>Exact score 5</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#818cf8", background: "#818cf818", border: "1px solid #818cf833", borderRadius: 5, padding: "2px 7px" }}>Outcome 3</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#fbbf24", background: "#fbbf2418", border: "1px solid #fbbf2433", borderRadius: 5, padding: "2px 7px" }}>Over/Under +1</span>
+                </div>
                 <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 12 }}>
                   Search and select the real fixture below — typing team names by hand used to be the single biggest cause of predictions silently not scoring, since even a small spelling difference from the official name stops it from being recognized.
                 </div>
@@ -1739,6 +1776,9 @@ if (!session && !guestMode) {
                                   </span>
                               }
                               <div style={{ fontSize: 12, color: "#333", marginTop: 2 }}>{f.round}</div>
+                              {curatedBadgeKeys.has(`${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`) && (
+                                <div style={{ fontSize: 10, fontWeight: 800, color: "#fbbf24", marginTop: 3, whiteSpace: "nowrap" }}>🏅 Leaderboard</div>
+                              )}
                             </div>
                             <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, justifyContent: "flex-end" }}>
                               <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{f.away}</span>
@@ -2558,8 +2598,11 @@ if (!session && !guestMode) {
       {tab === "leaderboard" && (
         <div style={{ maxWidth: 600, margin: "0 auto", padding: "14px 12px" }}>
           <div style={{ fontSize: 16, fontWeight: 900, color: "#f0f0f0", marginBottom: 2 }}>🏅 Leaderboard</div>
-          <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 10 }}>
+          <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6 }}>
             Exact: 5pts · Outcome only: 3pts · O/U: +1pt
+          </div>
+          <div style={{ fontSize: 12, fontWeight: 800, color: "#fbbf24", marginBottom: 10 }}>
+            🏆 Predict free. Win up to ₦100,000 · Top 5 paid every round
           </div>
           {userRole === "admin" && (
             <button
@@ -2687,6 +2730,47 @@ if (!session && !guestMode) {
               ))}
             </div>
           )}
+          {/* Rank nudge + progress. Display only, reads the computed board. */}
+          {!leaderboardLoading && (() => {
+            const boxStyle = { background: "#13131f", border: "1px solid #fbbf2433", borderRadius: 10, padding: "10px 12px", marginBottom: 12 };
+            if (!session) {
+              return (
+                <div style={boxStyle}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", marginBottom: 6 }}>Sign up free to see where you would rank</div>
+                  <button onClick={() => setGuestMode(false)} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "6px 14px" }}>Sign up free</button>
+                </div>
+              );
+            }
+            const me = leaderboard.find(r => r.userId === session.user.id);
+            if (!me) {
+              return (
+                <div style={boxStyle}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>You are not on the board yet</div>
+                  <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>Predict a 🏅 Leaderboard match and finish the game to get on it.</div>
+                </div>
+              );
+            }
+            const myRank = 1 + leaderboard.filter(r => r.points > me.points).length;
+            const fifth = leaderboard.length >= 5 ? [...leaderboard].sort((a, b) => b.points - a.points)[4] : null;
+            const gap = fifth ? Math.max(0, fifth.points - me.points) : 0;
+            const msg = myRank === 1 ? "You are leading 🔥"
+              : myRank <= 5 ? "You are in the prize places 🏆"
+              : fifth ? `${gap} pt${gap === 1 ? "" : "s"} off the top 5`
+              : "Keep predicting to climb";
+            const pct = Math.min(100, Math.round((me.total / 30) * 100));
+            return (
+              <div style={boxStyle}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "#f0f0f0" }}>You are {myRank}{myRank % 10 === 1 && myRank !== 11 ? "st" : myRank % 10 === 2 && myRank !== 12 ? "nd" : myRank % 10 === 3 && myRank !== 13 ? "rd" : "th"} · {me.points} pts</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#fbbf24" }}>{msg}</div>
+                </div>
+                <div style={{ fontSize: 11, color: "#94a3b8", margin: "8px 0 4px" }}>{me.total} of 30 leaderboard predictions made</div>
+                <div style={{ height: 6, background: "#1a1a2e", borderRadius: 4, overflow: "hidden" }}>
+                  <div style={{ width: `${pct}%`, height: "100%", background: "linear-gradient(90deg,#4ade80,#22c55e)" }} />
+                </div>
+              </div>
+            );
+          })()}
           {leaderboardLoading && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 14, padding: "20px 0" }}>Loading...</div>}
           {!leaderboardLoading && leaderboard.length === 0 && (
             <div style={{ textAlign: "center", color: "#666", fontSize: 14, padding: "20px 0" }}>No confirmed results yet.</div>
@@ -2694,7 +2778,7 @@ if (!session && !guestMode) {
           {leaderboard.map((row, i) => (
             <div key={row.userId} style={{
               display: "flex", alignItems: "center", gap: 12,
-              background: "#0d0d18", border: "1px solid #1a1a2e", borderRadius: 10,
+              background: "#0d0d18", border: `1px solid ${session && row.userId === session.user.id ? "#4ade8066" : "#1a1a2e"}`, borderRadius: 10,
               padding: "10px 12px", marginBottom: 6,
             }}>
               <span style={{ fontSize: 15, fontWeight: 900, color: "#818cf8", width: 20, flexShrink: 0, textAlign: "center" }}>{i + 1}</span>
