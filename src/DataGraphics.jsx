@@ -1956,6 +1956,195 @@ function LockedInGraphic({ supabase }) {
   );
 }
 
+// ─── MATCH RESULTS CARD (how the locked-in predictions went) ─────────────────
+// After full time: how many predictions for a leaderboard match came through
+// or failed. Same counting rules as the leaderboard (curated matches only,
+// made on/after the round start, admin accounts left out). No player names.
+function ResultsCardBody({ stat, home, away, score, roundLabel }) {
+  const total = stat.total;
+  const pct = n => (total ? Math.round((n / total) * 100) : 0);
+  const came = stat.exact + stat.outcomeOnly;
+  const tiles = [
+    { icon: "🎯", label: "Exact score", n: stat.exact, pts: "5 pts", color: "#4ade80" },
+    { icon: "✅", label: "Right result", n: stat.outcomeOnly, pts: "3 pts", color: "#818cf8" },
+    { icon: "❌", label: "Missed", n: stat.missed, pts: "0 pts", color: "#f87171" },
+  ];
+  return (
+    <div style={{ padding: "44px 22px 22px" }}>
+      <div style={{ textAlign: "center", fontSize: 12, fontWeight: 800, color: "#94a3b8", letterSpacing: 2.5, textTransform: "uppercase" }}>{roundLabel} · Full time</div>
+      <div style={{ textAlign: "center", marginTop: 10, fontSize: 17, fontWeight: 800, color: "#f0f0f0" }}>{home}</div>
+      <div style={{ textAlign: "center", fontSize: 54, fontWeight: 900, lineHeight: 1.1, color: "#fbbf24", letterSpacing: 2 }}>{score}</div>
+      <div style={{ textAlign: "center", fontSize: 17, fontWeight: 800, color: "#f0f0f0" }}>{away}</div>
+
+      <div style={{ textAlign: "center", marginTop: 14, fontSize: 13, fontWeight: 700, color: "#e2e8f0" }}>
+        🔒 {total} {total === 1 ? "prediction" : "predictions"} locked in
+      </div>
+
+      <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+        {tiles.map(t => (
+          <div key={t.label} style={{ flex: 1, background: "#0d0d18", border: `1px solid ${t.color}55`, borderRadius: 12, padding: "12px 6px", textAlign: "center" }}>
+            <div style={{ fontSize: 16 }}>{t.icon}</div>
+            <div style={{ fontSize: 34, fontWeight: 900, color: t.color, lineHeight: 1.1 }}>{t.n}</div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: "#f0f0f0", marginTop: 2 }}>{t.label}</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8" }}>{t.pts} · {pct(t.n)}%</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: "flex", height: 8, borderRadius: 4, overflow: "hidden", marginTop: 12, background: "#1a1a2e" }}>
+        <div style={{ width: `${pct(stat.exact)}%`, background: "#4ade80" }} />
+        <div style={{ width: `${pct(stat.outcomeOnly)}%`, background: "#818cf8" }} />
+        <div style={{ width: `${pct(stat.missed)}%`, background: "#f87171" }} />
+      </div>
+      <div style={{ textAlign: "center", fontSize: 13, fontWeight: 800, color: "#f0f0f0", marginTop: 8 }}>
+        {came} of {total} got the result right ({pct(came)}%)
+      </div>
+
+      <div style={{ marginTop: 12, background: "#0d0d18", border: "1px solid #1e1e30", borderRadius: 12, padding: "10px 14px", fontSize: 12, fontWeight: 700, color: "#e2e8f0" }}>
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <span>⚽ {Number(score.split("-")[0]) + Number(score.split("-")[1]) > 2.5 ? "Over 2.5" : "Under 2.5"} goals called right</span>
+          <span style={{ color: "#4ade80", fontWeight: 900 }}>{stat.ouHits} · +1 pt</span>
+        </div>
+        {stat.topScore && (
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+            <span>🔥 Most predicted scoreline</span>
+            <span style={{ color: "#fbbf24", fontWeight: 900 }}>{stat.topScore} ({stat.topCount})</span>
+          </div>
+        )}
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+          <span>🏅 Points handed out</span>
+          <span style={{ color: "#818cf8", fontWeight: 900 }}>{stat.points}</span>
+        </div>
+      </div>
+
+      <div style={{ marginTop: 16, textAlign: "center", fontSize: 13, fontWeight: 800, color: "#fbbf24" }}>Free to play · Top 5 win every round</div>
+    </div>
+  );
+}
+
+function ResultsGraphic({ supabase }) {
+  const cardRef = useRef(null);
+  const [matches, setMatches] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [downloading, setDownloading] = useState(false);
+  const [selKey, setSelKey] = useState("");
+  const [manualScore, setManualScore] = useState("");
+  const [roundLabel, setRoundLabel] = useState("Round 3");
+
+  const load = async () => {
+    setLoading(true); setError("");
+    try {
+      const key = (h, a) => `${(h || "").trim().toLowerCase()}|${(a || "").trim().toLowerCase()}`;
+      const { data: fx, error: fxErr } = await supabase.from("leaderboard_fixtures").select("home_team, away_team");
+      if (fxErr) throw fxErr;
+      const curated = new Map((fx || []).map(f => [key(f.home_team, f.away_team), { home: f.home_team, away: f.away_team, preds: [] }]));
+
+      let all = [];
+      for (let from = 0; from < 50000; from += 1000) {
+        const { data: page, error: pe } = await supabase
+          .from("predictions")
+          .select("user_id, home_team, away_team, user_prediction, user_outcome, user_over_under, actual_score")
+          .gte("created_at", LOCKED_IN_ROUND_START_ISO)
+          .order("created_at", { ascending: true })
+          .range(from, from + 999);
+        if (pe) throw pe;
+        all = all.concat(page || []);
+        if (!page || page.length < 1000) break;
+      }
+      const mine = all.filter(p => curated.has(key(p.home_team, p.away_team)));
+      const ids = [...new Set(mine.map(p => p.user_id))];
+      const roleById = {};
+      for (let i = 0; i < ids.length; i += 200) {
+        const { data: pr } = await supabase.from("profiles").select("id, role").in("id", ids.slice(i, i + 200));
+        (pr || []).forEach(p => { roleById[p.id] = p.role; });
+      }
+      mine.filter(p => roleById[p.user_id] !== "admin").forEach(p => curated.get(key(p.home_team, p.away_team)).preds.push(p));
+      const list = [...curated.entries()]
+        .map(([k, m]) => ({ k, ...m, n: m.preds.length, resolved: (m.preds.find(p => p.actual_score) || {}).actual_score || "" }))
+        .filter(m => m.n > 0)
+        .sort((a, b) => b.n - a.n);
+      setMatches(list);
+      if (list.length && !list.some(m => m.k === selKey)) { setSelKey(list[0].k); setManualScore(""); }
+    } catch (e) {
+      setError("Could not load the numbers: " + ((e && e.message) || "unknown error"));
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { if (supabase) load(); }, []);
+
+  const sel = matches.find(m => m.k === selKey);
+  const scoreStr = (manualScore.trim() || (sel && sel.resolved) || "").replace(/\s+/g, "");
+  const parts = scoreStr.split("-").map(n => parseInt(n));
+  const validScore = parts.length === 2 && parts.every(n => !Number.isNaN(n));
+
+  let stat = null;
+  if (sel && validScore) {
+    const [ah, aa] = parts;
+    const outcome = ah > aa ? "Home Win" : aa > ah ? "Away Win" : "Draw";
+    const ou = (ah + aa) > 2.5 ? "Over 2.5" : "Under 2.5";
+    stat = { total: sel.n, exact: 0, outcomeOnly: 0, missed: 0, ouHits: 0, points: 0, topScore: "", topCount: 0 };
+    const freq = {};
+    sel.preds.forEach(p => {
+      let pts = 0;
+      if (p.user_prediction === `${ah}-${aa}`) { stat.exact += 1; pts += 5; }
+      else if (p.user_outcome && p.user_outcome === outcome) { stat.outcomeOnly += 1; pts += 3; }
+      else stat.missed += 1;
+      if (p.user_over_under && p.user_over_under === ou) { stat.ouHits += 1; pts += 1; }
+      stat.points += pts;
+      if (p.user_prediction) freq[p.user_prediction] = (freq[p.user_prediction] || 0) + 1;
+    });
+    const top = Object.entries(freq).sort((a, b) => b[1] - a[1])[0];
+    if (top) { stat.topScore = top[0]; stat.topCount = top[1]; }
+  }
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, "deep433-match-results.png", "#0a0a12", transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const inputStyle = { width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>After full time: how many locked-in predictions for a leaderboard match came through or failed. No player names. The final score fills in once the match is resolved; type it below if not.</div>
+      <button onClick={load} disabled={loading} style={{ background: "linear-gradient(135deg,#818cf8,#6366f1)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
+        {loading ? "Loading..." : "🔄 Refresh numbers"}
+      </button>
+      {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
+      {matches.length > 0 && (
+        <>
+          <select value={selKey} onChange={e => { setSelKey(e.target.value); setManualScore(""); }} style={inputStyle}>
+            {matches.map(m => (
+              <option key={m.k} value={m.k}>{m.home} v {m.away} · {m.n} predictions{m.resolved ? ` · FT ${m.resolved}` : " · result pending"}</option>
+            ))}
+          </select>
+          <input value={manualScore} onChange={e => setManualScore(e.target.value)} placeholder={sel && sel.resolved ? `Final score (auto: ${sel.resolved}), type to override` : "Final score, e.g. 2-1"} style={inputStyle} />
+          <input value={roundLabel} onChange={e => setRoundLabel(e.target.value)} placeholder="Round label" style={inputStyle} />
+        </>
+      )}
+      {sel && !validScore && <div style={{ color: "#fbbf24", fontSize: 13 }}>No final score yet for this match. Type it above (e.g. 2-1) or resolve the match first.</div>}
+      {sel && stat && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <ResultsCardBody stat={stat} home={sel.home} away={sel.away} score={`${parts[0]}-${parts[1]}`} roundLabel={roundLabel} />
+          </GraphicCard>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── BRACKET GRAPHIC ─────────────────────────────────────────────────────────
 function BracketGraphic({ history = [] }) {
   const cardRef = useRef(null);
@@ -11792,6 +11981,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "top5explained", label: "🏅 Top 5 Explained" },
     { id: "roundcompare", label: "📊 Last Two Rounds Compared" },
     { id: "lockedin", label: "🔒 Predictions Locked In" },
+    { id: "matchresults", label: "📊 Match Results (how predictions went)" },
     { id: "curatedmatches", label: "📋 Curated Matches Cards" },
     { id: "h2h",      label: "🆚 Player H2H" },
     { id: "matchh2h", label: "📋 Match H2H" },
@@ -11867,6 +12057,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "top5explained" && <Top5ExplainedGraphic supabase={supabase} />}
       {activeSection === "roundcompare" && <RoundCompareGraphic supabase={supabase} />}
       {activeSection === "lockedin" && <LockedInGraphic supabase={supabase} />}
+      {activeSection === "matchresults" && <ResultsGraphic supabase={supabase} />}
       {activeSection === "curatedmatches" && <CuratedMatchesGraphic supabase={supabase} />}
       {activeSection === "h2h"      && <PlayerH2HGraphic />}
       {activeSection === "matchh2h" && <MatchH2HGraphic />}
