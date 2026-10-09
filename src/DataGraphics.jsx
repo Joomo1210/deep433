@@ -1509,6 +1509,34 @@ function TeamStatsGraphic() {
   );
 }
 
+// ─── RECAP POINTS STRIP ──────────────────────────────────────────────────────
+// Shows what each type of correct call is worth for this final score, worked out
+// from the score alone (5 exact score, 3 correct outcome, +1 Over/Under 2.5).
+function RecapPointsStrip({ score, home, away }) {
+  const [h, a] = (score || "").split("-").map(n => parseInt(n));
+  if (Number.isNaN(h) || Number.isNaN(a)) return null;
+  const outcome = h > a ? `${home} win` : a > h ? `${away} win` : "Draw";
+  const ou = (h + a) > 2.5 ? "Over 2.5" : "Under 2.5";
+  const chips = [
+    { pts: "5 pts", label: `Exact score ${h}-${a}`, color: "#4ade80" },
+    { pts: "3 pts", label: `Outcome: ${outcome}`, color: "#f59e0b" },
+    { pts: "+1 pt", label: ou, color: "#818cf8" },
+  ];
+  return (
+    <div style={{ background: "#0d0d18", border: "1px solid #1e1e30", borderRadius: 10, padding: "8px 10px" }}>
+      <div style={{ fontSize: 12, fontWeight: 800, color: "#e2e8f0", textTransform: "uppercase", letterSpacing: 1, textAlign: "center", marginBottom: 6 }}>Points for this result</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
+        {chips.map(c => (
+          <div key={c.label} style={{ background: "#13131f", borderRadius: 8, padding: "6px 4px", textAlign: "center" }}>
+            <div style={{ fontSize: 18, fontWeight: 900, color: c.color, lineHeight: 1.1 }}>{c.pts}</div>
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: "#e2e8f0", marginTop: 2, lineHeight: 1.2 }}>{c.label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── RECAP CARD ──────────────────────────────────────────────────────────────
 function RecapGraphic({ history = [] }) {
   const cardRef = useRef(null);
@@ -1697,6 +1725,7 @@ function RecapGraphic({ history = [] }) {
                 )}
               </div>
             ))}
+            <RecapPointsStrip score={regScore} home={selectedFixture?.home} away={selectedFixture?.away} />
             <div style={{ background: "#0d0d18", borderRadius: 8, padding: "8px 12px", textAlign: "center" }}>
               {matchData?.keyStat && (
                 <div style={{ marginBottom: selectedFixture?.venue ? 4 : 0 }}>
@@ -1752,6 +1781,7 @@ function RecapGraphic({ history = [] }) {
               </div>
             ))}
           </div>
+          <RecapPointsStrip score={regScore} home={selectedFixture?.home} away={selectedFixture?.away} />
           {/* Key stat + venue banner */}
           <div style={{ background: "#0d0d18", borderRadius: 8, padding: "8px 12px", textAlign: "center" }}>
             {matchData?.keyStat && (
@@ -3404,7 +3434,7 @@ function LeaderboardGraphic({ supabase }) {
       // the current month, that silently excluded every September
       // prediction for this still-ongoing round the moment it became
       // October. Only moves when deliberately changed for a new round.
-      const LEADERBOARD_START_DATE = new Date("2026-10-09");
+      const LEADERBOARD_START_DATE = new Date("2026-10-09T05:30:00Z");
       const cutoff = LEADERBOARD_START_DATE.toISOString();
 
       const { data: preds } = await supabase
@@ -3581,7 +3611,7 @@ function Top5ExplainedGraphic({ supabase }) {
       // the current month, that silently excluded every September
       // prediction for this still-ongoing round the moment it became
       // October. Only moves when deliberately changed for a new round.
-      const LEADERBOARD_START_DATE = new Date("2026-10-09");
+      const LEADERBOARD_START_DATE = new Date("2026-10-09T05:30:00Z");
       const cutoff = LEADERBOARD_START_DATE.toISOString();
 
       const { data: preds } = await supabase
