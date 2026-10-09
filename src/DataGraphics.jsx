@@ -1829,7 +1829,7 @@ function RecapGraphic({ history = [], supabase }) {
 const LOCKED_IN_ROUND_START_ISO = new Date("2026-10-09T05:30:00Z").toISOString();
 
 function LockedInCardBody({ data, roundLabel, endsText }) {
-  const shown = (data.rows || []).filter(r => r.n > 0).slice(0, 8);
+  const shown = (data.rows || []).filter(r => r.n > 0).slice(0, 10);
   const maxN = Math.max(1, ...shown.map(r => r.n));
   const rest = Math.max(0, (data.matches || 0) - shown.length);
   return (
