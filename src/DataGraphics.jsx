@@ -1538,13 +1538,16 @@ function RecapPointsStrip({ score, home, away }) {
 }
 
 // ─── RECAP CARD ──────────────────────────────────────────────────────────────
-function RecapGraphic({ history = [] }) {
+function RecapGraphic({ history = [], supabase }) {
   const cardRef = useRef(null);
   const [selectedFixture, setSelectedFixture] = useState(null);
   const [variant, setVariant] = useState("square");
   const [downloading, setDownloading] = useState(false);
   const [matchData, setMatchData] = useState(null);
   const [error, setError] = useState("");
+  // The points strip only shows for curated leaderboard matches. Matched by
+  // lower-cased, trimmed team names, the same way the leaderboard matches them.
+  const [isCurated, setIsCurated] = useState(false);
 
   const isLandscape = variant === "landscape";
 
@@ -1552,6 +1555,14 @@ function RecapGraphic({ history = [] }) {
     setSelectedFixture(f);
     setError("");
     setMatchData(null);
+    setIsCurated(false);
+    if (supabase) {
+      supabase.from("leaderboard_fixtures").select("home_team, away_team").then(({ data }) => {
+        const k = (h, a) => `${(h || "").trim().toLowerCase()}|${(a || "").trim().toLowerCase()}`;
+        const mine = k(f.home, f.away);
+        setIsCurated((data || []).some(x => k(x.home_team, x.away_team) === mine));
+      }).catch(() => setIsCurated(false));
+    }
     const fs = (f.score?.home != null && f.score?.away != null)
       ? `${f.score.home}-${f.score.away}` : null;
     if (!fs) { setError("No final score available — match may not be finished yet."); return; }
@@ -1710,22 +1721,7 @@ function RecapGraphic({ history = [] }) {
           </div>
           {/* Right: predictions */}
           <div style={{ flex: 1, padding: "36px 20px 12px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 12, position: "relative", zIndex: 1 }}>
-            <div style={{ fontSize: 15, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Predictions</div>
-            {[{ label: "👤 Your Call", pred: yourPrediction, result: yourResult, color: "#4ade80" }, { label: "🤖 AI Predicted", pred: aiPrediction, result: aiResult, color: "#f59e0b" }].map(p => (
-              <div key={p.label} style={{ background: "#13131f", borderRadius: 10, padding: "12px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <div style={{ fontSize: 15, color: p.color, fontWeight: 700, marginBottom: 4 }}>{p.label}</div>
-                  <div style={{ fontSize: 28, fontWeight: 900, color: p.color }}>{p.pred || "—"}</div>
-                </div>
-                {p.result && (
-                  <div style={{ textAlign: "center" }}>
-                    <div style={{ fontSize: 22 }}>{p.result.icon}</div>
-                    <div style={{ fontSize: 14, color: p.result.color, fontWeight: 700, marginTop: 2 }}>{p.result.label}</div>
-                  </div>
-                )}
-              </div>
-            ))}
-            <RecapPointsStrip score={regScore} home={selectedFixture?.home} away={selectedFixture?.away} />
+            {isCurated && <RecapPointsStrip score={regScore} home={selectedFixture?.home} away={selectedFixture?.away} />}
             <div style={{ background: "#0d0d18", borderRadius: 8, padding: "8px 12px", textAlign: "center" }}>
               {matchData?.keyStat && (
                 <div style={{ marginBottom: selectedFixture?.venue ? 4 : 0 }}>
@@ -1767,21 +1763,7 @@ function RecapGraphic({ history = [] }) {
           </div>
           <div style={{ height: 1, background: "#1a1a2a" }} />
           {/* Predictions */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            {[{ label: "👤 Your Call", pred: yourPrediction, result: yourResult, color: "#4ade80" }, { label: "🤖 AI Predicted", pred: aiPrediction, result: aiResult, color: "#818cf8" }].map(p => (
-              <div key={p.label} style={{ background: "#13131f", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
-                <div style={{ fontSize: 14, color: p.color, fontWeight: 700, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>{p.label}</div>
-                <div style={{ fontSize: 26, fontWeight: 900, color: p.color, marginBottom: 4, letterSpacing: -0.5 }}>{p.pred || "—"}</div>
-                {p.result && (
-                  <>
-                    <div style={{ fontSize: 20 }}>{p.result.icon}</div>
-                    <div style={{ fontSize: 14, color: p.result.color, fontWeight: 700, marginTop: 2 }}>{p.result.label}</div>
-                  </>
-                )}
-              </div>
-            ))}
-          </div>
-          <RecapPointsStrip score={regScore} home={selectedFixture?.home} away={selectedFixture?.away} />
+          {isCurated && <RecapPointsStrip score={regScore} home={selectedFixture?.home} away={selectedFixture?.away} />}
           {/* Key stat + venue banner */}
           <div style={{ background: "#0d0d18", borderRadius: 8, padding: "8px 12px", textAlign: "center" }}>
             {matchData?.keyStat && (
@@ -1807,16 +1789,10 @@ function RecapGraphic({ history = [] }) {
         <>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#13131f", borderRadius: 8, padding: "10px 14px" }}>
             <span style={{ fontSize: 18, fontWeight: 700, color: "#f0f0f0" }}>{selectedFixture.home} vs {selectedFixture.away}</span>
-            <button onClick={() => { setSelectedFixture(null); setMatchData(null); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 16, padding: "4px 10px" }}>Change</button>
+            <button onClick={() => { setSelectedFixture(null); setMatchData(null); setIsCurated(false); setError(""); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 16, padding: "4px 10px" }}>Change</button>
           </div>
 
           {error && <div style={{ color: "#f87171", fontSize: 18 }}>{error}</div>}
-
-          {matchData && !matchData.yourPrediction && (
-            <div style={{ fontSize: 17, color: "#f59e0b", background: "#f59e0b11", border: "1px solid #f59e0b33", borderRadius: 8, padding: "10px 14px" }}>
-              ⚠️ No prediction found for this match in your history. Make a prediction first to use the Recap card.
-            </div>
-          )}
 
           {matchData && (
             <>
@@ -11794,7 +11770,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "beyondscoresheet" && <BeyondScoresheetGraphic />}
       {activeSection === "backfourbattle" && <BackFourBattleGraphic />}
       {activeSection === "triobattle" && <TrioBattleGraphic />}
-      {activeSection === "recap"    && <RecapGraphic history={history} />}
+      {activeSection === "recap"    && <RecapGraphic history={history} supabase={supabase} />}
       {activeSection === "bracket"  && <BracketGraphic history={history} />}
     </div>
   );
