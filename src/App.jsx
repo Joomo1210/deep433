@@ -36,6 +36,11 @@ const ROUND_HEAD_START = {
   "fbb8a523-b75b-40b1-bfde-afa3851f0cc0": 1, // Hayzey FC, 5th (tied)
 };
 
+// Display only: the round start used by the "X of 30 predicted" counter on the
+// Predict tab. Keep in step with the cutoff in computeLeaderboard and submitAndReveal
+// (and the database trigger) when a new round starts.
+const COUNTER_ROUND_START = new Date("2026-10-09T05:30:00Z");
+
 // ─── Past leaderboard rounds (display only) ──────────────────────────────────
 // Saved round results come from the leaderboard_round_results table. If the
 // table is missing or empty, these built-in results for the first two rounds
@@ -849,7 +854,7 @@ export default function FootballPredictor() {
     // warning and nothing to undo it. A round's cutoff should only ever
     // move when someone deliberately changes this line for a genuinely
     // new round, never on its own just because the month changed.
-    const LEADERBOARD_START_DATE = new Date("2026-10-09");
+    const LEADERBOARD_START_DATE = new Date("2026-10-09T05:30:00Z");
     const cutoff = LEADERBOARD_START_DATE.toISOString();
     const { data: preds, error: predsError } = await supabase
       .from("predictions")
@@ -1347,7 +1352,7 @@ useEffect(() => {
     // state, since that's never populated for a regular user submitting a
     // prediction. Matched the same case-insensitive home|away key
     // comparison already used for leaderboard scoring, for consistency.
-    const CONTEST_START_DATE = new Date("2026-10-09");
+    const CONTEST_START_DATE = new Date("2026-10-09T05:30:00Z");
     const { data: curatedFixturesForCap } = await supabase.from("leaderboard_fixtures").select("home_team, away_team");
     const curatedKeysForCap = new Set(
       (curatedFixturesForCap || []).map(f => `${f.home_team.trim().toLowerCase()}|${f.away_team.trim().toLowerCase()}`)
@@ -1703,6 +1708,32 @@ if (!session && !guestMode) {
           </div>
         </div>
       )}
+      {/* Prediction counter: how many curated leaderboard predictions this player has
+          made towards the 30 cap. Display only. Same count the cap itself uses. */}
+      {tab === "predict" && session && curatedBadgeKeys.size > 0 && (() => {
+        const made = history.filter(h =>
+          new Date(h.created_at) >= COUNTER_ROUND_START &&
+          curatedBadgeKeys.has(`${(h.home_team || "").trim().toLowerCase()}|${(h.away_team || "").trim().toLowerCase()}`)
+        ).length;
+        const shown = Math.min(made, 30);
+        const left = Math.max(0, 30 - made);
+        const colour = left === 0 ? "#f87171" : left <= 5 ? "#fbbf24" : "#4ade80";
+        return (
+          <div style={{ background: "#0d0d18", borderBottom: "1px solid #1a1a2e", padding: "10px 16px" }}>
+            <div style={{ maxWidth: 600, margin: "0 auto" }}>
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
+                <div style={{ fontSize: 22, fontWeight: 900, color: colour, letterSpacing: -0.3 }}>{shown} of 30 predicted</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#94a3b8" }}>
+                  {left === 0 ? "All 30 picks made" : `${left} left to play for the prize`}
+                </div>
+              </div>
+              <div style={{ height: 6, background: "#1a1a2e", borderRadius: 3, marginTop: 6, overflow: "hidden" }}>
+                <div style={{ width: `${(shown / 30) * 100}%`, height: "100%", background: colour, borderRadius: 3, transition: "width .3s" }} />
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       {/* One-time prompt to set a display name — predictions were only ever
           linked to an internal user ID, meaningless on a public leaderboard.
           Shown until the user actually sets one, then never again. */}
