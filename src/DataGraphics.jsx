@@ -1822,6 +1822,140 @@ function RecapGraphic({ history = [], supabase }) {
   );
 }
 
+// ─── PREDICTIONS LOCKED IN CARD ──────────────────────────────────────────────
+// Live count of predictions that count towards the round (curated matches only,
+// made on or after the round start, admin accounts left out). Keep the start in
+// step with the other round-start cutoffs when a new round begins.
+const LOCKED_IN_ROUND_START_ISO = new Date("2026-10-09T05:30:00Z").toISOString();
+
+function LockedInCardBody({ data, roundLabel, endsText }) {
+  const shown = (data.rows || []).filter(r => r.n > 0).slice(0, 8);
+  const maxN = Math.max(1, ...shown.map(r => r.n));
+  const rest = Math.max(0, (data.matches || 0) - shown.length);
+  return (
+    <div style={{ padding: "44px 22px 22px" }}>
+      <div style={{ textAlign: "center", fontSize: 12, fontWeight: 800, color: "#94a3b8", letterSpacing: 2.5, textTransform: "uppercase" }}>{roundLabel}</div>
+      <div style={{ textAlign: "center", marginTop: 6 }}>
+        <span style={{
+          fontSize: 84, fontWeight: 900, lineHeight: 1, letterSpacing: -2,
+          background: "linear-gradient(90deg,#4ade80,#818cf8,#f59e0b)",
+          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+        }}>{data.total}</span>
+      </div>
+      <div style={{ textAlign: "center", fontSize: 17, fontWeight: 900, color: "#f0f0f0", textTransform: "uppercase", letterSpacing: 1.5, marginTop: 2 }}>🔒 Predictions locked in</div>
+      <div style={{ textAlign: "center", fontSize: 13, fontWeight: 600, color: "#e2e8f0", marginTop: 6 }}>
+        {data.players} {data.players === 1 ? "player" : "players"} · {data.matches} leaderboard {data.matches === 1 ? "match" : "matches"} open
+      </div>
+
+      {shown.length > 0 && (
+        <div style={{ marginTop: 20, background: "#0d0d18", border: "1px solid #1e1e30", borderRadius: 12, padding: "12px 14px" }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Most predicted matches</div>
+          {shown.map(r => (
+            <div key={r.label} style={{ marginBottom: 9 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "baseline" }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.label}</span>
+                <span style={{ fontSize: 14, fontWeight: 900, color: "#4ade80", flexShrink: 0 }}>{r.n}</span>
+              </div>
+              <div style={{ height: 6, background: "#1a1a2e", borderRadius: 3, marginTop: 4, overflow: "hidden" }}>
+                <div style={{ width: `${(r.n / maxN) * 100}%`, height: "100%", borderRadius: 3, background: "linear-gradient(90deg,#4ade80,#818cf8)" }} />
+              </div>
+            </div>
+          ))}
+          {rest > 0 && <div style={{ fontSize: 12, fontWeight: 600, color: "#94a3b8", textAlign: "center" }}>+{rest} more {rest === 1 ? "match" : "matches"}</div>}
+        </div>
+      )}
+
+      <div style={{ marginTop: 18, textAlign: "center" }}>
+        <div style={{ fontSize: 13, fontWeight: 800, color: "#fbbf24" }}>Free to play · Top 5 win every round</div>
+        {endsText && <div style={{ fontSize: 12, fontWeight: 600, color: "#94a3b8", marginTop: 3 }}>{endsText}</div>}
+      </div>
+    </div>
+  );
+}
+
+function LockedInGraphic({ supabase }) {
+  const cardRef = useRef(null);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [downloading, setDownloading] = useState(false);
+  const [roundLabel, setRoundLabel] = useState("Round 3");
+  const [endsText, setEndsText] = useState("Round 3 ends Sunday 23:59");
+
+  const load = async () => {
+    setLoading(true); setError("");
+    try {
+      const key = (h, a) => `${(h || "").trim().toLowerCase()}|${(a || "").trim().toLowerCase()}`;
+      const { data: fx, error: fxErr } = await supabase.from("leaderboard_fixtures").select("home_team, away_team");
+      if (fxErr) throw fxErr;
+      const curated = new Map((fx || []).map(f => [key(f.home_team, f.away_team), { label: `${f.home_team} v ${f.away_team}`, n: 0 }]));
+
+      // Page through predictions so a busy round is never cut off at 1000 rows.
+      let all = [];
+      for (let from = 0; from < 50000; from += 1000) {
+        const { data: page, error: pe } = await supabase
+          .from("predictions")
+          .select("user_id, home_team, away_team")
+          .gte("created_at", LOCKED_IN_ROUND_START_ISO)
+          .order("created_at", { ascending: true })
+          .range(from, from + 999);
+        if (pe) throw pe;
+        all = all.concat(page || []);
+        if (!page || page.length < 1000) break;
+      }
+      const mine = all.filter(p => curated.has(key(p.home_team, p.away_team)));
+      const ids = [...new Set(mine.map(p => p.user_id))];
+      const roleById = {};
+      for (let i = 0; i < ids.length; i += 200) {
+        const { data: pr } = await supabase.from("profiles").select("id, role").in("id", ids.slice(i, i + 200));
+        (pr || []).forEach(p => { roleById[p.id] = p.role; });
+      }
+      const counted = mine.filter(p => roleById[p.user_id] !== "admin");
+      counted.forEach(p => { curated.get(key(p.home_team, p.away_team)).n += 1; });
+      const rows = [...curated.values()].sort((a, b) => b.n - a.n);
+      setData({ total: counted.length, players: new Set(counted.map(p => p.user_id)).size, matches: rows.length, rows });
+    } catch (e) {
+      setError("Could not load the numbers: " + ((e && e.message) || "unknown error"));
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { if (supabase) load(); }, []);
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, "deep433-predictions-locked-in.png", "#0a0a12", transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Live count of predictions locked in for the round (leaderboard matches only, admin accounts left out). Refresh before you download.</div>
+      <input value={roundLabel} onChange={e => setRoundLabel(e.target.value)} placeholder="Round label" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+      <input value={endsText} onChange={e => setEndsText(e.target.value)} placeholder="Line at the bottom, e.g. Round 3 ends Sunday 23:59" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+      <button onClick={load} disabled={loading} style={{ background: "linear-gradient(135deg,#818cf8,#6366f1)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
+        {loading ? "Loading..." : "🔄 Refresh numbers"}
+      </button>
+      {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
+      {data && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <LockedInCardBody data={data} roundLabel={roundLabel} endsText={endsText} />
+          </GraphicCard>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── BRACKET GRAPHIC ─────────────────────────────────────────────────────────
 function BracketGraphic({ history = [] }) {
   const cardRef = useRef(null);
@@ -11657,6 +11791,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "leaderboardshare", label: "🏅 Leaderboard Share Card" },
     { id: "top5explained", label: "🏅 Top 5 Explained" },
     { id: "roundcompare", label: "📊 Last Two Rounds Compared" },
+    { id: "lockedin", label: "🔒 Predictions Locked In" },
     { id: "curatedmatches", label: "📋 Curated Matches Cards" },
     { id: "h2h",      label: "🆚 Player H2H" },
     { id: "matchh2h", label: "📋 Match H2H" },
@@ -11731,6 +11866,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "leaderboardshare" && <LeaderboardGraphic supabase={supabase} />}
       {activeSection === "top5explained" && <Top5ExplainedGraphic supabase={supabase} />}
       {activeSection === "roundcompare" && <RoundCompareGraphic supabase={supabase} />}
+      {activeSection === "lockedin" && <LockedInGraphic supabase={supabase} />}
       {activeSection === "curatedmatches" && <CuratedMatchesGraphic supabase={supabase} />}
       {activeSection === "h2h"      && <PlayerH2HGraphic />}
       {activeSection === "matchh2h" && <MatchH2HGraphic />}
