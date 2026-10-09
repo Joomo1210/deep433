@@ -1730,6 +1730,8 @@ if (!session && !guestMode) {
               <div style={{ height: 6, background: "#1a1a2e", borderRadius: 3, marginTop: 6, overflow: "hidden" }}>
                 <div style={{ width: `${(shown / 30) * 100}%`, height: "100%", background: colour, borderRadius: 3, transition: "width .3s" }} />
               </div>
+              {/* Display only: change this text when a new round starts. */}
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", marginTop: 5 }}>Round 3 ends Sunday 23:59</div>
             </div>
           </div>
         );
