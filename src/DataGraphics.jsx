@@ -1833,9 +1833,13 @@ const ukDayKey = d => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Londo
 const ukDayLabel = key => new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", weekday: "long", day: "numeric", month: "long" }).format(new Date(key + "T12:00:00Z"));
 
 function LockedInCardBody({ data, roundLabel, endsText, dayLabel }) {
-  const shown = (data.rows || []).filter(r => r.n > 0).slice(0, 10);
+  // Up to 10 matches: the original roomy list (matches with picks only).
+  // More than 10 (a full match day): list every match in a compact layout.
+  const allRows = data.rows || [];
+  const compact = allRows.length > 10;
+  const shown = compact ? allRows : allRows.filter(r => r.n > 0).slice(0, 10);
   const maxN = Math.max(1, ...shown.map(r => r.n));
-  const rest = Math.max(0, (data.matches || 0) - shown.length);
+  const rest = compact ? 0 : Math.max(0, (data.matches || 0) - shown.length);
   return (
     <div style={{ padding: "44px 22px 22px" }}>
       <div style={{ textAlign: "center", fontSize: 12, fontWeight: 800, color: "#94a3b8", letterSpacing: 2.5, textTransform: "uppercase" }}>{roundLabel}{dayLabel ? ` · ${dayLabel}` : ""}</div>
@@ -1853,14 +1857,14 @@ function LockedInCardBody({ data, roundLabel, endsText, dayLabel }) {
 
       {shown.length > 0 && (
         <div style={{ marginTop: 20, background: "#0d0d18", border: "1px solid #1e1e30", borderRadius: 12, padding: "12px 14px" }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Most predicted matches</div>
+          <div style={{ fontSize: 11, fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>{compact ? "Predictions by match" : "Most predicted matches"}</div>
           {shown.map(r => (
-            <div key={r.label} style={{ marginBottom: 9 }}>
+            <div key={r.label} style={{ marginBottom: compact ? 6 : 9 }}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "baseline" }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.label}</span>
-                <span style={{ fontSize: 14, fontWeight: 900, color: "#4ade80", flexShrink: 0 }}>{r.n}</span>
+                <span style={{ fontSize: compact ? 11 : 13, fontWeight: 700, color: r.n > 0 ? "#f0f0f0" : "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.label}</span>
+                <span style={{ fontSize: compact ? 12 : 14, fontWeight: 900, color: r.n > 0 ? "#4ade80" : "#94a3b8", flexShrink: 0 }}>{r.n}</span>
               </div>
-              <div style={{ height: 6, background: "#1a1a2e", borderRadius: 3, marginTop: 4, overflow: "hidden" }}>
+              <div style={{ height: compact ? 4 : 6, background: "#1a1a2e", borderRadius: 3, marginTop: compact ? 2 : 4, overflow: "hidden" }}>
                 <div style={{ width: `${(r.n / maxN) * 100}%`, height: "100%", borderRadius: 3, background: "linear-gradient(90deg,#4ade80,#818cf8)" }} />
               </div>
             </div>
