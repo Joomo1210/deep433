@@ -1832,7 +1832,7 @@ const LOCKED_IN_ROUND_START_ISO = new Date("2026-10-09T05:30:00Z").toISOString()
 const ukDayKey = d => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(d));
 const ukDayLabel = key => new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", weekday: "long", day: "numeric", month: "long" }).format(new Date(key + "T12:00:00Z"));
 
-function LockedInCardBody({ data, roundLabel, endsText, dayLabel }) {
+function LockedInCardBody({ data, roundLabel, endsText, dayLabel, part = 1, parts = 1 }) {
   // Up to 10 matches: the original roomy list (matches with picks only).
   // More than 10 (a full match day): list every match in a compact layout.
   const allRows = data.rows || [];
@@ -1854,6 +1854,7 @@ function LockedInCardBody({ data, roundLabel, endsText, dayLabel }) {
       <div style={{ textAlign: "center", fontSize: 13, fontWeight: 600, color: "#e2e8f0", marginTop: 6 }}>
         {data.players} {data.players === 1 ? "player" : "players"} · {data.matches} leaderboard {data.matches === 1 ? "match" : "matches"}{dayLabel ? "" : " open"}
       </div>
+      {parts > 1 && <div style={{ textAlign: "center", fontSize: 11, fontWeight: 800, color: "#fbbf24", letterSpacing: 1.5, textTransform: "uppercase", marginTop: 6 }}>Part {part} of {parts}</div>}
 
       {shown.length > 0 && (
         <div style={{ marginTop: 20, background: "#0d0d18", border: "1px solid #1e1e30", borderRadius: 12, padding: "12px 14px" }}>
@@ -1885,6 +1886,7 @@ function LockedInGraphic({ supabase }) {
   const cardRef = useRef(null);
   const [raw, setRaw] = useState(null);
   const [selDay, setSelDay] = useState("");
+  const [part, setPart] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [downloading, setDownloading] = useState(false);
@@ -1944,11 +1946,16 @@ function LockedInGraphic({ supabase }) {
     data = { total: picks.length, players: new Set(picks.map(p => p.user_id)).size, matches: rows.length, rows };
   }
   const dayLabel = selDay && selDay !== "all" ? ukDayLabel(selDay) : "";
+  // A big match day is split into cards of up to 15 matches so each stays readable on X.
+  const PER_CARD = 15;
+  const parts = data ? Math.max(1, Math.ceil(data.rows.length / PER_CARD)) : 1;
+  const partIdx = Math.min(part, parts - 1);
+  const cardData = data ? { ...data, rows: parts > 1 ? data.rows.slice(partIdx * PER_CARD, (partIdx + 1) * PER_CARD) : data.rows } : null;
 
   const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, "deep433-predictions-locked-in.png", "#0a0a12", transparent);
+      await downloadCardImage(cardRef.current, parts > 1 ? `deep433-predictions-locked-in-part${partIdx + 1}.png` : "deep433-predictions-locked-in.png", "#0a0a12", transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
@@ -1957,7 +1964,7 @@ function LockedInGraphic({ supabase }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ fontSize: 11, color: "#e2e8f0" }}>Live count of predictions locked in for the round (leaderboard matches only, admin accounts left out). Refresh before you download.</div>
       {raw && dayOptions.length > 0 && (
-        <select value={selDay} onChange={e => setSelDay(e.target.value)} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}>
+        <select value={selDay} onChange={e => { setSelDay(e.target.value); setPart(0); }} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}>
           <option value="all">All match days (whole round)</option>
           {dayOptions.map(d => <option key={d} value={d}>{ukDayLabel(d)}</option>)}
         </select>
@@ -1970,8 +1977,17 @@ function LockedInGraphic({ supabase }) {
       {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
       {data && (
         <>
+          {parts > 1 && (
+            <div style={{ display: "flex", gap: 8 }}>
+              {Array.from({ length: parts }, (_, i) => (
+                <button key={i} onClick={() => setPart(i)} style={{ flex: 1, background: i === partIdx ? "linear-gradient(135deg,#fbbf24,#f59e0b)" : "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: i === partIdx ? "#1a1000" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 800, padding: "8px" }}>
+                  Part {i + 1} of {parts}
+                </button>
+              ))}
+            </div>
+          )}
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <LockedInCardBody data={data} roundLabel={roundLabel} endsText={endsText} dayLabel={dayLabel} />
+            <LockedInCardBody data={cardData} roundLabel={roundLabel} endsText={endsText} dayLabel={dayLabel} part={partIdx + 1} parts={parts} />
           </GraphicCard>
           <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
