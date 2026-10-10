@@ -755,7 +755,7 @@ export default function FootballPredictor() {
       for (const dateStr of datesToCheck) {
         for (const league of SCORES_TAB_LEAGUES) {
           try {
-            const res = await fetch(`/api/live-scores?leagueId=${league.id}&date=${dateStr}`);
+            const res = await cachedFetch(`/api/live-scores?leagueId=${league.id}&date=${dateStr}`, 120000);
             if (!res.ok) continue;
             const data = await res.json();
             const match = (data.fixtures || []).find(f => {
@@ -828,7 +828,7 @@ export default function FootballPredictor() {
     setAwardsStep(1);
     setAwardsForm({ sf1: "", sf2: "", sf3: "", sf4: "", finalist1: "", finalist2: "", winner: "" });
     Promise.all([
-      fetch(`/api/bracket?leagueId=${awardsLeague}`).then(r => r.json()),
+      cachedFetch(`/api/bracket?leagueId=${awardsLeague}`, 1800000).then(r => r.json()),
       supabase.from("tournament_predictions").select("*").eq("user_id", session.user.id).eq("league_id", awardsLeague).maybeSingle(),
     ]).then(([bracketData, predResult]) => {
       const teams = new Set();
@@ -1091,7 +1091,7 @@ export default function FootballPredictor() {
   useEffect(() => {
     setFixturesLoading(true);
     setFixtures([]);
-    fetch(`/api/fixtures?leagueId=${selectedLeague}`)
+    cachedFetch(`/api/fixtures?leagueId=${selectedLeague}`, 600000)
       .then(r => r.json())
       .then(d => {
         const fixtureList = d.fixtures || [];
@@ -1108,12 +1108,38 @@ export default function FootballPredictor() {
     if (tab !== "leaderboard" || userRole !== "admin") return;
     setAdminFixturesLoading(true);
     setAdminFixtureOptions([]);
-    fetch(`/api/fixtures?leagueId=${adminFixtureLeague}`)
+    cachedFetch(`/api/fixtures?leagueId=${adminFixtureLeague}`, 600000)
       .then(r => r.json())
       .then(d => setAdminFixtureOptions(d.fixtures || []))
       .catch(() => {})
       .finally(() => setAdminFixturesLoading(false));
   }, [tab, userRole, adminFixtureLeague]);
+// Shared in-memory cache for read-only /api GET calls. Identical requests
+// within the TTL reuse the earlier answer, and identical requests made at the
+// same moment share one network call, so tab switches, repeat clicks and
+// result checks stop spending upstream API quota. Failed responses are never
+// cached.
+const _apiCache = new Map();
+const _apiInflight = new Map();
+async function cachedFetch(url, ttlMs = 120000) {
+  const hit = _apiCache.get(url);
+  if (hit && Date.now() - hit.t < ttlMs) return { ok: true, status: 200, json: async () => hit.data };
+  let p = _apiInflight.get(url);
+  if (!p) {
+    p = fetch(url)
+      .then(async res => {
+        if (!res.ok) return { ok: false, status: res.status };
+        const data = await res.json();
+        _apiCache.set(url, { t: Date.now(), data });
+        return { ok: true, status: res.status, data };
+      })
+      .finally(() => _apiInflight.delete(url));
+    _apiInflight.set(url, p);
+  }
+  const r = await p;
+  if (!r.ok) return { ok: false, status: r.status, json: async () => ({}) };
+  return { ok: true, status: r.status, json: async () => r.data };
+}
 const SCORES_TAB_LEAGUES = [
   { id: "pl", label: "Premier League" },
   { id: "laliga", label: "La Liga" },
@@ -1134,7 +1160,7 @@ useEffect(() => {
       const allFixtures = [];
       for (const league of SCORES_TAB_LEAGUES) {
         try {
-          const res = await fetch(`/api/live-scores?leagueId=${league.id}&date=${scoresDate}`);
+          const res = await cachedFetch(`/api/live-scores?leagueId=${league.id}&date=${scoresDate}`, scoresDate === getLocalDateString() ? 120000 : 600000);
           if (res.ok) {
             const data = await res.json();
             const tagged = (data.fixtures || []).map(f => ({ ...f, leagueLabel: league.label }));
@@ -1154,7 +1180,7 @@ useEffect(() => {
   // match does, so polling them on the same interval was pointless.
   const isToday = scoresDate === getLocalDateString();
   if (!isToday) return;
-  const interval = setInterval(fetchLive, 3 * 60 * 1000);
+  const interval = setInterval(() => { if (!document.hidden) fetchLive(); }, 3 * 60 * 1000);
   return () => clearInterval(interval);
 }, [session, scoresDate]);
 
@@ -1368,6 +1394,37 @@ useEffect(() => {
     const up = `${userHome}-${userAway}`;
     setUserPrediction(up);
     setError(""); setLoading(true); setResult(null);
+    // AI analysis is admin only. Regular players just lock in their own
+    // scoreline, which saves straight to the database without calling
+    // /api/predict at all, so an AI or data API limit can never block entries
+    // and no AI calls are spent on player predictions.
+    if (userRole !== "admin") {
+      try {
+        if (session) {
+          const plainPayload = {
+            user_id: session.user.id, home_team: homeTeam, away_team: awayTeam,
+            user_prediction: up, ai_prediction: "", ai_verdict: "", ai_data: null,
+          };
+          let { data: saved, error: saveError } = await supabase.from("predictions").insert({
+            ...plainPayload,
+            user_outcome: derivedOutcome, user_over_under: derivedOverUnder,
+          }).select().single();
+          if (saveError) {
+            ({ data: saved } = await supabase.from("predictions").insert(plainPayload).select().single());
+          }
+          if (!saved) {
+            setError("Couldn't save your prediction. Please try again.");
+            setLoading(false);
+            return;
+          }
+          setHistory(prev => [saved, ...prev]);
+          setSavedPredictionId(saved.id);
+        }
+        setStep(4);
+      } catch (e) { setError(e.message || "Something went wrong. Try again."); }
+      setLoading(false);
+      return;
+    }
     try {
       const res = await fetch("/api/predict", {
         method: "POST",
@@ -1542,7 +1599,7 @@ useEffect(() => {
     ];
     for (const date of dates) {
       try {
-        const res = await fetch(`/api/match-lineup?leagueId=${league}&date=${date}&home=${encodeURIComponent(home)}&away=${encodeURIComponent(away)}`);
+        const res = await cachedFetch(`/api/match-lineup?leagueId=${league}&date=${date}&home=${encodeURIComponent(home)}&away=${encodeURIComponent(away)}`, 60000);
         const data = await res.json();
         if (data.available) {
           setConfirmedLineup(data);
@@ -1582,7 +1639,7 @@ useEffect(() => {
     }
     const fid = selectedFixtureId || findLiveFixture(homeTeam, awayTeam)?.fixtureId;
     if (fid) {
-      fetch(`/api/fixture-insights?fixtureId=${fid}`)
+      cachedFetch(`/api/fixture-insights?fixtureId=${fid}`, 300000)
         .then(r => r.json())
         .then(data => { if (data.available) setDeepInsights(data); })
         .catch(() => {});
@@ -1963,7 +2020,7 @@ if (!session && !guestMode) {
                 </div>
                 {error && <div style={{ color: "#f87171", fontSize: 16, marginBottom: 12 }}>{error}</div>}
                 <button className="predict-btn" onClick={submitAndReveal} disabled={loading} style={{ marginBottom: 10 }}>
-                  {loading ? "AI is thinking..." : "🤖 Submit & See What AI Predicts"}
+                  {loading ? (userRole === "admin" ? "AI is thinking..." : "Locking in...") : (userRole === "admin" ? "🤖 Submit & See What AI Predicts" : "🔒 Lock In My Prediction")}
                 </button>
                 <button className="ghost-btn" onClick={() => setStep(1)}>← Back</button>
               </div>
@@ -1971,7 +2028,17 @@ if (!session && !guestMode) {
             {loading && (
               <div className="card" style={{ textAlign: "center", padding: "40px 20px" }}>
                 <div className="spinner" style={{ marginBottom: 16 }} />
-                <div style={{ color: "#e2e8f0", fontSize: 16 }}>AI is analysing the match...</div>
+                <div style={{ color: "#e2e8f0", fontSize: 16 }}>{userRole === "admin" ? "AI is analysing the match..." : "Saving your prediction..."}</div>
+              </div>
+            )}
+            {step === 4 && !loading && (
+              <div className="card" style={{ textAlign: "center", padding: "32px 20px" }}>
+                <div style={{ fontSize: 40, marginBottom: 8 }}>🔒</div>
+                <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>{homeTeam} vs {awayTeam} · {leagueLabel}</div>
+                <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, marginBottom: 6, textTransform: "uppercase" }}>👤 Your Call</div>
+                <div style={{ fontSize: 56, fontWeight: 900, color: "#4ade80", marginBottom: 12 }}>{userPrediction}</div>
+                <div style={{ fontSize: 16, color: "#e2e8f0", marginBottom: 20 }}>Prediction locked in. Good luck! 🍀</div>
+                <button className="predict-btn" onClick={resetPredict}>Predict another match</button>
               </div>
             )}
             {step === 3 && result && !loading && (
@@ -2561,11 +2628,13 @@ if (!session && !guestMode) {
                       <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 700, marginBottom: 4 }}>👤 YOU</div>
                       <div style={{ fontSize: 20, fontWeight: 900, color: "#4ade80" }}>{h.user_prediction}</div>
                     </div>
-                    <div style={{ fontSize: 15, color: "#333" }}>vs</div>
+                    {h.ai_prediction && <div style={{ fontSize: 15, color: "#333" }}>vs</div>}
+                    {h.ai_prediction && (
                     <div style={{ flex: 1, textAlign: "center", background: "#13131f", borderRadius: 8, padding: "8px 4px" }}>
                       <div style={{ fontSize: 13, color: "#f59e0b", fontWeight: 700, marginBottom: 4 }}>🤖 AI</div>
                       <div style={{ fontSize: 20, fontWeight: 900, color: "#f59e0b" }}>{h.ai_prediction}</div>
                     </div>
+                    )}
                     {h.actual_score && (
                       <div style={{ flex: 1, textAlign: "center", background: "#13131f", borderRadius: 8, padding: "8px 4px" }}>
                         <div style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 700, marginBottom: 4 }}>RESULT</div>
@@ -2614,7 +2683,7 @@ if (!session && !guestMode) {
                       )}
                     </div>
                   )}
-                  {h.result && (
+                  {h.result && h.ai_prediction && (
                     <div style={{ textAlign: "center", padding: "8px", background: wc + "11", border: `1px solid ${wc}33`, borderRadius: 8, fontSize: 16, fontWeight: 700, color: wc, marginBottom: 8 }}>
                       {h.result === "user" ? "🏆 You beat the AI!" : h.result === "ai" ? "🤖 AI wins this one" : "🤝 It's a tie"}
                     </div>
