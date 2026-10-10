@@ -1828,13 +1828,17 @@ function RecapGraphic({ history = [], supabase }) {
 // step with the other round-start cutoffs when a new round begins.
 const LOCKED_IN_ROUND_START_ISO = new Date("2026-10-09T05:30:00Z").toISOString();
 
-function LockedInCardBody({ data, roundLabel, endsText }) {
+// UK calendar day for a kick-off time (used to split the card by match day).
+const ukDayKey = d => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(d));
+const ukDayLabel = key => new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", weekday: "long", day: "numeric", month: "long" }).format(new Date(key + "T12:00:00Z"));
+
+function LockedInCardBody({ data, roundLabel, endsText, dayLabel }) {
   const shown = (data.rows || []).filter(r => r.n > 0).slice(0, 10);
   const maxN = Math.max(1, ...shown.map(r => r.n));
   const rest = Math.max(0, (data.matches || 0) - shown.length);
   return (
     <div style={{ padding: "44px 22px 22px" }}>
-      <div style={{ textAlign: "center", fontSize: 12, fontWeight: 800, color: "#94a3b8", letterSpacing: 2.5, textTransform: "uppercase" }}>{roundLabel}</div>
+      <div style={{ textAlign: "center", fontSize: 12, fontWeight: 800, color: "#94a3b8", letterSpacing: 2.5, textTransform: "uppercase" }}>{roundLabel}{dayLabel ? ` · ${dayLabel}` : ""}</div>
       <div style={{ textAlign: "center", marginTop: 6 }}>
         <span style={{
           fontSize: 84, fontWeight: 900, lineHeight: 1, letterSpacing: -2,
@@ -1844,7 +1848,7 @@ function LockedInCardBody({ data, roundLabel, endsText }) {
       </div>
       <div style={{ textAlign: "center", fontSize: 17, fontWeight: 900, color: "#f0f0f0", textTransform: "uppercase", letterSpacing: 1.5, marginTop: 2 }}>🔒 Predictions locked in</div>
       <div style={{ textAlign: "center", fontSize: 13, fontWeight: 600, color: "#e2e8f0", marginTop: 6 }}>
-        {data.players} {data.players === 1 ? "player" : "players"} · {data.matches} leaderboard {data.matches === 1 ? "match" : "matches"} open
+        {data.players} {data.players === 1 ? "player" : "players"} · {data.matches} leaderboard {data.matches === 1 ? "match" : "matches"}{dayLabel ? "" : " open"}
       </div>
 
       {shown.length > 0 && (
@@ -1875,7 +1879,8 @@ function LockedInCardBody({ data, roundLabel, endsText }) {
 
 function LockedInGraphic({ supabase }) {
   const cardRef = useRef(null);
-  const [data, setData] = useState(null);
+  const [raw, setRaw] = useState(null);
+  const [selDay, setSelDay] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [downloading, setDownloading] = useState(false);
@@ -1886,9 +1891,9 @@ function LockedInGraphic({ supabase }) {
     setLoading(true); setError("");
     try {
       const key = (h, a) => `${(h || "").trim().toLowerCase()}|${(a || "").trim().toLowerCase()}`;
-      const { data: fx, error: fxErr } = await supabase.from("leaderboard_fixtures").select("home_team, away_team");
+      const { data: fx, error: fxErr } = await supabase.from("leaderboard_fixtures").select("home_team, away_team, kickoff");
       if (fxErr) throw fxErr;
-      const curated = new Map((fx || []).map(f => [key(f.home_team, f.away_team), { label: `${f.home_team} v ${f.away_team}`, n: 0 }]));
+      const curated = new Map((fx || []).map(f => [key(f.home_team, f.away_team), { label: `${f.home_team} v ${f.away_team}`, day: f.kickoff ? ukDayKey(f.kickoff) : "none" }]));
 
       // Page through predictions so a busy round is never cut off at 1000 rows.
       let all = [];
@@ -1911,9 +1916,12 @@ function LockedInGraphic({ supabase }) {
         (pr || []).forEach(p => { roleById[p.id] = p.role; });
       }
       const counted = mine.filter(p => roleById[p.user_id] !== "admin");
-      counted.forEach(p => { curated.get(key(p.home_team, p.away_team)).n += 1; });
-      const rows = [...curated.values()].sort((a, b) => b.n - a.n);
-      setData({ total: counted.length, players: new Set(counted.map(p => p.user_id)).size, matches: rows.length, rows });
+      const picks = counted.map(p => ({ user_id: p.user_id, label: curated.get(key(p.home_team, p.away_team)).label, day: curated.get(key(p.home_team, p.away_team)).day }));
+      const fixtures = [...curated.values()];
+      setRaw({ picks, fixtures });
+      // Default to today's match day (UK) when there are fixtures for it, else the whole round.
+      const today = ukDayKey(new Date());
+      setSelDay(prev => prev || (fixtures.some(f => f.day === today) ? today : "all"));
     } catch (e) {
       setError("Could not load the numbers: " + ((e && e.message) || "unknown error"));
     }
@@ -1921,6 +1929,17 @@ function LockedInGraphic({ supabase }) {
   };
 
   useEffect(() => { if (supabase) load(); }, []);
+
+  const dayOptions = raw ? [...new Set(raw.fixtures.map(f => f.day).filter(d => d !== "none"))].sort() : [];
+  let data = null;
+  if (raw) {
+    const inDay = d => selDay === "all" || d === selDay;
+    const fx = raw.fixtures.filter(f => inDay(f.day));
+    const picks = raw.picks.filter(p => inDay(p.day));
+    const rows = fx.map(f => ({ label: f.label, n: picks.filter(p => p.label === f.label).length })).sort((a, b) => b.n - a.n);
+    data = { total: picks.length, players: new Set(picks.map(p => p.user_id)).size, matches: rows.length, rows };
+  }
+  const dayLabel = selDay && selDay !== "all" ? ukDayLabel(selDay) : "";
 
   const download = async (transparent = false) => {
     setDownloading(true);
@@ -1933,6 +1952,12 @@ function LockedInGraphic({ supabase }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ fontSize: 11, color: "#e2e8f0" }}>Live count of predictions locked in for the round (leaderboard matches only, admin accounts left out). Refresh before you download.</div>
+      {raw && dayOptions.length > 0 && (
+        <select value={selDay} onChange={e => setSelDay(e.target.value)} style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}>
+          <option value="all">All match days (whole round)</option>
+          {dayOptions.map(d => <option key={d} value={d}>{ukDayLabel(d)}</option>)}
+        </select>
+      )}
       <input value={roundLabel} onChange={e => setRoundLabel(e.target.value)} placeholder="Round label" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
       <input value={endsText} onChange={e => setEndsText(e.target.value)} placeholder="Line at the bottom, e.g. Round 3 ends Sunday 23:59" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
       <button onClick={load} disabled={loading} style={{ background: "linear-gradient(135deg,#818cf8,#6366f1)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
@@ -1942,7 +1967,7 @@ function LockedInGraphic({ supabase }) {
       {data && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <LockedInCardBody data={data} roundLabel={roundLabel} endsText={endsText} />
+            <LockedInCardBody data={data} roundLabel={roundLabel} endsText={endsText} dayLabel={dayLabel} />
           </GraphicCard>
           <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
