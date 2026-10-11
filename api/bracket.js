@@ -107,6 +107,7 @@ export default async function handler(req, res) {
       ? allRounds.slice(-2)
       : allRounds.slice(currentIdx, currentIdx + 2);
 
+    res.setHeader("Cache-Control", "public, s-maxage=1800, stale-while-revalidate=3600");
     res.status(200).json({ available: true, rounds: displayRounds });
   } catch (err) {
     res.status(500).json({ available: false, error: err.message });
