@@ -53,6 +53,7 @@ export default async function handler(req, res) {
         })
         .sort((a, b) => (a.minute || 0) - (b.minute || 0));
 
+      res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
       return res.status(200).json({ events });
     } catch (err) {
       return res.status(200).json({ events: [], error: err.message });
