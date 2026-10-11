@@ -20,9 +20,33 @@ const supabase = createClient(
 // the separate /api/match-lineup endpoint, unaffected by this change.
 // ─────────────────────────────────────────────────────────────────────────
 
+// Public anon key (same one already used above); only used to verify the caller's own token.
+const ANON_KEY_FALLBACK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlkaXNkenR3cHZlZHRucm9paWFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NTczOTQsImV4cCI6MjA5NzAzMzM5NH0.YmF0DqWmopuJs9Ci1hdFi0XDMoWRD0yfVwOuuG7WVyE';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST' && req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
   const { homeTeam, awayTeam, league, fixtureId } = req.method === 'GET' ? req.query : req.body;
+
+  // Admin only. The match analysis spends API-Football quota (2 calls per
+  // new fixture), and regular players never use it, so anyone who is not a
+  // signed-in admin is turned away BEFORE any API-Football call is made.
+  // The role is read with the caller's own token, the same way the app reads
+  // its own profile, so no extra database permission is needed.
+  const authToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  if (!authToken) return res.status(401).json({ error: 'Sign in required' });
+  try {
+    const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || ANON_KEY_FALLBACK;
+    const asUser = createClient('https://idisdztwpvedtnroiian.supabase.co', anonKey, {
+      global: { headers: { Authorization: `Bearer ${authToken}` } },
+    });
+    const { data: userData } = await asUser.auth.getUser(authToken);
+    const uid = userData?.user?.id;
+    if (!uid) return res.status(401).json({ error: 'Sign in required' });
+    const { data: prof } = await asUser.from('profiles').select('role').eq('id', uid).single();
+    if (prof?.role !== 'admin') return res.status(403).json({ error: 'Match analysis is admin only' });
+  } catch {
+    return res.status(401).json({ error: 'Could not verify your account' });
+  }
 
   // Any cached row from before the deterministic rewrite is stale, hallucinated
   // AI prose (named-player tactical narrative, not derived from real stats) and
