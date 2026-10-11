@@ -74,6 +74,7 @@ export default async function handler(req, res) {
     const def  = norm(comp.def?.home,  comp.def?.away);
     const form = norm(comp.form?.home, comp.form?.away);
 
+    res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
     return res.status(200).json({
       available: true,
       winner,
