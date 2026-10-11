@@ -2190,6 +2190,216 @@ function ResultsGraphic({ supabase }) {
   );
 }
 
+// ─── RESULTS ROUNDUP CARD (up to 10 finished matches on one card) ────────────
+// Final scores plus how the locked-in predictions went, ranked by points the
+// predictions earned. Shows the highest and lowest scoring matches together.
+// Same counting rules as the leaderboard (curated matches only, made on/after
+// the round start, admin accounts left out). No player names.
+function RoundupCardBody({ rows, roundLabel, dayLabel, part = 1, parts = 1, groups = false, topN = 5, totals }) {
+  const rowEl = (r, flag) => {
+    const pct = n => (r.n ? (n / r.n) * 100 : 0);
+    return (
+      <div key={r.k} style={{ background: "#0d0d18", border: "1px solid #1e1e30", borderRadius: 10, padding: "7px 11px", marginBottom: 5 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+          <span style={{ fontSize: 12, fontWeight: 800, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{flag ? flag + " " : ""}{r.home} v {r.away}</span>
+          <span style={{ fontSize: 17, fontWeight: 900, color: "#fbbf24", flexShrink: 0, letterSpacing: 1 }}>{r.score}</span>
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, marginTop: 2 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8" }}>🔒 {r.n} · 🎯 {r.exact} · ✅ {r.outcomeOnly} · ❌ {r.missed}</span>
+          <span style={{ fontSize: 11, fontWeight: 900, color: "#818cf8", flexShrink: 0 }}>{r.points} pts · {r.avg.toFixed(1)} avg</span>
+        </div>
+        <div style={{ display: "flex", height: 4, borderRadius: 2, overflow: "hidden", marginTop: 4, background: "#1a1a2e" }}>
+          <div style={{ width: `${pct(r.exact)}%`, background: "#4ade80" }} />
+          <div style={{ width: `${pct(r.outcomeOnly)}%`, background: "#818cf8" }} />
+          <div style={{ width: `${pct(r.missed)}%`, background: "#f87171" }} />
+        </div>
+      </div>
+    );
+  };
+  const heading = (txt, color) => (
+    <div style={{ fontSize: 11, fontWeight: 800, color, textTransform: "uppercase", letterSpacing: 1.2, margin: "10px 0 6px" }}>{txt}</div>
+  );
+  return (
+    <div style={{ padding: "44px 20px 20px" }}>
+      <div style={{ textAlign: "center", fontSize: 12, fontWeight: 800, color: "#94a3b8", letterSpacing: 2.5, textTransform: "uppercase" }}>{roundLabel}{dayLabel ? ` · ${dayLabel}` : ""}</div>
+      <div style={{ textAlign: "center", marginTop: 6, fontSize: 24, fontWeight: 900, color: "#f0f0f0", textTransform: "uppercase", letterSpacing: 1 }}>📊 How predictions went</div>
+      <div style={{ textAlign: "center", fontSize: 12, fontWeight: 600, color: "#e2e8f0", marginTop: 4 }}>
+        {totals.matches} {totals.matches === 1 ? "match" : "matches"} · {totals.preds} predictions · {totals.points} points handed out
+      </div>
+      {parts > 1 && <div style={{ textAlign: "center", fontSize: 11, fontWeight: 800, color: "#fbbf24", letterSpacing: 1.5, textTransform: "uppercase", marginTop: 6 }}>Part {part} of {parts}</div>}
+
+      <div style={{ marginTop: 8 }}>
+        {groups ? (
+          <>
+            {heading("🔥 Most points handed out", "#4ade80")}
+            {rows.slice(0, topN).map(r => rowEl(r))}
+            {heading("🥶 Toughest to predict", "#f87171")}
+            {rows.slice(topN).map(r => rowEl(r))}
+          </>
+        ) : (
+          rows.map((r, i) => rowEl(r, rows.length > 2 && i === 0 ? "🔥" : rows.length > 2 && i === rows.length - 1 ? "🥶" : ""))
+        )}
+      </div>
+
+      <div style={{ marginTop: 12, display: "flex", justifyContent: "center", gap: 12, fontSize: 10, fontWeight: 700, color: "#94a3b8" }}>
+        <span>🎯 Exact 5</span><span>✅ Right result 3</span><span>⚽ Over/Under +1</span>
+      </div>
+      <div style={{ marginTop: 10, textAlign: "center", fontSize: 13, fontWeight: 800, color: "#fbbf24" }}>Free to play · Top 5 win every round</div>
+    </div>
+  );
+}
+
+function RoundupGraphic({ supabase }) {
+  const cardRef = useRef(null);
+  const [raw, setRaw] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [downloading, setDownloading] = useState(false);
+  const [roundLabel, setRoundLabel] = useState("Round 3");
+  const [selDay, setSelDay] = useState("all");
+  const [mode, setMode] = useState("extremes");
+  const [rankBy, setRankBy] = useState("avg");
+  const [part, setPart] = useState(0);
+
+  const load = async () => {
+    setLoading(true); setError("");
+    try {
+      const key = (h, a) => `${(h || "").trim().toLowerCase()}|${(a || "").trim().toLowerCase()}`;
+      const { data: fx, error: fxErr } = await supabase.from("leaderboard_fixtures").select("home_team, away_team, kickoff");
+      if (fxErr) throw fxErr;
+      const curated = new Map((fx || []).map(f => [key(f.home_team, f.away_team), { home: f.home_team, away: f.away_team, day: f.kickoff ? ukDayKey(f.kickoff) : "none", preds: [] }]));
+      let all = [];
+      for (let from = 0; from < 50000; from += 1000) {
+        const { data: page, error: pe } = await supabase
+          .from("predictions")
+          .select("user_id, home_team, away_team, user_prediction, user_outcome, user_over_under, actual_score")
+          .gte("created_at", LOCKED_IN_ROUND_START_ISO)
+          .order("created_at", { ascending: true })
+          .range(from, from + 999);
+        if (pe) throw pe;
+        all = all.concat(page || []);
+        if (!page || page.length < 1000) break;
+      }
+      const mine = all.filter(p => curated.has(key(p.home_team, p.away_team)));
+      const ids = [...new Set(mine.map(p => p.user_id))];
+      const roleById = {};
+      for (let i = 0; i < ids.length; i += 200) {
+        const { data: pr } = await supabase.from("profiles").select("id, role").in("id", ids.slice(i, i + 200));
+        (pr || []).forEach(p => { roleById[p.id] = p.role; });
+      }
+      mine.filter(p => roleById[p.user_id] !== "admin").forEach(p => curated.get(key(p.home_team, p.away_team)).preds.push(p));
+      const list = [...curated.entries()]
+        .map(([k, m]) => ({ k, ...m, n: m.preds.length, resolved: ((m.preds.find(p => p.actual_score) || {}).actual_score || "").replace(/\s+/g, "") }))
+        .filter(m => m.n > 0);
+      setRaw(list);
+    } catch (e) {
+      setError("Could not load the numbers: " + ((e && e.message) || "unknown error"));
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { if (supabase) load(); }, []);
+
+  // Score every finished match with the leaderboard rules.
+  const scored = (raw || []).map(m => {
+    const parts = m.resolved.split("-").map(n => parseInt(n));
+    if (!(parts.length === 2 && parts.every(n => !Number.isNaN(n)))) return null;
+    const [ah, aa] = parts;
+    const outcome = ah > aa ? "Home Win" : aa > ah ? "Away Win" : "Draw";
+    const ou = (ah + aa) > 2.5 ? "Over 2.5" : "Under 2.5";
+    const r = { k: m.k, home: m.home, away: m.away, day: m.day, score: `${ah}-${aa}`, n: m.n, exact: 0, outcomeOnly: 0, missed: 0, points: 0 };
+    m.preds.forEach(p => {
+      if (p.user_prediction === `${ah}-${aa}`) { r.exact += 1; r.points += 5; }
+      else if (p.user_outcome && p.user_outcome === outcome) { r.outcomeOnly += 1; r.points += 3; }
+      else r.missed += 1;
+      if (p.user_over_under && p.user_over_under === ou) r.points += 1;
+    });
+    r.avg = r.n ? r.points / r.n : 0;
+    return r;
+  }).filter(Boolean);
+
+  const dayOptions = [...new Set(scored.map(r => r.day).filter(d => d !== "none"))].sort();
+  const inDay = r => selDay === "all" || r.day === selDay;
+  const finished = scored.filter(inDay)
+    .sort((a, b) => rankBy === "total" ? (b.points - a.points) || (b.avg - a.avg) : (b.avg - a.avg) || (b.points - a.points));
+  const pendingCount = (raw || []).filter(m => (selDay === "all" || m.day === selDay) && !scored.some(s => s.k === m.k)).length;
+
+  const PER = 10;
+  let cardRows = finished, groups = false, parts = 1;
+  if (mode === "extremes") {
+    if (finished.length > PER) { cardRows = [...finished.slice(0, 5), ...finished.slice(-5)]; groups = true; }
+  } else {
+    parts = Math.max(1, Math.ceil(finished.length / PER));
+    cardRows = finished.slice(Math.min(part, parts - 1) * PER, Math.min(part, parts - 1) * PER + PER);
+  }
+  const partIdx = Math.min(part, parts - 1);
+  const totals = {
+    matches: finished.length,
+    preds: finished.reduce((s, r) => s + r.n, 0),
+    points: finished.reduce((s, r) => s + r.points, 0),
+  };
+  const dayLabel = selDay && selDay !== "all" ? ukDayLabel(selDay) : "";
+
+  const download = async (transparent = false) => {
+    setDownloading(true);
+    try {
+      await downloadCardImage(cardRef.current, parts > 1 ? `deep433-results-roundup-part${partIdx + 1}.png` : "deep433-results-roundup.png", "#0a0a12", transparent);
+    } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+
+  const inputStyle = { width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Up to 10 finished matches on one card: final scores and how the locked-in predictions went, ranked by points. Default shows the 5 highest and 5 lowest scoring matches. No player names. Only matches with a resolved result are included.</div>
+      <button onClick={load} disabled={loading} style={{ background: "linear-gradient(135deg,#818cf8,#6366f1)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
+        {loading ? "Loading..." : "🔄 Refresh numbers"}
+      </button>
+      {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
+      {raw && (
+        <>
+          <select value={selDay} onChange={e => { setSelDay(e.target.value); setPart(0); }} style={inputStyle}>
+            <option value="all">All match days (whole round)</option>
+            {dayOptions.map(d => <option key={d} value={d}>{ukDayLabel(d)}</option>)}
+          </select>
+          <select value={mode} onChange={e => { setMode(e.target.value); setPart(0); }} style={inputStyle}>
+            <option value="extremes">Highest and lowest scoring (5 + 5)</option>
+            <option value="all">All finished matches (10 per card)</option>
+          </select>
+          <select value={rankBy} onChange={e => { setRankBy(e.target.value); setPart(0); }} style={inputStyle}>
+            <option value="avg">Rank by average points per prediction</option>
+            <option value="total">Rank by total points handed out</option>
+          </select>
+          <input value={roundLabel} onChange={e => setRoundLabel(e.target.value)} placeholder="Round label" style={inputStyle} />
+          {pendingCount > 0 && <div style={{ color: "#fbbf24", fontSize: 12 }}>{pendingCount} {pendingCount === 1 ? "match is" : "matches are"} still waiting on a result and left off the card.</div>}
+        </>
+      )}
+      {raw && finished.length === 0 && <div style={{ color: "#fbbf24", fontSize: 13 }}>No finished matches with a resolved result yet.</div>}
+      {parts > 1 && (
+        <div style={{ display: "flex", gap: 6 }}>
+          {Array.from({ length: parts }, (_, i) => (
+            <button key={i} onClick={() => setPart(i)} style={{ flex: 1, background: i === partIdx ? "#818cf8" : "none", border: "1px solid #818cf8", borderRadius: 8, color: i === partIdx ? "#0a0a12" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 800, padding: "7px" }}>Part {i + 1}</button>
+          ))}
+        </div>
+      )}
+      {finished.length > 0 && (
+        <>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <RoundupCardBody rows={cardRows} roundLabel={roundLabel} dayLabel={dayLabel} part={partIdx + 1} parts={parts} groups={groups} totals={totals} />
+          </GraphicCard>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download PNG"}
+          </button>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%" }}>
+            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── BRACKET GRAPHIC ─────────────────────────────────────────────────────────
 function BracketGraphic({ history = [] }) {
   const cardRef = useRef(null);
@@ -12027,6 +12237,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "roundcompare", label: "📊 Last Two Rounds Compared" },
     { id: "lockedin", label: "🔒 Predictions Locked In" },
     { id: "matchresults", label: "📊 Match Results (how predictions went)" },
+    { id: "resultsroundup", label: "🔥 Results Roundup (best and toughest matches)" },
     { id: "curatedmatches", label: "📋 Curated Matches Cards" },
     { id: "h2h",      label: "🆚 Player H2H" },
     { id: "matchh2h", label: "📋 Match H2H" },
@@ -12103,6 +12314,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "roundcompare" && <RoundCompareGraphic supabase={supabase} />}
       {activeSection === "lockedin" && <LockedInGraphic supabase={supabase} />}
       {activeSection === "matchresults" && <ResultsGraphic supabase={supabase} />}
+      {activeSection === "resultsroundup" && <RoundupGraphic supabase={supabase} />}
       {activeSection === "curatedmatches" && <CuratedMatchesGraphic supabase={supabase} />}
       {activeSection === "h2h"      && <PlayerH2HGraphic />}
       {activeSection === "matchh2h" && <MatchH2HGraphic />}
