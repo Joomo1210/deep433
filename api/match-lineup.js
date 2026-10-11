@@ -95,6 +95,7 @@ export default async function handler(req, res) {
 
       if (!homeL?.startXI?.length) return res.status(200).json({ available: false, reason: "Lineups not yet announced" });
 
+      res.setHeader("Cache-Control", "public, s-maxage=60");
       return res.status(200).json({
         available: true,
         home: mapTeam(homeL, true),
@@ -138,6 +139,7 @@ export default async function handler(req, res) {
 
     if (!homeLineup?.startXI?.length) return res.status(200).json({ available: false, reason: "Lineups not yet announced" });
 
+    res.setHeader("Cache-Control", "public, s-maxage=60");
     return res.status(200).json({
       available: true,
       home: mapTeam(homeLineup, false),
