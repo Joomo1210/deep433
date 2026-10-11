@@ -1463,7 +1463,7 @@ useEffect(() => {
     try {
       const res = await fetch("/api/predict", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
         body: JSON.stringify({ homeTeam, awayTeam, league: leagueLabel, fixtureId: selectedFixtureId || findLiveFixture(homeTeam, awayTeam)?.fixtureId || null }),
       });
       if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `Error ${res.status}`); }
