@@ -41,6 +41,13 @@ const ROUND_HEAD_START = {
 // (and the database trigger) when a new round starts.
 const COUNTER_ROUND_START = new Date("2026-10-09T05:30:00Z");
 
+// European leaderboard (Champions League + Europa League): one combined table
+// from Tue 13 Oct 06:30 UK, ongoing (no end date), with its own 30 prediction cap.
+// When a new Euro round starts, change this date, the trigger date in euro_leaderboard.sql,
+// and save the finished table in Stats Lab first.
+// Its matches live in the euro_fixtures table, apart from the weekly leaderboard.
+const EURO_START_DATE = new Date("2026-10-13T05:30:00Z");
+
 // ─── Past leaderboard rounds (display only) ──────────────────────────────────
 // Saved round results come from the leaderboard_round_results table. If the
 // table is missing or empty, these built-in results for the first two rounds
@@ -669,6 +676,10 @@ export default function FootballPredictor() {
   const [usernameDraft, setUsernameDraft] = useState("");
   const [leaderboard, setLeaderboard] = useState([]);
   const [leaderboardFixtures, setLeaderboardFixtures] = useState([]);
+  // "weekly" = the usual weekly leaderboard, "euro" = Champions League + Europa League board.
+  const [contest, setContest] = useState("weekly");
+  const fxTable = contest === "euro" ? "euro_fixtures" : "leaderboard_fixtures";
+  const [euroBadgeKeys, setEuroBadgeKeys] = useState(() => new Set());
   // Display only: set of curated match keys (lowercased home|away) used to
   // badge fixtures that count toward the leaderboard. Never used for scoring.
   const [curatedBadgeKeys, setCuratedBadgeKeys] = useState(() => new Set());
@@ -854,7 +865,7 @@ export default function FootballPredictor() {
     // warning and nothing to undo it. A round's cutoff should only ever
     // move when someone deliberately changes this line for a genuinely
     // new round, never on its own just because the month changed.
-    const LEADERBOARD_START_DATE = new Date("2026-10-09T05:30:00Z");
+    const LEADERBOARD_START_DATE = contest === "euro" ? EURO_START_DATE : new Date("2026-10-09T05:30:00Z");
     const cutoff = LEADERBOARD_START_DATE.toISOString();
     const { data: preds, error: predsError } = await supabase
       .from("predictions")
@@ -875,7 +886,7 @@ export default function FootballPredictor() {
     // leaderboard, not every prediction anyone happens to submit through
     // the app. Matched by team name pair (case-insensitive), since
     // predictions store plain team name text, not a fixture ID.
-    const { data: fixturesData, error: fixturesError } = await supabase.from("leaderboard_fixtures").select("home_team, away_team");
+    const { data: fixturesData, error: fixturesError } = await supabase.from(fxTable).select("home_team, away_team");
     if (fixturesError) {
       setLeaderboardDebug({ step: "fetching curated fixtures", error: fixturesError.message });
       setLeaderboardLoading(false);
@@ -971,8 +982,8 @@ export default function FootballPredictor() {
         name: nameById[id] || null, // null = never set a display name
         role: roleById[id],
         total: byUser[id].total,
-        points: byUser[id].points + (ROUND_HEAD_START[id] || 0),
-        headStart: ROUND_HEAD_START[id] || 0,
+        points: byUser[id].points + (contest === "euro" ? 0 : (ROUND_HEAD_START[id] || 0)),
+        headStart: contest === "euro" ? 0 : (ROUND_HEAD_START[id] || 0),
         exact: byUser[id].exact,
         outcomeOnly: byUser[id].outcomeOnly,
         overUnderHits: byUser[id].overUnderHits,
@@ -1016,7 +1027,7 @@ export default function FootballPredictor() {
     if (tab !== "leaderboard") return;
     if (userRole === "admin") { loadLeaderboardFixtures(); loadAllPendingPredictions(); }
     computeLeaderboard();
-  }, [tab, session]);
+  }, [tab, session, contest]);
   // Display only: load curated keys so the Predict tab can badge fixtures
   // that count toward the leaderboard. Any failure just means no badges.
   useEffect(() => {
@@ -1028,6 +1039,11 @@ export default function FootballPredictor() {
         if (cancelled || !data) return;
         setCuratedBadgeKeys(new Set(data.map(f => `${(f.home_team || "").trim().toLowerCase()}|${(f.away_team || "").trim().toLowerCase()}`)));
       } catch (e) { /* no badges, nothing else affected */ }
+      try {
+        const { data: ed } = await supabase.from("euro_fixtures").select("home_team, away_team");
+        if (cancelled || !ed) return;
+        setEuroBadgeKeys(new Set(ed.map(f => `${(f.home_team || "").trim().toLowerCase()}|${(f.away_team || "").trim().toLowerCase()}`)));
+      } catch (e) { /* no euro badges, nothing else affected */ }
     })();
     return () => { cancelled = true; };
   }, [tab]);
@@ -1147,6 +1163,7 @@ const SCORES_TAB_LEAGUES = [
   { id: "bundesliga", label: "Bundesliga" },
   { id: "ligue1", label: "Ligue 1" },
   { id: "ucl", label: "Champions League" },
+  { id: "uel", label: "Europa League" },
   { id: "championship", label: "Championship" },
   { id: "communityshield", label: "Community Shield" },
   { id: "leaguecup", label: "League Cup" },
@@ -1229,7 +1246,7 @@ useEffect(() => {
     setUsername(name.trim());
   };
   const loadLeaderboardFixtures = async () => {
-    const { data } = await supabase.from("leaderboard_fixtures").select("*").order("created_at", { ascending: false });
+    const { data } = await supabase.from(fxTable).select("*").order("created_at", { ascending: false });
     setLeaderboardFixtures(data || []);
   };
   // Lets admin resolve anyone's pending prediction directly, without ever
@@ -1246,7 +1263,7 @@ useEffect(() => {
     // resolve leaderboard results, not every pending prediction anyone's
     // ever made through the app, most of which were never eligible to
     // score at all and just make it harder to find the ones that matter.
-    const { data: fixturesData } = await supabase.from("leaderboard_fixtures").select("home_team, away_team");
+    const { data: fixturesData } = await supabase.from(fxTable).select("home_team, away_team");
     const curatedKeys = new Set(
       (fixturesData || []).map(f => `${f.home_team.trim().toLowerCase()}|${f.away_team.trim().toLowerCase()}`)
     );
@@ -1276,7 +1293,7 @@ useEffect(() => {
       setFixtureAdminError("This fixture is already on the curated list.");
       return;
     }
-    let { error } = await supabase.from("leaderboard_fixtures").insert({
+    let { error } = await supabase.from(fxTable).insert({
       home_team: newFixtureHome.trim(),
       away_team: newFixtureAway.trim(),
       kickoff: newFixtureKickoff || null,
@@ -1286,7 +1303,7 @@ useEffect(() => {
       // The two new columns haven't been created in Supabase yet. Save the
       // match anyway so adding one is never blocked, but say so plainly
       // instead of silently dropping the date and league.
-      const retry = await supabase.from("leaderboard_fixtures").insert({
+      const retry = await supabase.from(fxTable).insert({
         home_team: newFixtureHome.trim(),
         away_team: newFixtureAway.trim(),
       });
@@ -1320,7 +1337,7 @@ useEffect(() => {
     : "";
   const removeLeaderboardFixture = async (id) => {
     setFixtureAdminError("");
-    const { error } = await supabase.from("leaderboard_fixtures").delete().eq("id", id);
+    const { error } = await supabase.from(fxTable).delete().eq("id", id);
     if (error) { setFixtureAdminError(error.message || "Failed to remove this fixture."); return; }
     loadLeaderboardFixtures();
     computeLeaderboard();
@@ -1379,17 +1396,35 @@ useEffect(() => {
     // prediction. Matched the same case-insensitive home|away key
     // comparison already used for leaderboard scoring, for consistency.
     const CONTEST_START_DATE = new Date("2026-10-09T05:30:00Z");
-    const { data: curatedFixturesForCap } = await supabase.from("leaderboard_fixtures").select("home_team, away_team");
-    const curatedKeysForCap = new Set(
-      (curatedFixturesForCap || []).map(f => `${f.home_team.trim().toLowerCase()}|${f.away_team.trim().toLowerCase()}`)
-    );
-    const contestPredictionsCount = history.filter(h =>
-      new Date(h.created_at) >= CONTEST_START_DATE &&
-      curatedKeysForCap.has(`${(h.home_team || "").trim().toLowerCase()}|${(h.away_team || "").trim().toLowerCase()}`)
-    ).length;
-    if (contestPredictionsCount >= 30) {
-      setError("You've reached the 30 curated-match prediction limit for this contest round.");
-      return;
+    const keyOf = (h, a) => `${(h || "").trim().toLowerCase()}|${(a || "").trim().toLowerCase()}`;
+    // European board has its own 30 cap. A missing euro_fixtures table or a
+    // failed lookup just means no euro match is recognised, so nothing breaks.
+    let euroKeysForCap = new Set();
+    try {
+      const { data: euroFx } = await supabase.from("euro_fixtures").select("home_team, away_team");
+      euroKeysForCap = new Set((euroFx || []).map(f => keyOf(f.home_team, f.away_team)));
+    } catch (e) { /* weekly cap logic below still applies */ }
+    if (euroKeysForCap.has(keyOf(homeTeam, awayTeam))) {
+      const euroCount = history.filter(h =>
+        new Date(h.created_at) >= EURO_START_DATE && euroKeysForCap.has(keyOf(h.home_team, h.away_team))
+      ).length;
+      if (euroCount >= 30) {
+        setError("You've reached the 30 prediction limit for the European leaderboard.");
+        return;
+      }
+    } else {
+      const { data: curatedFixturesForCap } = await supabase.from("leaderboard_fixtures").select("home_team, away_team");
+      const curatedKeysForCap = new Set(
+        (curatedFixturesForCap || []).map(f => `${f.home_team.trim().toLowerCase()}|${f.away_team.trim().toLowerCase()}`)
+      );
+      const contestPredictionsCount = history.filter(h =>
+        new Date(h.created_at) >= CONTEST_START_DATE &&
+        curatedKeysForCap.has(`${(h.home_team || "").trim().toLowerCase()}|${(h.away_team || "").trim().toLowerCase()}`)
+      ).length;
+      if (contestPredictionsCount >= 30) {
+        setError("You've reached the 30 curated-match prediction limit for this contest round.");
+        return;
+      }
     }
     const up = `${userHome}-${userAway}`;
     setUserPrediction(up);
@@ -1793,6 +1828,32 @@ if (!session && !guestMode) {
           </div>
         );
       })()}
+      {/* European leaderboard counter: predictions made on curated Champions League / Europa League matches. Display only. */}
+      {tab === "predict" && session && euroBadgeKeys.size > 0 && (() => {
+        const made = history.filter(h =>
+          new Date(h.created_at) >= EURO_START_DATE &&
+          euroBadgeKeys.has(`${(h.home_team || "").trim().toLowerCase()}|${(h.away_team || "").trim().toLowerCase()}`)
+        ).length;
+        const shown = Math.min(made, 30);
+        const left = Math.max(0, 30 - made);
+        const colour = left === 0 ? "#f87171" : left <= 5 ? "#fbbf24" : "#4ade80";
+        return (
+          <div style={{ background: "#0d0d18", borderBottom: "1px solid #1a1a2e", padding: "10px 16px" }}>
+            <div style={{ maxWidth: 600, margin: "0 auto" }}>
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
+                <div style={{ fontSize: 22, fontWeight: 900, color: colour, letterSpacing: -0.3 }}>🇪🇺 {shown} of 30 predicted</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#94a3b8" }}>
+                  {left === 0 ? "All 30 Euro picks made" : `${left} left on the Euro board`}
+                </div>
+              </div>
+              <div style={{ height: 6, background: "#1a1a2e", borderRadius: 3, marginTop: 6, overflow: "hidden" }}>
+                <div style={{ width: `${(shown / 30) * 100}%`, height: "100%", background: colour, borderRadius: 3, transition: "width .3s" }} />
+              </div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", marginTop: 5 }}>Champions League and Europa League board · runs every Tue, Wed and Thu</div>
+            </div>
+          </div>
+        );
+      })()}
       {/* One-time prompt to set a display name — predictions were only ever
           linked to an internal user ID, meaningless on a public leaderboard.
           Shown until the user actually sets one, then never again. */}
@@ -1961,6 +2022,9 @@ if (!session && !guestMode) {
                               <div style={{ fontSize: 12, color: "#333", marginTop: 2 }}>{f.round}</div>
                               {curatedBadgeKeys.has(`${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`) && (
                                 <div style={{ fontSize: 10, fontWeight: 800, color: "#fbbf24", marginTop: 3, whiteSpace: "nowrap" }}>🏅 Leaderboard</div>
+                              )}
+                              {euroBadgeKeys.has(`${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`) && (
+                                <div style={{ fontSize: 10, fontWeight: 800, color: "#818cf8", marginTop: 3, whiteSpace: "nowrap" }}>🇪🇺 Euro board</div>
                               )}
                             </div>
                             <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, justifyContent: "flex-end" }}>
@@ -2792,7 +2856,19 @@ if (!session && !guestMode) {
       )}
       {tab === "leaderboard" && (
         <div style={{ maxWidth: 600, margin: "0 auto", padding: "14px 12px" }}>
-          <div style={{ fontSize: 16, fontWeight: 900, color: "#f0f0f0", marginBottom: 2 }}>🏅 Leaderboard</div>
+          <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+            {[{ id: "weekly", label: "🏅 Weekly" }, { id: "euro", label: "🇪🇺 Champions & Europa League" }].map(c => (
+              <button key={c.id}
+                onClick={() => { setContest(c.id); setAdminFixtureLeague(c.id === "euro" ? "ucl" : "pl"); }}
+                style={{ flex: 1, background: contest === c.id ? "linear-gradient(135deg,#818cf8,#6366f1)" : "none", border: `1px solid ${contest === c.id ? "#818cf8" : "#2a2a3a"}`, borderRadius: 8, color: contest === c.id ? "#fff" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 800, padding: "8px 6px" }}>
+                {c.label}
+              </button>
+            ))}
+          </div>
+          <div style={{ fontSize: 16, fontWeight: 900, color: "#f0f0f0", marginBottom: 2 }}>{contest === "euro" ? "🇪🇺 European Leaderboard" : "🏅 Leaderboard"}</div>
+          {contest === "euro" && (
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", marginBottom: 6 }}>Champions League Tue and Wed, Europa League Thu · started Tue 13 Oct · one running table</div>
+          )}
           <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6 }}>
             Exact: 5pts · Outcome only: 3pts · O/U: +1pt
           </div>
@@ -2823,7 +2899,7 @@ if (!session && !guestMode) {
                 onChange={e => setAdminFixtureLeague(e.target.value)}
                 style={{ width: "100%", background: "#1a1a24", border: "1px solid #2a2a3a", borderRadius: 6, color: "#f0f0f0", fontSize: 12, padding: "6px 8px", outline: "none", fontFamily: "inherit", marginBottom: 6 }}
               >
-                {LEAGUES.map(l => <option key={l.id} value={l.id}>{l.label}</option>)}
+                {(contest === "euro" ? LEAGUES.filter(l => l.id === "ucl" || l.id === "uel") : LEAGUES).map(l => <option key={l.id} value={l.id}>{l.label}</option>)}
               </select>
               <select
                 onChange={e => {
@@ -2997,7 +3073,7 @@ if (!session && !guestMode) {
             </div>
           ))}
           {/* Last two rounds comparison. Reads saved rounds from leaderboard_round_results. Display only. */}
-          {(() => {
+          {contest === "weekly" && (() => {
             const rounds = (pastRoundsData && pastRoundsData.length >= 2 ? pastRoundsData : FALLBACK_PAST_ROUNDS).slice(-2);
             const [rA, rB] = rounds;
             const sA = summariseRound(rA.rows), sB = summariseRound(rB.rows);
