@@ -176,6 +176,12 @@ export default async function handler(req, res) {
       };
     });
 
+    // Shared Vercel cache so every player is served from one provider call:
+    // short while a match is live, longer when nothing is in play.
+    const anyLive = fixtures.some(f => f.status === "live");
+    res.setHeader("Cache-Control", anyLive
+      ? "public, s-maxage=30, stale-while-revalidate=60"
+      : "public, s-maxage=120, stale-while-revalidate=300");
     return res.status(200).json({ fixtures });
   } catch (err) {
     return res.status(500).json({ error: "Failed to fetch live scores", detail: err.message });
