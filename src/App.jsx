@@ -46,6 +46,11 @@ const COUNTER_ROUND_START = new Date("2026-10-09T05:30:00Z");
 // When a new Euro round starts, change this date, the trigger date in euro_leaderboard.sql,
 // and save the finished table in Stats Lab first.
 // Its matches live in the euro_fixtures table, apart from the weekly leaderboard.
+// Weekly league status. Round 3 ended Sun 11 Oct 23:59 UK. While the next round is not
+// set up, the weekly counter shows "not open yet". When the next round is ready, set
+// WEEKLY_ROUND_END to its end time and WEEKLY_ROUND_LABEL to e.g. "Round 4 ends Sunday 23:59".
+const WEEKLY_ROUND_END = new Date("2026-10-11T22:59:00Z");
+const WEEKLY_ROUND_LABEL = "Round 3 ends Sunday 23:59";
 const EURO_START_DATE = new Date("2026-10-12T00:00:00Z");
 
 // ─── Past leaderboard rounds (display only) ──────────────────────────────────
@@ -1931,7 +1936,15 @@ if (!session && !guestMode) {
       )}
       {/* Prediction counter: how many curated leaderboard predictions this player has
           made towards the 30 cap. Display only. Same count the cap itself uses. */}
-      {tab === "predict" && session && curatedBadgeKeys.size > 0 && (() => {
+      {tab === "predict" && session && new Date() > WEEKLY_ROUND_END && (
+        <div style={{ background: "#0d0d18", borderBottom: "1px solid #1a1a2e", padding: "10px 16px" }}>
+          <div style={{ maxWidth: PAGE_MAX_WIDTH, margin: "0 auto" }}>
+            <div style={{ fontSize: 16, fontWeight: 900, color: "#fbbf24" }}>🏅 Weekly league: not open yet</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#94a3b8", marginTop: 3 }}>Round 3 is complete. The next round opens soon. Euro matches below are open now.</div>
+          </div>
+        </div>
+      )}
+      {tab === "predict" && session && curatedBadgeKeys.size > 0 && new Date() <= WEEKLY_ROUND_END && (() => {
         const made = history.filter(h =>
           new Date(h.created_at) >= COUNTER_ROUND_START &&
           curatedBadgeKeys.has(`${(h.home_team || "").trim().toLowerCase()}|${(h.away_team || "").trim().toLowerCase()}`)
@@ -1952,7 +1965,7 @@ if (!session && !guestMode) {
                 <div style={{ width: `${(shown / 30) * 100}%`, height: "100%", background: colour, borderRadius: 3, transition: "width .3s" }} />
               </div>
               {/* Display only: change this text when a new round starts. */}
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", marginTop: 5 }}>Round 3 ends Sunday 23:59</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", marginTop: 5 }}>{WEEKLY_ROUND_LABEL}</div>
             </div>
           </div>
         );
