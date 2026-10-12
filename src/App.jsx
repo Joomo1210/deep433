@@ -127,6 +127,23 @@ const LEAGUE_LOGOS = {
   npfl:         "https://media.api-sports.io/football/leagues/399.png",
   scotprem:     "https://media.api-sports.io/football/leagues/179.png",
 };
+// Lucide-style line icons (inline so no extra package is needed). Same size and colour as the text.
+const ICON_PATHS = {
+  zap: <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />,
+  history: <><path d="M3 3v5h5" /><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8" /><path d="M12 7v5l4 2" /></>,
+  activity: <path d="M22 12h-4l-3 9L9 3l-3 9H2" />,
+  brain: <path d="M9 4a3 3 0 0 0-3 3 3 3 0 0 0-2 5 3 3 0 0 0 2 5 3 3 0 0 0 6 1V4a3 3 0 0 0-3 0Zm6 0a3 3 0 0 1 3 3 3 3 0 0 1 2 5 3 3 0 0 1-2 5 3 3 0 0 1-6 1" />,
+  chart: <><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></>,
+  trophy: <><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" /><path d="M4 22h16" /><path d="M10 14.66V17c0 .55-.47.98-1.04 1.21C7.85 18.75 7 20.24 7 22" /><path d="M14 14.66V17c0 .55.47.98 1.04 1.21C16.15 18.75 17 20.24 17 22" /><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" /></>,
+};
+const NavIcon = ({ name }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
+    {ICON_PATHS[name]}
+  </svg>
+);
+// Shared page width. Header, tab bar and all page content use this so their edges line up.
+const PAGE_MAX_WIDTH = 760;
+
 // Home screen config. Display only.
 // PRIZE_AMOUNTS: leave as null to show "Top 5 win every round" with no amounts.
 // To show amounts, set it to e.g. ["£20","£12","£8","£5","£5"] (1st to 5th).
@@ -669,6 +686,13 @@ export default function FootballPredictor() {
   const [step, setStep] = useState(1);
   const [fixtureSearch, setFixtureSearch] = useState("");
   const [showMoreComps, setShowMoreComps] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const close = (e) => { if (!e.target.closest || !e.target.closest("[data-user-menu]")) setUserMenuOpen(false); };
+    document.addEventListener("click", close);
+    return () => document.removeEventListener("click", close);
+  }, [userMenuOpen]);
   const [historySearch, setHistorySearch] = useState("");
   const [liveData, setLiveData] = useState([]);
   const [scoresDate, setScoresDate] = useState(getLocalDateString());
@@ -1698,16 +1722,14 @@ useEffect(() => {
     return capped + '%';
   };
   const TABS = !session ? [
-    { id: "predict", label: "⚡ Predict" },
+    { id: "predict", label: "Predict", icon: "zap" },
   ] : [
-    { id: "predict",   label: "⚡ Predict" },
-    { id: "scores",    label: "🔴 Scores" },
-    { id: "awards",    label: "🎖 Season Awards" },
-    ...(userRole === "admin" ? [{ id: "graphics", label: "📊 Stats Lab" }] : []),
-    { id: "standings", label: "🏆 You vs AI" },
-    { id: "badges",    label: "🏅 Badges" },
-    { id: "history",   label: "📋 History" },
-    { id: "leaderboard", label: "🏅 Leaderboard" },
+    { id: "predict",     label: "Predict",     icon: "zap" },
+    { id: "history",     label: "History",     icon: "history" },
+    { id: "scores",      label: "Scores",      icon: "activity" },
+    { id: "standings",   label: "You vs AI",   icon: "brain" },
+    ...(userRole === "admin" ? [{ id: "graphics", label: "Stats Lab", icon: "chart" }] : []),
+    { id: "leaderboard", label: "Leaderboard", icon: "trophy" },
   ];
   if (authLoading) return (
     <div style={{ minHeight: "100vh", background: "#0a0a0f", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -1747,8 +1769,32 @@ if (!session && !guestMode) {
         .predict-btn:hover { opacity: 0.9; }
         .predict-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .ghost-btn { background: none; border: 1.5px solid #2a2a3a; border-radius: 10px; color: #e2e8f0; font-size: 14px; font-weight: 600; padding: 12px; cursor: pointer; width: 100%; font-family: inherit; }
-        .nav-tab { background: none; border: none; border-radius: 999px; color: #e2e8f0; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700; padding: 9px 14px; margin: 10px 0; transition: all 0.15s; white-space: nowrap; }
-        .nav-tab.active { background: #2EE66B; color: #04120a; box-shadow: 0 6px 0 -3px #2EE66B; }
+        .hdr { background: #0d0d18; border-bottom: 1px solid #1F2A36; position: sticky; top: 0; z-index: 30; }
+        .hdr-in { max-width: ${PAGE_MAX_WIDTH}px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .user-chip { display: flex; align-items: center; gap: 10px; background: #111820; border: 1px solid #1F2A36; border-radius: 999px; padding: 5px 14px 5px 5px; cursor: pointer; font-family: inherit; color: #fff; }
+        .user-chip:hover { border-color: #2EE66B; }
+        .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: #2EE66B; color: #0A0F14; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 15px; flex: none; }
+        .user-menu { position: absolute; right: 0; top: calc(100% + 8px); min-width: 170px; background: #111820; border: 1px solid #1F2A36; border-radius: 12px; padding: 6px; box-shadow: 0 12px 30px rgba(0,0,0,.5); }
+        .user-menu button { display: block; width: 100%; text-align: left; background: none; border: none; color: #C9D1D9; font-family: inherit; font-size: 14px; font-weight: 600; padding: 9px 12px; border-radius: 8px; cursor: pointer; }
+        .user-menu button:hover { background: #1a2430; color: #fff; }
+        .user-menu button.out { color: #f87171; border-top: 1px solid #1F2A36; border-radius: 0 0 8px 8px; margin-top: 4px; }
+        .tabbar { background: #0d0d18; border-bottom: 1px solid #1a1a2e; }
+        .tabbar-in { max-width: ${PAGE_MAX_WIDTH}px; margin: 0 auto; padding: 0 16px; position: relative; }
+        .tabbar-in::after { content: ""; position: absolute; top: 0; right: 16px; bottom: 0; width: 28px; pointer-events: none; background: linear-gradient(90deg, rgba(13,13,24,0), #0d0d18); }
+        .tabbar-scroll { display: flex; gap: 8px; overflow-x: auto; padding: 10px 24px 10px 0; scrollbar-width: none; }
+        .tabbar-scroll::-webkit-scrollbar { display: none; }
+        .nav-tab { display: inline-flex; align-items: center; gap: 8px; flex: none; background: #111820; border: 1px solid #1F2A36; border-radius: 999px; color: #C9D1D9; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 600; padding: 8px 16px; transition: all 0.15s; white-space: nowrap; }
+        .nav-tab:hover { border-color: #2EE66B; color: #fff; }
+        .nav-tab.gold { border-color: #F5C518; color: #F5C518; }
+        .nav-tab.gold:hover { border-color: #F5C518; color: #ffd84d; }
+        .nav-tab.active, .nav-tab.active:hover { background: #2EE66B; border-color: #2EE66B; color: #0A0F14; box-shadow: 0 0 12px rgba(46,230,107,0.35); }
+        .tab-count { background: #2EE66B; color: #0A0F14; border-radius: 999px; min-width: 18px; height: 18px; padding: 0 5px; font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; }
+        .nav-tab.active .tab-count { background: #0A0F14; color: #2EE66B; }
+        @media (max-width: 480px) {
+          .brand-tag { display: none; }
+          .user-chip { padding: 0; border: none; background: none; }
+          .user-chip .user-text { display: none; }
+        }
         .comp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .comp-card { background: #111820; border: 1px solid #1f2a35; border-radius: 14px; color: #f2f5f7; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 700; padding: 14px 6px 12px; text-align: center; transition: border-color 0.15s; }
         .comp-card img { width: 34px; height: 34px; object-fit: contain; display: block; margin: 0 auto 8px; }
@@ -1773,36 +1819,56 @@ if (!session && !guestMode) {
         .step-dot.active { background: #4ade80; }
         .step-dot.done { background: #22c55e; }
       `}</style>
-      <div style={{ background: "#0d0d18", borderBottom: "1px solid #1a1a2e", padding: "16px 20px" }}>
-        <div style={{ maxWidth: 600, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <img src="/deep433.jpg" alt="Deep433" style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", border: "2px solid #2EE66B" }} />
+      <div className="hdr">
+        <div className="hdr-in">
+          <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+            <img src="/deep433.jpg" alt="Deep433" style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", border: "2px solid #2EE66B", flex: "none" }} />
             <div>
               <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: 0.5, lineHeight: 1 }}>DEEP<span style={{ color: "#2EE66B" }}>433</span></div>
-              <div style={{ fontSize: 10, color: "#8b98a5", marginTop: 3, lineHeight: 1.3 }}>Football Intelligence.<br />Predictions. Analysis</div>
+              <div className="brand-tag" style={{ fontSize: 10, color: "#8b98a5", marginTop: 3, lineHeight: 1.3 }}>Football Intelligence.<br />Predictions. Analysis</div>
             </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {rank && <div style={{ textAlign: "right" }}><div style={{ fontSize: 17 }}>{rank.icon}</div><div style={{ fontSize: 13, color: rank.color, fontWeight: 700 }}>{rank.name}</div></div>}
-            {session && username && (
-              <div style={{ fontSize: 13, color: "#4ade80", fontWeight: 700 }}>👤 {username}</div>
-            )}
-            {session ? (
-              <button onClick={signOut} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "5px 10px" }}>Sign out</button>
-            ) : (
-              <button onClick={() => setGuestMode(false)} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px" }}>Sign In</button>
-            )}
-          </div>
+          {session ? (
+            <div data-user-menu style={{ position: "relative" }}>
+              <button className="user-chip" onClick={() => setUserMenuOpen(o => !o)} aria-haspopup="menu" aria-expanded={userMenuOpen}>
+                <span className="user-avatar">{(username || "?").trim().charAt(0).toUpperCase()}</span>
+                <span className="user-text" style={{ textAlign: "left", lineHeight: 1.15 }}>
+                  <span style={{ display: "block", fontSize: 14, fontWeight: 800, color: "#fff" }}>{username || "Player"}</span>
+                  {rank && <span style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#2EE66B" }}>{rank.icon} {rank.name}</span>}
+                </span>
+              </button>
+              {userMenuOpen && (
+                <div className="user-menu" role="menu">
+                  <button role="menuitem" onClick={() => { setTab("badges"); setUserMenuOpen(false); }}>Profile</button>
+                  <button role="menuitem" onClick={() => { setTab("history"); setUserMenuOpen(false); }}>History</button>
+                  <button role="menuitem" className="out" onClick={() => { setUserMenuOpen(false); signOut(); }}>Sign out</button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button onClick={() => setGuestMode(false)} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 6, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px" }}>Sign In</button>
+          )}
         </div>
       </div>
-      <div style={{ background: "#0d0d18", borderBottom: "1px solid #1a1a2e", overflowX: "auto" }}>
-        <div style={{ maxWidth: 600, margin: "0 auto", display: "flex", gap: 4, padding: "0 16px" }}>
-          {TABS.map(t => <button key={t.id} className={`nav-tab${tab === t.id ? " active" : ""}`} onClick={() => setTab(t.id)}>{t.label}</button>)}
+      <div className="tabbar">
+        <div className="tabbar-in">
+          <div className="tabbar-scroll">
+            {TABS.map(t => {
+              const histCount = t.id === "history" ? history.filter(h => new Date(h.created_at) >= COUNTER_ROUND_START).length : 0;
+              return (
+                <button key={t.id} className={`nav-tab${t.id === "history" && tab !== "history" ? " gold" : ""}${tab === t.id ? " active" : ""}`} onClick={() => setTab(t.id)}>
+                  <NavIcon name={t.icon} />
+                  {t.label}
+                  {histCount > 0 && <span className="tab-count">{histCount}</span>}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
       {/* Prize banner. Display only. Headline and amounts come from PRIZE_HEADLINE / PRIZE_AMOUNTS near the top of this file. */}
       {tab === "predict" && step === 1 && (
-        <div style={{ maxWidth: 600, margin: "0 auto", padding: "16px 16px 0" }}>
+        <div style={{ maxWidth: PAGE_MAX_WIDTH, margin: "0 auto", padding: "16px 16px 0" }}>
           <div style={{ borderRadius: 14, border: "1px solid #2EE66B59", padding: 16, background: "radial-gradient(circle at 85% 0%, rgba(46,230,107,.18), transparent 55%), linear-gradient(160deg,#0d2a1b,#0b1a14 70%)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
               <div>
@@ -1840,7 +1906,7 @@ if (!session && !guestMode) {
         const colour = left === 0 ? "#f87171" : left <= 5 ? "#fbbf24" : "#4ade80";
         return (
           <div style={{ background: "#0d0d18", borderBottom: "1px solid #1a1a2e", padding: "10px 16px" }}>
-            <div style={{ maxWidth: 600, margin: "0 auto" }}>
+            <div style={{ maxWidth: PAGE_MAX_WIDTH, margin: "0 auto" }}>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
                 <div style={{ fontSize: 22, fontWeight: 900, color: colour, letterSpacing: -0.3 }}>{shown} of 30 predicted</div>
                 <div style={{ fontSize: 12, fontWeight: 700, color: "#94a3b8" }}>
@@ -1867,7 +1933,7 @@ if (!session && !guestMode) {
         const colour = left === 0 ? "#f87171" : left <= 5 ? "#fbbf24" : "#4ade80";
         return (
           <div style={{ background: "#0d0d18", borderBottom: "1px solid #1a1a2e", padding: "10px 16px" }}>
-            <div style={{ maxWidth: 600, margin: "0 auto" }}>
+            <div style={{ maxWidth: PAGE_MAX_WIDTH, margin: "0 auto" }}>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
                 <div style={{ fontSize: 22, fontWeight: 900, color: colour, letterSpacing: -0.3 }}>🇪🇺 {shown} of 30 predicted</div>
                 <div style={{ fontSize: 12, fontWeight: 700, color: "#94a3b8" }}>
@@ -1887,7 +1953,7 @@ if (!session && !guestMode) {
           Shown until the user actually sets one, then never again. */}
       {session && !username && (
         <div style={{ background: "#1a1400", borderBottom: "1px solid #4ade8033", padding: "10px 20px" }}>
-          <div style={{ maxWidth: 600, margin: "0 auto", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <div style={{ maxWidth: PAGE_MAX_WIDTH, margin: "0 auto", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <span style={{ fontSize: 13, color: "#fbbf24", fontWeight: 700 }}>Set a display name to appear on the leaderboard:</span>
             <input
               value={usernameDraft}
@@ -1908,7 +1974,7 @@ if (!session && !guestMode) {
             <div key={f.fixtureId}>
               <div
                 onClick={() => setExpandedLive(expandedLive === f.fixtureId ? null : f.fixtureId)}
-                style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 16px", cursor: "pointer", maxWidth: 600, margin: "0 auto" }}
+                style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 16px", cursor: "pointer", maxWidth: PAGE_MAX_WIDTH, margin: "0 auto" }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                   <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#ef4444", animation: "pulse 1.5s infinite" }} />
@@ -1925,7 +1991,7 @@ if (!session && !guestMode) {
                 <span style={{ fontSize: 13, color: "#e2e8f0" }}>{expandedLive === f.fixtureId ? "▲" : "▼"}</span>
               </div>
               {expandedLive === f.fixtureId && (
-                <div style={{ background: "#0a0a0a", borderTop: "1px solid #1a1a1a", padding: "12px 16px", maxWidth: 600, margin: "0 auto" }}>
+                <div style={{ background: "#0a0a0a", borderTop: "1px solid #1a1a1a", padding: "12px 16px", maxWidth: PAGE_MAX_WIDTH, margin: "0 auto" }}>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 8, alignItems: "center", marginBottom: 12 }}>
                     <div style={{ textAlign: "center" }}>
                       <div style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>{f.home}</div>
@@ -1988,7 +2054,7 @@ if (!session && !guestMode) {
           <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }`}</style>
         </div>
       )}
-      <div style={{ maxWidth: 600, margin: "0 auto", padding: "20px 16px", display: "flex", flexDirection: "column", gap: 14 }}>
+      <div style={{ maxWidth: PAGE_MAX_WIDTH, margin: "0 auto", padding: "20px 16px", display: "flex", flexDirection: "column", gap: 14 }}>
         {tab === "predict" && (
           <>
             <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
@@ -2934,7 +3000,7 @@ if (!session && !guestMode) {
         </div>
       )}
       {tab === "leaderboard" && (
-        <div style={{ maxWidth: 600, margin: "0 auto", padding: "14px 12px" }}>
+        <div style={{ maxWidth: PAGE_MAX_WIDTH, margin: "0 auto", padding: "14px 12px" }}>
           <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
             {[{ id: "weekly", label: "🏅 Weekly" }, { id: "euro", label: "🇪🇺 Champions & Europa League" }].map(c => (
               <button key={c.id}
@@ -3226,7 +3292,7 @@ if (!session && !guestMode) {
       )}
       {viewingAnalysis && (
         <div style={{ position: "fixed", inset: 0, background: "#0a0a0f", zIndex: 50, overflowY: "auto" }}>
-          <div style={{ maxWidth: 600, margin: "0 auto", padding: "16px 16px 60px", display: "flex", flexDirection: "column", gap: 14 }}>
+          <div style={{ maxWidth: PAGE_MAX_WIDTH, margin: "0 auto", padding: "16px 16px 60px", display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0" }}>
               <div style={{ fontSize: 17, color: "#f0f0f0", fontWeight: 700 }}>{viewingAnalysis.home_team} vs {viewingAnalysis.away_team}</div>
               <button onClick={() => setViewingAnalysis(null)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 16, padding: "6px 14px" }}>✕ Close</button>
