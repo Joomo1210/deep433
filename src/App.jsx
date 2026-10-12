@@ -42,11 +42,11 @@ const ROUND_HEAD_START = {
 const COUNTER_ROUND_START = new Date("2026-10-09T05:30:00Z");
 
 // European leaderboard (Champions League + Europa League): one combined table
-// from Tue 13 Oct 06:30 UK, ongoing (no end date), with its own 30 prediction cap.
+// from Mon 12 Oct 01:00 UK (so early picks for Tuesday count), ongoing (no end date), with its own 30 prediction cap.
 // When a new Euro round starts, change this date, the trigger date in euro_leaderboard.sql,
 // and save the finished table in Stats Lab first.
 // Its matches live in the euro_fixtures table, apart from the weekly leaderboard.
-const EURO_START_DATE = new Date("2026-10-13T05:30:00Z");
+const EURO_START_DATE = new Date("2026-10-12T00:00:00Z");
 
 // ─── Past leaderboard rounds (display only) ──────────────────────────────────
 // Saved round results come from the leaderboard_round_results table. If the
@@ -1661,9 +1661,10 @@ useEffect(() => {
     const d = new Date(dateStr);
     return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
   };
+  const openFixtures = fixtures.filter(f => !hasExistingPrediction(f.home, f.away));
   const filteredFixtures = fixtureSearch.trim()
-    ? fixtures.filter(f => f.home.toLowerCase().includes(fixtureSearch.toLowerCase()) || f.away.toLowerCase().includes(fixtureSearch.toLowerCase()))
-    : fixtures;
+    ? openFixtures.filter(f => f.home.toLowerCase().includes(fixtureSearch.toLowerCase()) || f.away.toLowerCase().includes(fixtureSearch.toLowerCase()))
+    : openFixtures;
   const fixturesByDate = filteredFixtures.reduce((acc, f) => {
     const label = getDateLabel(f.date);
     if (!acc[label]) acc[label] = [];
@@ -2127,7 +2128,7 @@ if (!session && !guestMode) {
                 {(() => {
                   const keyOf = f => `${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`;
                   const upcoming = fixtures
-                    .filter(f => f.kickoff && new Date(f.kickoff) > new Date() && getMatchStatus(f.home, f.away) !== "finished" && getMatchStatus(f.home, f.away) !== "live")
+                    .filter(f => f.kickoff && new Date(f.kickoff) > new Date() && !hasExistingPrediction(f.home, f.away) && getMatchStatus(f.home, f.away) !== "finished" && getMatchStatus(f.home, f.away) !== "live")
                     .sort((x, y) => new Date(x.kickoff) - new Date(y.kickoff));
                   const feat = upcoming.find(f => curatedBadgeKeys.has(keyOf(f)) || euroBadgeKeys.has(keyOf(f))) || upcoming[0];
                   if (!feat) return null;
@@ -2151,7 +2152,7 @@ if (!session && !guestMode) {
                       </div>
                       {(curatedBadgeKeys.has(keyOf(feat)) || euroBadgeKeys.has(keyOf(feat))) && (
                         <div style={{ textAlign: "center", fontSize: 11, fontWeight: 800, color: curatedBadgeKeys.has(keyOf(feat)) ? "#fbbf24" : "#818cf8" }}>
-                          {curatedBadgeKeys.has(keyOf(feat)) ? "🏅 Leaderboard match" : "🇪🇺 Euro board match"}
+                          {curatedBadgeKeys.has(keyOf(feat)) ? "🏅 CURATED · Leaderboard match" : "🇪🇺 CURATED · Euro board match"}
                         </div>
                       )}
                       <button
@@ -2179,8 +2180,8 @@ if (!session && !guestMode) {
                 {fixturesLoading && (
                   <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 16, padding: "20px 0" }}>Loading fixtures...</div>
                 )}
-                {!fixturesLoading && fixtures.length === 0 && (
-                  <div style={{ textAlign: "center", color: "#94a3b8", fontSize: 14, padding: "20px 0" }}>{userRole === "admin" ? "No upcoming fixtures found for this competition" : "No curated matches are open right now. Check back on matchday."}</div>
+                {!fixturesLoading && openFixtures.length === 0 && (
+                  <div style={{ textAlign: "center", color: "#94a3b8", fontSize: 14, padding: "20px 0" }}>{fixtures.length > 0 ? "✅ You've predicted every open match. See History for your picks, and check back for the next matchday." : userRole === "admin" ? "No upcoming fixtures found for this competition" : "No curated matches are open right now. Check back on matchday."}</div>
                 )}
                 <div style={{ maxHeight: 320, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
                   {Object.entries(fixturesByDate).map(([date, dateFixtures]) => (
@@ -2209,10 +2210,10 @@ if (!session && !guestMode) {
                               }
                               <div style={{ fontSize: 12, color: "#8b98a5", marginTop: 2 }}>{f.round}</div>
                               {curatedBadgeKeys.has(`${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`) && (
-                                <div style={{ fontSize: 10, fontWeight: 800, color: "#fbbf24", marginTop: 3, whiteSpace: "nowrap" }}>🏅 Leaderboard</div>
+                                <div style={{ display: "inline-block", fontSize: 10, fontWeight: 900, color: "#fbbf24", background: "#fbbf2418", border: "1px solid #fbbf2466", borderRadius: 6, padding: "2px 7px", marginTop: 4, whiteSpace: "nowrap", letterSpacing: 0.4 }}>🏅 CURATED</div>
                               )}
                               {euroBadgeKeys.has(`${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`) && (
-                                <div style={{ fontSize: 10, fontWeight: 800, color: "#818cf8", marginTop: 3, whiteSpace: "nowrap" }}>🇪🇺 Euro board</div>
+                                <div style={{ display: "inline-block", fontSize: 10, fontWeight: 900, color: "#a5b4fc", background: "#818cf818", border: "1px solid #818cf866", borderRadius: 6, padding: "2px 7px", marginTop: 4, whiteSpace: "nowrap", letterSpacing: 0.4 }}>🇪🇺 CURATED · EURO</div>
                               )}
                             </div>
                             <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, justifyContent: "flex-end" }}>
