@@ -1135,7 +1135,41 @@ export default function FootballPredictor() {
     else setTournamentPred(data);
     setAwardsSubmitting(false);
   };
+  // Players only see the curated matches (leaderboard_fixtures + euro_fixtures), read straight from the
+  // database, so no API-Football call is made for them. Admins keep the full fixture list from the API
+  // so they can still pick matches to curate.
+  const onPredictTab = tab === "predict";
   useEffect(() => {
+    if (userRole !== "admin") {
+      if (!onPredictTab) return;
+      let cancelled = false;
+      setFixturesLoading(true);
+      (async () => {
+        try {
+          const [w, e] = await Promise.all([
+            supabase.from("leaderboard_fixtures").select("home_team, away_team, kickoff, league_label"),
+            supabase.from("euro_fixtures").select("home_team, away_team, kickoff, league_label"),
+          ]);
+          if (cancelled) return;
+          const cutoff = Date.now() - 150 * 60000; // keep a match visible (locked) until about 2.5h after kickoff
+          const list = [...(w.data || []), ...(e.data || [])]
+            .filter(r => r.home_team && r.away_team && (!r.kickoff || new Date(r.kickoff).getTime() > cutoff))
+            .map(r => ({
+              home: r.home_team,
+              away: r.away_team,
+              kickoff: r.kickoff || null,
+              date: getLocalDateString(r.kickoff ? new Date(r.kickoff) : new Date()),
+              round: r.league_label || "",
+              homeLogo: TEAM_LOGOS[r.home_team] || "",
+              awayLogo: TEAM_LOGOS[r.away_team] || "",
+            }))
+            .sort((x, y) => (x.kickoff ? new Date(x.kickoff).getTime() : 0) - (y.kickoff ? new Date(y.kickoff).getTime() : 0));
+          setFixtures(list);
+        } catch (err) { /* leave the list as it was */ }
+        finally { if (!cancelled) setFixturesLoading(false); }
+      })();
+      return () => { cancelled = true; };
+    }
     setFixturesLoading(true);
     setFixtures([]);
     cachedFetch(`/api/fixtures?leagueId=${selectedLeague}`, 600000)
@@ -1150,7 +1184,7 @@ export default function FootballPredictor() {
       })
       .catch(() => {})
       .finally(() => setFixturesLoading(false));
-  }, [selectedLeague, session]);
+  }, [selectedLeague, session, userRole, onPredictTab]);
   useEffect(() => {
     if (tab !== "leaderboard" || userRole !== "admin") return;
     setAdminFixturesLoading(true);
@@ -1729,7 +1763,7 @@ useEffect(() => {
     { id: "scores",      label: "Scores",      icon: "activity" },
     { id: "standings",   label: "You vs AI",   icon: "brain" },
     ...(userRole === "admin" ? [{ id: "graphics", label: "Stats Lab", icon: "chart" }] : []),
-    { id: "leaderboard", label: "Leaderboard", icon: "trophy" },
+    { id: "leaderboard", label: userRole === "admin" ? "Leaderboard" : "My Points", icon: "trophy" },
   ];
   if (authLoading) return (
     <div style={{ minHeight: "100vh", background: "#0a0a0f", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -1878,7 +1912,7 @@ if (!session && !guestMode) {
                 </div>
                 <div style={{ fontSize: 11, marginTop: 8, color: "#dfe8e3" }}>Free to enter • Skill based • Exact score 5 • Outcome 3 • Over/Under +1</div>
               </div>
-              <button onClick={() => setTab("leaderboard")} style={{ flex: "none", background: "none", border: "1px solid #2EE66B", borderRadius: 999, color: "#2EE66B", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "7px 11px", whiteSpace: "nowrap" }}>See board →</button>
+              <button onClick={() => setTab("leaderboard")} style={{ flex: "none", background: "none", border: "1px solid #2EE66B", borderRadius: 999, color: "#2EE66B", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "7px 11px", whiteSpace: "nowrap" }}>{userRole === "admin" ? "See board →" : "My points →"}</button>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", marginTop: 14, background: "rgba(0,0,0,.35)", borderRadius: 12, padding: "10px 0" }}>
               {["1st", "2nd", "3rd", "4th", "5th"].map((pos, i) => (
@@ -2062,6 +2096,12 @@ if (!session && !guestMode) {
             </div>
             {step === 1 && (
               <div className="card">
+                {userRole !== "admin" && (
+                  <div style={{ fontSize: 12, color: "#C9D1D9", background: "#2EE66B0d", border: "1px solid #2EE66B33", borderRadius: 10, padding: "9px 12px", marginBottom: 16 }}>
+                    🏅 Only the Deep433 curated matches are open for predictions. Each matchday's matches are added on the day.
+                  </div>
+                )}
+                {userRole === "admin" && (<>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                   <div style={{ fontSize: 15, color: "#fff", fontWeight: 900, textTransform: "uppercase", letterSpacing: 0.4 }}>Choose a competition</div>
                   <div style={{ display: "flex", gap: 14, fontSize: 12, fontWeight: 700 }}>
@@ -2082,6 +2122,7 @@ if (!session && !guestMode) {
                   <button className="comp-more" onClick={() => setShowMoreComps(true)}>⌄ More competitions ({LEAGUES.length - POPULAR_LEAGUE_IDS.length})</button>
                 )}
                 <div style={{ height: 20 }} />
+                </>)}
                 {/* Featured match: the next curated leaderboard match in the chosen competition, else the next match. Display only. */}
                 {(() => {
                   const keyOf = f => `${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`;
@@ -2130,14 +2171,16 @@ if (!session && !guestMode) {
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#fbbf24", background: "#fbbf2418", border: "1px solid #fbbf2433", borderRadius: 5, padding: "2px 7px" }}>Over/Under +1</span>
                 </div>
                 <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 12 }}>
-                  Pick a league above, then choose a match marked 🏅 Leaderboard to play for the prize. Select it from the list so your prediction is recognised and scored.
+                  {userRole === "admin"
+                    ? "Pick a league above, then choose a match marked 🏅 Leaderboard to play for the prize. Select it from the list so your prediction is recognised and scored."
+                    : "Choose a match below to make your prediction. Every match here counts towards the leaderboard."}
                 </div>
                 <input className="search-input" placeholder="🔍 Search team..." value={fixtureSearch} onChange={e => setFixtureSearch(e.target.value)} style={{ marginBottom: 12 }} />
                 {fixturesLoading && (
                   <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 16, padding: "20px 0" }}>Loading fixtures...</div>
                 )}
                 {!fixturesLoading && fixtures.length === 0 && (
-                  <div style={{ textAlign: "center", color: "#444", fontSize: 16, padding: "20px 0" }}>No upcoming fixtures found for this competition</div>
+                  <div style={{ textAlign: "center", color: "#94a3b8", fontSize: 14, padding: "20px 0" }}>{userRole === "admin" ? "No upcoming fixtures found for this competition" : "No curated matches are open right now. Check back on matchday."}</div>
                 )}
                 <div style={{ maxHeight: 320, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
                   {Object.entries(fixturesByDate).map(([date, dateFixtures]) => (
@@ -2157,14 +2200,14 @@ if (!session && !guestMode) {
                             </div>
                             <div style={{ textAlign: "center", minWidth: 60 }}>
                               {isLocked && status === "finished"
-                                ? <span style={{ fontSize: 15, fontWeight: 800, color: "#e2e8f0" }}>{f.score.home}-{f.score.away}</span>
+                                ? <span style={{ fontSize: 15, fontWeight: 800, color: "#e2e8f0" }}>{f.score ? `${f.score.home}-${f.score.away}` : "FT"}</span>
                                 : status === "live"
                                 ? <span style={{ fontSize: 13, color: "#ef4444", fontWeight: 700 }}>🔴 LIVE</span>
                                 : <span style={{ fontSize: 13, color: "#e2e8f0" }}>
                                     {new Date(f.kickoff).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} BST
                                   </span>
                               }
-                              <div style={{ fontSize: 12, color: "#333", marginTop: 2 }}>{f.round}</div>
+                              <div style={{ fontSize: 12, color: "#8b98a5", marginTop: 2 }}>{f.round}</div>
                               {curatedBadgeKeys.has(`${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`) && (
                                 <div style={{ fontSize: 10, fontWeight: 800, color: "#fbbf24", marginTop: 3, whiteSpace: "nowrap" }}>🏅 Leaderboard</div>
                               )}
@@ -3010,7 +3053,7 @@ if (!session && !guestMode) {
               </button>
             ))}
           </div>
-          <div style={{ fontSize: 16, fontWeight: 900, color: "#f0f0f0", marginBottom: 2 }}>{contest === "euro" ? "🇪🇺 European Leaderboard" : "🏅 Leaderboard"}</div>
+          <div style={{ fontSize: 16, fontWeight: 900, color: "#f0f0f0", marginBottom: 2 }}>{userRole === "admin" ? (contest === "euro" ? "🇪🇺 European Leaderboard" : "🏅 Leaderboard") : (contest === "euro" ? "🇪🇺 My European Points" : "🏅 My Points")}</div>
           {contest === "euro" && (
             <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", marginBottom: 6 }}>Champions League Tue and Wed, Europa League Thu · started Tue 13 Oct · one running table</div>
           )}
@@ -3169,8 +3212,28 @@ if (!session && !guestMode) {
             const myRank = 1 + leaderboard.filter(r => r.points > me.points).length;
             const fifth = leaderboard.length >= 5 ? [...leaderboard].sort((a, b) => b.points - a.points)[4] : null;
             const gap = fifth ? Math.max(0, fifth.points - me.points) : 0;
+            if (userRole !== "admin") {
+              // Players see their own points and a rank band only. No other player's name, points or position.
+              const band = myRank <= 5 ? { text: "You're in the top 5 🏆", sub: "Keep your picks sharp and hold your place." }
+                : myRank <= 10 ? { text: "You're in the top 10 🔥", sub: "A couple of exact scores and you're in the top 5." }
+                : myRank <= 20 ? { text: "You're in the top 20 ⚡", sub: "Keep predicting, every exact score moves you up." }
+                : { text: "Keep predicting 🎯", sub: "Every exact score is 5 points. The table moves fast." };
+              const pctMe = Math.min(100, Math.round((me.total / 30) * 100));
+              return (
+                <div style={{ background: "#111820", border: "1px solid #2EE66B44", borderRadius: 14, padding: "18px 16px", marginBottom: 12, textAlign: "center" }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: "#8b98a5", textTransform: "uppercase", letterSpacing: 1 }}>Your points</div>
+                  <div style={{ fontSize: 54, fontWeight: 900, color: "#fbbf24", lineHeight: 1.05, margin: "4px 0 8px" }}>{me.points}</div>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: "#2EE66B" }}>{band.text}</div>
+                  <div style={{ fontSize: 12, color: "#C9D1D9", marginTop: 3 }}>{band.sub}</div>
+                  <div style={{ fontSize: 11, color: "#94a3b8", margin: "14px 0 4px" }}>{me.total} of 30 predictions made</div>
+                  <div style={{ height: 6, background: "#1a1a2e", borderRadius: 4, overflow: "hidden" }}>
+                    <div style={{ width: `${pctMe}%`, height: "100%", background: "linear-gradient(90deg,#4ade80,#22c55e)" }} />
+                  </div>
+                </div>
+              );
+            }
             const msg = myRank === 1 ? "You are leading 🔥"
-              : myRank <= 5 ? "You are in the prize places 🏆"
+              : myRank <= 5 ? "You are in the top 5 🏆"
               : fifth ? `${gap} pt${gap === 1 ? "" : "s"} off the top 5`
               : "Keep predicting to climb";
             const pct = Math.min(100, Math.round((me.total / 30) * 100));
@@ -3188,10 +3251,10 @@ if (!session && !guestMode) {
             );
           })()}
           {leaderboardLoading && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 14, padding: "20px 0" }}>Loading...</div>}
-          {!leaderboardLoading && leaderboard.length === 0 && (
+          {!leaderboardLoading && leaderboard.length === 0 && userRole === "admin" && (
             <div style={{ textAlign: "center", color: "#666", fontSize: 14, padding: "20px 0" }}>No confirmed results yet.</div>
           )}
-          {leaderboard.map((row, i) => (
+          {userRole === "admin" && leaderboard.map((row, i) => (
             <div key={row.userId} style={{
               display: "flex", alignItems: "center", gap: 12,
               background: "#0d0d18", border: `1px solid ${session && row.userId === session.user.id ? "#4ade8066" : "#1a1a2e"}`, borderRadius: 10,
@@ -3218,7 +3281,7 @@ if (!session && !guestMode) {
             </div>
           ))}
           {/* Last two rounds comparison. Reads saved rounds from leaderboard_round_results. Display only. */}
-          {contest === "weekly" && (() => {
+          {userRole === "admin" && contest === "weekly" && (() => {
             const rounds = (pastRoundsData && pastRoundsData.length >= 2 ? pastRoundsData : FALLBACK_PAST_ROUNDS).slice(-2);
             const [rA, rB] = rounds;
             const sA = summariseRound(rA.rows), sB = summariseRound(rB.rows);
