@@ -127,6 +127,12 @@ const LEAGUE_LOGOS = {
   npfl:         "https://media.api-sports.io/football/leagues/399.png",
   scotprem:     "https://media.api-sports.io/football/leagues/179.png",
 };
+// Home screen config. Display only.
+// PRIZE_AMOUNTS: leave as null to show "Top 5 win every round" with no amounts.
+// To show amounts, set it to e.g. ["£20","£12","£8","£5","£5"] (1st to 5th).
+const PRIZE_AMOUNTS = null;
+const PRIZE_HEADLINE = "Predict free. Top 5 win every round";
+const POPULAR_LEAGUE_IDS = ["pl", "laliga", "seriea", "bundesliga", "ucl", "uel"];
 const LEAGUES = [
   { id: "wc2026", label: "FIFA World Cup 2026", short: "FIFA World Cup 2026" },
   { id: "pl", label: "Premier League", short: "Premier League" },
@@ -659,9 +665,10 @@ export default function FootballPredictor() {
   const [loggingIdx, setLoggingIdx] = useState(null);
   const [logScore, setLogScore] = useState("");
   const [copied, setCopied] = useState(false);
-  const [selectedLeague, setSelectedLeague] = useState("wc2026");
+  const [selectedLeague, setSelectedLeague] = useState("pl");
   const [step, setStep] = useState(1);
   const [fixtureSearch, setFixtureSearch] = useState("");
+  const [showMoreComps, setShowMoreComps] = useState(false);
   const [historySearch, setHistorySearch] = useState("");
   const [liveData, setLiveData] = useState([]);
   const [scoresDate, setScoresDate] = useState(getLocalDateString());
@@ -1368,13 +1375,16 @@ useEffect(() => {
       (normalize(item.home_team) === a && normalize(item.away_team) === h)
     );
   };
-  const goToStep2 = () => {
-    if (!homeTeam || !awayTeam) { setError("Select a fixture first."); return; }
-    if (hasExistingPrediction(homeTeam, awayTeam)) {
+  const goToStep2 = (fix) => {
+    // Called with a fixture from the featured card, or with no argument (or a click event) from the normal button.
+    const h = fix && fix.home ? fix.home : homeTeam;
+    const a = fix && fix.away ? fix.away : awayTeam;
+    if (!h || !a) { setError("Select a fixture first."); return; }
+    if (hasExistingPrediction(h, a)) {
       setError("You've already predicted this match — check History to edit it.");
       return;
     }
-    const status = getMatchStatus(homeTeam, awayTeam);
+    const status = getMatchStatus(h, a);
     if (status === "live") { setError("This match is already in progress — predictions are closed."); return; }
     if (status === "finished") { setError("This match has finished — predictions are closed."); return; }
     setError(""); setStep(2);
@@ -1737,8 +1747,13 @@ if (!session && !guestMode) {
         .predict-btn:hover { opacity: 0.9; }
         .predict-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .ghost-btn { background: none; border: 1.5px solid #2a2a3a; border-radius: 10px; color: #e2e8f0; font-size: 14px; font-weight: 600; padding: 12px; cursor: pointer; width: 100%; font-family: inherit; }
-        .nav-tab { background: none; border: none; border-bottom: 2px solid transparent; color: #e2e8f0; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 600; padding: 12px 4px; transition: all 0.15s; white-space: nowrap; }
-        .nav-tab.active { border-bottom-color: #4ade80; color: #4ade80; }
+        .nav-tab { background: none; border: none; border-radius: 999px; color: #e2e8f0; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700; padding: 9px 14px; margin: 10px 0; transition: all 0.15s; white-space: nowrap; }
+        .nav-tab.active { background: #2EE66B; color: #04120a; box-shadow: 0 6px 0 -3px #2EE66B; }
+        .comp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .comp-card { background: #111820; border: 1px solid #1f2a35; border-radius: 14px; color: #f2f5f7; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 700; padding: 14px 6px 12px; text-align: center; transition: border-color 0.15s; }
+        .comp-card img { width: 34px; height: 34px; object-fit: contain; display: block; margin: 0 auto 8px; }
+        .comp-card.active { border-color: #2EE66B; background: #2EE66B0d; }
+        .comp-more { background: #111820; border: 1px solid #1f2a35; border-radius: 14px; color: #8b98a5; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700; margin-top: 10px; padding: 12px; width: 100%; }
         .tag { display: inline-block; border-radius: 6px; font-size: 12px; font-weight: 700; padding: 4px 10px; text-transform: uppercase; }
         .player-chip { background: #1a1a28; border: 1px solid #2a2a40; border-radius: 6px; font-size: 12px; padding: 5px 10px; color: #ccc; }
         .spinner { width: 36px; height: 36px; border: 3px solid #1e1e30; border-top: 3px solid #4ade80; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto; }
@@ -1751,7 +1766,7 @@ if (!session && !guestMode) {
         .log-input { background: #1a1a24; border: 1.5px solid #2a2a3a; border-radius: 6px; color: #f0f0f0; font-size: 13px; padding: 6px 10px; width: 80px; outline: none; font-family: inherit; text-align: center; }
         .league-btn { background: #1a1a24; border: 1.5px solid #2a2a3a; border-radius: 20px; color: #e2e8f0; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 600; padding: 7px 14px; transition: all 0.12s; white-space: nowrap; }
         .league-btn.active { background: #4ade8018; border-color: #4ade80; color: #4ade80; }
-        .fixture-row { background: #0f0f1a; border: 1px solid #1a1a2a; border-radius: 10px; padding: 10px 14px; cursor: pointer; transition: border-color 0.15s; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .fixture-row { background: #111820; border: 1px solid #1f2a35; border-radius: 14px; padding: 10px 14px; cursor: pointer; transition: border-color 0.15s; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
         .fixture-row:hover { border-color: #4ade80; }
         .fixture-row.selected { border-color: #4ade80; background: #4ade8008; }
         .step-dot { width: 8px; height: 8px; border-radius: 50%; background: #1a1a2a; transition: background 0.2s; }
@@ -1761,10 +1776,10 @@ if (!session && !guestMode) {
       <div style={{ background: "#0d0d18", borderBottom: "1px solid #1a1a2e", padding: "16px 20px" }}>
         <div style={{ maxWidth: 600, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <img src="/deep433.jpg" alt="Deep433" style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover" }} />
+            <img src="/deep433.jpg" alt="Deep433" style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", border: "2px solid #2EE66B" }} />
             <div>
-              <div style={{ fontSize: 18, fontWeight: 900, color: "#4ade80" }} className="glow">DEEP433</div>
-              <div style={{ fontSize: 13, color: "#e2e8f0", letterSpacing: 1 }}>DATA-DRIVEN FOOTBALL INSIGHTS</div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: 0.5, lineHeight: 1 }}>DEEP<span style={{ color: "#2EE66B" }}>433</span></div>
+              <div style={{ fontSize: 10, color: "#8b98a5", marginTop: 3, lineHeight: 1.3 }}>Football Intelligence.<br />Predictions. Analysis</div>
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -1785,18 +1800,31 @@ if (!session && !guestMode) {
           {TABS.map(t => <button key={t.id} className={`nav-tab${tab === t.id ? " active" : ""}`} onClick={() => setTab(t.id)}>{t.label}</button>)}
         </div>
       </div>
-      {/* Leaderboard teaser strip. Display only. Change the headline text here. */}
-      {tab === "predict" && (
-        <div
-          onClick={() => setTab("leaderboard")}
-          style={{ background: "linear-gradient(90deg,#1a1400,#0f1a0f)", borderBottom: "1px solid #fbbf2433", padding: "9px 16px", cursor: "pointer" }}
-        >
-          <div style={{ maxWidth: 600, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: "#fbbf24" }}>🏆 Predict free. Top 5 win cash every round</div>
-              <div style={{ fontSize: 11, color: "#94a3b8" }}>Free to enter · Skill based · Exact score 5 · Outcome 3 · Over/Under +1</div>
+      {/* Prize banner. Display only. Headline and amounts come from PRIZE_HEADLINE / PRIZE_AMOUNTS near the top of this file. */}
+      {tab === "predict" && step === 1 && (
+        <div style={{ maxWidth: 600, margin: "0 auto", padding: "16px 16px 0" }}>
+          <div style={{ borderRadius: 14, border: "1px solid #2EE66B59", padding: 16, background: "radial-gradient(circle at 85% 0%, rgba(46,230,107,.18), transparent 55%), linear-gradient(160deg,#0d2a1b,#0b1a14 70%)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+              <div>
+                <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                  <span style={{ fontSize: 28, lineHeight: 1 }}>🏆</span>
+                  <div style={{ color: "#F5C518", fontSize: 19, fontWeight: 900, lineHeight: 1.15 }}>{PRIZE_HEADLINE}</div>
+                </div>
+                <div style={{ fontSize: 11, marginTop: 8, color: "#dfe8e3" }}>Free to enter • Skill based • Exact score 5 • Outcome 3 • Over/Under +1</div>
+              </div>
+              <button onClick={() => setTab("leaderboard")} style={{ flex: "none", background: "none", border: "1px solid #2EE66B", borderRadius: 999, color: "#2EE66B", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "7px 11px", whiteSpace: "nowrap" }}>See board →</button>
             </div>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#4ade80", whiteSpace: "nowrap" }}>See board →</span>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", marginTop: 14, background: "rgba(0,0,0,.35)", borderRadius: 12, padding: "10px 0" }}>
+              {["1st", "2nd", "3rd", "4th", "5th"].map((pos, i) => (
+                <div key={pos} style={{ textAlign: "center", borderLeft: i === 0 ? "none" : "1px solid rgba(255,255,255,.1)", padding: "2px 4px" }}>
+                  <div style={{ fontSize: 10, color: "#8b98a5", marginBottom: 5 }}>{pos}</div>
+                  <div style={{ height: 22, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 4, fontSize: i < 3 ? 18 : 11, fontWeight: 800 }}>
+                    {i < 3 ? ["🥇", "🥈", "🥉"][i] : <span style={{ width: 20, height: 20, borderRadius: "50%", background: "#3b82f6", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>{i + 1}</span>}
+                  </div>
+                  {PRIZE_AMOUNTS && <div style={{ fontSize: 17, fontWeight: 900, color: "#f2f5f7" }}>{PRIZE_AMOUNTS[i]}</div>}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -1968,17 +1996,68 @@ if (!session && !guestMode) {
             </div>
             {step === 1 && (
               <div className="card">
-                <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Competition</div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
-                  {LEAGUES.map(l => (
-                    <button key={l.id} className={`league-btn${selectedLeague === l.id ? " active" : ""}`}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <div style={{ fontSize: 15, color: "#fff", fontWeight: 900, textTransform: "uppercase", letterSpacing: 0.4 }}>Choose a competition</div>
+                  <div style={{ display: "flex", gap: 14, fontSize: 12, fontWeight: 700 }}>
+                    <button onClick={() => setShowMoreComps(false)} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, color: showMoreComps ? "#8b98a5" : "#2EE66B", textDecoration: showMoreComps ? "none" : "underline", textUnderlineOffset: 4 }}>Popular</button>
+                    <button onClick={() => setShowMoreComps(true)} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, color: showMoreComps ? "#2EE66B" : "#8b98a5", textDecoration: showMoreComps ? "underline" : "none", textUnderlineOffset: 4 }}>More ⌄</button>
+                  </div>
+                </div>
+                <div className="comp-grid">
+                  {LEAGUES.filter(l => showMoreComps || POPULAR_LEAGUE_IDS.includes(l.id) || l.id === selectedLeague).map(l => (
+                    <button key={l.id} className={`comp-card${selectedLeague === l.id ? " active" : ""}`}
                       onClick={() => { setSelectedLeague(l.id); setHomeTeam(""); setAwayTeam(""); setFixtureSearch(""); }}>
-                      {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt={l.label} style={{ width: 16, height: 16, objectFit: "contain", marginRight: 5, verticalAlign: "middle" }} crossOrigin="anonymous" />}
-                      {l.label}
+                      {LEAGUE_LOGOS[l.id] ? <img src={LEAGUE_LOGOS[l.id]} alt="" crossOrigin="anonymous" /> : <div style={{ height: 34, marginBottom: 8, fontSize: 22 }}>⚽</div>}
+                      {l.short}
                     </button>
                   ))}
                 </div>
-                <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Pick The Match</div>
+                {!showMoreComps && (
+                  <button className="comp-more" onClick={() => setShowMoreComps(true)}>⌄ More competitions ({LEAGUES.length - POPULAR_LEAGUE_IDS.length})</button>
+                )}
+                <div style={{ height: 20 }} />
+                {/* Featured match: the next curated leaderboard match in the chosen competition, else the next match. Display only. */}
+                {(() => {
+                  const keyOf = f => `${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`;
+                  const upcoming = fixtures
+                    .filter(f => f.kickoff && new Date(f.kickoff) > new Date() && getMatchStatus(f.home, f.away) !== "finished" && getMatchStatus(f.home, f.away) !== "live")
+                    .sort((x, y) => new Date(x.kickoff) - new Date(y.kickoff));
+                  const feat = upcoming.find(f => curatedBadgeKeys.has(keyOf(f)) || euroBadgeKeys.has(keyOf(f))) || upcoming[0];
+                  if (!feat) return null;
+                  const k = new Date(feat.kickoff);
+                  const dayTxt = k.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" }).replace(",", "");
+                  const timeTxt = k.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+                  const predicted = hasExistingPrediction(feat.home, feat.away);
+                  const crest = (logo, name) => logo
+                    ? <img src={logo} alt="" style={{ width: 52, height: 52, objectFit: "contain" }} />
+                    : <div style={{ width: 52, height: 52, borderRadius: "50%", background: "#1a2430", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 14 }}>{(name || "?").slice(0, 3).toUpperCase()}</div>;
+                  return (
+                    <div style={{ background: "#111820", border: "1.5px solid #2EE66B", borderRadius: 14, padding: 14, boxShadow: "0 0 24px rgba(46,230,107,.08)", marginBottom: 20 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                        <span style={{ background: "#2EE66B", color: "#04120a", fontSize: 10, fontWeight: 900, borderRadius: 6, padding: "5px 8px", letterSpacing: 0.4, whiteSpace: "nowrap", flex: "none" }}>FEATURED MATCH</span>
+                        <span style={{ fontSize: 10.5, color: "#8b98a5", textAlign: "right" }}>📅 {dayTxt} • {timeTxt}</span>
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", margin: "18px 0 14px", textAlign: "center" }}>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 14 }}>{crest(feat.homeLogo, feat.home)}{feat.home}</div>
+                        <div style={{ color: "#8b98a5", fontWeight: 800, fontSize: 13, padding: "0 8px" }}>VS</div>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 14 }}>{crest(feat.awayLogo, feat.away)}{feat.away}</div>
+                      </div>
+                      {(curatedBadgeKeys.has(keyOf(feat)) || euroBadgeKeys.has(keyOf(feat))) && (
+                        <div style={{ textAlign: "center", fontSize: 11, fontWeight: 800, color: curatedBadgeKeys.has(keyOf(feat)) ? "#fbbf24" : "#818cf8" }}>
+                          {curatedBadgeKeys.has(keyOf(feat)) ? "🏅 Leaderboard match" : "🇪🇺 Euro board match"}
+                        </div>
+                      )}
+                      <button
+                        disabled={predicted}
+                        onClick={() => { selectFixture(feat); goToStep2(feat); }}
+                        style={{ width: "100%", marginTop: 12, background: predicted ? "#1a2430" : "#2EE66B", color: predicted ? "#8b98a5" : "#04120a", border: "none", borderRadius: 12, padding: 14, fontWeight: 900, fontSize: 15, cursor: predicted ? "default" : "pointer", fontFamily: "inherit" }}
+                      >
+                        {predicted ? "✅ Already predicted" : "🧠 Make Your Prediction →"}
+                      </button>
+                    </div>
+                  );
+                })()}
+                <div style={{ fontSize: 14, color: "#4ade80", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Live &amp; Upcoming</div>
                 <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 10 }}>
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#4ade80", background: "#4ade8018", border: "1px solid #4ade8033", borderRadius: 5, padding: "2px 7px" }}>Exact score 5</span>
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#818cf8", background: "#818cf818", border: "1px solid #818cf833", borderRadius: 5, padding: "2px 7px" }}>Outcome 3</span>
@@ -2007,8 +2086,8 @@ if (!session && !guestMode) {
                             style={{ marginBottom: 5, opacity: isLocked ? 0.4 : 1, cursor: isLocked ? "default" : "pointer" }}
                           >
                             <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
-                              <img src={f.homeLogo || ""} alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
-                              <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{f.home}</span>
+                              <img src={f.homeLogo || ""} alt="" style={{ width: 26, height: 26, objectFit: "contain" }} />
+                              <span style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0" }}>{f.home}</span>
                             </div>
                             <div style={{ textAlign: "center", minWidth: 60 }}>
                               {isLocked && status === "finished"
@@ -2029,7 +2108,7 @@ if (!session && !guestMode) {
                             </div>
                             <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, justifyContent: "flex-end" }}>
                               <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>{f.away}</span>
-                              <img src={f.awayLogo || ""} alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
+                              <img src={f.awayLogo || ""} alt="" style={{ width: 26, height: 26, objectFit: "contain" }} />
                             </div>
                           </div>
                         );
@@ -2038,7 +2117,7 @@ if (!session && !guestMode) {
                   ))}
                 </div>
                 {error && <div style={{ color: "#f87171", fontSize: 16, margin: "12px 0" }}>{error}</div>}
-                <button className="predict-btn" onClick={goToStep2} disabled={!homeTeam || !awayTeam} style={{ marginTop: 16 }}>
+                <button className="predict-btn" onClick={() => goToStep2()} disabled={!homeTeam || !awayTeam} style={{ marginTop: 16 }}>
                   ⚡ Predict This Match
                 </button>
               </div>
