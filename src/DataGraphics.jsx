@@ -4330,6 +4330,7 @@ function CuratedMatchesGraphic({ supabase }) {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [loaded, setLoaded] = useState(false);
+  const [source, setSource] = useState("euro"); // "weekly" | "euro" | "both"
 
   const MAX_CARDS = 4;
   const PER_CARD_TARGET = 15;
@@ -4337,9 +4338,13 @@ function CuratedMatchesGraphic({ supabase }) {
   const loadMatches = async () => {
     setLoading(true); setError(""); setLoaded(false);
     try {
-      let { data, error: err } = await supabase
-        .from("leaderboard_fixtures")
-        .select("home_team, away_team, kickoff, league_label");
+      const tables = source === "both" ? ["leaderboard_fixtures", "euro_fixtures"] : source === "euro" ? ["euro_fixtures"] : ["leaderboard_fixtures"];
+      let data = [], err = null;
+      for (const t of tables) {
+        const r = await supabase.from(t).select("home_team, away_team, kickoff, league_label");
+        if (r.error) { err = r.error; if (!/kickoff|league_label|column/i.test(r.error.message || "")) break; }
+        else data = data.concat(r.data || []);
+      }
       if (err && /kickoff|league_label|column/i.test(err.message || "")) {
         // Columns not created yet — still show the matches, but say why
         // there are no dates instead of failing with a blank card.
@@ -4412,6 +4417,13 @@ function CuratedMatchesGraphic({ supabase }) {
         </label>
         <label style={{ fontSize: 11, color: "#94a3b8", flex: 1, minWidth: 120 }}>To date
           <input type="date" value={toDate} onChange={e => setToDate(e.target.value)} style={{ display: "block", width: "100%", marginTop: 3, background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "7px 8px", fontFamily: "inherit" }} />
+        </label>
+        <label style={{ fontSize: 11, color: "#94a3b8", flex: 1, minWidth: 120 }}>Matches from
+          <select value={source} onChange={e => { setSource(e.target.value); setLoaded(false); }} style={{ display: "block", width: "100%", marginTop: 3, background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "8px 8px", fontFamily: "inherit" }}>
+            <option value="euro">Euro Cups board</option>
+            <option value="weekly">Weekly league</option>
+            <option value="both">Both boards</option>
+          </select>
         </label>
         <label style={{ fontSize: 11, color: "#94a3b8", flex: 1, minWidth: 120 }}>Show times in
           <select value={tz} onChange={e => setTz(e.target.value)} style={{ display: "block", width: "100%", marginTop: 3, background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "8px 8px", fontFamily: "inherit" }}>
