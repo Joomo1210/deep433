@@ -51,6 +51,8 @@ const COUNTER_ROUND_START = new Date("2026-10-09T05:30:00Z");
 // WEEKLY_ROUND_END to its end time and WEEKLY_ROUND_LABEL to e.g. "Round 4 ends Sunday 23:59".
 const WEEKLY_ROUND_END = new Date("2026-10-11T22:59:00Z");
 const WEEKLY_ROUND_LABEL = "Round 3 ends Sunday 23:59";
+// Display only: text under the Euro counter.
+const EURO_ROUND_LABEL = "🇪🇺 Euro Cups board · 30 predictions across 2 weeks · starts Tue 13 Oct";
 const EURO_START_DATE = new Date("2026-10-12T00:00:00Z");
 
 // ─── Past leaderboard rounds (display only) ──────────────────────────────────
@@ -133,6 +135,29 @@ const LEAGUE_LOGOS = {
   scotprem:     "https://media.api-sports.io/football/leagues/179.png",
 };
 // Lucide-style line icons (inline so no extra package is needed). Same size and colour as the text.
+// ── Mobile match list helpers ─────────────────────────────────────────────
+const crestInitials = (name) => {
+  const w = (name || "?").trim().split(/\s+/);
+  if (w[0].length <= 3 && w[0] === w[0].toUpperCase()) return w[0];
+  if (w.length === 1) return w[0].slice(0, 3).toUpperCase();
+  return (w[0][0] + w[1][0]).toUpperCase();
+};
+const Crest = ({ src, name }) => {
+  const [bad, setBad] = useState(false);
+  if (!src || bad) {
+    return <span style={{ width: 24, height: 24, borderRadius: "50%", background: "#1F2A36", color: "#fff", fontSize: 10, fontWeight: 700, display: "inline-flex", alignItems: "center", justifyContent: "center", flex: "none" }}>{crestInitials(name)}</span>;
+  }
+  return <img src={src} alt="" onError={() => setBad(true)} style={{ width: 24, height: 24, objectFit: "contain", flex: "none" }} />;
+};
+const logoForCompetition = (label) => {
+  const l = (label || "").toLowerCase();
+  if (!l) return null;
+  if (l.includes("champions league") && !l.includes("conference")) return LEAGUE_LOGOS.ucl;
+  if (l.includes("europa league") && !l.includes("conference")) return LEAGUE_LOGOS.uel;
+  const hit = LEAGUES.find(x => x.label.toLowerCase() === l || x.short.toLowerCase() === l);
+  return hit ? LEAGUE_LOGOS[hit.id] || null : null;
+};
+
 const ICON_PATHS = {
   zap: <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />,
   history: <><path d="M3 3v5h5" /><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8" /><path d="M12 7v5l4 2" /></>,
@@ -574,7 +599,7 @@ function PitchView({ homeTeam, awayTeam, homeFormation, awayFormation, homeLineu
       <div style={{ background: "#0d0d18", display: "flex", alignItems: "center", gap: 8, padding: "5px 14px" }}>
         <div style={{ flex: 1, height: 1, background: "#1e1e30" }} />
         <div style={{ width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg, #1a1a2e, #16213e)", border: "2px solid #2a2a4a", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
-          <img src="/deep433.jpg" alt="Deep433" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img className="brand-logo" src="/deep433.jpg" alt="Deep433" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         </div>
         <div style={{ flex: 1, height: 1, background: "#1e1e30" }} />
       </div>
@@ -1855,6 +1880,42 @@ if (!session && !guestMode) {
         .fixture-row { background: #111820; border: 1px solid #1f2a35; border-radius: 14px; padding: 10px 14px; cursor: pointer; transition: border-color 0.15s; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
         .fixture-row:hover { border-color: #4ade80; }
         .fixture-row.selected { border-color: #4ade80; background: #4ade8008; }
+        .fx-mob-only, .fx-sticky { display: none; }
+        .fx-list-desk { max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+        @media (max-width: 480px) {
+          html, body { overflow-x: hidden; }
+          html { scroll-padding-top: 72px; }
+          .hdr-in { padding: 10px 16px; }
+          .brand-logo { width: 40px !important; height: 40px !important; }
+          .user-avatar { width: 36px; height: 36px; }
+          .card.step1 { background: none; border: none; padding: 0; }
+          .fx-list-desk, .fx-desk-btn, .fx-desk-search { display: none !important; }
+          .fx-mob-only { display: block; }
+          .fx-list-mob { padding-bottom: 100px; }
+          .fx-search { position: relative; margin-bottom: 4px; }
+          .fx-search svg { position: absolute; left: 14px; top: 13px; pointer-events: none; }
+          .fx-search input { width: 100%; height: 44px; border-radius: 12px; background: #111820; border: 1px solid #1F2A36; color: #fff; font-family: inherit; font-size: 14px; padding: 0 14px 0 42px; outline: none; }
+          .fx-search input::placeholder { color: #8B98A5; }
+          .fx-search input:focus { border-color: #2EE66B; }
+          .fx-group { display: flex; align-items: center; gap: 8px; margin: 16px 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #8B98A5; font-weight: 700; min-width: 0; }
+          .fx-group img { width: 18px; height: 18px; object-fit: contain; flex: none; }
+          .fx-group .fx-gname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+          .fx-pill { margin-left: auto; flex: none; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; padding: 2px 8px; border-radius: 999px; background: rgba(46,230,107,0.12); color: #2EE66B; }
+          .fx-card { position: relative; background: #111820; border: 1px solid #1F2A36; border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; transition: background .15s; min-width: 0; overflow-wrap: anywhere; }
+          .fx-card:active { background: #16212c; }
+          .fx-card.selected { border: 1.5px solid #2EE66B; background: rgba(46,230,107,0.06); padding: 11.5px 13.5px; }
+          .fx-card.locked { opacity: 0.45; cursor: default; }
+          .fx-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; color: #8B98A5; margin-bottom: 4px; }
+          .fx-top b { color: #fff; font-weight: 800; }
+          .fx-team { display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 15px; font-weight: 600; color: #fff; margin-top: 8px; }
+          .fx-team span.fx-tn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+          .fx-card.selected .fx-team { padding-right: 34px; }
+          .fx-check { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; border-radius: 50%; background: #2EE66B; display: flex; align-items: center; justify-content: center; }
+          .fx-sticky { display: block; position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; padding: 28px 16px calc(12px + env(safe-area-inset-bottom)); background: linear-gradient(180deg, rgba(10,10,15,0), #0a0a0f 45%); pointer-events: none; }
+          .fx-sticky button { pointer-events: auto; width: 100%; height: 52px; border: none; border-radius: 14px; background: #2EE66B; color: #0A0F14; font-family: inherit; font-size: 16px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 16px; box-shadow: 0 0 22px rgba(46,230,107,0.35); cursor: pointer; }
+          .fx-sticky button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+          .fx-sticky button:disabled { background: #1F2A36; color: #8B98A5; box-shadow: none; cursor: default; }
+        }
         .step-dot { width: 8px; height: 8px; border-radius: 50%; background: #1a1a2a; transition: background 0.2s; }
         .step-dot.active { background: #4ade80; }
         .step-dot.done { background: #22c55e; }
@@ -1991,7 +2052,8 @@ if (!session && !guestMode) {
               <div style={{ height: 6, background: "#1a1a2e", borderRadius: 3, marginTop: 6, overflow: "hidden" }}>
                 <div style={{ width: `${(shown / 30) * 100}%`, height: "100%", background: colour, borderRadius: 3, transition: "width .3s" }} />
               </div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", marginTop: 5 }}>Champions League and Europa League board · runs every Tue, Wed and Thu</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#a5b4fc", marginTop: 5 }}>{EURO_ROUND_LABEL}</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#94a3b8", marginTop: 3 }}>Champions League and Europa League matches only. This is a separate board from the weekly league, with its own 30 predictions. Both run side by side.</div>
             </div>
           </div>
         );
@@ -2109,10 +2171,10 @@ if (!session && !guestMode) {
               {[1,2,3].map(s => <div key={s} className={`step-dot${step === s ? " active" : step > s ? " done" : ""}`} />)}
             </div>
             {step === 1 && (
-              <div className="card">
+              <div className="card step1">
                 {userRole !== "admin" && (
                   <div style={{ fontSize: 12, color: "#C9D1D9", background: "#2EE66B0d", border: "1px solid #2EE66B33", borderRadius: 10, padding: "9px 12px", marginBottom: 16 }}>
-                    🏅 Only the Deep433 curated matches are open for predictions. Each matchday's matches are added on the day.
+                    🏅 Only Deep433 curated matches are open. There are two separate boards: 🏅 CURATED is the weekly league, and 🇪🇺 CURATED · EURO is the Champions League and Europa League board (30 predictions across 2 weeks from Tue 13 Oct). Each has its own 30 picks, and they run side by side.
                   </div>
                 )}
                 {userRole === "admin" && (<>
@@ -2187,16 +2249,20 @@ if (!session && !guestMode) {
                 <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 12 }}>
                   {userRole === "admin"
                     ? "Pick a league above, then choose a match marked 🏅 Leaderboard to play for the prize. Select it from the list so your prediction is recognised and scored."
-                    : "Choose a match below to make your prediction. Every match here counts towards the leaderboard."}
+                    : "Pick a match to predict. Every match counts towards the leaderboard."}
                 </div>
-                <input className="search-input" placeholder="🔍 Search team..." value={fixtureSearch} onChange={e => setFixtureSearch(e.target.value)} style={{ marginBottom: 12 }} />
+                <div className="fx-search fx-mob-only">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B98A5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                  <input placeholder="Search team…" value={fixtureSearch} onChange={e => setFixtureSearch(e.target.value)} />
+                </div>
+                <input className="search-input fx-desk-search" placeholder="🔍 Search team..." value={fixtureSearch} onChange={e => setFixtureSearch(e.target.value)} style={{ marginBottom: 12 }} />
                 {fixturesLoading && (
                   <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 16, padding: "20px 0" }}>Loading fixtures...</div>
                 )}
                 {!fixturesLoading && openFixtures.length === 0 && (
                   <div style={{ textAlign: "center", color: "#94a3b8", fontSize: 14, padding: "20px 0" }}>{fixtures.length > 0 ? "✅ You've predicted every open match. See History for your picks, and check back for the next matchday." : userRole === "admin" ? "No upcoming fixtures found for this competition" : "No curated matches are open right now. Check back on matchday."}</div>
                 )}
-                <div style={{ maxHeight: 320, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
+                <div className="fx-list-desk">
                   {Object.entries(fixturesByDate).map(([date, dateFixtures]) => (
                     <div key={date}>
                       <div style={{ fontSize: 13, color: date === "Today" ? "#4ade80" : date === "Tomorrow" ? "#f59e0b" : "#444", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6, marginTop: 4 }}>{date}</div>
@@ -2239,10 +2305,74 @@ if (!session && !guestMode) {
                     </div>
                   ))}
                 </div>
+                {/* Mobile list: compact cards grouped by competition. Desktop keeps the list above. */}
+                <div className="fx-mob-only fx-list-mob">
+                  {(() => {
+                    const keyOf = f => `${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`;
+                    const isCur = f => curatedBadgeKeys.has(keyOf(f)) || euroBadgeKeys.has(keyOf(f));
+                    const flat = Object.values(fixturesByDate).flat();
+                    const groups = [];
+                    flat.forEach(f => {
+                      const name = f.round || "Matches";
+                      let g = groups.find(x => x.name === name);
+                      if (!g) { g = { name, items: [] }; groups.push(g); }
+                      g.items.push(f);
+                    });
+                    return groups.map(g => {
+                      const allCur = g.items.every(isCur);
+                      const logo = logoForCompetition(g.name);
+                      return (
+                        <div key={g.name}>
+                          <div className="fx-group">
+                            {logo && <img src={logo} alt="" crossOrigin="anonymous" onError={e => { e.currentTarget.style.display = "none"; }} />}
+                            <span className="fx-gname">{g.name}</span>
+                            {allCur && <span className="fx-pill">Curated</span>}
+                          </div>
+                          {g.items.map((f, i) => {
+                            const status = getMatchStatus(f.home, f.away);
+                            const isLocked = status === "finished" || status === "live";
+                            const selected = homeTeam === f.home && awayTeam === f.away;
+                            const dl = getDateLabel(f.date);
+                            return (
+                              <div key={i} className={`fx-card${selected ? " selected" : ""}${isLocked ? " locked" : ""}`}
+                                onClick={() => { if (!isLocked) selectFixture(f); }}>
+                                <div className="fx-top">
+                                  <span>
+                                    {status === "live" ? <b style={{ color: "#ef4444" }}>LIVE</b>
+                                      : status === "finished" ? <b>{f.score ? `${f.score.home}-${f.score.away}` : "FT"}</b>
+                                      : <><b>{new Date(f.kickoff).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</b> · {dl}</>}
+                                  </span>
+                                  {!allCur && isCur(f) && <span className="fx-pill">Curated</span>}
+                                </div>
+                                <div className="fx-team"><Crest src={f.homeLogo} name={f.home} /><span className="fx-tn">{f.home}</span></div>
+                                <div className="fx-team"><Crest src={f.awayLogo} name={f.away} /><span className="fx-tn">{f.away}</span></div>
+                                {selected && (
+                                  <span className="fx-check">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0A0F14" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
                 {error && <div style={{ color: "#f87171", fontSize: 16, margin: "12px 0" }}>{error}</div>}
-                <button className="predict-btn" onClick={() => goToStep2()} disabled={!homeTeam || !awayTeam} style={{ marginTop: 16 }}>
+                <button className="predict-btn fx-desk-btn" onClick={() => goToStep2()} disabled={!homeTeam || !awayTeam} style={{ marginTop: 16 }}>
                   ⚡ Predict This Match
                 </button>
+                <div className="fx-sticky">
+                  <button onClick={() => goToStep2()} disabled={!homeTeam || !awayTeam}>
+                    {homeTeam && awayTeam ? (
+                      <>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="#0A0F14" stroke="#0A0F14" strokeWidth="1.5" strokeLinejoin="round" style={{ flex: "none" }}><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
+                        <span>Predict: {homeTeam} vs {awayTeam} →</span>
+                      </>
+                    ) : "Select a match"}
+                  </button>
+                </div>
               </div>
             )}
             {step === 2 && (
