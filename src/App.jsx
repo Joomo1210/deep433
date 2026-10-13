@@ -219,6 +219,7 @@ const PAGE_MAX_WIDTH = 760;
 //     xUrl: "https://x.com/Deep433/status/<post id>" }   // xUrl optional: falls back to the profile
 const PREMIUM_MATCHES = [
   { home: "Manchester City", away: "PSG", kickoff: "2026-10-14T19:00:00Z", league: "Champions League" }, // add xUrl: "https://x.com/Deep433/status/<post id>" once the post is up
+  { home: "Roma", away: "Real Madrid", kickoff: "2026-10-14T19:00:00Z", league: "Champions League" }, // add xUrl: "https://x.com/Deep433/status/<post id>" once the post is up
 ];
 const PREMIUM_POINTS = { exact: 10, outcome: 5, ou: 3 };
 const STANDARD_POINTS_LINE = "Exact 5 · Outcome 3 · O/U +1";
