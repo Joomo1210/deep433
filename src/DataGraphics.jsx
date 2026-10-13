@@ -59,6 +59,14 @@ const activeBoard = () => BOARDS[ACTIVE_BOARD] || BOARDS.euro;
 const boardIsEuro = () => ACTIVE_BOARD === "euro";
 const boardFxTable = () => activeBoard().fixturesTable;
 const boardStartIso = () => new Date(activeBoard().startIso).toISOString();
+const fetchBonusById = async (supabase) => {
+  const out = {};
+  try {
+    const { data } = await supabase.from("bonus_points").select("user_id, points").eq("board", activeBoard().id);
+    (data || []).forEach(b => { out[b.user_id] = (out[b.user_id] || 0) + (b.points || 0); });
+  } catch (e) { /* table missing: no bonus */ }
+  return out;
+};
 const boardHeadStart = (id) => (activeBoard().headStart ? (ROUND_HEAD_START[id] || 0) : 0);
 const boardRoundLabel = () => activeBoard().name;
 const boardEndsText = () => activeBoard().endsText;
@@ -4050,12 +4058,13 @@ function LeaderboardGraphic({ supabase }) {
       });
 
       const userIds = Object.keys(byUser);
+      const bonusById = await fetchBonusById(supabase);
       const { data: profilesData } = await supabase.from("profiles").select("id, username, role").in("id", userIds);
       const nameById = {}, roleById = {};
       (profilesData || []).forEach(p => { nameById[p.id] = p.username; roleById[p.id] = p.role; });
 
       const finalRows = userIds
-        .map(id => ({ name: nameById[id], role: roleById[id], ...byUser[id], headStart: boardHeadStart(id), points: byUser[id].points + (boardHeadStart(id)) }))
+        .map(id => ({ name: nameById[id], role: roleById[id], ...byUser[id], headStart: boardHeadStart(id), bonus: bonusById[id] || 0, points: byUser[id].points + (boardHeadStart(id)) + (bonusById[id] || 0) }))
         .filter(r => r.name && r.role !== "admin")
         .sort((a, b) => b.points - a.points)
         .slice(0, 10);
@@ -4227,12 +4236,13 @@ function Top5ExplainedGraphic({ supabase }) {
       });
 
       const userIds = Object.keys(byUser);
+      const bonusById = await fetchBonusById(supabase);
       const { data: profilesData } = await supabase.from("profiles").select("id, username, role").in("id", userIds);
       const nameById = {}, roleById = {};
       (profilesData || []).forEach(p => { nameById[p.id] = p.username; roleById[p.id] = p.role; });
 
       const finalRows = userIds
-        .map(id => ({ name: nameById[id], role: roleById[id], ...byUser[id], headStart: boardHeadStart(id), points: byUser[id].points + (boardHeadStart(id)) }))
+        .map(id => ({ name: nameById[id], role: roleById[id], ...byUser[id], headStart: boardHeadStart(id), bonus: bonusById[id] || 0, points: byUser[id].points + (boardHeadStart(id)) + (bonusById[id] || 0) }))
         .filter(r => r.name && r.role !== "admin")
         .sort((a, b) => b.points - a.points)
         .slice(0, 5);
