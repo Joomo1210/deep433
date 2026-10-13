@@ -217,13 +217,15 @@ const PAGE_MAX_WIDTH = 760;
 // To feature one, add an entry here (kickoff in UTC) and redeploy; remove it when the day is done.
 //   { home: "Atlético", away: "United", kickoff: "2026-10-14T19:00:00Z", league: "Champions League",
 //     xUrl: "https://x.com/Deep433/status/<post id>" }   // xUrl optional: falls back to the profile
-const PREMIUM_MATCHES = [];
+const PREMIUM_MATCHES = [
+  { home: "Manchester City", away: "PSG", kickoff: "2026-10-14T19:00:00Z", league: "Champions League" }, // add xUrl: "https://x.com/Deep433/status/<post id>" once the post is up
+];
 const PREMIUM_POINTS = { exact: 10, outcome: 5, ou: 3 };
 const STANDARD_POINTS_LINE = "Exact 5 · Outcome 3 · O/U +1";
 const X_PROFILE_URL = "https://x.com/Deep433";
 
-const PRIZE_AMOUNTS = null;
-const PRIZE_HEADLINE = "Predict free. Top 5 win every round";
+const PRIZE_AMOUNTS = ["17,500","12,500","9,000","6,000","5,000"]; // 35/25/18/12/10% of 50k. Add a currency symbol here once decided.
+const PRIZE_HEADLINE = "Predict free. 50k for the top 5";
 const POPULAR_LEAGUE_IDS = ["pl", "laliga", "seriea", "bundesliga", "ucl", "uel"];
 const LEAGUES = [
   { id: "wc2026", label: "FIFA World Cup 2026", short: "FIFA World Cup 2026" },
