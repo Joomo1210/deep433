@@ -194,6 +194,9 @@ const logoForCompetition = (label) => {
 };
 
 const ICON_PATHS = {
+  crown: <><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z" /><path d="M5 20h14" /></>,
+  target: <><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></>,
+  clock: <><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></>,
   zap: <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />,
   history: <><path d="M3 3v5h5" /><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8" /><path d="M12 7v5l4 2" /></>,
   activity: <path d="M22 12h-4l-3 9L9 3l-3 9H2" />,
@@ -201,8 +204,8 @@ const ICON_PATHS = {
   chart: <><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></>,
   trophy: <><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" /><path d="M4 22h16" /><path d="M10 14.66V17c0 .55-.47.98-1.04 1.21C7.85 18.75 7 20.24 7 22" /><path d="M14 14.66V17c0 .55.47.98 1.04 1.21C16.15 18.75 17 20.24 17 22" /><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" /></>,
 };
-const NavIcon = ({ name }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
+const NavIcon = ({ name, size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}>
     {ICON_PATHS[name]}
   </svg>
 );
@@ -226,7 +229,12 @@ const STANDARD_POINTS_LINE = "Exact 5 · Outcome 3 · O/U +1";
 const X_PROFILE_URL = "https://x.com/Deep433";
 
 const PRIZE_AMOUNTS = ["17,500","12,500","9,000","6,000","5,000"]; // 35/25/18/12/10% of 50k. Add a currency symbol here once decided.
-const PRIZE_HEADLINE = "Predict free. 50k for the top 5";
+const PRIZE_POOL = "50k";                       // gold part of the headline
+const PRIZE_HEADLINE_REST = "for the top 5";   // rest of the headline
+const PRIZE_EYEBROW = "ROUND PRIZES";
+const PRIZE_SUBLINE = "Predict free. Skill based.";
+const PRIZE_TITLES = ["DeepSharp", "DeepBrain", "DeepTarget"]; // named titles for 1st, 2nd, 3rd
+const SCORING_CHIPS = [["Exact score", "+5"], ["Outcome", "+3"], ["Over/Under", "+1"]];
 const POPULAR_LEAGUE_IDS = ["pl", "laliga", "seriea", "bundesliga", "ucl", "uel"];
 const LEAGUES = [
   { id: "wc2026", label: "FIFA World Cup 2026", short: "FIFA World Cup 2026" },
@@ -781,6 +789,8 @@ export default function FootballPredictor() {
   const [selectedHomeLogo, setSelectedHomeLogo] = useState(null);
   const [selectedAwayLogo, setSelectedAwayLogo] = useState(null);
   const [userRole, setUserRole] = useState("user");
+  // Premium matches come from the premium_matches table; the PREMIUM_MATCHES constant is only a fallback.
+  const [premiumDb, setPremiumDb] = useState(null);
   const [username, setUsername] = useState("");
   const [usernameDraft, setUsernameDraft] = useState("");
   const [leaderboard, setLeaderboard] = useState([]);
@@ -1230,6 +1240,18 @@ export default function FootballPredictor() {
   // database, so no API-Football call is made for them. Admins keep the full fixture list from the API
   // so they can still pick matches to curate.
   const onPredictTab = tab === "predict";
+  useEffect(() => {
+    if (tab !== "predict") return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data, error } = await supabase.from("premium_matches").select("home, away, kickoff, league, x_url").eq("active", true);
+        if (cancelled || error || !data) return;
+        setPremiumDb(data.map(r => ({ home: r.home, away: r.away, kickoff: r.kickoff, league: r.league || "", xUrl: r.x_url || "" })));
+      } catch (e) { /* keep the fallback list */ }
+    })();
+    return () => { cancelled = true; };
+  }, [tab]);
   useEffect(() => {
     if (userRole !== "admin") {
       if (!onPredictTab) return;
@@ -2038,38 +2060,83 @@ if (!session && !guestMode) {
       {/* Prize banner. Display only. Headline and amounts come from PRIZE_HEADLINE / PRIZE_AMOUNTS near the top of this file. */}
       {tab === "predict" && step === 1 && (
         <div style={{ maxWidth: PAGE_MAX_WIDTH, margin: "0 auto", padding: "16px 16px 0" }}>
-          <div style={{ borderRadius: 14, border: "1px solid #2EE66B59", padding: 16, background: "radial-gradient(circle at 85% 0%, rgba(46,230,107,.18), transparent 55%), linear-gradient(160deg,#0d2a1b,#0b1a14 70%)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-              <div>
-                <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                  <span style={{ fontSize: 28, lineHeight: 1 }}>🏆</span>
-                  <div style={{ color: "#F5C518", fontSize: 19, fontWeight: 900, lineHeight: 1.15 }}>{PRIZE_HEADLINE}</div>
+          <style>{`
+            .pz-card { position: relative; overflow: hidden; width: 100%; border-radius: 18px; padding: 18px; border: 1px solid rgba(46,230,107,0.35); background: radial-gradient(ellipse at 50% 62%, rgba(245,197,24,0.10), transparent 60%), linear-gradient(135deg, #0F2A1A, #0A1510); font-family: 'Inter','Helvetica Neue',sans-serif; }
+            .pz-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+            .pz-eyebrow { display: flex; align-items: center; gap: 6px; min-width: 0; color: #F5C518; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+            .pz-link { flex: none; background: none; border: none; padding: 0; color: #2EE66B; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+            .pz-h { margin: 8px 0 0; color: #fff; font-size: 22px; font-weight: 800; line-height: 1.15; white-space: nowrap; }
+            .pz-h b { color: #F5C518; font-weight: 800; }
+            .pz-sub { margin-top: 4px; color: #A9B4C0; font-size: 13px; }
+            .pz-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+            .pz-chip { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10); color: #fff; white-space: nowrap; }
+            .pz-chip b { color: #2EE66B; font-weight: 700; }
+            .pz-podium { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-items: end; margin-top: 18px; padding-top: 14px; }
+            .pz-block { position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px; border-radius: 14px; padding: 12px 4px; min-width: 0; text-align: center; }
+            .pz-circle { display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #14100a; margin-bottom: 6px; flex: none; }
+            .pz-title { max-width: 100%; font-weight: 800; line-height: 1.3; padding-bottom: 1px; white-space: nowrap; letter-spacing: -0.2px; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+            .pz-pos { font-size: 11px; color: #A9B4C0; }
+            .pz-amt { font-weight: 800; color: #fff; }
+            .pz-crown { position: absolute; top: 6px; left: 50%; transform: translateX(-50%); color: #FFD54A; filter: drop-shadow(0 0 6px rgba(245,197,24,0.6)); }
+            .pz-shimmer { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(105deg, transparent 35%, rgba(255,226,130,0.22) 50%, transparent 65%); transform: translateX(-120%); animation: pz-sweep 4s ease-in-out infinite; }
+            @keyframes pz-sweep { 0%, 60% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
+            @media (prefers-reduced-motion: reduce) { .pz-shimmer { animation: none; display: none; } }
+            .pz-rest { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+            .pz-pill { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid #1F2A36; min-width: 0; }
+            .pz-num { flex: none; width: 22px; height: 22px; border-radius: 50%; background: #3b82f6; color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+            .pz-pill span.l { font-size: 12px; color: #A9B4C0; }
+            .pz-pill span.a { margin-left: auto; font-size: 14px; font-weight: 800; color: #fff; }
+          `}</style>
+          <div className="pz-card">
+            <div className="pz-top">
+              <div className="pz-eyebrow"><span style={{ color: "#F5C518", display: "inline-flex" }}><NavIcon name="trophy" size={20} /></span>{PRIZE_EYEBROW}</div>
+              <button className="pz-link" onClick={() => setTab("leaderboard")}>See board →</button>
+            </div>
+            <h2 className="pz-h"><b>{PRIZE_POOL}</b> {PRIZE_HEADLINE_REST}</h2>
+            <div className="pz-sub">{PRIZE_SUBLINE}</div>
+            <div className="pz-chips">
+              {SCORING_CHIPS.map(([label, pts]) => <span key={label} className="pz-chip">{label} <b>{pts}</b></span>)}
+            </div>
+            {PRIZE_AMOUNTS && (() => {
+              const podium = [
+                { i: 1, pos: "2nd", h: 130, icon: "brain", circle: 40, grad: "linear-gradient(135deg,#E6EBF0,#9AA5B1)", text: "linear-gradient(180deg,#F1F4F7,#9AA5B1)", border: "1px solid rgba(200,208,218,0.55)", bg: "rgba(200,208,218,0.06)", ts: 13, as: 18 },
+                { i: 0, pos: "1st", h: 150, icon: "zap", circle: 44, grad: "linear-gradient(135deg,#FFD54A,#F5A300)", text: "linear-gradient(180deg,#FFE27A,#F5A300)", border: "1.5px solid #F5C518", bg: "rgba(245,197,24,0.08)", ts: 14, as: 20, first: true },
+                { i: 2, pos: "3rd", h: 124, icon: "target", circle: 38, grad: "linear-gradient(135deg,#E39A5B,#A0582A)", text: "linear-gradient(180deg,#EDB07C,#B8743A)", border: "1px solid rgba(205,127,50,0.55)", bg: "rgba(205,127,50,0.06)", ts: 13, as: 18 },
+              ];
+              return (
+                <div className="pz-podium">
+                  {podium.map(p => (
+                    <div key={p.pos} className="pz-block" style={{ height: p.h, border: p.border, background: p.bg, paddingTop: p.first ? 26 : 12 }}>
+                      {p.first && <><span className="pz-shimmer" aria-hidden="true" /><span className="pz-crown"><NavIcon name="crown" size={18} /></span></>}
+                      <div className="pz-circle" style={{ width: p.circle, height: p.circle, background: p.grad, boxShadow: p.first ? "0 0 16px rgba(245,197,24,0.55)" : "none" }}><NavIcon name={p.icon} size={p.first ? 22 : 20} /></div>
+                      <div className="pz-title" style={{ fontSize: `min(${p.ts}px, 3.6vw)`, backgroundImage: p.text }}>{PRIZE_TITLES[p.i]}</div>
+                      <div className="pz-pos">{p.pos}</div>
+                      <div className="pz-amt" style={{ fontSize: p.as }}>{PRIZE_AMOUNTS[p.i]}</div>
+                    </div>
+                  ))}
                 </div>
-                <div style={{ fontSize: 11, marginTop: 8, color: "#dfe8e3" }}>Free to enter • Skill based • Exact score 5 • Outcome 3 • Over/Under +1</div>
+              );
+            })()}
+            {PRIZE_AMOUNTS && (
+              <div className="pz-rest">
+                {[3, 4].map(i => (
+                  <div key={i} className="pz-pill"><span className="pz-num">{i + 1}</span><span className="l">{i + 1}th</span><span className="a">{PRIZE_AMOUNTS[i]}</span></div>
+                ))}
               </div>
-              <button onClick={() => setTab("leaderboard")} style={{ flex: "none", background: "none", border: "1px solid #2EE66B", borderRadius: 999, color: "#2EE66B", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "7px 11px", whiteSpace: "nowrap" }}>{userRole === "admin" ? "See board →" : "My points →"}</button>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", marginTop: 14, background: "rgba(0,0,0,.35)", borderRadius: 12, padding: "10px 0" }}>
-              {["1st", "2nd", "3rd", "4th", "5th"].map((pos, i) => (
-                <div key={pos} style={{ textAlign: "center", borderLeft: i === 0 ? "none" : "1px solid rgba(255,255,255,.1)", padding: "2px 4px" }}>
-                  <div style={{ fontSize: 10, color: "#8b98a5", marginBottom: 5 }}>{pos}</div>
-                  <div style={{ height: 22, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 4, fontSize: i < 3 ? 18 : 11, fontWeight: 800 }}>
-                    {i < 3 ? ["🥇", "🥈", "🥉"][i] : <span style={{ width: 20, height: 20, borderRadius: "50%", background: "#3b82f6", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>{i + 1}</span>}
-                  </div>
-                  {PRIZE_AMOUNTS && <div style={{ fontSize: 17, fontWeight: 900, color: "#f2f5f7" }}>{PRIZE_AMOUNTS[i]}</div>}
-                </div>
-              ))}
-            </div>
+            )}
           </div>
         </div>
       )}
       {/* Prediction counter: how many curated leaderboard predictions this player has
           made towards the 30 cap. Display only. Same count the cap itself uses. */}
       {tab === "predict" && session && new Date() > WEEKLY_ROUND_END && (
-        <div style={{ background: "#0d0d18", borderBottom: "1px solid #1a1a2e", padding: "10px 16px" }}>
-          <div style={{ maxWidth: PAGE_MAX_WIDTH, margin: "0 auto" }}>
-            <div style={{ fontSize: 16, fontWeight: 900, color: "#fbbf24" }}>🏅 Weekly league: not open yet</div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#94a3b8", marginTop: 3 }}>Round 3 is complete. The next round opens soon. Euro matches below are open now.</div>
+        <div style={{ maxWidth: PAGE_MAX_WIDTH, margin: "0 auto", padding: "12px 16px 0" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 12, background: "#111820", border: "1px solid #1F2A36", borderRadius: 14, padding: 14 }}>
+            <span style={{ color: "#F5C518", display: "inline-flex", marginTop: 1 }}><NavIcon name="clock" size={20} /></span>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#F5C518" }}>Weekly league: not open yet</div>
+              <div style={{ fontSize: 13, color: "#A9B4C0", marginTop: 3 }}>The next round opens soon. Euro matches below are open now.</div>
+            </div>
           </div>
         </div>
       )}
@@ -2320,7 +2387,7 @@ if (!session && !guestMode) {
                     : "Pick a match to predict. Every match counts towards the leaderboard."}
                 </div>
                 {(() => {
-                  const live = PREMIUM_MATCHES.filter(m => m.kickoff && new Date(m.kickoff).getTime() > Date.now() - 150 * 60000);
+                  const live = (premiumDb ?? PREMIUM_MATCHES).filter(m => m.kickoff && new Date(m.kickoff).getTime() > Date.now() - 150 * 60000);
                   if (live.length === 0) return null;
                   return live.map((m, i) => {
                     const k = new Date(m.kickoff);
@@ -2459,7 +2526,7 @@ if (!session && !guestMode) {
                 <button className="predict-btn fx-desk-btn" onClick={() => goToStep2()} disabled={!homeTeam || !awayTeam} style={{ marginTop: 16 }}>
                   ⚡ Predict This Match
                 </button>
-                <div className="fx-sticky">
+                {filteredFixtures.length > 0 && <div className="fx-sticky">
                   <button onClick={() => goToStep2()} disabled={!homeTeam || !awayTeam}>
                     {homeTeam && awayTeam ? (
                       <>
@@ -2468,7 +2535,7 @@ if (!session && !guestMode) {
                       </>
                     ) : "Select a match"}
                   </button>
-                </div>
+                </div>}
               </div>
             )}
             {step === 2 && (
