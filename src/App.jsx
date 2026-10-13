@@ -1100,6 +1100,12 @@ export default function FootballPredictor() {
     });
 
     const userIds = Object.keys(byUser);
+    // Bonus points (Premium matches, scored by hand) live in the bonus_points table, per board.
+    const bonusById = {};
+    try {
+      const { data: bonusData } = await supabase.from("bonus_points").select("user_id, points").eq("board", contest === "euro" ? "euro" : "weekly");
+      (bonusData || []).forEach(b => { bonusById[b.user_id] = (bonusById[b.user_id] || 0) + (b.points || 0); });
+    } catch (e) { /* table missing: no bonus */ }
     const { data: profilesData } = await supabase
       .from("profiles")
       .select("id, username, role")
@@ -1114,7 +1120,8 @@ export default function FootballPredictor() {
         name: nameById[id] || null, // null = never set a display name
         role: roleById[id],
         total: byUser[id].total,
-        points: byUser[id].points + (contest === "euro" ? 0 : (ROUND_HEAD_START[id] || 0)),
+        points: byUser[id].points + (contest === "euro" ? 0 : (ROUND_HEAD_START[id] || 0)) + (bonusById[id] || 0),
+        bonus: bonusById[id] || 0,
         headStart: contest === "euro" ? 0 : (ROUND_HEAD_START[id] || 0),
         exact: byUser[id].exact,
         outcomeOnly: byUser[id].outcomeOnly,
