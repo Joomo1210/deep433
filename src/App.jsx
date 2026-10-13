@@ -212,6 +212,16 @@ const PAGE_MAX_WIDTH = 760;
 // Home screen config. Display only.
 // PRIZE_AMOUNTS: leave as null to show "Top 5 win every round" with no amounts.
 // To show amounts, set it to e.g. ["£20","£12","£8","£5","£5"] (1st to 5th).
+// ── Premium match (predicted on X, not in the app) ──────────────────────────
+// One featured match per matchday, worth more points. Players predict it in the comments on X.
+// To feature one, add an entry here (kickoff in UTC) and redeploy; remove it when the day is done.
+//   { home: "Atlético", away: "United", kickoff: "2026-10-14T19:00:00Z", league: "Champions League",
+//     xUrl: "https://x.com/Deep433/status/<post id>" }   // xUrl optional: falls back to the profile
+const PREMIUM_MATCHES = [];
+const PREMIUM_POINTS = { exact: 10, outcome: 5, ou: 3 };
+const STANDARD_POINTS_LINE = "Exact 5 · Outcome 3 · O/U +1";
+const X_PROFILE_URL = "https://x.com/Deep433";
+
 const PRIZE_AMOUNTS = null;
 const PRIZE_HEADLINE = "Predict free. Top 5 win every round";
 const POPULAR_LEAGUE_IDS = ["pl", "laliga", "seriea", "bundesliga", "ucl", "uel"];
@@ -1961,6 +1971,7 @@ if (!session && !guestMode) {
           .fx-card.locked { opacity: 0.45; cursor: default; }
           .fx-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; color: #8B98A5; margin-bottom: 4px; }
           .fx-top b { color: #fff; font-weight: 800; }
+          .fx-pts { font-size: 11px; font-weight: 600; color: #8B98A5; margin-top: 8px; }
           .fx-team { display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 15px; font-weight: 600; color: #fff; margin-top: 8px; }
           .fx-team span.fx-tn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
           .fx-card.selected .fx-team { padding-right: 34px; }
@@ -2305,6 +2316,30 @@ if (!session && !guestMode) {
                     ? "Pick a league above, then choose a match marked 🏅 Leaderboard to play for the prize. Select it from the list so your prediction is recognised and scored."
                     : "Pick a match to predict. Every match counts towards the leaderboard."}
                 </div>
+                {(() => {
+                  const live = PREMIUM_MATCHES.filter(m => m.kickoff && new Date(m.kickoff).getTime() > Date.now() - 150 * 60000);
+                  if (live.length === 0) return null;
+                  return live.map((m, i) => {
+                    const k = new Date(m.kickoff);
+                    const when = `${k.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })} · ${k.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
+                    return (
+                      <div key={i} style={{ background: "linear-gradient(180deg, rgba(245,197,24,0.10), rgba(245,197,24,0.03))", border: "1.5px solid #F5C518", borderRadius: 14, padding: 14, marginBottom: 16, boxShadow: "0 0 22px rgba(245,197,24,0.10)", minWidth: 0 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                          <span style={{ background: "#F5C518", color: "#1a1300", fontSize: 10, fontWeight: 900, borderRadius: 6, padding: "4px 8px", letterSpacing: 0.5, whiteSpace: "nowrap", flex: "none" }}>⭐ PREMIUM MATCH</span>
+                          <span style={{ fontSize: 11, color: "#8b98a5", textAlign: "right" }}>{when}{m.league ? ` · ${m.league}` : ""}</span>
+                        </div>
+                        <div style={{ marginTop: 12, fontSize: 16, fontWeight: 700, color: "#fff", overflowWrap: "anywhere" }}>{m.home} <span style={{ color: "#8b98a5", fontWeight: 600 }}>vs</span> {m.away}</div>
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
+                          <span style={{ fontSize: 11, fontWeight: 800, color: "#F5C518", background: "#F5C51822", border: "1px solid #F5C51855", borderRadius: 6, padding: "3px 8px" }}>Exact score {PREMIUM_POINTS.exact} pts</span>
+                          <span style={{ fontSize: 11, fontWeight: 800, color: "#F5C518", background: "#F5C51822", border: "1px solid #F5C51855", borderRadius: 6, padding: "3px 8px" }}>Outcome {PREMIUM_POINTS.outcome} pts</span>
+                          <span style={{ fontSize: 11, fontWeight: 800, color: "#F5C518", background: "#F5C51822", border: "1px solid #F5C51855", borderRadius: 6, padding: "3px 8px" }}>Over/Under {PREMIUM_POINTS.ou} pts</span>
+                        </div>
+                        <div style={{ fontSize: 12, color: "#C9D1D9", marginTop: 10 }}>Predict Premium on X for {PREMIUM_POINTS.exact}, {PREMIUM_POINTS.outcome} and {PREMIUM_POINTS.ou} points. Drop your scoreline in the comments before kickoff.</div>
+                        <a href={m.xUrl || X_PROFILE_URL} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: 12, height: 44, borderRadius: 12, background: "#F5C518", color: "#1a1300", fontWeight: 800, fontSize: 14, textDecoration: "none" }}>Predict Premium on X →</a>
+                      </div>
+                    );
+                  });
+                })()}
                 <div className="fx-search fx-mob-only">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B98A5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
                   <input placeholder="Search team…" value={fixtureSearch} onChange={e => setFixtureSearch(e.target.value)} />
@@ -2347,6 +2382,9 @@ if (!session && !guestMode) {
                               )}
                               {euroBadgeKeys.has(`${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`) && (
                                 <div style={{ display: "inline-block", fontSize: 10, fontWeight: 900, color: "#a5b4fc", background: "#818cf818", border: "1px solid #818cf866", borderRadius: 6, padding: "2px 7px", marginTop: 4, whiteSpace: "nowrap", letterSpacing: 0.4 }}>🇪🇺 CURATED · EURO</div>
+                              )}
+                              {(curatedBadgeKeys.has(`${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`) || euroBadgeKeys.has(`${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`)) && (
+                                <div style={{ fontSize: 10, fontWeight: 600, color: "#8b98a5", marginTop: 4, whiteSpace: "nowrap" }}>{STANDARD_POINTS_LINE}</div>
                               )}
                             </div>
                             <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, justifyContent: "flex-end" }}>
@@ -2400,6 +2438,7 @@ if (!session && !guestMode) {
                                 </div>
                                 <div className="fx-team"><Crest src={f.homeLogo} name={f.home} /><span className="fx-tn">{f.home}</span></div>
                                 <div className="fx-team"><Crest src={f.awayLogo} name={f.away} /><span className="fx-tn">{f.away}</span></div>
+                                {isCur(f) && <div className="fx-pts">{STANDARD_POINTS_LINE}</div>}
                                 {selected && (
                                   <span className="fx-check">
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0A0F14" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
