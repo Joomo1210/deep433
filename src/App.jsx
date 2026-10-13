@@ -133,6 +133,27 @@ const LEAGUE_LOGOS = {
   serieb:       "https://media.api-sports.io/football/leagues/136.png",
   npfl:         "https://media.api-sports.io/football/leagues/399.png",
   scotprem:     "https://media.api-sports.io/football/leagues/179.png",
+  communityshield: "https://media.api-sports.io/football/leagues/528.png",
+  leaguecup: "https://media.api-sports.io/football/leagues/48.png",
+  dflsupercup: "https://media.api-sports.io/football/leagues/529.png",
+  tropheedeschampions: "https://media.api-sports.io/football/leagues/526.png",
+  supercoppa: "https://media.api-sports.io/football/leagues/547.png",
+  uefanationsleague: "https://media.api-sports.io/football/leagues/5.png",
+  afconqualifiers: "https://media.api-sports.io/football/leagues/36.png",
+  concacafnationsleague: "https://media.api-sports.io/football/leagues/536.png",
+  austrianbl: "https://media.api-sports.io/football/leagues/218.png",
+  superlig: "https://media.api-sports.io/football/leagues/203.png",
+  eredivisie: "https://media.api-sports.io/football/leagues/88.png",
+  belgianpro: "https://media.api-sports.io/football/leagues/144.png",
+  primeiraliga: "https://media.api-sports.io/football/leagues/94.png",
+  superleaguegr: "https://media.api-sports.io/football/leagues/197.png",
+  ukraine: "https://media.api-sports.io/football/leagues/235.png",
+  swisssl: "https://media.api-sports.io/football/leagues/207.png",
+  czechfl: "https://media.api-sports.io/football/leagues/345.png",
+  croatiahnl: "https://media.api-sports.io/football/leagues/210.png",
+  danishsl: "https://media.api-sports.io/football/leagues/119.png",
+  eliteserien: "https://media.api-sports.io/football/leagues/103.png",
+  serbiasl: "https://media.api-sports.io/football/leagues/286.png",
 };
 // Lucide-style line icons (inline so no extra package is needed). Same size and colour as the text.
 // ── Mobile match list helpers ─────────────────────────────────────────────
@@ -148,6 +169,20 @@ const Crest = ({ src, name }) => {
     return <span style={{ width: 24, height: 24, borderRadius: "50%", background: "#1F2A36", color: "#fff", fontSize: 10, fontWeight: 700, display: "inline-flex", alignItems: "center", justifyContent: "center", flex: "none" }}>{crestInitials(name)}</span>;
   }
   return <img src={src} alt="" onError={() => setBad(true)} style={{ width: 24, height: 24, objectFit: "contain", flex: "none" }} />;
+};
+const compInitials = (label) => {
+  const w = (label || "?").replace(/[()]/g, "").split(/\s+/).filter(Boolean);
+  return (w.length === 1 ? w[0].slice(0, 3) : w.slice(0, 3).map(x => x[0]).join("")).toUpperCase();
+};
+// Competition logo on a light tile so dark crests (Champions League, Europa League) stay visible on the dark page.
+// Falls back to initials when a logo is missing or fails to load.
+const CompLogo = ({ src, label, size = 40 }) => {
+  const [bad, setBad] = useState(false);
+  const tile = { width: size, height: size, borderRadius: Math.round(size / 4), background: "#EEF2F6", display: "inline-flex", alignItems: "center", justifyContent: "center", flex: "none", overflow: "hidden" };
+  if (!src || bad) {
+    return <span style={{ ...tile, background: "#1F2A36", color: "#2EE66B", fontWeight: 800, fontSize: Math.max(9, Math.round(size / 3.2)), letterSpacing: 0.3 }}>{compInitials(label)}</span>;
+  }
+  return <span style={tile}><img src={src} alt="" onError={() => setBad(true)} style={{ width: "76%", height: "76%", objectFit: "contain" }} /></span>;
 };
 const logoForCompetition = (label) => {
   const l = (label || "").toLowerCase();
@@ -1918,8 +1953,7 @@ if (!session && !guestMode) {
           .fx-search input::placeholder { color: #8B98A5; }
           .fx-search input:focus { border-color: #2EE66B; }
           .fx-group { display: flex; align-items: center; gap: 8px; margin: 16px 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #8B98A5; font-weight: 700; min-width: 0; }
-          .fx-group img { width: 18px; height: 18px; object-fit: contain; flex: none; }
-          .fx-group .fx-gname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+                    .fx-group .fx-gname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
           .fx-pill { margin-left: auto; flex: none; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; padding: 2px 8px; border-radius: 999px; background: rgba(46,230,107,0.12); color: #2EE66B; }
           .fx-card { position: relative; background: #111820; border: 1px solid #1F2A36; border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; transition: background .15s; min-width: 0; overflow-wrap: anywhere; }
           .fx-card:active { background: #16212c; }
@@ -2209,7 +2243,7 @@ if (!session && !guestMode) {
                   {LEAGUES.filter(l => showMoreComps || POPULAR_LEAGUE_IDS.includes(l.id) || l.id === selectedLeague).map(l => (
                     <button key={l.id} className={`comp-card${selectedLeague === l.id ? " active" : ""}`}
                       onClick={() => { setSelectedLeague(l.id); setHomeTeam(""); setAwayTeam(""); setFixtureSearch(""); }}>
-                      {LEAGUE_LOGOS[l.id] ? <img src={LEAGUE_LOGOS[l.id]} alt="" crossOrigin="anonymous" /> : <div style={{ height: 34, marginBottom: 8, fontSize: 22 }}>⚽</div>}
+                      <div style={{ marginBottom: 8 }}><CompLogo src={LEAGUE_LOGOS[l.id]} label={l.short} size={40} /></div>
                       {l.short}
                     </button>
                   ))}
@@ -2344,7 +2378,7 @@ if (!session && !guestMode) {
                       return (
                         <div key={g.name}>
                           <div className="fx-group">
-                            {logo && <img src={logo} alt="" crossOrigin="anonymous" onError={e => { e.currentTarget.style.display = "none"; }} />}
+                            <CompLogo src={logo} label={g.name} size={22} />
                             <span className="fx-gname">{g.name}</span>
                             {allCur && <span className="fx-pill">Curated</span>}
                           </div>
