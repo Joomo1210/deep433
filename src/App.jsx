@@ -939,7 +939,20 @@ export default function FootballPredictor() {
       return;
     }
     if (!preds || preds.length === 0) {
-      setLeaderboardDebug({ step: "fetching predictions", predsFetched: 0, note: "No resolved predictions found on or after the cutoff date." });
+      // Nothing has a final score yet. Count the saved-but-unscored predictions so this reads as
+      // "waiting for results", not as "the board isn't fetching".
+      const { count: waiting } = await supabase
+        .from("predictions")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", cutoff)
+        .is("actual_score", null);
+      setLeaderboardDebug({
+        step: "waiting for results",
+        predsFetched: 0,
+        predictionsWaitingForResults: waiting ?? "unknown",
+        board: contest === "euro" ? "Euro Cups" : "Weekly",
+        note: "No finished matches have been scored yet, so the board is empty. Predictions are saved and will score once results are confirmed (use the pending predictions list to confirm a result).",
+      });
       setLeaderboardLoading(false); return;
     }
 
