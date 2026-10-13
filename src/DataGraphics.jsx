@@ -33,6 +33,37 @@ const ROUND_HEAD_START = {
   "fbb8a523-b75b-40b1-bfde-afa3851f0cc0": 1, // Hayzey FC, 5th (tied)
 };
 
+// ─── Boards for the share-card tools (reusable) ─────────────────────────────
+// One entry per contest board. Every card pull (fixtures table, start time, head
+// start) and every default card name reads from here, so starting a new round is
+// a one-place edit: change `startIso`, `name` and `endsText` below. Nothing else.
+// The switch above the cards sets ACTIVE_BOARD, and the cards remount on change.
+const BOARDS = {
+  euro: {
+    id: "euro", emoji: "🇪🇺", name: "Euro Cups", switchLabel: "Euro Cups board",
+    fixturesTable: "euro_fixtures",
+    startIso: "2026-10-12T00:00:00Z",          // keep in step with EURO_START_DATE in App.jsx and the SQL trigger
+    endsText: "30 predictions across 2 weeks · Champions League & Europa League",
+    headStart: false,
+  },
+  weekly: {
+    id: "weekly", emoji: "🏅", name: "Weekly League", switchLabel: "Weekly league",
+    fixturesTable: "leaderboard_fixtures",
+    startIso: "2026-10-09T05:30:00Z",          // keep in step with the cutoff in App.jsx and the SQL trigger
+    endsText: "",                              // e.g. "Round 4 ends Sunday 23:59" once the next weekly round is set
+    headStart: true,                           // ROUND_HEAD_START applies (set the table to {} when it expires)
+  },
+};
+let ACTIVE_BOARD = "euro";
+const activeBoard = () => BOARDS[ACTIVE_BOARD] || BOARDS.euro;
+const boardIsEuro = () => ACTIVE_BOARD === "euro";
+const boardFxTable = () => activeBoard().fixturesTable;
+const boardStartIso = () => new Date(activeBoard().startIso).toISOString();
+const boardHeadStart = (id) => (activeBoard().headStart ? (ROUND_HEAD_START[id] || 0) : 0);
+const boardRoundLabel = () => activeBoard().name;
+const boardEndsText = () => activeBoard().endsText;
+const boardTitle = (t) => `${activeBoard().name} ${t}`;
+
 // ─── Past leaderboard rounds (display only) ──────────────────────────────────
 // Saved round results come from the leaderboard_round_results table. If the
 // table is missing or empty, these built-in results for the first two rounds
@@ -1890,14 +1921,14 @@ function LockedInGraphic({ supabase }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [downloading, setDownloading] = useState(false);
-  const [roundLabel, setRoundLabel] = useState("Round 3");
-  const [endsText, setEndsText] = useState("Round 3 ends Sunday 23:59");
+  const [roundLabel, setRoundLabel] = useState(boardRoundLabel());
+  const [endsText, setEndsText] = useState(boardEndsText());
 
   const load = async () => {
     setLoading(true); setError("");
     try {
       const key = (h, a) => `${(h || "").trim().toLowerCase()}|${(a || "").trim().toLowerCase()}`;
-      const { data: fx, error: fxErr } = await supabase.from("leaderboard_fixtures").select("home_team, away_team, kickoff");
+      const { data: fx, error: fxErr } = await supabase.from(boardFxTable()).select("home_team, away_team, kickoff");
       if (fxErr) throw fxErr;
       const curated = new Map((fx || []).map(f => [key(f.home_team, f.away_team), { label: `${f.home_team} v ${f.away_team}`, day: f.kickoff ? ukDayKey(f.kickoff) : "none" }]));
 
@@ -1907,7 +1938,7 @@ function LockedInGraphic({ supabase }) {
         const { data: page, error: pe } = await supabase
           .from("predictions")
           .select("user_id, home_team, away_team")
-          .gte("created_at", LOCKED_IN_ROUND_START_ISO)
+          .gte("created_at", boardStartIso())
           .order("created_at", { ascending: true })
           .range(from, from + 999);
         if (pe) throw pe;
@@ -1970,7 +2001,7 @@ function LockedInGraphic({ supabase }) {
         </select>
       )}
       <input value={roundLabel} onChange={e => setRoundLabel(e.target.value)} placeholder="Round label" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
-      <input value={endsText} onChange={e => setEndsText(e.target.value)} placeholder="Line at the bottom, e.g. Round 3 ends Sunday 23:59" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+      <input value={endsText} onChange={e => setEndsText(e.target.value)} placeholder="Line at the bottom, e.g. Ends Sunday 23:59" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
       <button onClick={load} disabled={loading} style={{ background: "linear-gradient(135deg,#818cf8,#6366f1)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
         {loading ? "Loading..." : "🔄 Refresh numbers"}
       </button>
@@ -2075,13 +2106,13 @@ function ResultsGraphic({ supabase }) {
   const [downloading, setDownloading] = useState(false);
   const [selKey, setSelKey] = useState("");
   const [manualScore, setManualScore] = useState("");
-  const [roundLabel, setRoundLabel] = useState("Round 3");
+  const [roundLabel, setRoundLabel] = useState(boardRoundLabel());
 
   const load = async () => {
     setLoading(true); setError("");
     try {
       const key = (h, a) => `${(h || "").trim().toLowerCase()}|${(a || "").trim().toLowerCase()}`;
-      const { data: fx, error: fxErr } = await supabase.from("leaderboard_fixtures").select("home_team, away_team");
+      const { data: fx, error: fxErr } = await supabase.from(boardFxTable()).select("home_team, away_team");
       if (fxErr) throw fxErr;
       const curated = new Map((fx || []).map(f => [key(f.home_team, f.away_team), { home: f.home_team, away: f.away_team, preds: [] }]));
 
@@ -2090,7 +2121,7 @@ function ResultsGraphic({ supabase }) {
         const { data: page, error: pe } = await supabase
           .from("predictions")
           .select("user_id, home_team, away_team, user_prediction, user_outcome, user_over_under, actual_score")
-          .gte("created_at", LOCKED_IN_ROUND_START_ISO)
+          .gte("created_at", boardStartIso())
           .order("created_at", { ascending: true })
           .range(from, from + 999);
         if (pe) throw pe;
@@ -2255,7 +2286,7 @@ function RoundupGraphic({ supabase }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [downloading, setDownloading] = useState(false);
-  const [roundLabel, setRoundLabel] = useState("Round 3");
+  const [roundLabel, setRoundLabel] = useState(boardRoundLabel());
   const [selDay, setSelDay] = useState("all");
   const [mode, setMode] = useState("extremes");
   const [rankBy, setRankBy] = useState("avg");
@@ -2265,7 +2296,7 @@ function RoundupGraphic({ supabase }) {
     setLoading(true); setError("");
     try {
       const key = (h, a) => `${(h || "").trim().toLowerCase()}|${(a || "").trim().toLowerCase()}`;
-      const { data: fx, error: fxErr } = await supabase.from("leaderboard_fixtures").select("home_team, away_team, kickoff");
+      const { data: fx, error: fxErr } = await supabase.from(boardFxTable()).select("home_team, away_team, kickoff");
       if (fxErr) throw fxErr;
       const curated = new Map((fx || []).map(f => [key(f.home_team, f.away_team), { home: f.home_team, away: f.away_team, day: f.kickoff ? ukDayKey(f.kickoff) : "none", preds: [] }]));
       let all = [];
@@ -2273,7 +2304,7 @@ function RoundupGraphic({ supabase }) {
         const { data: page, error: pe } = await supabase
           .from("predictions")
           .select("user_id, home_team, away_team, user_prediction, user_outcome, user_over_under, actual_score")
-          .gte("created_at", LOCKED_IN_ROUND_START_ISO)
+          .gte("created_at", boardStartIso())
           .order("created_at", { ascending: true })
           .range(from, from + 999);
         if (pe) throw pe;
@@ -3948,7 +3979,7 @@ function LeaderboardGraphic({ supabase }) {
   const cardRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [title, setTitle] = useState("Top 10 Leaderboard");
+  const [title, setTitle] = useState(boardTitle("Top 10 Leaderboard"));
   const [rows, setRows] = useState([]);
   const [roundLabel, setRoundLabel] = useState("");
   const [savingRound, setSavingRound] = useState(false);
@@ -3988,7 +4019,7 @@ function LeaderboardGraphic({ supabase }) {
       // the current month, that silently excluded every September
       // prediction for this still-ongoing round the moment it became
       // October. Only moves when deliberately changed for a new round.
-      const LEADERBOARD_START_DATE = new Date("2026-10-09T05:30:00Z");
+      const LEADERBOARD_START_DATE = new Date(boardStartIso());
       const cutoff = LEADERBOARD_START_DATE.toISOString();
 
       const { data: preds } = await supabase
@@ -3998,7 +4029,7 @@ function LeaderboardGraphic({ supabase }) {
         .not("actual_score", "is", null);
       if (!preds || preds.length === 0) { setRows([]); setLoading(false); return; }
 
-      const { data: fixturesData } = await supabase.from("leaderboard_fixtures").select("home_team, away_team");
+      const { data: fixturesData } = await supabase.from(boardFxTable()).select("home_team, away_team");
       const eligibleKeys = new Set((fixturesData || []).map(f => `${f.home_team.trim().toLowerCase()}|${f.away_team.trim().toLowerCase()}`));
       const eligiblePreds = preds.filter(p => eligibleKeys.has(`${(p.home_team || "").trim().toLowerCase()}|${(p.away_team || "").trim().toLowerCase()}`));
       if (eligiblePreds.length === 0) { setRows([]); setLoading(false); return; }
@@ -4024,7 +4055,7 @@ function LeaderboardGraphic({ supabase }) {
       (profilesData || []).forEach(p => { nameById[p.id] = p.username; roleById[p.id] = p.role; });
 
       const finalRows = userIds
-        .map(id => ({ name: nameById[id], role: roleById[id], ...byUser[id], headStart: ROUND_HEAD_START[id] || 0, points: byUser[id].points + (ROUND_HEAD_START[id] || 0) }))
+        .map(id => ({ name: nameById[id], role: roleById[id], ...byUser[id], headStart: boardHeadStart(id), points: byUser[id].points + (boardHeadStart(id)) }))
         .filter(r => r.name && r.role !== "admin")
         .sort((a, b) => b.points - a.points)
         .slice(0, 10);
@@ -4155,7 +4186,7 @@ function Top5ExplainedGraphic({ supabase }) {
   const cardRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [title, setTitle] = useState("Top 5 Leaderboard");
+  const [title, setTitle] = useState(boardTitle("Top 5 Leaderboard"));
   const [rows, setRows] = useState([]);
 
   const loadStandings = async () => {
@@ -4165,7 +4196,7 @@ function Top5ExplainedGraphic({ supabase }) {
       // the current month, that silently excluded every September
       // prediction for this still-ongoing round the moment it became
       // October. Only moves when deliberately changed for a new round.
-      const LEADERBOARD_START_DATE = new Date("2026-10-09T05:30:00Z");
+      const LEADERBOARD_START_DATE = new Date(boardStartIso());
       const cutoff = LEADERBOARD_START_DATE.toISOString();
 
       const { data: preds } = await supabase
@@ -4175,7 +4206,7 @@ function Top5ExplainedGraphic({ supabase }) {
         .not("actual_score", "is", null);
       if (!preds || preds.length === 0) { setRows([]); setLoading(false); return; }
 
-      const { data: fixturesData } = await supabase.from("leaderboard_fixtures").select("home_team, away_team");
+      const { data: fixturesData } = await supabase.from(boardFxTable()).select("home_team, away_team");
       const eligibleKeys = new Set((fixturesData || []).map(f => `${f.home_team.trim().toLowerCase()}|${f.away_team.trim().toLowerCase()}`));
       const eligiblePreds = preds.filter(p => eligibleKeys.has(`${(p.home_team || "").trim().toLowerCase()}|${(p.away_team || "").trim().toLowerCase()}`));
       if (eligiblePreds.length === 0) { setRows([]); setLoading(false); return; }
@@ -4201,7 +4232,7 @@ function Top5ExplainedGraphic({ supabase }) {
       (profilesData || []).forEach(p => { nameById[p.id] = p.username; roleById[p.id] = p.role; });
 
       const finalRows = userIds
-        .map(id => ({ name: nameById[id], role: roleById[id], ...byUser[id], headStart: ROUND_HEAD_START[id] || 0, points: byUser[id].points + (ROUND_HEAD_START[id] || 0) }))
+        .map(id => ({ name: nameById[id], role: roleById[id], ...byUser[id], headStart: boardHeadStart(id), points: byUser[id].points + (boardHeadStart(id)) }))
         .filter(r => r.name && r.role !== "admin")
         .sort((a, b) => b.points - a.points)
         .slice(0, 5);
@@ -12233,6 +12264,8 @@ function RoundCompareGraphic({ supabase }) {
 
 export default function DataGraphics({ history = [], supabase }) {
   const [activeSection, setActiveSection] = useState("match");
+  const [board, setBoard] = useState("euro");
+  ACTIVE_BOARD = board;
   const [sectionMenuOpen, setSectionMenuOpen] = useState(false);
 
   const sections = [
@@ -12321,12 +12354,19 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "weeklyresults" && <WeeklyPicksResultsGraphic />}
       {activeSection === "awardrace" && <AwardRaceGraphic />}
       {activeSection === "noticeboard" && <NoticeBoardGraphic />}
-      {activeSection === "leaderboardshare" && <LeaderboardGraphic supabase={supabase} />}
-      {activeSection === "top5explained" && <Top5ExplainedGraphic supabase={supabase} />}
+      {["leaderboardshare", "top5explained", "lockedin", "matchresults", "resultsroundup"].includes(activeSection) && (
+        <div style={{ display: "flex", gap: 8 }}>
+          {Object.values(BOARDS).map(b => [b.id, `${b.emoji} ${b.switchLabel}`]).map(([id, label]) => (
+            <button key={id} onClick={() => setBoard(id)} style={{ flex: 1, background: board === id ? "linear-gradient(135deg,#818cf8,#6366f1)" : "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: board === id ? "#fff" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 800, padding: "9px" }}>{label}</button>
+          ))}
+        </div>
+      )}
+      {activeSection === "leaderboardshare" && <LeaderboardGraphic key={board} supabase={supabase} />}
+      {activeSection === "top5explained" && <Top5ExplainedGraphic key={board} supabase={supabase} />}
       {activeSection === "roundcompare" && <RoundCompareGraphic supabase={supabase} />}
-      {activeSection === "lockedin" && <LockedInGraphic supabase={supabase} />}
-      {activeSection === "matchresults" && <ResultsGraphic supabase={supabase} />}
-      {activeSection === "resultsroundup" && <RoundupGraphic supabase={supabase} />}
+      {activeSection === "lockedin" && <LockedInGraphic key={board} supabase={supabase} />}
+      {activeSection === "matchresults" && <ResultsGraphic key={board} supabase={supabase} />}
+      {activeSection === "resultsroundup" && <RoundupGraphic key={board} supabase={supabase} />}
       {activeSection === "curatedmatches" && <CuratedMatchesGraphic supabase={supabase} />}
       {activeSection === "h2h"      && <PlayerH2HGraphic />}
       {activeSection === "matchh2h" && <MatchH2HGraphic />}
