@@ -1490,7 +1490,14 @@ useEffect(() => {
     if (status === "finished") { setError("This match has finished — predictions are closed."); return; }
     setError(""); setStep(2);
   };
+  const submitLock = useRef(false);
   const submitAndReveal = async () => {
+    // Double-tap guard: ignore a second submit while one is running or just finished (stops duplicate rows).
+    if (submitLock.current) return;
+    submitLock.current = true;
+    try { await submitAndRevealInner(); } finally { setTimeout(() => { submitLock.current = false; }, 2500); }
+  };
+  const submitAndRevealInner = async () => {
     if (userHome === "" || userAway === "") { setError("Enter your predicted score."); return; }
     // Outcome and Over/Under come straight from the scoreline now, never a
     // separate pick, so the two can't contradict each other.
