@@ -27,13 +27,12 @@ export default async function handler(req, res) {
   if (req.method !== 'POST' && req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
   const { homeTeam, awayTeam, league, fixtureId } = req.method === 'GET' ? req.query : req.body;
 
-  // Admin only. The match analysis spends API-Football quota (2 calls per
-  // new fixture), and regular players never use it, so anyone who is not a
-  // signed-in admin is turned away BEFORE any API-Football call is made.
-  // The role is read with the caller's own token, the same way the app reads
-  // its own profile, so no extra database permission is needed.
+  // Signed-in users only. Admins can generate a new analysis (2 API-Football calls per new fixture).
+  // Players are served from the cached analysis only, so player traffic can never spend API-Football quota:
+  // a match is analysed once by an admin, then every player reads the saved result.
   const authToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
   if (!authToken) return res.status(401).json({ error: 'Sign in required' });
+  let isAdmin = false;
   try {
     const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || ANON_KEY_FALLBACK;
     const asUser = createClient('https://idisdztwpvedtnroiian.supabase.co', anonKey, {
@@ -43,7 +42,7 @@ export default async function handler(req, res) {
     const uid = userData?.user?.id;
     if (!uid) return res.status(401).json({ error: 'Sign in required' });
     const { data: prof } = await asUser.from('profiles').select('role').eq('id', uid).single();
-    if (prof?.role !== 'admin') return res.status(403).json({ error: 'Match analysis is admin only' });
+    isAdmin = prof?.role === 'admin';
   } catch {
     return res.status(401).json({ error: 'Could not verify your account' });
   }
@@ -60,7 +59,7 @@ export default async function handler(req, res) {
   // sections would have nothing to show for any fixture already cached.
   const PREDICTION_ENGINE_VERSION = 6;
 
-  const skipCache = (req.method === 'GET' ? req.query.skipCache : req.body.skipCache) === 'true';
+  const skipCache = isAdmin && (req.method === 'GET' ? req.query.skipCache : req.body.skipCache) === 'true';
   if (!skipCache) {
     try {
       const { data: cached } = await supabase
@@ -74,6 +73,23 @@ export default async function handler(req, res) {
         return res.status(200).json({ ...cached.ai_data, cached: true });
       }
     } catch {}
+    // The competition label a player's app sends can differ from the one used when the analysis was
+    // generated, so fall back to the same two teams under any label before treating it as a miss.
+    try {
+      const { data: rows } = await supabase
+        .from('match_predictions')
+        .select('ai_data')
+        .eq('home_team', homeTeam)
+        .eq('away_team', awayTeam)
+        .limit(5);
+      const hit = (rows || []).find(r => r.ai_data && r.ai_data.predictionEngineVersion === PREDICTION_ENGINE_VERSION);
+      if (hit) return res.status(200).json({ ...hit.ai_data, cached: true });
+    } catch {}
+  }
+
+  // Not cached yet and the caller is a player: do not call API-Football.
+  if (!isAdmin) {
+    return res.status(200).json({ available: false, reason: 'The AI analysis for this match is not ready yet.' });
   }
 
   const apiKey = process.env.API_FOOTBALL_KEY;
