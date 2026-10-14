@@ -1247,6 +1247,49 @@ export default function FootballPredictor() {
   // database, so no API-Football call is made for them. Admins keep the full fixture list from the API
   // so they can still pick matches to curate.
   const onPredictTab = tab === "predict";
+  // Automatic AI warm-up. Whenever an admin has the Predict tab open, every curated match kicking off in the
+  // next 36 hours gets its AI analysis generated (once; already-saved ones are returned from the cache for
+  // free), so players see "You vs AI" without anyone running matches by hand.
+  const warmedAi = useRef(new Set());
+  useEffect(() => {
+    if (!onPredictTab || userRole !== "admin" || !session?.access_token) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [w, e] = await Promise.all([
+          supabase.from("leaderboard_fixtures").select("home_team, away_team, kickoff, league_label"),
+          supabase.from("euro_fixtures").select("home_team, away_team, kickoff, league_label"),
+        ]);
+        const now = Date.now();
+        const todo = [...(w.data || []), ...(e.data || [])].filter(r =>
+          r.home_team && r.away_team && r.kickoff &&
+          new Date(r.kickoff).getTime() > now && new Date(r.kickoff).getTime() < now + 36 * 3600e3 &&
+          !warmedAi.current.has(`${r.home_team}|${r.away_team}`));
+        if (todo.length === 0) return;
+        const norm = (s) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        const leagueCache = {};
+        for (const r of todo) {
+          if (cancelled) return;
+          const lg = LEAGUES.find(l => (l.label || "").toLowerCase() === (r.league_label || "").toLowerCase() || (l.short || "").toLowerCase() === (r.league_label || "").toLowerCase());
+          if (!lg) continue;
+          if (!leagueCache[lg.id]) {
+            try { leagueCache[lg.id] = (await (await cachedFetch(`/api/fixtures?leagueId=${lg.id}`, 600000)).json()).fixtures || []; } catch { leagueCache[lg.id] = []; }
+          }
+          const hit = leagueCache[lg.id].find(f => (norm(f.home) === norm(r.home_team) && norm(f.away) === norm(r.away_team)));
+          if (!hit?.fixtureId) continue;
+          warmedAi.current.add(`${r.home_team}|${r.away_team}`);
+          try {
+            await fetch("/api/predict", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+              body: JSON.stringify({ homeTeam: r.home_team, awayTeam: r.away_team, league: lg.short, fixtureId: hit.fixtureId }),
+            });
+          } catch { warmedAi.current.delete(`${r.home_team}|${r.away_team}`); }
+        }
+      } catch (err) { /* best effort, never blocks anything */ }
+    })();
+    return () => { cancelled = true; };
+  }, [onPredictTab, userRole, session?.access_token]);
   useEffect(() => {
     if (tab !== "predict") return;
     let cancelled = false;
@@ -1624,11 +1667,10 @@ useEffect(() => {
     const up = `${userHome}-${userAway}`;
     setUserPrediction(up);
     setError(""); setLoading(true); setResult(null);
-    // AI analysis is admin only. Regular players just lock in their own
-    // scoreline, which saves straight to the database without calling
-    // /api/predict at all, so an AI or data API limit can never block entries
-    // and no AI calls are spent on player predictions.
-    if (userRole !== "admin") {
+    // Everyone gets the AI comparison now that only curated matches can be predicted. Players are served
+    // from the cached analysis only (see /api/predict), so they never spend API-Football quota. If the AI
+    // is unavailable for any reason, the player's own scoreline is still saved so entries are never blocked.
+    const savePlain = async () => {
       try {
         if (session) {
           const plainPayload = {
@@ -1653,8 +1695,7 @@ useEffect(() => {
         setStep(4);
       } catch (e) { setError(e.message || "Something went wrong. Try again."); }
       setLoading(false);
-      return;
-    }
+    };
     try {
       const res = await fetch("/api/predict", {
         method: "POST",
@@ -1663,6 +1704,7 @@ useEffect(() => {
       });
       if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `Error ${res.status}`); }
       const parsed = await res.json();
+      if (userRole !== "admin" && (parsed.available === false || !parsed.scoreline)) { await savePlain(); return; }
       setResult(parsed);
       setStep(3);
       const aiPrediction = (parsed.scoreline || "").replace(" - ", "-").replace(" – ", "-");
@@ -1691,7 +1733,10 @@ useEffect(() => {
           setSavedPredictionId(saved.id);
         }
       }
-    } catch (e) { setError(e.message || "Something went wrong. Try again."); }
+    } catch (e) {
+      if (userRole !== "admin") { await savePlain(); return; }
+      setError(e.message || "Something went wrong. Try again.");
+    }
     setLoading(false);
   };
   const resetPredict = () => {
