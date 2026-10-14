@@ -59,6 +59,8 @@ const activeBoard = () => BOARDS[ACTIVE_BOARD] || BOARDS.euro;
 const boardIsEuro = () => ACTIVE_BOARD === "euro";
 const boardFxTable = () => activeBoard().fixturesTable;
 const boardStartIso = () => new Date(activeBoard().startIso).toISOString();
+const tieRank = (rows, i) => rows.findIndex(x => x.points === rows[i].points) + 1;
+const rankColour = (n) => (n === 1 ? "#F5C518" : n === 2 ? "#cbd5e1" : n === 3 ? "#e39a5b" : "#818cf8");
 const fetchBonusById = async (supabase) => {
   const out = {};
   try {
@@ -3988,6 +3990,7 @@ function LeaderboardGraphic({ supabase }) {
   const [downloading, setDownloading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [title, setTitle] = useState(boardTitle("Top 10 Leaderboard"));
+  const [topCount, setTopCount] = useState(10); // 0 = everyone
   const [rows, setRows] = useState([]);
   const [roundLabel, setRoundLabel] = useState("");
   const [savingRound, setSavingRound] = useState(false);
@@ -4067,7 +4070,7 @@ function LeaderboardGraphic({ supabase }) {
         .map(id => ({ name: nameById[id], role: roleById[id], ...byUser[id], headStart: boardHeadStart(id), bonus: bonusById[id] || 0, points: byUser[id].points + (boardHeadStart(id)) + (bonusById[id] || 0) }))
         .filter(r => r.name && r.role !== "admin")
         .sort((a, b) => b.points - a.points)
-        .slice(0, 10);
+        .slice(0, topCount || undefined);
       setRows(finalRows);
     } catch {}
     setLoading(false);
@@ -4087,8 +4090,14 @@ function LeaderboardGraphic({ supabase }) {
 
       <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Card title" style={{ width: "100%", background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
 
+      <label style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700 }}>Players to show
+        <select value={topCount} onChange={e => { const n = parseInt(e.target.value); setTopCount(n); setTitle(boardTitle(n ? `Top ${n} Leaderboard` : "Full Leaderboard")); }} style={{ marginLeft: 8, background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "6px 8px" }}>
+          <option value={5}>Top 5</option><option value={10}>Top 10</option><option value={20}>Top 20</option><option value={0}>Everyone</option>
+        </select>
+      </label>
+
       <button onClick={loadStandings} disabled={loading} style={{ background: "linear-gradient(135deg,#818cf8,#6366f1)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
-        {loading ? "Loading standings..." : "Load Top 10"}
+        {loading ? "Loading standings..." : (topCount ? `Load Top ${topCount}` : "Load full board")}
       </button>
 
       {rows.length > 0 && (
@@ -4103,12 +4112,12 @@ function LeaderboardGraphic({ supabase }) {
                 }}>🏅 {title}</span>
               </div>
               <div style={{ textAlign: "center", fontSize: 12, color: "#e2e8f0", fontWeight: 700, marginBottom: 22 }}>
-                Exact: 5pts · Outcome only: 3pts · O/U: +1pt
+                Exact: 5pts · Outcome only: 3pts · O/U: +1pt · Premium: from X
               </div>
 
               <div style={{ border: "1px solid #23232f", borderRadius: 12, overflow: "hidden" }}>
                 <div style={{
-                  display: "grid", gridTemplateColumns: "34px 1fr 44px 44px 44px 44px 52px",
+                  display: "grid", gridTemplateColumns: "28px 1fr 30px 30px 30px 30px 40px 46px",
                   background: "#1a1a28", padding: "10px 12px", gap: 4,
                 }}>
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase" }}>Pos</span>
@@ -4117,21 +4126,24 @@ function LeaderboardGraphic({ supabase }) {
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#4ade80", textTransform: "uppercase", textAlign: "center" }}>E</span>
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#818cf8", textTransform: "uppercase", textAlign: "center" }}>O</span>
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#fbbf24", textTransform: "uppercase", textAlign: "center" }}>OU</span>
+                  <span style={{ fontSize: 10.5, fontWeight: 900, color: "#F5C518", textTransform: "uppercase", textAlign: "center" }}>Prem</span>
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#e2e8f0", textTransform: "uppercase", textAlign: "center" }}>Pts</span>
                 </div>
                 {rows.map((r, i) => (
                   <div key={i} style={{
-                    display: "grid", gridTemplateColumns: "34px 1fr 44px 44px 44px 44px 52px",
+                    display: "grid", gridTemplateColumns: "28px 1fr 30px 30px 30px 30px 40px 46px",
                     alignItems: "center", gap: 4, padding: "12px 12px",
                     background: i % 2 === 0 ? "#13131f" : "#0f0f18",
-                    borderTop: "1px solid #1e1e2a",
+                    borderTop: (i > 0 && tieRank(rows, i) > 5 && tieRank(rows, i - 1) <= 5) ? "2px dashed #4ade8099" : "1px solid #1e1e2a",
+                    boxShadow: tieRank(rows, i) <= 5 ? "inset 3px 0 0 #4ade80" : "none",
                   }}>
-                    <span style={{ fontSize: 15, fontWeight: 900, color: "#818cf8" }}>{i + 1}</span>
-                    <span style={{ fontSize: 14, fontWeight: 800, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
+                    <span style={{ fontSize: 15, fontWeight: 900, color: rankColour(tieRank(rows, i)) }}>{tieRank(rows, i)}</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
                     <span style={{ fontSize: 13, fontWeight: 700, color: "#94a3b8", textAlign: "center" }}>{r.total}</span>
                     <span style={{ fontSize: 13, fontWeight: 800, color: "#4ade80", textAlign: "center" }}>{r.exact}</span>
                     <span style={{ fontSize: 13, fontWeight: 800, color: "#818cf8", textAlign: "center" }}>{r.outcomeOnly}</span>
                     <span style={{ fontSize: 13, fontWeight: 800, color: "#fbbf24", textAlign: "center" }}>{r.overUnderHits}</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: r.bonus > 0 ? "#F5C518" : "#475569", textAlign: "center" }}>{r.bonus > 0 ? `+${r.bonus}` : "-"}</span>
                     <span style={{ fontSize: 17, fontWeight: 900, color: "#fbbf24", textAlign: "center" }}>{r.points}</span>
                   </div>
                 ))}
@@ -4151,6 +4163,14 @@ function LeaderboardGraphic({ supabase }) {
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 11, fontWeight: 800, color: "#fbbf24", background: "#fbbf2420", border: "1px solid #fbbf2444", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>OU</span>
                     <span style={{ fontSize: 12, color: "#e2e8f0" }}>Over/Under goals correct — +1 point each, always additive</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#F5C518", background: "#F5C51820", border: "1px solid #F5C51844", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Prem</span>
+                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Premium match points from X (exact 10, outcome 5, O/U 3), already counted in Pts</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#4ade80", background: "#4ade8020", border: "1px solid #4ade8044", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Top 5</span>
+                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Green bar and dashed line mark the top 5 who win</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 11, fontWeight: 800, color: "#fbbf24", background: "#fbbf2420", border: "1px solid #fbbf2444", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Pts</span>
@@ -4281,12 +4301,12 @@ function Top5ExplainedGraphic({ supabase }) {
                 }}>🏅 {title}</span>
               </div>
               <div style={{ textAlign: "center", fontSize: 12, color: "#e2e8f0", fontWeight: 700, marginBottom: 22 }}>
-                Exact: 5pts · Outcome only: 3pts · O/U: +1pt
+                Exact: 5pts · Outcome only: 3pts · O/U: +1pt · Premium: from X
               </div>
 
               <div style={{ border: "1px solid #23232f", borderRadius: 12, overflow: "hidden" }}>
                 <div style={{
-                  display: "grid", gridTemplateColumns: "34px 1fr 44px 44px 44px 44px 52px",
+                  display: "grid", gridTemplateColumns: "28px 1fr 30px 30px 30px 30px 40px 46px",
                   background: "#1a1a28", padding: "10px 12px", gap: 4,
                 }}>
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase" }}>Pos</span>
@@ -4295,21 +4315,24 @@ function Top5ExplainedGraphic({ supabase }) {
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#4ade80", textTransform: "uppercase", textAlign: "center" }}>E</span>
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#818cf8", textTransform: "uppercase", textAlign: "center" }}>O</span>
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#fbbf24", textTransform: "uppercase", textAlign: "center" }}>OU</span>
+                  <span style={{ fontSize: 10.5, fontWeight: 900, color: "#F5C518", textTransform: "uppercase", textAlign: "center" }}>Prem</span>
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#e2e8f0", textTransform: "uppercase", textAlign: "center" }}>Pts</span>
                 </div>
                 {rows.map((r, i) => (
                   <div key={i} style={{
-                    display: "grid", gridTemplateColumns: "34px 1fr 44px 44px 44px 44px 52px",
+                    display: "grid", gridTemplateColumns: "28px 1fr 30px 30px 30px 30px 40px 46px",
                     alignItems: "center", gap: 4, padding: "12px 12px",
                     background: i % 2 === 0 ? "#13131f" : "#0f0f18",
-                    borderTop: "1px solid #1e1e2a",
+                    borderTop: (i > 0 && tieRank(rows, i) > 5 && tieRank(rows, i - 1) <= 5) ? "2px dashed #4ade8099" : "1px solid #1e1e2a",
+                    boxShadow: tieRank(rows, i) <= 5 ? "inset 3px 0 0 #4ade80" : "none",
                   }}>
-                    <span style={{ fontSize: 15, fontWeight: 900, color: "#818cf8" }}>{i + 1}</span>
-                    <span style={{ fontSize: 14, fontWeight: 800, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
+                    <span style={{ fontSize: 15, fontWeight: 900, color: rankColour(tieRank(rows, i)) }}>{tieRank(rows, i)}</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
                     <span style={{ fontSize: 13, fontWeight: 700, color: "#94a3b8", textAlign: "center" }}>{r.total}</span>
                     <span style={{ fontSize: 13, fontWeight: 800, color: "#4ade80", textAlign: "center" }}>{r.exact}</span>
                     <span style={{ fontSize: 13, fontWeight: 800, color: "#818cf8", textAlign: "center" }}>{r.outcomeOnly}</span>
                     <span style={{ fontSize: 13, fontWeight: 800, color: "#fbbf24", textAlign: "center" }}>{r.overUnderHits}</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: r.bonus > 0 ? "#F5C518" : "#475569", textAlign: "center" }}>{r.bonus > 0 ? `+${r.bonus}` : "-"}</span>
                     <span style={{ fontSize: 17, fontWeight: 900, color: "#fbbf24", textAlign: "center" }}>{r.points}</span>
                   </div>
                 ))}
@@ -4329,6 +4352,14 @@ function Top5ExplainedGraphic({ supabase }) {
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 11, fontWeight: 800, color: "#fbbf24", background: "#fbbf2420", border: "1px solid #fbbf2444", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>OU</span>
                     <span style={{ fontSize: 12, color: "#e2e8f0" }}>Over/Under goals correct — +1 point each, always additive</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#F5C518", background: "#F5C51820", border: "1px solid #F5C51844", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Prem</span>
+                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Premium match points from X (exact 10, outcome 5, O/U 3), already counted in Pts</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#4ade80", background: "#4ade8020", border: "1px solid #4ade8044", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Top 5</span>
+                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Green bar and dashed line mark the top 5 who win</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 11, fontWeight: 800, color: "#fbbf24", background: "#fbbf2420", border: "1px solid #fbbf2444", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Pts</span>
