@@ -3574,7 +3574,7 @@ if (!session && !guestMode) {
               background: "#0d0d18", border: `1px solid ${session && row.userId === session.user.id ? "#4ade8066" : "#1a1a2e"}`, borderRadius: 10,
               padding: "10px 12px", marginBottom: 6,
             }}>
-              <span style={{ fontSize: 15, fontWeight: 900, color: "#818cf8", width: 20, flexShrink: 0, textAlign: "center" }}>{i + 1}</span>
+              <span style={{ fontSize: 15, fontWeight: 900, color: "#818cf8", width: 20, flexShrink: 0, textAlign: "center" }}>{leaderboard.findIndex(x => x.points === row.points) + 1}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 4 }}>{row.name}</div>
                 <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
@@ -3582,6 +3582,7 @@ if (!session && !guestMode) {
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#818cf8", background: "#818cf818", border: "1px solid #818cf833", borderRadius: 5, padding: "2px 6px" }}>{row.outcomeOnly} O</span>
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#fbbf24", background: "#fbbf2418", border: "1px solid #fbbf2433", borderRadius: 5, padding: "2px 6px" }}>{row.overUnderHits} OU</span>
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8" }}>{row.total} preds</span>
+                  {row.bonus > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: "#F5C518", background: "#F5C51818", border: "1px solid #F5C51833", borderRadius: 5, padding: "2px 6px" }}>+{row.bonus} Premium</span>}
                   {row.headStart > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: "#c4b5fd", background: "#818cf818", border: "1px solid #818cf833", borderRadius: 5, padding: "2px 6px" }}>+{row.headStart} head start</span>}
                 </div>
                 {userRole === "admin" && (
