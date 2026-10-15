@@ -219,14 +219,22 @@ const PAGE_MAX_WIDTH = 760;
 // One featured match per matchday, worth more points. Players predict it in the comments on X.
 // To feature one, add an entry here (kickoff in UTC) and redeploy; remove it when the day is done.
 //   { home: "Atlético", away: "United", kickoff: "2026-10-14T19:00:00Z", league: "Champions League",
-//     xUrl: "https://x.com/Deep433/status/<post id>" }   // xUrl optional: falls back to the profile
+//     xUrl: "https://x.com/Deep_433/status/<post id>" }   // xUrl optional: falls back to the profile
+// Premium matches appear at 06:00 UK time on the day of kickoff (handles BST/GMT automatically).
+function premiumRevealMs(kickoff) {
+  const k = new Date(kickoff);
+  const day = k.toLocaleDateString("en-CA", { timeZone: "Europe/London" }); // YYYY-MM-DD in UK
+  const guess = new Date(day + "T06:00:00Z");
+  const ukHour = Number(guess.toLocaleString("en-GB", { timeZone: "Europe/London", hour: "2-digit", hour12: false }));
+  return guess.getTime() - (ukHour - 6) * 3600000;
+}
 const PREMIUM_MATCHES = [
-  { home: "Manchester City", away: "PSG", kickoff: "2026-10-14T19:00:00Z", league: "Champions League" }, // add xUrl: "https://x.com/Deep433/status/<post id>" once the post is up
-  { home: "Roma", away: "Real Madrid", kickoff: "2026-10-14T19:00:00Z", league: "Champions League" }, // add xUrl: "https://x.com/Deep433/status/<post id>" once the post is up
+  { home: "Manchester City", away: "PSG", kickoff: "2026-10-14T19:00:00Z", league: "Champions League" }, // add xUrl: "https://x.com/Deep_433/status/<post id>" once the post is up
+  { home: "Roma", away: "Real Madrid", kickoff: "2026-10-14T19:00:00Z", league: "Champions League" }, // add xUrl: "https://x.com/Deep_433/status/<post id>" once the post is up
 ];
 const PREMIUM_POINTS = { exact: 10, outcome: 5, ou: 3 };
 const STANDARD_POINTS_LINE = "Exact 5 · Outcome 3 · O/U +1";
-const X_PROFILE_URL = "https://x.com/Deep433";
+const X_PROFILE_URL = "https://x.com/Deep_433";
 
 const PRIZE_AMOUNTS = ["17,500","12,500","9,000","6,000","5,000"]; // 35/25/18/12/10% of 50k. Add a currency symbol here once decided.
 const PRIZE_POOL = "50k";                       // gold part of the headline
@@ -791,6 +799,11 @@ export default function FootballPredictor() {
   const [userRole, setUserRole] = useState("user");
   // Premium matches come from the premium_matches table; the PREMIUM_MATCHES constant is only a fallback.
   const [premiumDb, setPremiumDb] = useState(null);
+  const [, setPremiumTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setPremiumTick(n => n + 1), 60000); // re-check every minute so the 06:00 reveal happens without a refresh
+    return () => clearInterval(t);
+  }, []);
   const [username, setUsername] = useState("");
   const [usernameDraft, setUsernameDraft] = useState("");
   const [leaderboard, setLeaderboard] = useState([]);
@@ -2439,7 +2452,7 @@ if (!session && !guestMode) {
                     : "Pick a match to predict. Every match counts towards the leaderboard."}
                 </div>
                 {(() => {
-                  const live = (premiumDb ?? PREMIUM_MATCHES).filter(m => m.kickoff && new Date(m.kickoff).getTime() > Date.now() - 150 * 60000);
+                  const live = (premiumDb ?? PREMIUM_MATCHES).filter(m => m.kickoff && new Date(m.kickoff).getTime() > Date.now() - 150 * 60000 && Date.now() >= premiumRevealMs(m.kickoff)).sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
                   if (live.length === 0) return null;
                   return live.map((m, i) => {
                     const k = new Date(m.kickoff);
