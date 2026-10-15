@@ -3585,11 +3585,17 @@ if (!session && !guestMode) {
             const fifth = leaderboard.length >= 5 ? [...leaderboard].sort((a, b) => b.points - a.points)[4] : null;
             const gap = fifth ? Math.max(0, fifth.points - me.points) : 0;
             if (userRole !== "admin") {
-              // Players see their own points and a rank band only. No other player's name, points or position.
-              const band = myRank <= 5 ? { text: "You're in the top 5 🏆", sub: "Keep your picks sharp and hold your place." }
-                : myRank <= 10 ? { text: "You're in the top 10 🔥", sub: "A couple of exact scores and you're in the top 5." }
-                : myRank <= 20 ? { text: "You're in the top 20 ⚡", sub: "Keep predicting, every exact score moves you up." }
-                : { text: "Keep predicting 🎯", sub: "Every exact score is 5 points. The table moves fast." };
+              // Players see their own points and their own position (shared ranks on ties). No other player's name or points.
+              const ord = n => `${n}${n % 10 === 1 && n !== 11 ? "st" : n % 10 === 2 && n !== 12 ? "nd" : n % 10 === 3 && n !== 13 ? "rd" : "th"}`;
+              const tied = leaderboard.filter(r => r.points === me.points).length > 1;
+              const posText = `You are currently in ${tied ? "joint " : ""}${ord(myRank)} position`;
+              const band = {
+                text: myRank === 1 ? `${posText} 🔥` : myRank <= 5 ? `${posText} 🏆` : posText,
+                sub: myRank === 1 ? "You are leading the board. Hold your place."
+                  : myRank <= 5 ? "You are in the top 5. Keep your picks sharp."
+                  : fifth ? `${gap} pt${gap === 1 ? "" : "s"} off the top 5. Every exact score moves you up.`
+                  : "Keep predicting, every exact score moves you up.",
+              };
               const pctMe = Math.min(100, Math.round((me.total / 30) * 100));
               return (
                 <div style={{ background: "#111820", border: "1px solid #2EE66B44", borderRadius: 14, padding: "18px 16px", marginBottom: 12, textAlign: "center" }}>
