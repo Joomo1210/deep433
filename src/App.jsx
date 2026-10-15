@@ -832,7 +832,11 @@ export default function FootballPredictor() {
   const [newFixtureLeagueLabel, setNewFixtureLeagueLabel] = useState("");
   const [adminUpcomingOnly, setAdminUpcomingOnly] = useState(true);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
-  const [fixtures, setFixtures] = useState([]);
+  const [fixturesRaw, setFixtures] = useState([]);
+  // Curated matches can be loaded for the whole round up front. Players only see a match from 06:00 UK on
+  // its matchday (revealAt); admins see everything from day one. The tick above re-runs this every minute.
+  const fixtures = fixturesRaw.filter(f => !f.revealAt || Date.now() >= f.revealAt);
+  const hiddenUntilMatchday = fixturesRaw.length - fixtures.length;
   const [fixturesLoading, setFixturesLoading] = useState(false);
   // Removed: bracketRounds/bracketLoading state, only ever used by the
   // now-removed standalone Bracket tab. Season Awards has its own separate
@@ -1334,6 +1338,7 @@ export default function FootballPredictor() {
               home: r.home_team,
               away: r.away_team,
               kickoff: r.kickoff || null,
+              revealAt: r.kickoff ? premiumRevealMs(r.kickoff) : 0,
               date: getLocalDateString(r.kickoff ? new Date(r.kickoff) : new Date()),
               round: r.league_label || "",
               homeLogo: TEAM_LOGOS[r.home_team] || "",
@@ -2452,7 +2457,7 @@ if (!session && !guestMode) {
                     : "Pick a match to predict. Every match counts towards the leaderboard."}
                 </div>
                 {(() => {
-                  const live = (premiumDb ?? PREMIUM_MATCHES).filter(m => m.kickoff && new Date(m.kickoff).getTime() > Date.now() - 150 * 60000 && Date.now() >= premiumRevealMs(m.kickoff)).sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+                  const live = (premiumDb ?? PREMIUM_MATCHES).filter(m => m.kickoff && new Date(m.kickoff).getTime() > Date.now() - 150 * 60000 && (userRole === "admin" || Date.now() >= premiumRevealMs(m.kickoff))).sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
                   if (live.length === 0) return null;
                   return live.map((m, i) => {
                     const k = new Date(m.kickoff);
@@ -2463,6 +2468,9 @@ if (!session && !guestMode) {
                           <span style={{ background: "#F5C518", color: "#1a1300", fontSize: 10, fontWeight: 900, borderRadius: 6, padding: "4px 8px", letterSpacing: 0.5, whiteSpace: "nowrap", flex: "none" }}>⭐ PREMIUM MATCH</span>
                           <span style={{ fontSize: 11, color: "#8b98a5", textAlign: "right" }}>{when}{m.league ? ` · ${m.league}` : ""}</span>
                         </div>
+                        {userRole === "admin" && Date.now() < premiumRevealMs(m.kickoff) && (
+                          <div style={{ marginTop: 10, fontSize: 11, fontWeight: 800, color: "#fbbf24", background: "#fbbf2418", border: "1px solid #fbbf2455", borderRadius: 6, padding: "4px 8px", display: "inline-block" }}>👁 Admin preview. Players see this from 06:00 UK on matchday.</div>
+                        )}
                         <div style={{ marginTop: 12, fontSize: 16, fontWeight: 700, color: "#fff", overflowWrap: "anywhere" }}>{m.home} <span style={{ color: "#8b98a5", fontWeight: 600 }}>vs</span> {m.away}</div>
                         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
                           <span style={{ fontSize: 11, fontWeight: 800, color: "#F5C518", background: "#F5C51822", border: "1px solid #F5C51855", borderRadius: 6, padding: "3px 8px" }}>Exact score {PREMIUM_POINTS.exact} pts</span>
@@ -2484,7 +2492,7 @@ if (!session && !guestMode) {
                   <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 16, padding: "20px 0" }}>Loading fixtures...</div>
                 )}
                 {!fixturesLoading && openFixtures.length === 0 && (
-                  <div style={{ textAlign: "center", color: "#94a3b8", fontSize: 14, padding: "20px 0" }}>{fixtures.length > 0 ? "✅ You've predicted every open match. See History for your picks, and check back for the next matchday." : userRole === "admin" ? "No upcoming fixtures found for this competition" : "No curated matches are open right now. Check back on matchday."}</div>
+                  <div style={{ textAlign: "center", color: "#94a3b8", fontSize: 14, padding: "20px 0" }}>{fixtures.length > 0 ? "✅ You've predicted every open match. See History for your picks, and check back for the next matchday." : userRole === "admin" ? "No upcoming fixtures found for this competition" : hiddenUntilMatchday > 0 ? "Today's matches open at 6am UK time on matchday. Check back then, and join the Premium match on X in the meantime." : "No curated matches are open right now. Check back on matchday."}</div>
                 )}
                 <div className="fx-list-desk">
                   {Object.entries(fixturesByDate).map(([date, dateFixtures]) => (
