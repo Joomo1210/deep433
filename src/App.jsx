@@ -294,6 +294,17 @@ const BADGE_DEFS = [
   { icon: "🧠", name: "Analyst", desc: "Beat the AI 10 times", color: "#4ade80", condition: (s) => s.beatAI >= 10 },
   { icon: "👑", name: "AI Destroyer", desc: "Beat the AI 20 times", color: "#fbbf24", condition: (s) => s.beatAI >= 20 },
 ];
+// Deep433 board badges: awarded from the nightly position snapshots (see player_badges view).
+// Display only. Months are calendar months, awarded once the month has finished (Hot Streak is live).
+const BOARD_BADGES = [
+  { code: "champion", icon: "🥇", name: "Deep433 Champion", desc: "Finished a month in 1st place", color: "#fbbf24" },
+  { code: "top5", icon: "🏆", name: "Deep433 Top 5", desc: "Finished a month in the top 5", color: "#2EE66B" },
+  { code: "top10", icon: "🔟", name: "Deep433 Top 10", desc: "Finished a month in the top 10", color: "#60a5fa" },
+  { code: "iron_grip", icon: "🧱", name: "Deep433 Iron Grip", desc: "In the top 5 every night of a month (20+ nights)", color: "#a78bfa" },
+  { code: "hot_streak", icon: "🔥", name: "Deep433 Hot Streak", desc: "In the top 5 for 7 nights in a row", color: "#f97316" },
+  { code: "climber", icon: "🚀", name: "Deep433 Climber", desc: "Climbed 5 or more places in a month", color: "#f472b6" },
+];
+const badgeMonthLabel = (period) => period ? new Date(`${String(period).slice(0, 10)}T00:00:00Z`).toLocaleString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" }) : "Live";
 function getRank(stats) {
   const earned = BADGE_DEFS.filter(b => b.condition(stats));
   return earned.length > 0 ? earned[earned.length - 1] : null;
@@ -807,6 +818,7 @@ export default function FootballPredictor() {
   const [username, setUsername] = useState("");
   const [usernameDraft, setUsernameDraft] = useState("");
   const [leaderboard, setLeaderboard] = useState([]);
+  const [boardBadges, setBoardBadges] = useState([]);
   const [leaderboardFixtures, setLeaderboardFixtures] = useState([]);
   // "weekly" = the usual weekly leaderboard, "euro" = Champions League + Europa League board.
   const [contest, setContest] = useState("weekly");
@@ -1144,14 +1156,15 @@ export default function FootballPredictor() {
         outcomeOnly: byUser[id].outcomeOnly,
         overUnderHits: byUser[id].overUnderHits,
       }));
-    const rows = allRows
+    const rowsSorted = allRows
       .filter(r => r.name) // leave out anyone without a display name rather than show a raw ID
       // The admin runs the contest and picks which matches count — letting
       // that account also compete on the same board it controls isn't a
       // fair contest, so it's excluded regardless of its own points.
       .filter(r => r.role !== "admin")
-      .sort((a, b) => b.points - a.points)
-      .slice(0, 20);
+      .sort((a, b) => b.points - a.points);
+    // Top 20, but anyone level on points with 20th place stays on the board too.
+    const rows = rowsSorted.length > 20 ? rowsSorted.filter(r => r.points >= rowsSorted[19].points) : rowsSorted;
 
     // Full visibility into every user who had eligible predictions this
     // period, including anyone left off the final board and why — instead
@@ -1184,6 +1197,19 @@ export default function FootballPredictor() {
     if (userRole === "admin") { loadLeaderboardFixtures(); loadAllPendingPredictions(); }
     computeLeaderboard();
   }, [tab, session, contest]);
+  // Display only: Deep433 board badges from the player_badges view. Players load their own;
+  // admins load everyone's. Any failure just means no badges are shown.
+  useEffect(() => {
+    if (!session || (tab !== "leaderboard" && tab !== "badges")) return;
+    (async () => {
+      try {
+        let q = supabase.from("player_badges").select("user_id, board, badge, period");
+        if (userRole !== "admin") q = q.eq("user_id", session.user.id);
+        const { data } = await q;
+        setBoardBadges(data || []);
+      } catch (e) { setBoardBadges([]); }
+    })();
+  }, [tab, session, userRole]);
   // Display only: load curated keys so the Predict tab can badge fixtures
   // that count toward the leaderboard. Any failure just means no badges.
   useEffect(() => {
@@ -3223,6 +3249,24 @@ if (!session && !guestMode) {
                 </div>
               ))}
             </div>
+            <div className="card" style={{ marginTop: 14 }}>
+              <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Deep433 Board Badges</div>
+              <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 10 }}>Earned from your position on the board. Positions are saved every night, and monthly badges are awarded on the 1st.</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                {BOARD_BADGES.map(d => {
+                  const got = boardBadges.filter(b => b.badge === d.code && b.user_id === session?.user?.id);
+                  const earned = got.length > 0;
+                  return (
+                    <div key={d.code} className={`badge-card${earned ? "" : " locked"}`}>
+                      <div style={{ fontSize: 28, marginBottom: 8 }}>{d.icon}</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: earned ? d.color : "#e2e8f0", marginBottom: 4, lineHeight: 1.3 }}>{d.name}</div>
+                      <div style={{ fontSize: 13, color: "#444", lineHeight: 1.4 }}>{d.desc}</div>
+                      {earned ? <div style={{ fontSize: 12, color: d.color, marginTop: 6 }}>{got.map(g => badgeMonthLabel(g.period)).join(", ")}</div> : <div style={{ fontSize: 13, color: "#2a2a2a", marginTop: 6 }}>🔒 Locked</div>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </>
         )}
         {tab === "history" && (
@@ -3611,6 +3655,15 @@ if (!session && !guestMode) {
                   <div style={{ fontSize: 54, fontWeight: 900, color: "#fbbf24", lineHeight: 1.05, margin: "4px 0 8px" }}>{me.points}</div>
                   <div style={{ fontSize: 16, fontWeight: 900, color: "#2EE66B" }}>{band.text}</div>
                   <div style={{ fontSize: 12, color: "#C9D1D9", marginTop: 3 }}>{band.sub}</div>
+                  {boardBadges.filter(b => b.board === (contest === "euro" ? "euro" : "weekly")).length > 0 && (
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center", marginTop: 10 }}>
+                      {boardBadges.filter(b => b.board === (contest === "euro" ? "euro" : "weekly")).map((b, i) => {
+                        const def = BOARD_BADGES.find(d => d.code === b.badge);
+                        if (!def) return null;
+                        return <span key={i} style={{ fontSize: 11, fontWeight: 800, color: def.color, background: `${def.color}18`, border: `1px solid ${def.color}44`, borderRadius: 999, padding: "3px 9px" }}>{def.icon} {def.name}{b.period ? ` · ${badgeMonthLabel(b.period)}` : ""}</span>;
+                      })}
+                    </div>
+                  )}
                   <div style={{ fontSize: 11, color: "#94a3b8", margin: "14px 0 4px" }}>{me.total} of 30 predictions made</div>
                   <div style={{ height: 6, background: "#1a1a2e", borderRadius: 4, overflow: "hidden" }}>
                     <div style={{ width: `${pctMe}%`, height: "100%", background: "linear-gradient(90deg,#4ade80,#22c55e)" }} />
@@ -3648,7 +3701,7 @@ if (!session && !guestMode) {
             }}>
               <span style={{ fontSize: 15, fontWeight: 900, color: "#818cf8", width: 20, flexShrink: 0, textAlign: "center" }}>{leaderboard.findIndex(x => x.points === row.points) + 1}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 4 }}>{row.name}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 4 }}>{row.name}{boardBadges.filter(b => b.user_id === row.userId && b.board === (contest === "euro" ? "euro" : "weekly")).map((b, i) => { const def = BOARD_BADGES.find(d => d.code === b.badge); return def ? <span key={i} title={`${def.name}${b.period ? " · " + badgeMonthLabel(b.period) : ""}`} style={{ marginLeft: 4 }}>{def.icon}</span> : null; })}</div>
                 <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#4ade80", background: "#4ade8018", border: "1px solid #4ade8033", borderRadius: 5, padding: "2px 6px" }}>{row.exact} E</span>
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#818cf8", background: "#818cf818", border: "1px solid #818cf833", borderRadius: 5, padding: "2px 6px" }}>{row.outcomeOnly} O</span>
