@@ -304,6 +304,9 @@ const BOARD_BADGES = [
   { code: "hot_streak", icon: "🔥", name: "Deep433 Hot Streak", desc: "In the top 5 for 7 nights in a row", color: "#f97316" },
   { code: "climber", icon: "🚀", name: "Deep433 Climber", desc: "Climbed 5 or more places in a month", color: "#f472b6" },
 ];
+// Cash prize per monthly finish badge, in pounds. Set an amount to show it on the badge card; 0 hides it.
+// Display only: prizes are handed out by hand, nothing here moves money.
+const BOARD_BADGE_CASH = { champion: 10, top5: 3, top10: 0 };
 const badgeMonthLabel = (period) => period ? new Date(`${String(period).slice(0, 10)}T00:00:00Z`).toLocaleString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" }) : "Live";
 function getRank(stats) {
   const earned = BADGE_DEFS.filter(b => b.condition(stats));
@@ -3251,7 +3254,7 @@ if (!session && !guestMode) {
             </div>
             <div className="card" style={{ marginTop: 14 }}>
               <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Deep433 Board Badges</div>
-              <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 10 }}>Earned from your position on the board. Positions are saved every night, and monthly badges are awarded on the 1st.</div>
+              <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 10 }}>Earned from your position on the board. Positions are saved every night, and monthly badges are awarded on the 1st.{Object.values(BOARD_BADGE_CASH).some(v => v > 0) ? " Champion and Top 5 finishes carry a cash prize, and joint finishes share it." : ""}</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
                 {BOARD_BADGES.map(d => {
                   const got = boardBadges.filter(b => b.badge === d.code && b.user_id === session?.user?.id);
@@ -3261,6 +3264,7 @@ if (!session && !guestMode) {
                       <div style={{ fontSize: 28, marginBottom: 8 }}>{d.icon}</div>
                       <div style={{ fontSize: 14, fontWeight: 700, color: earned ? d.color : "#e2e8f0", marginBottom: 4, lineHeight: 1.3 }}>{d.name}</div>
                       <div style={{ fontSize: 13, color: "#444", lineHeight: 1.4 }}>{d.desc}</div>
+                      {BOARD_BADGE_CASH[d.code] > 0 && <div style={{ fontSize: 13, fontWeight: 900, color: "#fbbf24", marginTop: 6 }}>💷 £{BOARD_BADGE_CASH[d.code]} prize</div>}
                       {earned ? <div style={{ fontSize: 12, color: d.color, marginTop: 6 }}>{got.map(g => badgeMonthLabel(g.period)).join(", ")}</div> : <div style={{ fontSize: 13, color: "#2a2a2a", marginTop: 6 }}>🔒 Locked</div>}
                     </div>
                   );
