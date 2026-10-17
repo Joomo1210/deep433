@@ -1858,6 +1858,7 @@ useEffect(() => {
     setLoggingIdx(null); setLogScore("");
   };
   const deletePredict = async (id) => {
+    if (userRole !== "admin") return; // players cannot remove a locked-in prediction
     await supabase.from("predictions").delete().eq("id", id);
     setHistory(prev => prev.filter(h => h.id !== id));
   };
@@ -3452,7 +3453,7 @@ if (!session && !guestMode) {
                     <div style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700, textAlign: "center", padding: "6px", marginTop: 4 }}>🏁 Fetching final score...</div>
                   )}
                   <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                    <button onClick={() => deletePredict(h.id)} style={{ background: "none", border: "1px solid #f8717133", borderRadius: 6, color: "#f87171", cursor: "pointer", fontFamily: "inherit", fontSize: 15, padding: "6px 12px", flex: 1 }}>🗑️ Delete</button>
+                    {userRole === "admin" && <button onClick={() => deletePredict(h.id)} style={{ background: "none", border: "1px solid #f8717133", borderRadius: 6, color: "#f87171", cursor: "pointer", fontFamily: "inherit", fontSize: 15, padding: "6px 12px", flex: 1 }}>🗑️ Delete</button>}
                   </div>
                 </div>
               );
