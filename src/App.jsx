@@ -817,6 +817,7 @@ export default function FootballPredictor() {
   const [leaderboard, setLeaderboard] = useState([]);
   const [boardBadges, setBoardBadges] = useState([]);
   const [badgeNames, setBadgeNames] = useState({});
+  const [liveTop, setLiveTop] = useState({ date: null, rows: [] });
   const [leaderboardFixtures, setLeaderboardFixtures] = useState([]);
   // "weekly" = the usual weekly leaderboard, "euro" = Champions League + Europa League board.
   const [contest, setContest] = useState("weekly");
@@ -1204,6 +1205,19 @@ export default function FootballPredictor() {
         let q = supabase.from("player_badges").select("user_id, board, badge, period");
         const { data } = await q;
         setBoardBadges(data || []);
+        if (userRole === "admin") {
+          try {
+            const { data: lastRow } = await supabase.from("leaderboard_snapshots").select("snap_date").order("snap_date", { ascending: false }).limit(1);
+            const d = lastRow && lastRow[0] && lastRow[0].snap_date;
+            if (d) {
+              const { data: top } = await supabase.from("leaderboard_snapshots").select("board, user_id, position, points").eq("snap_date", d).lte("position", 5).order("position");
+              const tids = [...new Set((top || []).map(t => t.user_id))];
+              const { data: tp } = tids.length ? await supabase.from("profiles").select("id, username").in("id", tids) : { data: [] };
+              const nm = Object.fromEntries((tp || []).map(p => [p.id, p.username]));
+              setLiveTop({ date: d, rows: (top || []).map(t => ({ ...t, name: nm[t.user_id] || t.user_id })) });
+            }
+          } catch (e) { /* display only */ }
+        }
         if (userRole === "admin" && data && data.length) {
           const ids = [...new Set(data.map(b => b.user_id))];
           const { data: profs } = await supabase.from("profiles").select("id, username").in("id", ids);
@@ -3279,6 +3293,22 @@ if (!session && !guestMode) {
                 <div className="card" style={{ marginTop: 14, border: "1px solid #fbbf2455" }}>
                   <div style={{ fontSize: 14, color: "#fbbf24", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Admin: monthly winners and prizes</div>
                   <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 10 }}>Champion £{BOARD_BADGE_CASH.champion}, Top 5 £{BOARD_BADGE_CASH.top5} each. Joint finishes share the prize. Only you can see this.</div>
+                  {liveTop.rows.length > 0 && (
+                    <div style={{ marginBottom: 12 }}>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: "#f0f0f0", marginBottom: 6 }}>Leading now · last night's snapshot ({new Date(liveTop.date).toLocaleDateString("en-GB")})</div>
+                      {["weekly", "euro"].map(bd => {
+                        const r = liveTop.rows.filter(x => x.board === bd);
+                        if (!r.length) return null;
+                        return (
+                          <div key={bd} style={{ background: "#0d0d18", border: "1px solid #2a2a3a", borderRadius: 8, padding: 10, marginBottom: 8 }}>
+                            <div style={{ fontSize: 12, fontWeight: 800, color: "#818cf8", marginBottom: 4 }}>{bd === "euro" ? "🇪🇺 Euro board" : "🏅 Weekly board"}</div>
+                            {r.map((x, i) => <div key={i} style={{ fontSize: 13, color: "#e2e8f0" }}>{x.position === 1 ? "🥇" : "🏆"} {x.position}. <b>{x.name}</b> · {x.points} pts</div>)}
+                          </div>
+                        );
+                      })}
+                      <div style={{ fontSize: 11, color: "#94a3b8" }}>Whoever is 1st on the last night of the month becomes Champion.</div>
+                    </div>
+                  )}
                   {keys.length === 0 && <div style={{ fontSize: 13, color: "#e2e8f0" }}>No monthly badges awarded yet. The first are awarded on 1 Nov 2026.</div>}
                   {keys.map(k => {
                     const [period, board] = k.split("|");
