@@ -24,14 +24,7 @@ const TEAM_FLAG_CODES = {
 // TUSH tied 2nd, so 3 each; Monez and Hayzey FC tied 5th, so 1 each).
 // Keyed by user id. Delete this table (set to {}) when the round after this
 // one begins.
-const ROUND_HEAD_START = {
-  "947279b9-aa94-4250-854a-c24f5e387570": 5, // Isaa, 1st
-  "15afd7bf-e570-40c7-aa4a-57fb8d84badd": 3, // Lumifootballhub, 2nd (tied)
-  "1697e623-2ef5-4484-9555-6a670abc6d59": 3, // TUSH, 2nd (tied)
-  "40a5032c-9702-4107-9660-5707b212c4b9": 1, // FAWAZ, 4th
-  "31178f5a-aa03-4e15-8e30-320a3bc40722": 1, // Monez, 5th (tied)
-  "fbb8a523-b75b-40b1-bfde-afa3851f0cc0": 1, // Hayzey FC, 5th (tied)
-};
+const ROUND_HEAD_START = {};  // previous round's carry-over bonuses removed: this round (from 09/10/2026) starts everyone at zero, same as the site board
 
 // ─── Boards for the share-card tools (reusable) ─────────────────────────────
 // One entry per contest board. Every card pull (fixtures table, start time, head
