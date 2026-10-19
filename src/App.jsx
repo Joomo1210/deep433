@@ -1708,15 +1708,22 @@ useEffect(() => {
       const { data: euroFx } = await supabase.from("euro_fixtures").select("home_team, away_team");
       euroKeysForCap = new Set((euroFx || []).map(f => keyOf(f.home_team, f.away_team)));
     } catch (e) { /* weekly cap logic below still applies */ }
-    // Monday Night matches (monday_fixtures) have no per-player cap: a one-night board.
+    // Monday Night matches (monday_fixtures) have their own cap of 5 per player.
     let mondayOnlyForCap = false;
+    let monKeys = new Set();
     try {
       const { data: monFx } = await supabase.from("monday_fixtures").select("home_team, away_team");
-      const monKeys = new Set((monFx || []).map(f => keyOf(f.home_team, f.away_team)));
+      monKeys = new Set((monFx || []).map(f => keyOf(f.home_team, f.away_team)));
       mondayOnlyForCap = monKeys.has(keyOf(homeTeam, awayTeam)) && !euroKeysForCap.has(keyOf(homeTeam, awayTeam));
     } catch (e) { /* no monday table yet */ }
     if (mondayOnlyForCap) {
-      // no cap check
+      const mondayCount = history.filter(h =>
+        new Date(h.created_at) >= MONDAY_START_DATE && monKeys.has(keyOf(h.home_team, h.away_team))
+      ).length;
+      if (mondayCount >= 5) {
+        setError("You've reached the 5 prediction limit for the Monday Night leaderboard.");
+        return;
+      }
     } else if (euroKeysForCap.has(keyOf(homeTeam, awayTeam))) {
       const euroCount = history.filter(h =>
         new Date(h.created_at) >= EURO_START_DATE && euroKeysForCap.has(keyOf(h.home_team, h.away_team))
