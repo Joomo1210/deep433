@@ -4402,7 +4402,7 @@ function CuratedMatchesGraphic({ supabase }) {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [loaded, setLoaded] = useState(false);
-  const [source, setSource] = useState("euro"); // "weekly" | "euro" | "both"
+  const [source, setSource] = useState("euro"); // "weekly" | "euro" | "monday" | "both"
 
   const MAX_CARDS = 4;
   const PER_CARD_TARGET = 15;
@@ -4410,7 +4410,7 @@ function CuratedMatchesGraphic({ supabase }) {
   const loadMatches = async () => {
     setLoading(true); setError(""); setLoaded(false);
     try {
-      const tables = source === "both" ? ["leaderboard_fixtures", "euro_fixtures"] : source === "euro" ? ["euro_fixtures"] : ["leaderboard_fixtures"];
+      const tables = source === "both" ? ["leaderboard_fixtures", "euro_fixtures", "monday_fixtures"] : source === "euro" ? ["euro_fixtures"] : source === "monday" ? ["monday_fixtures"] : ["leaderboard_fixtures"];
       let data = [], err = null;
       for (const t of tables) {
         const r = await supabase.from(t).select("home_team, away_team, kickoff, league_label");
@@ -4494,7 +4494,8 @@ function CuratedMatchesGraphic({ supabase }) {
           <select value={source} onChange={e => { setSource(e.target.value); setLoaded(false); }} style={{ display: "block", width: "100%", marginTop: 3, background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 13, padding: "8px 8px", fontFamily: "inherit" }}>
             <option value="euro">Euro Cups board</option>
             <option value="weekly">Weekly league</option>
-            <option value="both">Both boards</option>
+            <option value="monday">Monday Night board</option>
+            <option value="both">All boards</option>
           </select>
         </label>
         <label style={{ fontSize: 11, color: "#94a3b8", flex: 1, minWidth: 120 }}>Show times in
