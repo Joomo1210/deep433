@@ -826,6 +826,7 @@ export default function FootballPredictor() {
   const [contest, setContest] = useState("weekly");
   const fxTable = contest === "euro" ? "euro_fixtures" : contest === "monday" ? "monday_fixtures" : "leaderboard_fixtures";
   const [euroBadgeKeys, setEuroBadgeKeys] = useState(() => new Set());
+  const [mondayBadgeKeys, setMondayBadgeKeys] = useState(() => new Set());
   // Display only: set of curated match keys (lowercased home|away) used to
   // badge fixtures that count toward the leaderboard. Never used for scoring.
   const [curatedBadgeKeys, setCuratedBadgeKeys] = useState(() => new Set());
@@ -1246,6 +1247,11 @@ export default function FootballPredictor() {
         if (cancelled || !ed) return;
         setEuroBadgeKeys(new Set(ed.map(f => `${(f.home_team || "").trim().toLowerCase()}|${(f.away_team || "").trim().toLowerCase()}`)));
       } catch (e) { /* no euro badges, nothing else affected */ }
+      try {
+        const { data: md } = await supabase.from("monday_fixtures").select("home_team, away_team");
+        if (cancelled || !md) return;
+        setMondayBadgeKeys(new Set(md.map(f => `${(f.home_team || "").trim().toLowerCase()}|${(f.away_team || "").trim().toLowerCase()}`)));
+      } catch (e) { /* no monday badges, nothing else affected */ }
     })();
     return () => { cancelled = true; };
   }, [tab]);
@@ -1380,8 +1386,13 @@ export default function FootballPredictor() {
           ]);
           if (cancelled) return;
           const cutoff = Date.now() - 150 * 60000; // keep a match visible (locked) until about 2.5h after kickoff
+          // Match-day reveal: a curated match only shows to players from 00:00 UK time on the day it kicks off,
+          // even if the admin listed it days earlier. (The database enforces the same rule on save.)
+          const ukDay = (d) => new Date(d).toLocaleDateString("en-CA", { timeZone: "Europe/London" });
+          const todayUk = ukDay(Date.now());
           const list = [...(w.data || []), ...(e.data || []), ...(m.data || [])]
             .filter(r => r.home_team && r.away_team && (!r.kickoff || new Date(r.kickoff).getTime() > cutoff))
+            .filter(r => !r.kickoff || ukDay(r.kickoff) <= todayUk)
             .map(r => ({
               home: r.home_team,
               away: r.away_team,
@@ -2475,7 +2486,7 @@ if (!session && !guestMode) {
                   const upcoming = fixtures
                     .filter(f => f.kickoff && new Date(f.kickoff) > new Date() && !hasExistingPrediction(f.home, f.away) && getMatchStatus(f.home, f.away) !== "finished" && getMatchStatus(f.home, f.away) !== "live")
                     .sort((x, y) => new Date(x.kickoff) - new Date(y.kickoff));
-                  const feat = upcoming.find(f => curatedBadgeKeys.has(keyOf(f)) || euroBadgeKeys.has(keyOf(f))) || upcoming[0];
+                  const feat = upcoming.find(f => curatedBadgeKeys.has(keyOf(f)) || euroBadgeKeys.has(keyOf(f)) || mondayBadgeKeys.has(keyOf(f))) || upcoming[0];
                   if (!feat) return null;
                   const k = new Date(feat.kickoff);
                   const dayTxt = k.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" }).replace(",", "");
@@ -2495,9 +2506,9 @@ if (!session && !guestMode) {
                         <div style={{ color: "#8b98a5", fontWeight: 800, fontSize: 13, padding: "0 8px" }}>VS</div>
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 14 }}>{crest(feat.awayLogo, feat.away)}{feat.away}</div>
                       </div>
-                      {(curatedBadgeKeys.has(keyOf(feat)) || euroBadgeKeys.has(keyOf(feat))) && (
-                        <div style={{ textAlign: "center", fontSize: 11, fontWeight: 800, color: curatedBadgeKeys.has(keyOf(feat)) ? "#fbbf24" : "#818cf8" }}>
-                          {curatedBadgeKeys.has(keyOf(feat)) ? "🏅 CURATED · Leaderboard match" : "🇪🇺 CURATED · Euro board match"}
+                      {(curatedBadgeKeys.has(keyOf(feat)) || euroBadgeKeys.has(keyOf(feat)) || mondayBadgeKeys.has(keyOf(feat))) && (
+                        <div style={{ textAlign: "center", fontSize: 11, fontWeight: 800, color: curatedBadgeKeys.has(keyOf(feat)) ? "#fbbf24" : mondayBadgeKeys.has(keyOf(feat)) && !euroBadgeKeys.has(keyOf(feat)) ? "#c4b5fd" : "#818cf8" }}>
+                          {curatedBadgeKeys.has(keyOf(feat)) ? "🏅 CURATED · Leaderboard match" : euroBadgeKeys.has(keyOf(feat)) ? "🇪🇺 CURATED · Euro board match" : "🌙 CURATED · Monday Night match"}
                         </div>
                       )}
                       <button
@@ -2591,7 +2602,10 @@ if (!session && !guestMode) {
                               {euroBadgeKeys.has(`${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`) && (
                                 <div style={{ display: "inline-block", fontSize: 10, fontWeight: 900, color: "#a5b4fc", background: "#818cf818", border: "1px solid #818cf866", borderRadius: 6, padding: "2px 7px", marginTop: 4, whiteSpace: "nowrap", letterSpacing: 0.4 }}>🇪🇺 CURATED · EURO</div>
                               )}
-                              {(curatedBadgeKeys.has(`${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`) || euroBadgeKeys.has(`${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`)) && (
+                              {mondayBadgeKeys.has(`${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`) && (
+                                <div style={{ display: "inline-block", fontSize: 10, fontWeight: 900, color: "#c4b5fd", background: "#a855f718", border: "1px solid #a855f766", borderRadius: 6, padding: "2px 7px", marginTop: 4, marginLeft: 4, whiteSpace: "nowrap", letterSpacing: 0.4 }}>🌙 CURATED · MONDAY NIGHT</div>
+                              )}
+                              {(curatedBadgeKeys.has(`${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`) || mondayBadgeKeys.has(`${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`) || euroBadgeKeys.has(`${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`)) && (
                                 <div style={{ fontSize: 10, fontWeight: 600, color: "#8b98a5", marginTop: 4, whiteSpace: "nowrap" }}>{STANDARD_POINTS_LINE}</div>
                               )}
                             </div>
@@ -2609,7 +2623,7 @@ if (!session && !guestMode) {
                 <div className="fx-mob-only fx-list-mob">
                   {(() => {
                     const keyOf = f => `${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`;
-                    const isCur = f => curatedBadgeKeys.has(keyOf(f)) || euroBadgeKeys.has(keyOf(f));
+                    const isCur = f => curatedBadgeKeys.has(keyOf(f)) || euroBadgeKeys.has(keyOf(f)) || mondayBadgeKeys.has(keyOf(f));
                     const flat = Object.values(fixturesByDate).flat();
                     const groups = [];
                     flat.forEach(f => {
