@@ -135,7 +135,7 @@ const signed = (d) => `${d >= 0 ? "+" : "-"}${Math.abs(d).toFixed(1)}`;
 // the standard `download` attribute doesn't reliably work on iOS — it just
 // opens the image instead of saving it. Falls back to standard download link
 // for desktop and any browser without Web Share file support.
-async function downloadCardImage(cardElement, filename, bgColor = "#0a0a0f", transparent = false) {
+async function downloadCardImage(cardElement, filename, bgColor = "#0a0a0f", transparent = false, scale = 2) {
   if (!cardElement) return;
   if (!window.html2canvas) {
     const s = document.createElement("script");
@@ -143,7 +143,7 @@ async function downloadCardImage(cardElement, filename, bgColor = "#0a0a0f", tra
     document.head.appendChild(s);
     await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
   }
-  const canvas = await window.html2canvas(cardElement, { backgroundColor: transparent ? null : bgColor, scale: 2, useCORS: true, logging: false });
+  const canvas = await window.html2canvas(cardElement, { backgroundColor: transparent ? null : bgColor, scale, useCORS: true, logging: false });
 
   if (navigator.canShare && navigator.share) {
     try {
@@ -4391,6 +4391,127 @@ function Top5ExplainedGraphic({ supabase }) {
 // 60 matches stay readable at a large font instead of being crammed onto one
 // image. Needs the kickoff and league_label columns — matches added before
 // those existed show under "Date to be confirmed".
+// ── Curated Matches card — STANDARD TEMPLATE ───────────────────────────────
+// Native 1080x1350 (4:5). Only the date, part number and match list change between cards.
+// Layout budget (px): header 290 + footer 140 + rows area 904 (9 matches on one date, each extra date bar costs 72).
+const CM_LABEL_FIX = {
+  "GIL Vicente": "Gil Vicente", "Gil vicente": "Gil Vicente",
+  "Segunda Division": "Segunda División", "SEGUNDA DIVISION": "Segunda División",
+};
+const cmFix = (t) => CM_LABEL_FIX[(t || "").trim()] || (t || "").trim();
+const cmInitials = (name) => (name || "?").replace(/[^A-Za-zÀ-ÿ0-9 ]/g, "").split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join("").toUpperCase() || "?";
+const CM_CREST_CACHE = {};
+
+function CMCrest({ name, url, size = 44 }) {
+  const [bad, setBad] = useState(false);
+  if (url && !bad) {
+    return <img src={url} alt="" crossOrigin="anonymous" onError={() => setBad(true)} style={{ width: size, height: size, objectFit: "contain", flexShrink: 0 }} />;
+  }
+  return (
+    <div style={{ width: size, height: size, borderRadius: "50%", background: "#1B2633", border: "1px solid #2A3848", color: "#9FB0C3", fontSize: size * 0.4, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+      {cmInitials(name)}
+    </div>
+  );
+}
+
+const CMIconCalendar = ({ size = 26, color = "#F5C518" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="3" /><path d="M3 10h18M8 3v4M16 3v4" /></svg>
+);
+const CMIconTrophy = ({ size = 20, color = "#8B8CF8" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0V4z" /><path d="M8 6H4v1a4 4 0 0 0 4 4M16 6h4v1a4 4 0 0 1-4 4M12 13v4M8 21h8M10 17h4" /></svg>
+);
+
+function CuratedMatchCard({ cardRef, groups, partNo, partTotal, startNo, count, title, tzLabel, eyebrow, crests, timeOf }) {
+  let matchNo = startNo;
+  return (
+    <div ref={cardRef} style={{
+      width: 1080, height: 1350, boxSizing: "border-box", position: "relative", overflow: "hidden",
+      fontFamily: "'Inter','Montserrat',sans-serif", color: "#fff",
+      background: "radial-gradient(ellipse 760px 420px at 50% 0%, rgba(46,230,107,0.20), rgba(46,230,107,0) 70%), #0A0F14",
+    }}>
+      {/* faint pitch lines */}
+      <div style={{ position: "absolute", inset: 0, opacity: 0.05, backgroundImage: "repeating-linear-gradient(0deg, #fff 0 1px, transparent 1px 90px), repeating-linear-gradient(90deg, #fff 0 1px, transparent 1px 90px)" }} />
+      <div style={{ position: "absolute", left: 540 - 260, top: 675 - 260, width: 520, height: 520, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.045)" }} />
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 6, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
+
+      <div style={{ position: "relative", padding: "34px 56px 0", height: 1350, boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
+        {/* HEADER (290) */}
+        <div style={{ height: 256, flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 18, height: 96 }}>
+            <img src="/deep433.jpg" alt="Deep433" crossOrigin="anonymous" style={{ width: 96, height: 96, borderRadius: "50%", objectFit: "cover" }} />
+            <div style={{ fontSize: 44, fontWeight: 800, letterSpacing: 1 }}>DEEP<span style={{ color: "#2EE66B" }}>433</span></div>
+          </div>
+          <div style={{ textAlign: "center", marginTop: 8 }}>
+            <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: 2, color: "#8A99AA", textTransform: "uppercase" }}>{eyebrow}</div>
+            <div style={{ fontSize: 76, lineHeight: "84px", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, background: "linear-gradient(90deg,#2EE66B,#22D3EE)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>{title}</div>
+            <div style={{ display: "inline-block", marginTop: 6, padding: "7px 26px", borderRadius: 999, background: "#111820", border: "1px solid #1F2A36", fontSize: 22, fontWeight: 700, color: "#C9D4E0" }}>
+              {partTotal > 1 ? `Part ${partNo} of ${partTotal} · Matches ${startNo}–${startNo + count - 1}` : `${count} match${count === 1 ? "" : "es"}`} · Count toward the leaderboard
+            </div>
+          </div>
+        </div>
+
+        {/* ROWS (904) */}
+        <div style={{ height: 904 + 34, flexShrink: 0, overflow: "hidden", paddingTop: 34 }}>
+          {groups.map((g, gi) => (
+            <div key={gi}>
+              <div style={{ height: 56, marginBottom: 16, borderRadius: 999, border: "1.5px solid rgba(245,197,24,0.55)", background: "rgba(245,197,24,0.07)", display: "flex", alignItems: "center", justifyContent: "center", gap: 14, boxSizing: "border-box" }}>
+                <CMIconCalendar />
+                <span style={{ fontSize: 28, fontWeight: 800, color: "#F5C518", textTransform: "uppercase", letterSpacing: 1.5 }}>{g.label}</span>
+              </div>
+              {g.items.map((r, ri) => {
+                const t = r.kickoff ? timeOf(r.kickoff) : "--:--";
+                const prev = ri > 0 ? g.items[ri - 1] : null;
+                const next = ri < g.items.length - 1 ? g.items[ri + 1] : null;
+                const sameAsPrev = prev && prev.kickoff && r.kickoff && timeOf(prev.kickoff) === t;
+                const sameAsNext = next && next.kickoff && r.kickoff && timeOf(next.kickoff) === t;
+                const home = cmFix(r.home_team), away = cmFix(r.away_team);
+                const league = cmFix(r.league_label) || "Fixture";
+                matchNo++;
+                return (
+                  <div key={ri} style={{ height: 74, marginBottom: 12, borderRadius: 16, background: "#111820", border: "1px solid #1F2A36", display: "flex", alignItems: "center", padding: "0 18px 0 14px", gap: 18, boxSizing: "border-box", position: "relative" }}>
+                    <div style={{ width: 104, flexShrink: 0, display: "flex", justifyContent: "center", position: "relative", height: "100%", alignItems: "center" }}>
+                      {sameAsPrev ? (
+                        <div style={{ width: 3, height: "100%", background: "rgba(46,230,107,0.45)", position: "absolute", left: "50%", top: 0, bottom: sameAsNext ? -12 : "50%", transform: "translateX(-50%)" }} />
+                      ) : (
+                        <div style={{ padding: "8px 0", width: 104, textAlign: "center", borderRadius: 12, background: "#10291F", border: "1px solid #1D4A33", color: "#2EE66B", fontSize: 32, fontWeight: 800, position: "relative", zIndex: 1 }}>{t}</div>
+                      )}
+                      {sameAsPrev && <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#2EE66B", position: "relative", zIndex: 1 }} />}
+                      {!sameAsPrev && sameAsNext && <div style={{ width: 3, background: "rgba(46,230,107,0.45)", position: "absolute", left: "50%", top: "50%", bottom: -12, transform: "translateX(-50%)", zIndex: 0 }} />}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, height: 40 }}>
+                        <CMCrest name={home} url={crests[home]} size={36} />
+                        <span style={{ fontSize: 30, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0, flexShrink: 1 }}>{home}</span>
+                        <span style={{ fontSize: 20, fontWeight: 700, color: "#6B7A8C", flexShrink: 0 }}>vs</span>
+                        <CMCrest name={away} url={crests[away]} size={36} />
+                        <span style={{ fontSize: 30, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0, flexShrink: 1 }}>{away}</span>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, height: 22, marginTop: 2 }}>
+                        <CMIconTrophy size={18} />
+                        <span style={{ fontSize: 18, fontWeight: 800, color: "#8B8CF8", textTransform: "uppercase", letterSpacing: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{league}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+
+        {/* FOOTER (140) */}
+        <div style={{ position: "absolute", left: 56, right: 56, bottom: 0, height: 140, borderTop: "1px solid #1F2A36", textAlign: "center", paddingTop: 16, boxSizing: "border-box" }}>
+          <div style={{ fontSize: 26, fontWeight: 700, color: "#fff" }}>Only these matches count toward the leaderboard.</div>
+          <div style={{ fontSize: 20, fontWeight: 600, color: "#8A99AA", marginTop: 4 }}>All times shown in {tzLabel}</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 10 }}>
+            <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, borderRadius: "50%", objectFit: "cover" }} />
+            <span style={{ fontSize: 20, fontWeight: 800, color: "#C9D4E0" }}>Predict free · Top 5 win every round</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CuratedMatchesGraphic({ supabase }) {
   const cardRefs = useRef([]);
   const [loading, setLoading] = useState(false);
@@ -4404,8 +4525,8 @@ function CuratedMatchesGraphic({ supabase }) {
   const [loaded, setLoaded] = useState(false);
   const [source, setSource] = useState("euro"); // "weekly" | "euro" | "monday" | "both"
 
-  const MAX_CARDS = 4;
-  const PER_CARD_TARGET = 15;
+  const MAX_CARDS = 8;
+  const [crests, setCrests] = useState({});
 
   const loadMatches = async () => {
     setLoading(true); setError(""); setLoaded(false);
@@ -4453,14 +4574,31 @@ function CuratedMatchesGraphic({ supabase }) {
       return new Date(a.kickoff) - new Date(b.kickoff);
     });
 
-  const capped = filtered.slice(0, MAX_CARDS * PER_CARD_TARGET);
-  const cardCount = Math.min(MAX_CARDS, Math.max(1, Math.ceil(capped.length / PER_CARD_TARGET)));
-  const perCard = Math.ceil(capped.length / cardCount) || 1;
-  const cards = Array.from({ length: cardCount }, (_, i) => capped.slice(i * perCard, (i + 1) * perCard)).filter(c => c.length > 0);
+  // Pack matches into cards by height so every card keeps the identical 1080x1350 layout.
+  // 9 matches on one date fill a card; extra dates on the same card cost one date bar each.
+  const CARD_AVAIL = 904, ROW_H = 86, BAR_H = 72;
+  const cards = [];
+  {
+    let cur = [], used = 0, lastKey = null;
+    for (const r of filtered) {
+      const key = r.kickoff ? dayKeyOf(r.kickoff) : "tbc";
+      const cost = ROW_H + (key !== lastKey ? BAR_H : 0);
+      if (cur.length > 0 && used + cost > CARD_AVAIL) {
+        cards.push(cur); cur = []; used = 0; lastKey = null;
+      }
+      const c = ROW_H + (key !== lastKey ? BAR_H : 0);
+      cur.push(r); used += c; lastKey = key;
+    }
+    if (cur.length) cards.push(cur);
+  }
+  const shownCards = cards.slice(0, MAX_CARDS);
+  const capped = shownCards.flat();
+  const cardCount = shownCards.length;
+  cards.length = 0; shownCards.forEach(c => cards.push(c));
   const undated = rows.filter(r => !r.kickoff).length;
 
   const downloadOne = async (i) => {
-    await downloadCardImage(cardRefs.current[i], `deep433-curated-${i + 1}-of-${cards.length}.png`, "#0a0a12", false);
+    await downloadCardImage(cardRefs.current[i], `deep433-curated-${i + 1}-of-${cards.length}.png`, "#0A0F14", false, 1);
   };
   const downloadAll = async () => {
     setDownloading(true);
@@ -4474,6 +4612,33 @@ function CuratedMatchesGraphic({ supabase }) {
   };
 
   const tzLabel = tz === "Africa/Lagos" ? "Nigeria time (WAT)" : "UK time";
+
+  // Crests: look each team up once (exact/near-exact name match only, otherwise the card shows initials).
+  const crestKey = filtered.map(r => `${r.home_team}|${r.away_team}`).join(";");
+  useEffect(() => {
+    let cancelled = false;
+    const names = [...new Set(filtered.flatMap(r => [cmFix(r.home_team), cmFix(r.away_team)]))].filter(Boolean);
+    (async () => {
+      const found = {};
+      for (const n of names) {
+        if (n in CM_CREST_CACHE) { if (CM_CREST_CACHE[n]) found[n] = CM_CREST_CACHE[n]; continue; }
+        if (n.length < 3) { CM_CREST_CACHE[n] = null; continue; }
+        try {
+          const r = await fetch(`/api/team-stats?mode=teamsearch&query=${encodeURIComponent(n)}`);
+          const d = await r.json();
+          const q = n.toLowerCase();
+          const norm = (x) => (x || "").toLowerCase();
+          const hit = (d.teams || []).find(t => norm(t.name) === q)
+            || (d.teams || []).find(t => !/ (w|u\d+|ii)$/i.test(t.name || "") && (norm(t.name).startsWith(q) || q.startsWith(norm(t.name))) && norm(t.name).length >= 4);
+          CM_CREST_CACHE[n] = hit?.logo || null;
+          if (hit?.logo) found[n] = hit.logo;
+        } catch { /* leave initials */ }
+        if (cancelled) return;
+      }
+      if (!cancelled) setCrests(c => ({ ...c, ...found }));
+    })();
+    return () => { cancelled = true; };
+  }, [crestKey]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -4525,56 +4690,33 @@ function CuratedMatchesGraphic({ supabase }) {
       )}
 
       {cards.map((card, ci) => {
-        // Group this card's matches under a date header.
         const groups = [];
         card.forEach(r => {
           const key = r.kickoff ? dayKeyOf(r.kickoff) : "tbc";
           const last = groups[groups.length - 1];
           if (last && last.key === key) last.items.push(r);
-          else groups.push({ key, label: r.kickoff ? dayLabelOf(r.kickoff) : "Date to be confirmed", items: [r] });
+          else groups.push({ key, label: r.kickoff ? dayLabelOf(r.kickoff).toUpperCase() : "DATE TO BE CONFIRMED", items: [r] });
         });
-        const startNo = ci * perCard + 1;
+        const startNo = cards.slice(0, ci).reduce((n, c) => n + c.length, 0) + 1;
+        const firstK = card.find(r => r.kickoff)?.kickoff;
+        const todayKey = new Date().toLocaleDateString("en-CA", { timeZone: tz });
+        const eyebrow = firstK
+          ? (dayKeyOf(firstK) === todayKey ? "TODAY'S" : `${new Date(firstK).toLocaleDateString("en-GB", { weekday: "long", timeZone: tz }).toUpperCase()}'S`)
+          : "THIS ROUND'S";
+        const scale = typeof window !== "undefined" ? Math.min(1, (window.innerWidth - 32) / 1080) : 0.4;
+        const common = { groups, partNo: ci + 1, partTotal: cards.length, startNo, count: card.length, title: (title || "Curated Matches").toUpperCase(), tzLabel, eyebrow, crests, timeOf };
         return (
           <div key={ci}>
-            <GraphicCard cardRef={el => (cardRefs.current[ci] = el)} label={`Card ${ci + 1} of ${cards.length}`}>
-              <div style={{ padding: "44px 18px 22px" }}>
-                <div style={{ textAlign: "center", marginBottom: 2 }}>
-                  <span style={{
-                    fontSize: 24, fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.1,
-                    background: "linear-gradient(90deg,#4ade80,#818cf8,#f59e0b)",
-                    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-                  }}>📋 {title}</span>
-                </div>
-                <div style={{ textAlign: "center", fontSize: 12.5, color: "#e2e8f0", fontWeight: 800, marginBottom: 16 }}>
-                  Part {ci + 1} of {cards.length} · Matches {startNo}–{startNo + card.length - 1}
-                </div>
-
-                {groups.map((g, gi) => (
-                  <div key={gi} style={{ marginBottom: 10 }}>
-                    <div style={{ background: "#1a1a28", border: "1px solid #2a2a3a", borderRadius: 8, padding: "6px 12px", marginBottom: 6 }}>
-                      <span style={{ fontSize: 13.5, fontWeight: 900, color: "#fbbf24", textTransform: "uppercase", letterSpacing: 0.5 }}>{g.label}</span>
-                    </div>
-                    {g.items.map((r, ri) => (
-                      <div key={ri} style={{
-                        display: "grid", gridTemplateColumns: "56px 1fr", alignItems: "center", gap: 10,
-                        padding: "8px 10px", background: ri % 2 === 0 ? "#13131f" : "#0f0f18", borderRadius: 8, marginBottom: 3,
-                      }}>
-                        <span style={{ fontSize: 16, fontWeight: 900, color: "#4ade80", textAlign: "center" }}>{r.kickoff ? timeOf(r.kickoff) : "--:--"}</span>
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: 15.5, fontWeight: 800, color: "#f0f0f0", lineHeight: 1.25 }}>{r.home_team} vs {r.away_team}</div>
-                          {r.league_label && <div style={{ fontSize: 11.5, fontWeight: 800, color: "#818cf8", textTransform: "uppercase", letterSpacing: 0.4, marginTop: 2 }}>{r.league_label}</div>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ))}
-
-                <div style={{ textAlign: "center", marginTop: 14 }}>
-                  <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 800 }}>Only these matches count toward the leaderboard.</div>
-                  <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 700, marginTop: 3 }}>All times shown in {tzLabel}</div>
-                </div>
+            {/* Visible preview (scaled). The download uses the hidden full-size copy below. */}
+            <div style={{ width: 1080 * scale, height: 1350 * scale, margin: "0 auto", overflow: "hidden", borderRadius: 12 }}>
+              <div style={{ width: 1080, height: 1350, transform: `scale(${scale})`, transformOrigin: "top left" }}>
+                <CuratedMatchCard {...common} />
               </div>
-            </GraphicCard>
+            </div>
+            <div style={{ position: "fixed", left: -20000, top: 0, pointerEvents: "none" }} aria-hidden="true">
+              <CuratedMatchCard {...common} cardRef={el => (cardRefs.current[ci] = el)} />
+            </div>
+            <div style={{ fontSize: 13, color: "#e2e8f0", textAlign: "center", marginTop: 8 }}>{`Card ${ci + 1} of ${cards.length}`}</div>
             <button onClick={async () => { setDownloading(true); try { await downloadOne(ci); } catch { alert("Download failed"); } setDownloading(false); }} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 800, padding: "10px", width: "100%", marginTop: 8 }}>
               {downloading ? "Generating..." : `⬇ Download card ${ci + 1}`}
             </button>
