@@ -48,6 +48,9 @@ const WEEKLY_ROUND_LABEL = "Round 3 ends Sunday 23:59";
 // Display only: text under the Euro counter.
 const EURO_ROUND_LABEL = "🇪🇺 Euro Cups board · 30 predictions across 2 weeks · starts Tue 13 Oct";
 const EURO_START_DATE = new Date("2026-10-12T00:00:00Z");
+// Monday Night board: a one-night board on its own table (monday_fixtures). The leader after the night
+// takes all 5K, top 10 shown. To run another Monday, change this date, clear monday_fixtures and add the new matches.
+const MONDAY_START_DATE = new Date("2026-10-18T00:00:00Z");
 
 // ─── Past leaderboard rounds (display only) ──────────────────────────────────
 // Saved round results come from the leaderboard_round_results table. If the
@@ -821,7 +824,7 @@ export default function FootballPredictor() {
   const [leaderboardFixtures, setLeaderboardFixtures] = useState([]);
   // "weekly" = the usual weekly leaderboard, "euro" = Champions League + Europa League board.
   const [contest, setContest] = useState("weekly");
-  const fxTable = contest === "euro" ? "euro_fixtures" : "leaderboard_fixtures";
+  const fxTable = contest === "euro" ? "euro_fixtures" : contest === "monday" ? "monday_fixtures" : "leaderboard_fixtures";
   const [euroBadgeKeys, setEuroBadgeKeys] = useState(() => new Set());
   // Display only: set of curated match keys (lowercased home|away) used to
   // badge fixtures that count toward the leaderboard. Never used for scoring.
@@ -1012,7 +1015,7 @@ export default function FootballPredictor() {
     // warning and nothing to undo it. A round's cutoff should only ever
     // move when someone deliberately changes this line for a genuinely
     // new round, never on its own just because the month changed.
-    const LEADERBOARD_START_DATE = contest === "euro" ? EURO_START_DATE : new Date("2026-10-09T05:30:00Z");
+    const LEADERBOARD_START_DATE = contest === "euro" ? EURO_START_DATE : contest === "monday" ? MONDAY_START_DATE : new Date("2026-10-09T05:30:00Z");
     const cutoff = LEADERBOARD_START_DATE.toISOString();
     const { data: preds, error: predsError } = await supabase
       .from("predictions")
@@ -1036,7 +1039,7 @@ export default function FootballPredictor() {
         step: "waiting for results",
         predsFetched: 0,
         predictionsWaitingForResults: waiting ?? "unknown",
-        board: contest === "euro" ? "Euro Cups" : "Weekly",
+        board: contest === "euro" ? "Euro Cups" : contest === "monday" ? "Monday Night" : "Weekly",
         note: "No finished matches have been scored yet, so the board is empty. Predictions are saved and will score once results are confirmed (use the pending predictions list to confirm a result).",
       });
       setLeaderboardLoading(false); return;
@@ -1131,7 +1134,7 @@ export default function FootballPredictor() {
     // Bonus points (Premium matches, scored by hand) live in the bonus_points table, per board.
     const bonusById = {};
     try {
-      const { data: bonusData } = await supabase.from("bonus_points").select("user_id, points").eq("board", contest === "euro" ? "euro" : "weekly");
+      const { data: bonusData } = await supabase.from("bonus_points").select("user_id, points").eq("board", contest);
       (bonusData || []).forEach(b => { bonusById[b.user_id] = (bonusById[b.user_id] || 0) + (b.points || 0); });
     } catch (e) { /* table missing: no bonus */ }
     const { data: profilesData } = await supabase
@@ -1148,9 +1151,9 @@ export default function FootballPredictor() {
         name: nameById[id] || null, // null = never set a display name
         role: roleById[id],
         total: byUser[id].total,
-        points: byUser[id].points + (contest === "euro" ? 0 : (ROUND_HEAD_START[id] || 0)) + (bonusById[id] || 0),
+        points: byUser[id].points + (contest !== "weekly" ? 0 : (ROUND_HEAD_START[id] || 0)) + (bonusById[id] || 0),
         bonus: bonusById[id] || 0,
-        headStart: contest === "euro" ? 0 : (ROUND_HEAD_START[id] || 0),
+        headStart: contest !== "weekly" ? 0 : (ROUND_HEAD_START[id] || 0),
         exact: byUser[id].exact,
         outcomeOnly: byUser[id].outcomeOnly,
         overUnderHits: byUser[id].overUnderHits,
@@ -1162,8 +1165,9 @@ export default function FootballPredictor() {
       // fair contest, so it's excluded regardless of its own points.
       .filter(r => r.role !== "admin")
       .sort((a, b) => b.points - a.points);
-    // Top 20, but anyone level on points with 20th place stays on the board too.
-    const rows = rowsSorted.length > 20 ? rowsSorted.filter(r => r.points >= rowsSorted[19].points) : rowsSorted;
+    // Top 20 (Monday Night: top 10), but anyone level on points with the last place stays on the board too.
+    const boardCap = contest === "monday" ? 10 : 20;
+    const rows = rowsSorted.length > boardCap ? rowsSorted.filter(r => r.points >= rowsSorted[boardCap - 1].points) : rowsSorted;
 
     // Full visibility into every user who had eligible predictions this
     // period, including anyone left off the final board and why — instead
@@ -1315,12 +1319,13 @@ export default function FootballPredictor() {
     let cancelled = false;
     (async () => {
       try {
-        const [w, e] = await Promise.all([
+        const [w, e, m] = await Promise.all([
           supabase.from("leaderboard_fixtures").select("home_team, away_team, kickoff, league_label"),
           supabase.from("euro_fixtures").select("home_team, away_team, kickoff, league_label"),
+          supabase.from("monday_fixtures").select("home_team, away_team, kickoff, league_label"),
         ]);
         const now = Date.now();
-        const todo = [...(w.data || []), ...(e.data || [])].filter(r =>
+        const todo = [...(w.data || []), ...(e.data || []), ...(m.data || [])].filter(r =>
           r.home_team && r.away_team && r.kickoff &&
           new Date(r.kickoff).getTime() > now && new Date(r.kickoff).getTime() < now + 36 * 3600e3 &&
           !warmedAi.current.has(`${r.home_team}|${r.away_team}`));
@@ -1368,13 +1373,14 @@ export default function FootballPredictor() {
       setFixturesLoading(true);
       (async () => {
         try {
-          const [w, e] = await Promise.all([
+          const [w, e, m] = await Promise.all([
             supabase.from("leaderboard_fixtures").select("home_team, away_team, kickoff, league_label"),
             supabase.from("euro_fixtures").select("home_team, away_team, kickoff, league_label"),
+            supabase.from("monday_fixtures").select("home_team, away_team, kickoff, league_label"),
           ]);
           if (cancelled) return;
           const cutoff = Date.now() - 150 * 60000; // keep a match visible (locked) until about 2.5h after kickoff
-          const list = [...(w.data || []), ...(e.data || [])]
+          const list = [...(w.data || []), ...(e.data || []), ...(m.data || [])]
             .filter(r => r.home_team && r.away_team && (!r.kickoff || new Date(r.kickoff).getTime() > cutoff))
             .map(r => ({
               home: r.home_team,
@@ -1702,7 +1708,16 @@ useEffect(() => {
       const { data: euroFx } = await supabase.from("euro_fixtures").select("home_team, away_team");
       euroKeysForCap = new Set((euroFx || []).map(f => keyOf(f.home_team, f.away_team)));
     } catch (e) { /* weekly cap logic below still applies */ }
-    if (euroKeysForCap.has(keyOf(homeTeam, awayTeam))) {
+    // Monday Night matches (monday_fixtures) have no per-player cap: a one-night board.
+    let mondayOnlyForCap = false;
+    try {
+      const { data: monFx } = await supabase.from("monday_fixtures").select("home_team, away_team");
+      const monKeys = new Set((monFx || []).map(f => keyOf(f.home_team, f.away_team)));
+      mondayOnlyForCap = monKeys.has(keyOf(homeTeam, awayTeam)) && !euroKeysForCap.has(keyOf(homeTeam, awayTeam));
+    } catch (e) { /* no monday table yet */ }
+    if (mondayOnlyForCap) {
+      // no cap check
+    } else if (euroKeysForCap.has(keyOf(homeTeam, awayTeam))) {
       const euroCount = history.filter(h =>
         new Date(h.created_at) >= EURO_START_DATE && euroKeysForCap.has(keyOf(h.home_team, h.away_team))
       ).length;
@@ -3297,12 +3312,12 @@ if (!session && !guestMode) {
                   {liveTop.rows.length > 0 && (
                     <div style={{ marginBottom: 12 }}>
                       <div style={{ fontSize: 13, fontWeight: 800, color: "#f0f0f0", marginBottom: 6 }}>Leading now · last night's snapshot ({new Date(liveTop.date).toLocaleDateString("en-GB")})</div>
-                      {["weekly", "euro"].map(bd => {
+                      {["weekly", "euro", "monday"].map(bd => {
                         const r = liveTop.rows.filter(x => x.board === bd);
                         if (!r.length) return null;
                         return (
                           <div key={bd} style={{ background: "#0d0d18", border: "1px solid #2a2a3a", borderRadius: 8, padding: 10, marginBottom: 8 }}>
-                            <div style={{ fontSize: 12, fontWeight: 800, color: "#818cf8", marginBottom: 4 }}>{bd === "euro" ? "🇪🇺 Euro board" : "🏅 Weekly board"}</div>
+                            <div style={{ fontSize: 12, fontWeight: 800, color: "#818cf8", marginBottom: 4 }}>{bd === "euro" ? "🇪🇺 Euro board" : bd === "monday" ? "🌙 Monday Night board" : "🏅 Weekly board"}</div>
                             {r.map((x, i) => <div key={i} style={{ fontSize: 13, color: "#e2e8f0" }}>{x.position === 1 ? "🥇" : "🏆"} {x.position}. <b>{x.name}</b> · {x.points} pts</div>)}
                           </div>
                         );
@@ -3529,7 +3544,7 @@ if (!session && !guestMode) {
       {tab === "leaderboard" && (
         <div style={{ maxWidth: PAGE_MAX_WIDTH, margin: "0 auto", padding: "14px 12px" }}>
           <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
-            {[{ id: "weekly", label: "🏅 Weekly" }, { id: "euro", label: "🇪🇺 Champions & Europa League" }].map(c => (
+            {[{ id: "weekly", label: "🏅 Weekly" }, { id: "euro", label: "🇪🇺 Champions & Europa League" }, { id: "monday", label: "🌙 Monday Night" }].map(c => (
               <button key={c.id}
                 onClick={() => { setContest(c.id); setAdminFixtureLeague(c.id === "euro" ? "ucl" : "pl"); }}
                 style={{ flex: 1, background: contest === c.id ? "linear-gradient(135deg,#818cf8,#6366f1)" : "none", border: `1px solid ${contest === c.id ? "#818cf8" : "#2a2a3a"}`, borderRadius: 8, color: contest === c.id ? "#fff" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 800, padding: "8px 6px" }}>
@@ -3537,7 +3552,7 @@ if (!session && !guestMode) {
               </button>
             ))}
           </div>
-          <div style={{ fontSize: 16, fontWeight: 900, color: "#f0f0f0", marginBottom: 2 }}>{contest === "euro" ? "🇪🇺 European Leaderboard" : "🏅 Leaderboard"}</div>
+          <div style={{ fontSize: 16, fontWeight: 900, color: "#f0f0f0", marginBottom: 2 }}>{contest === "euro" ? "🇪🇺 European Leaderboard" : contest === "monday" ? "🌙 Monday Night Leaderboard" : "🏅 Leaderboard"}</div>
           {contest === "euro" && (
             <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", marginBottom: 6 }}>Champions League Tue and Wed, Europa League Thu · started Tue 13 Oct · one running table</div>
           )}
@@ -3545,7 +3560,7 @@ if (!session && !guestMode) {
             Exact: 5pts · Outcome only: 3pts · O/U: +1pt
           </div>
           <div style={{ fontSize: 12, fontWeight: 800, color: "#fbbf24", marginBottom: 10 }}>
-            🏆 Predict free · Top 5 win cash every round
+            {contest === "monday" ? "🏆 Predict free · The leader after Monday night takes all 5K" : "🏆 Predict free · Top 5 win cash every round"}
           </div>
           {userRole === "admin" && (
             <button
@@ -3715,9 +3730,9 @@ if (!session && !guestMode) {
                   <div style={{ fontSize: 54, fontWeight: 900, color: "#fbbf24", lineHeight: 1.05, margin: "4px 0 8px" }}>{me.points}</div>
                   <div style={{ fontSize: 16, fontWeight: 900, color: "#2EE66B" }}>{band.text}</div>
                   <div style={{ fontSize: 12, color: "#C9D1D9", marginTop: 3 }}>{band.sub}</div>
-                  {boardBadges.filter(b => b.user_id === session.user.id && b.board === (contest === "euro" ? "euro" : "weekly")).length > 0 && (
+                  {boardBadges.filter(b => b.user_id === session.user.id && b.board === contest).length > 0 && (
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center", marginTop: 10 }}>
-                      {boardBadges.filter(b => b.user_id === session.user.id && b.board === (contest === "euro" ? "euro" : "weekly")).map((b, i) => {
+                      {boardBadges.filter(b => b.user_id === session.user.id && b.board === contest).map((b, i) => {
                         const def = BOARD_BADGES.find(d => d.code === b.badge);
                         if (!def) return null;
                         return <span key={i} style={{ fontSize: 11, fontWeight: 800, color: def.color, background: `${def.color}18`, border: `1px solid ${def.color}44`, borderRadius: 999, padding: "3px 9px" }}>{def.icon} {def.name}{b.period ? ` · ${badgeMonthLabel(b.period)}` : ""}</span>;
@@ -3761,7 +3776,7 @@ if (!session && !guestMode) {
             }}>
               <span style={{ fontSize: 15, fontWeight: 900, color: "#818cf8", width: 20, flexShrink: 0, textAlign: "center" }}>{leaderboard.findIndex(x => x.points === row.points) + 1}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 4 }}>{row.name}{boardBadges.filter(b => b.user_id === row.userId && b.board === (contest === "euro" ? "euro" : "weekly")).map((b, i) => { const def = BOARD_BADGES.find(d => d.code === b.badge); return def ? <span key={i} title={`${def.name}${b.period ? " · " + badgeMonthLabel(b.period) : ""}`} style={{ marginLeft: 4 }}>{def.icon}</span> : null; })}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 4 }}>{row.name}{boardBadges.filter(b => b.user_id === row.userId && b.board === contest).map((b, i) => { const def = BOARD_BADGES.find(d => d.code === b.badge); return def ? <span key={i} title={`${def.name}${b.period ? " · " + badgeMonthLabel(b.period) : ""}`} style={{ marginLeft: 4 }}>{def.icon}</span> : null; })}</div>
                 <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#4ade80", background: "#4ade8018", border: "1px solid #4ade8033", borderRadius: 5, padding: "2px 6px" }}>{row.exact} E</span>
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#818cf8", background: "#818cf818", border: "1px solid #818cf833", borderRadius: 5, padding: "2px 6px" }}>{row.outcomeOnly} O</span>
