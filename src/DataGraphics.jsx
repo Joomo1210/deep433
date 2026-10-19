@@ -46,6 +46,13 @@ const BOARDS = {
     endsText: "",                              // e.g. "Round 4 ends Sunday 23:59" once the next weekly round is set
     headStart: true,                           // ROUND_HEAD_START applies (set the table to {} when it expires)
   },
+  monday: {
+    id: "monday", emoji: "🌙", name: "Monday Night", switchLabel: "Monday Night board",
+    fixturesTable: "monday_fixtures",
+    startIso: "2026-10-18T00:00:00Z",          // keep in step with MONDAY_START_DATE in App.jsx
+    endsText: "Leader after the night takes all 5K",
+    headStart: false,
+  },
 };
 let ACTIVE_BOARD = "euro";
 const activeBoard = () => BOARDS[ACTIVE_BOARD] || BOARDS.euro;
