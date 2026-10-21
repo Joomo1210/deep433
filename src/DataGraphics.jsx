@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import DeepInsightsPanel from "./DeepInsightsPanel";
 
 // Country name -> ISO code, for flag images (flagcdn.com) — covers national teams
@@ -4136,7 +4136,7 @@ function LeaderboardGraphic({ supabase }) {
 
               <div style={{ border: "1px solid #23232f", borderRadius: 12, overflow: "hidden" }}>
                 <div style={{
-                  display: "grid", gridTemplateColumns: "28px 1fr 30px 30px 30px 30px 40px 46px",
+                  display: "grid", gridTemplateColumns: "28px minmax(0,1fr) 30px 30px 30px 30px 40px 46px",
                   background: "#1a1a28", padding: "10px 12px", gap: 4,
                 }}>
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase" }}>Pos</span>
@@ -4148,13 +4148,23 @@ function LeaderboardGraphic({ supabase }) {
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#F5C518", textTransform: "uppercase", textAlign: "center" }}>Prem</span>
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#e2e8f0", textTransform: "uppercase", textAlign: "center" }}>Pts</span>
                 </div>
-                {rows.map((r, i) => (
-                  <div key={i} style={{
-                    display: "grid", gridTemplateColumns: "28px 1fr 30px 30px 30px 30px 40px 46px",
+                {rows.map((r, i) => {
+                  const top5 = tieRank(rows, i) <= 5;
+                  const cut = i > 0 && !top5 && tieRank(rows, i - 1) <= 5;
+                  return (
+                  <React.Fragment key={i}>
+                  {cut && (
+                    <div style={{ position: "relative", height: 18, background: "#0a0a12" }}>
+                      <div style={{ position: "absolute", left: 0, right: 0, top: 9, borderTop: "2px dashed #F5C518" }} />
+                      <span style={{ position: "absolute", left: "50%", top: 0, transform: "translateX(-50%)", background: "#0a0a12", padding: "0 10px", fontSize: 10, lineHeight: "18px", fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: "#F5C518", whiteSpace: "nowrap" }}>Top 5 win</span>
+                    </div>
+                  )}
+                  <div style={{
+                    display: "grid", gridTemplateColumns: "28px minmax(0,1fr) 30px 30px 30px 30px 40px 46px",
                     alignItems: "center", gap: 4, padding: "12px 12px",
-                    background: i % 2 === 0 ? "#13131f" : "#0f0f18",
-                    borderTop: (i > 0 && tieRank(rows, i) > 5 && tieRank(rows, i - 1) <= 5) ? "2px dashed #4ade8099" : "1px solid #1e1e2a",
-                    boxShadow: tieRank(rows, i) <= 5 ? "inset 3px 0 0 #4ade80" : "none",
+                    background: top5 ? "linear-gradient(rgba(245,197,24,0.06),rgba(245,197,24,0.06)), " + (i % 2 === 0 ? "#13131f" : "#0f0f18") : (i % 2 === 0 ? "#13131f" : "#0f0f18"),
+                    borderTop: cut ? "none" : "1px solid #1e1e2a",
+                    boxShadow: top5 ? "inset 3px 0 0 #F5C518" : "none",
                   }}>
                     <span style={{ fontSize: 15, fontWeight: 900, color: rankColour(tieRank(rows, i)) }}>{tieRank(rows, i)}</span>
                     <span style={{ fontSize: 13, fontWeight: 800, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
@@ -4163,9 +4173,13 @@ function LeaderboardGraphic({ supabase }) {
                     <span style={{ fontSize: 13, fontWeight: 800, color: "#818cf8", textAlign: "center" }}>{r.outcomeOnly}</span>
                     <span style={{ fontSize: 13, fontWeight: 800, color: "#fbbf24", textAlign: "center" }}>{r.overUnderHits}</span>
                     <span style={{ fontSize: 13, fontWeight: 800, color: r.bonus > 0 ? "#F5C518" : "#475569", textAlign: "center" }}>{r.bonus > 0 ? `+${r.bonus}` : "-"}</span>
-                    <span style={{ fontSize: 18, fontWeight: 900, color: "#ffffff", textAlign: "center", background: "#4c3a8f", borderRadius: 8, padding: "3px 0" }}>{r.points}</span>
+                    <span style={top5
+                      ? { fontSize: 18, fontWeight: 900, color: "#0A0F14", textAlign: "center", background: "#F5C518", borderRadius: 8, padding: "3px 0", boxShadow: "0 0 10px rgba(245,197,24,0.45)" }
+                      : { fontSize: 18, fontWeight: 900, color: "#ffffff", textAlign: "center", background: "#5B4BDB", borderRadius: 8, padding: "3px 0" }}>{r.points}</span>
                   </div>
-                ))}
+                  </React.Fragment>
+                  );
+                })}
               </div>
 
               <div style={{ marginTop: 24, background: "#13131f", border: "1px solid #23232f", borderRadius: 12, padding: "14px 16px" }}>
@@ -4188,8 +4202,8 @@ function LeaderboardGraphic({ supabase }) {
                     <span style={{ fontSize: 12, color: "#e2e8f0" }}>Premium match points from X (exact 10, outcome 5, O/U 3), already counted in Pts</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: "#0b0f1a", background: "#4ade80", border: "1px solid #4ade80", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Top 5</span>
-                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Green bar and dashed line mark the top 5 who win</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#0A0F14", background: "#F5C518", border: "1px solid #F5C518", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Top 5</span>
+                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Gold bar, gold points and dashed line mark the top 5 who win</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 11, fontWeight: 800, color: "#0b0f1a", background: "#fbbf24", border: "1px solid #fbbf24", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Pts</span>
@@ -4325,7 +4339,7 @@ function Top5ExplainedGraphic({ supabase }) {
 
               <div style={{ border: "1px solid #23232f", borderRadius: 12, overflow: "hidden" }}>
                 <div style={{
-                  display: "grid", gridTemplateColumns: "28px 1fr 30px 30px 30px 30px 40px 46px",
+                  display: "grid", gridTemplateColumns: "28px minmax(0,1fr) 30px 30px 30px 30px 40px 46px",
                   background: "#1a1a28", padding: "10px 12px", gap: 4,
                 }}>
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase" }}>Pos</span>
@@ -4337,13 +4351,23 @@ function Top5ExplainedGraphic({ supabase }) {
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#F5C518", textTransform: "uppercase", textAlign: "center" }}>Prem</span>
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#e2e8f0", textTransform: "uppercase", textAlign: "center" }}>Pts</span>
                 </div>
-                {rows.map((r, i) => (
-                  <div key={i} style={{
-                    display: "grid", gridTemplateColumns: "28px 1fr 30px 30px 30px 30px 40px 46px",
+                {rows.map((r, i) => {
+                  const top5 = tieRank(rows, i) <= 5;
+                  const cut = i > 0 && !top5 && tieRank(rows, i - 1) <= 5;
+                  return (
+                  <React.Fragment key={i}>
+                  {cut && (
+                    <div style={{ position: "relative", height: 18, background: "#0a0a12" }}>
+                      <div style={{ position: "absolute", left: 0, right: 0, top: 9, borderTop: "2px dashed #F5C518" }} />
+                      <span style={{ position: "absolute", left: "50%", top: 0, transform: "translateX(-50%)", background: "#0a0a12", padding: "0 10px", fontSize: 10, lineHeight: "18px", fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: "#F5C518", whiteSpace: "nowrap" }}>Top 5 win</span>
+                    </div>
+                  )}
+                  <div style={{
+                    display: "grid", gridTemplateColumns: "28px minmax(0,1fr) 30px 30px 30px 30px 40px 46px",
                     alignItems: "center", gap: 4, padding: "12px 12px",
-                    background: i % 2 === 0 ? "#13131f" : "#0f0f18",
-                    borderTop: (i > 0 && tieRank(rows, i) > 5 && tieRank(rows, i - 1) <= 5) ? "2px dashed #4ade8099" : "1px solid #1e1e2a",
-                    boxShadow: tieRank(rows, i) <= 5 ? "inset 3px 0 0 #4ade80" : "none",
+                    background: top5 ? "linear-gradient(rgba(245,197,24,0.06),rgba(245,197,24,0.06)), " + (i % 2 === 0 ? "#13131f" : "#0f0f18") : (i % 2 === 0 ? "#13131f" : "#0f0f18"),
+                    borderTop: cut ? "none" : "1px solid #1e1e2a",
+                    boxShadow: top5 ? "inset 3px 0 0 #F5C518" : "none",
                   }}>
                     <span style={{ fontSize: 15, fontWeight: 900, color: rankColour(tieRank(rows, i)) }}>{tieRank(rows, i)}</span>
                     <span style={{ fontSize: 13, fontWeight: 800, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
@@ -4352,9 +4376,13 @@ function Top5ExplainedGraphic({ supabase }) {
                     <span style={{ fontSize: 13, fontWeight: 800, color: "#818cf8", textAlign: "center" }}>{r.outcomeOnly}</span>
                     <span style={{ fontSize: 13, fontWeight: 800, color: "#fbbf24", textAlign: "center" }}>{r.overUnderHits}</span>
                     <span style={{ fontSize: 13, fontWeight: 800, color: r.bonus > 0 ? "#F5C518" : "#475569", textAlign: "center" }}>{r.bonus > 0 ? `+${r.bonus}` : "-"}</span>
-                    <span style={{ fontSize: 18, fontWeight: 900, color: "#ffffff", textAlign: "center", background: "#4c3a8f", borderRadius: 8, padding: "3px 0" }}>{r.points}</span>
+                    <span style={top5
+                      ? { fontSize: 18, fontWeight: 900, color: "#0A0F14", textAlign: "center", background: "#F5C518", borderRadius: 8, padding: "3px 0", boxShadow: "0 0 10px rgba(245,197,24,0.45)" }
+                      : { fontSize: 18, fontWeight: 900, color: "#ffffff", textAlign: "center", background: "#5B4BDB", borderRadius: 8, padding: "3px 0" }}>{r.points}</span>
                   </div>
-                ))}
+                  </React.Fragment>
+                  );
+                })}
               </div>
 
               <div style={{ marginTop: 24, background: "#13131f", border: "1px solid #23232f", borderRadius: 12, padding: "14px 16px" }}>
@@ -4377,8 +4405,8 @@ function Top5ExplainedGraphic({ supabase }) {
                     <span style={{ fontSize: 12, color: "#e2e8f0" }}>Premium match points from X (exact 10, outcome 5, O/U 3), already counted in Pts</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: "#0b0f1a", background: "#4ade80", border: "1px solid #4ade80", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Top 5</span>
-                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Green bar and dashed line mark the top 5 who win</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#0A0F14", background: "#F5C518", border: "1px solid #F5C518", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Top 5</span>
+                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Gold bar, gold points and dashed line mark the top 5 who win</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 11, fontWeight: 800, color: "#0b0f1a", background: "#fbbf24", border: "1px solid #fbbf24", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Pts</span>
