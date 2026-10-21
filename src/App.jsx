@@ -1019,11 +1019,21 @@ export default function FootballPredictor() {
     // new round, never on its own just because the month changed.
     const LEADERBOARD_START_DATE = contest === "euro" ? EURO_START_DATE : contest === "monday" ? MONDAY_START_DATE : new Date("2026-10-09T05:30:00Z");
     const cutoff = LEADERBOARD_START_DATE.toISOString();
-    const { data: preds, error: predsError } = await supabase
-      .from("predictions")
-      .select("user_id, home_team, away_team, user_prediction, user_outcome, user_over_under, actual_score")
-      .gte("created_at", cutoff)
-      .not("actual_score", "is", null);
+    // Supabase returns at most 1000 rows per request, so a busy round was silently cut off
+    // (newest predictions dropped). Fetch in pages until everything is loaded.
+    let preds = [], predsError = null;
+    for (let from = 0; ; from += 1000) {
+      const { data: page, error: pageErr } = await supabase
+        .from("predictions")
+        .select("id, user_id, home_team, away_team, user_prediction, user_outcome, user_over_under, actual_score")
+        .gte("created_at", cutoff)
+        .not("actual_score", "is", null)
+        .order("id", { ascending: true })
+        .range(from, from + 999);
+      if (pageErr) { predsError = pageErr; break; }
+      preds = preds.concat(page || []);
+      if (!page || page.length < 1000) break;
+    }
     if (predsError) {
       setLeaderboardDebug({ step: "fetching predictions", error: predsError.message });
       setLeaderboardLoading(false);
