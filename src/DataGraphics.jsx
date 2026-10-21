@@ -4052,11 +4052,19 @@ function LeaderboardGraphic({ supabase }) {
       const LEADERBOARD_START_DATE = new Date(boardStartIso());
       const cutoff = LEADERBOARD_START_DATE.toISOString();
 
-      const { data: preds } = await supabase
-        .from("predictions")
-        .select("user_id, home_team, away_team, user_prediction, user_outcome, user_over_under, actual_score")
-        .gte("created_at", cutoff)
-        .not("actual_score", "is", null);
+      // Supabase caps a request at 1000 rows, which silently dropped the newest predictions. Load every page.
+      let preds = [];
+      for (let from = 0; ; from += 1000) {
+        const { data: page } = await supabase
+          .from("predictions")
+          .select("id, user_id, home_team, away_team, user_prediction, user_outcome, user_over_under, actual_score")
+          .gte("created_at", cutoff)
+          .not("actual_score", "is", null)
+          .order("id", { ascending: true })
+          .range(from, from + 999);
+        preds = preds.concat(page || []);
+        if (!page || page.length < 1000) break;
+      }
       if (!preds || preds.length === 0) { setRows([]); setLoading(false); return; }
 
       const { data: fixturesData } = await supabase.from(boardFxTable()).select("home_team, away_team");
@@ -4261,11 +4269,19 @@ function Top5ExplainedGraphic({ supabase }) {
       const LEADERBOARD_START_DATE = new Date(boardStartIso());
       const cutoff = LEADERBOARD_START_DATE.toISOString();
 
-      const { data: preds } = await supabase
-        .from("predictions")
-        .select("user_id, home_team, away_team, user_prediction, user_outcome, user_over_under, actual_score")
-        .gte("created_at", cutoff)
-        .not("actual_score", "is", null);
+      // Supabase caps a request at 1000 rows, which silently dropped the newest predictions. Load every page.
+      let preds = [];
+      for (let from = 0; ; from += 1000) {
+        const { data: page } = await supabase
+          .from("predictions")
+          .select("id, user_id, home_team, away_team, user_prediction, user_outcome, user_over_under, actual_score")
+          .gte("created_at", cutoff)
+          .not("actual_score", "is", null)
+          .order("id", { ascending: true })
+          .range(from, from + 999);
+        preds = preds.concat(page || []);
+        if (!page || page.length < 1000) break;
+      }
       if (!preds || preds.length === 0) { setRows([]); setLoading(false); return; }
 
       const { data: fixturesData } = await supabase.from(boardFxTable()).select("home_team, away_team");
