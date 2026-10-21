@@ -143,7 +143,25 @@ async function downloadCardImage(cardElement, filename, bgColor = "#0a0a0f", tra
     document.head.appendChild(s);
     await new Promise((res, rej) => { s.onload = res; s.onerror = rej; });
   }
-  const canvas = await window.html2canvas(cardElement, { backgroundColor: transparent ? null : bgColor, scale, useCORS: true, logging: false });
+  // On phones the on-screen card is narrower than on desktop (viewport - 32px),
+  // which squeezes flexible columns such as player names to nothing. Render the
+  // downloaded copy at the full desktop card width so the image is identical.
+  const CAPTURE_W = 460;
+  const isGC = cardElement.hasAttribute && cardElement.hasAttribute("data-gc");
+  if (isGC) cardElement.setAttribute("data-gc-capture", "1");
+  let canvas;
+  try {
+    canvas = await window.html2canvas(cardElement, {
+      backgroundColor: transparent ? null : bgColor, scale, useCORS: true, logging: false,
+      ...(isGC ? { windowWidth: Math.max(window.innerWidth, 1024) } : {}),
+      onclone: (doc) => {
+        const el = doc.querySelector('[data-gc-capture="1"]');
+        if (el) { el.style.width = CAPTURE_W + "px"; el.style.maxWidth = CAPTURE_W + "px"; el.style.minWidth = CAPTURE_W + "px"; }
+      },
+    });
+  } finally {
+    if (isGC) cardElement.removeAttribute("data-gc-capture");
+  }
 
   if (navigator.canShare && navigator.share) {
     try {
@@ -379,6 +397,7 @@ function GraphicCard({ children, cardRef, label, light = false }) {
     <div>
       <div
         ref={cardRef}
+        data-gc="1"
         style={{
           background: light ? "#ffffff" : "linear-gradient(145deg, #0a0a0f 0%, #0d0d1a 60%, #0a0f0a 100%)",
           border: light ? "1px solid #e5e5e5" : "1px solid #1e1e30",
