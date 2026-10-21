@@ -4,6 +4,7 @@ import DataGraphics from "./DataGraphics";
 import DeepInsightsPanel from "./DeepInsightsPanel";
 import { createClient } from "@supabase/supabase-js";
 import PublicTeamCompare from "./PublicTeamCompare";
+import PremiumScoring from "./PremiumScoring";
 const supabase = createClient(
   "https://idisdztwpvedtnroiian.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlkaXNkenR3cHZlZHRucm9paWFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NTczOTQsImV4cCI6MjA5NzAzMzM5NH0.YmF0DqWmopuJs9Ci1hdFi0XDMoWRD0yfVwOuuG7WVyE"
@@ -3816,6 +3817,9 @@ if (!session && !guestMode) {
               </div>
             </div>
           ))}
+          {userRole === "admin" && (
+            <PremiumScoring supabase={supabase} defaultBoard={contest} onSaved={computeLeaderboard} />
+          )}
           {/* Last two rounds comparison. Reads saved rounds from leaderboard_round_results. Display only. */}
           {userRole === "admin" && contest === "weekly" && (() => {
             const rounds = (pastRoundsData && pastRoundsData.length >= 2 ? pastRoundsData : FALLBACK_PAST_ROUNDS).slice(-2);
