@@ -4144,7 +4144,7 @@ function LeaderboardGraphic({ supabase }) {
                     <span style={{ fontSize: 13, fontWeight: 800, color: "#818cf8", textAlign: "center" }}>{r.outcomeOnly}</span>
                     <span style={{ fontSize: 13, fontWeight: 800, color: "#fbbf24", textAlign: "center" }}>{r.overUnderHits}</span>
                     <span style={{ fontSize: 13, fontWeight: 800, color: r.bonus > 0 ? "#F5C518" : "#475569", textAlign: "center" }}>{r.bonus > 0 ? `+${r.bonus}` : "-"}</span>
-                    <span style={{ fontSize: 17, fontWeight: 900, color: "#fbbf24", textAlign: "center" }}>{r.points}</span>
+                    <span style={{ fontSize: 18, fontWeight: 900, color: "#ffffff", textAlign: "center", background: "#4c3a8f", borderRadius: 8, padding: "3px 0" }}>{r.points}</span>
                   </div>
                 ))}
               </div>
@@ -4153,15 +4153,15 @@ function LeaderboardGraphic({ supabase }) {
                 <div style={{ fontSize: 11.5, fontWeight: 800, color: "#e2e8f0", textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 10, textAlign: "center" }}>What the letters mean</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: "#4ade80", background: "#4ade8020", border: "1px solid #4ade8044", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>E</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#0b0f1a", background: "#4ade80", border: "1px solid #4ade80", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>E</span>
                     <span style={{ fontSize: 12, color: "#e2e8f0" }}>Exact scoreline correct — 5 points each</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: "#818cf8", background: "#818cf820", border: "1px solid #818cf844", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>O</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#0b0f1a", background: "#818cf8", border: "1px solid #818cf8", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>O</span>
                     <span style={{ fontSize: 12, color: "#e2e8f0" }}>Outcome only correct, score wrong — 3 points each</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: "#fbbf24", background: "#fbbf2420", border: "1px solid #fbbf2444", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>OU</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#0b0f1a", background: "#fbbf24", border: "1px solid #fbbf24", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>OU</span>
                     <span style={{ fontSize: 12, color: "#e2e8f0" }}>Over/Under goals correct — +1 point each, always additive</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -4169,11 +4169,11 @@ function LeaderboardGraphic({ supabase }) {
                     <span style={{ fontSize: 12, color: "#e2e8f0" }}>Premium match points from X (exact 10, outcome 5, O/U 3), already counted in Pts</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: "#4ade80", background: "#4ade8020", border: "1px solid #4ade8044", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Top 5</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#0b0f1a", background: "#4ade80", border: "1px solid #4ade80", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Top 5</span>
                     <span style={{ fontSize: 12, color: "#e2e8f0" }}>Green bar and dashed line mark the top 5 who win</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: "#fbbf24", background: "#fbbf2420", border: "1px solid #fbbf2444", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Pts</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#0b0f1a", background: "#fbbf24", border: "1px solid #fbbf24", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Pts</span>
                     <span style={{ fontSize: 12, color: "#e2e8f0" }}>Total points{rows.some(r => r.headStart > 0) ? ", including any head start from the last league round" : ""} — the number that decides the ranking</span>
                   </div>
                 </div>
@@ -4333,7 +4333,7 @@ function Top5ExplainedGraphic({ supabase }) {
                     <span style={{ fontSize: 13, fontWeight: 800, color: "#818cf8", textAlign: "center" }}>{r.outcomeOnly}</span>
                     <span style={{ fontSize: 13, fontWeight: 800, color: "#fbbf24", textAlign: "center" }}>{r.overUnderHits}</span>
                     <span style={{ fontSize: 13, fontWeight: 800, color: r.bonus > 0 ? "#F5C518" : "#475569", textAlign: "center" }}>{r.bonus > 0 ? `+${r.bonus}` : "-"}</span>
-                    <span style={{ fontSize: 17, fontWeight: 900, color: "#fbbf24", textAlign: "center" }}>{r.points}</span>
+                    <span style={{ fontSize: 18, fontWeight: 900, color: "#ffffff", textAlign: "center", background: "#4c3a8f", borderRadius: 8, padding: "3px 0" }}>{r.points}</span>
                   </div>
                 ))}
               </div>
@@ -4342,15 +4342,15 @@ function Top5ExplainedGraphic({ supabase }) {
                 <div style={{ fontSize: 11.5, fontWeight: 800, color: "#e2e8f0", textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 10, textAlign: "center" }}>What the letters mean</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: "#4ade80", background: "#4ade8020", border: "1px solid #4ade8044", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>E</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#0b0f1a", background: "#4ade80", border: "1px solid #4ade80", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>E</span>
                     <span style={{ fontSize: 12, color: "#e2e8f0" }}>Exact scoreline correct — 5 points each</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: "#818cf8", background: "#818cf820", border: "1px solid #818cf844", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>O</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#0b0f1a", background: "#818cf8", border: "1px solid #818cf8", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>O</span>
                     <span style={{ fontSize: 12, color: "#e2e8f0" }}>Outcome only correct, score wrong — 3 points each</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: "#fbbf24", background: "#fbbf2420", border: "1px solid #fbbf2444", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>OU</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#0b0f1a", background: "#fbbf24", border: "1px solid #fbbf24", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>OU</span>
                     <span style={{ fontSize: 12, color: "#e2e8f0" }}>Over/Under goals correct — +1 point each, always additive</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -4358,11 +4358,11 @@ function Top5ExplainedGraphic({ supabase }) {
                     <span style={{ fontSize: 12, color: "#e2e8f0" }}>Premium match points from X (exact 10, outcome 5, O/U 3), already counted in Pts</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: "#4ade80", background: "#4ade8020", border: "1px solid #4ade8044", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Top 5</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#0b0f1a", background: "#4ade80", border: "1px solid #4ade80", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Top 5</span>
                     <span style={{ fontSize: 12, color: "#e2e8f0" }}>Green bar and dashed line mark the top 5 who win</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: "#fbbf24", background: "#fbbf2420", border: "1px solid #fbbf2444", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Pts</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#0b0f1a", background: "#fbbf24", border: "1px solid #fbbf24", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Pts</span>
                     <span style={{ fontSize: 12, color: "#e2e8f0" }}>Total points{rows.some(r => r.headStart > 0) ? ", including any head start from the last league round" : ""} — the number that decides the ranking</span>
                   </div>
                 </div>
