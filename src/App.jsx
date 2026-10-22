@@ -1007,6 +1007,19 @@ export default function FootballPredictor() {
   }, [tab, awardsLeague, session]);
   const [leaderboardDebug, setLeaderboardDebug] = useState(null);
   const [showLeaderboardDebug, setShowLeaderboardDebug] = useState(false);
+  // Daily reveal: players (and guests) see the leaderboard only from 12:00 UK time each day, to build
+  // anticipation for the X reveal. Admins always see it. Checked on the client and re-checked every 30 seconds.
+  const [nowTick, setNowTick] = useState(Date.now());
+  useEffect(() => { const t = setInterval(() => setNowTick(Date.now()), 30000); return () => clearInterval(t); }, []);
+  const ukMinutesNow = (() => {
+    const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date(nowTick));
+    return parseInt(parts.find(p => p.type === "hour").value) % 24 * 60 + parseInt(parts.find(p => p.type === "minute").value);
+  })();
+  const LEADERBOARD_REVEAL_MIN = 12 * 60; // opens 12:00 UK
+  const LEADERBOARD_LOCK_MIN = 20 * 60;   // locks again 20:00 UK
+  const lbLocked = userRole !== "admin" && (ukMinutesNow < LEADERBOARD_REVEAL_MIN || ukMinutesNow >= LEADERBOARD_LOCK_MIN);
+  const lbMinsLeft = ukMinutesNow < LEADERBOARD_REVEAL_MIN ? LEADERBOARD_REVEAL_MIN - ukMinutesNow : 24 * 60 - ukMinutesNow + LEADERBOARD_REVEAL_MIN;
+  const lbAfterLock = ukMinutesNow >= LEADERBOARD_LOCK_MIN;
   const computeLeaderboard = async () => {
     setLeaderboardLoading(true);
     setLeaderboard([]);
@@ -1210,8 +1223,9 @@ export default function FootballPredictor() {
   useEffect(() => {
     if (tab !== "leaderboard") return;
     if (userRole === "admin") { loadLeaderboardFixtures(); loadAllPendingPredictions(); }
+    if (lbLocked) { setLeaderboard([]); setLeaderboardLoading(false); return; }
     computeLeaderboard();
-  }, [tab, session, contest]);
+  }, [tab, session, contest, lbLocked]);
   // Display only: Deep433 board badges from the player_badges view. Players load their own;
   // admins load everyone's. Any failure just means no badges are shown.
   useEffect(() => {
@@ -3721,7 +3735,18 @@ if (!session && !guestMode) {
             </div>
           )}
           {/* Rank nudge + progress. Display only, reads the computed board. */}
-          {!leaderboardLoading && (() => {
+          {lbLocked && (
+            <div style={{ background: "linear-gradient(145deg,#13131f,#1a1530)", border: "1px solid #F5C51855", borderRadius: 12, padding: "28px 16px", textAlign: "center", margin: "10px 0 14px" }}>
+              <div style={{ fontSize: 34, marginBottom: 6 }}>🔒</div>
+              <div style={{ fontSize: 17, fontWeight: 900, color: "#F5C518", marginBottom: 6 }}>{lbAfterLock ? "Leaderboard is locked until 12:00 UK" : "Leaderboard reveals at 12:00 UK"}</div>
+              <div style={{ fontSize: 13, color: "#e2e8f0", lineHeight: 1.6 }}>{lbAfterLock ? "The board is closed for tonight. It opens again at midday tomorrow, so watch X for the reveal." : "Every day at midday we reveal who is leading and who is chasing the top 5. Watch X for the big reveal."}</div>
+              <div style={{ fontSize: 15, fontWeight: 900, color: "#fff", marginTop: 12 }}>
+                Opens in {Math.floor(lbMinsLeft / 60) > 0 ? `${Math.floor(lbMinsLeft / 60)}h ` : ""}{lbMinsLeft % 60}m
+              </div>
+              <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 8 }}>Your predictions still count. Keep predicting.</div>
+            </div>
+          )}
+          {!lbLocked && !leaderboardLoading && (() => {
             const boxStyle = { background: "#13131f", border: "1px solid #fbbf2433", borderRadius: 10, padding: "10px 12px", marginBottom: 12 };
             if (!session) {
               return (
@@ -3796,11 +3821,11 @@ if (!session && !guestMode) {
               </div>
             );
           })()}
-          {leaderboardLoading && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 14, padding: "20px 0" }}>Loading...</div>}
-          {!leaderboardLoading && leaderboard.length === 0 && (
+          {!lbLocked && leaderboardLoading && <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 14, padding: "20px 0" }}>Loading...</div>}
+          {!lbLocked && !leaderboardLoading && leaderboard.length === 0 && (
             <div style={{ textAlign: "center", color: "#666", fontSize: 14, padding: "20px 0" }}>No confirmed results yet.</div>
           )}
-          {leaderboard.map((row, i) => (
+          {(lbLocked ? [] : leaderboard).map((row, i) => (
             <div key={row.userId} style={{
               display: "flex", alignItems: "center", gap: 12,
               background: "#0d0d18", border: `1px solid ${session && row.userId === session.user.id ? "#4ade8066" : "#1a1a2e"}`, borderRadius: 10,
