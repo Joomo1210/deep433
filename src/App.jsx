@@ -1159,7 +1159,7 @@ export default function FootballPredictor() {
     // Bonus points (Premium matches, scored by hand) live in the bonus_points table, per board.
     const bonusById = {};
     try {
-      const { data: bonusData } = await supabase.from("bonus_points").select("user_id, points").eq("board", contest);
+      const { data: bonusData } = await supabase.from("bonus_points").select("user_id, points").eq("board", contest).gte("created_at", cutoff); // only this round's Premium points
       (bonusData || []).forEach(b => { bonusById[b.user_id] = (bonusById[b.user_id] || 0) + (b.points || 0); });
     } catch (e) { /* table missing: no bonus */ }
     const { data: profilesData } = await supabase
