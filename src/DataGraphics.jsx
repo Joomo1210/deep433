@@ -64,7 +64,7 @@ const rankColour = (n) => (n === 1 ? "#F5C518" : n === 2 ? "#cbd5e1" : n === 3 ?
 const fetchBonusById = async (supabase) => {
   const out = {};
   try {
-    const { data } = await supabase.from("bonus_points").select("user_id, points").eq("board", activeBoard().id);
+    const { data } = await supabase.from("bonus_points").select("user_id, points").eq("board", activeBoard().id).gte("created_at", boardStartIso()); // only this round's Premium points
     (data || []).forEach(b => { out[b.user_id] = (out[b.user_id] || 0) + (b.points || 0); });
   } catch (e) { /* table missing: no bonus */ }
   return out;
