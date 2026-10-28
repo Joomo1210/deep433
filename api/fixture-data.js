@@ -5,6 +5,7 @@
 //   /api/fixture-data?type=stats&fixtureId=X     (full match statistics)
 //   /api/fixture-data?type=ratings&fixtureId=X   (per-player match ratings)
 //   /api/fixture-data?type=injuries&fixtureId=X  (pre-match unavailability)
+//   /api/fixture-data?type=odds&fixtureId=X      (pre-match 1X2 implied chances)
 
 export default async function handler(req, res) {
   const { type, fixtureId } = req.query;
@@ -213,5 +214,52 @@ export default async function handler(req, res) {
     }
   }
 
-  return res.status(400).json({ error: "Unknown type — use events, stats, ratings, or injuries" });
+  // ── Pre-match bookmaker odds (Match Winner / 1X2) ──
+  // Averages the 1X2 prices across every bookmaker API-Football returns, after
+  // removing each bookmaker's margin, so the card can show a neutral implied
+  // chance without naming or promoting any bookmaker. Odds are not available
+  // for every league, and API-Football only keeps pre-match odds for a limited
+  // time, so this returns { available: false } instead of guessing.
+  if (type === "odds") {
+    try {
+      const response = await fetch(`https://v3.football.api-sports.io/odds?fixture=${fixtureId}`, { headers: { "x-apisports-key": apiKey } });
+      if (!response.ok) return res.status(200).json({ available: false });
+      const data = await response.json();
+      const books = data.response?.[0]?.bookmakers || [];
+      const prices = [];
+      books.forEach(b => {
+        const bet = (b.bets || []).find(x => x.id === 1 || x.name === "Match Winner");
+        if (!bet) return;
+        const get = (v) => parseFloat((bet.values || []).find(x => x.value === v)?.odd);
+        const h = get("Home"), d = get("Draw"), a = get("Away");
+        if ([h, d, a].every(n => n > 1)) prices.push([h, d, a]);
+      });
+      if (!prices.length) return res.status(200).json({ available: false });
+
+      const avg = (i) => prices.reduce((s, p) => s + p[i], 0) / prices.length;
+      // Per bookmaker: implied = (1/odd) / sum(1/odds), which strips the margin.
+      const implied = [0, 0, 0];
+      prices.forEach(p => {
+        const inv = p.map(o => 1 / o);
+        const sum = inv.reduce((s, v) => s + v, 0);
+        inv.forEach((v, i) => { implied[i] += (v / sum) / prices.length; });
+      });
+      const pct = implied.map(v => Math.round(v * 100));
+      // Keep the three rounded numbers adding to exactly 100.
+      const diff = 100 - pct.reduce((s, v) => s + v, 0);
+      if (diff) pct[pct.indexOf(Math.max(...pct))] += diff;
+
+      res.setHeader("Cache-Control", "public, s-maxage=1800, stale-while-revalidate=3600");
+      return res.status(200).json({
+        available: true,
+        bookmakers: prices.length,
+        odds: { home: +avg(0).toFixed(2), draw: +avg(1).toFixed(2), away: +avg(2).toFixed(2) },
+        implied: { home: pct[0], draw: pct[1], away: pct[2] },
+      });
+    } catch (err) {
+      return res.status(200).json({ available: false, error: err.message });
+    }
+  }
+
+  return res.status(400).json({ error: "Unknown type — use events, stats, ratings, injuries, or odds" });
 }
