@@ -904,6 +904,8 @@ function LeagueTableGraphic() {
 
 function MatchStatsGraphic() {
   const cardRef = useRef(null);
+  const cardRef2 = useRef(null);
+  const [layout, setLayout] = useState("two"); // "two" = 2 cards, "one" = one long card
   const [fixtureId, setFixtureId] = useState("");
   const [selectedFixture, setSelectedFixture] = useState(null);
   const [data, setData] = useState(null);
@@ -960,13 +962,15 @@ function MatchStatsGraphic() {
     setLoading(false);
   };
 
-  const download = async (transparent = false) => {
+  // which: 1 = first card (or the single long card), 2 = second card
+  const download = async (transparent = false, which = 1) => {
     setDownloading(true);
     // Ensure bars/numbers are in their settled state before capturing
     setAnimate(false);
     await new Promise(res => setTimeout(res, 350));
     try {
-      await downloadCardImage(cardRef.current, `deep433-match-stats-${fixtureId}.png`, undefined, transparent);
+      const suffix = layout === "two" ? `-${which}of2` : "";
+      await downloadCardImage(which === 2 ? cardRef2.current : cardRef.current, `deep433-match-stats-${fixtureId}${suffix}.png`, undefined, transparent);
     } catch { alert("Download failed — try screenshotting manually"); }
     setDownloading(false);
   };
@@ -1008,15 +1012,46 @@ function MatchStatsGraphic() {
               ))}
             </div>
           </div>
-          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <MatchStatsCard s={s} headline={headline} badgeMode={badgeMode} animate={animate} />
-          </GraphicCard>
-          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
-            {downloading ? "Generating..." : "⬇ Download PNG"}
-          </button>
-          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
-            {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
-          </button>
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <span style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700 }}>Layout</span>
+            {[{ v: "two", l: "2 cards" }, { v: "one", l: "1 long card" }].map(o => (
+              <button key={o.v} onClick={() => setLayout(o.v)} style={{ background: layout === o.v ? "#4ade80" : "none", border: `1px solid ${layout === o.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 14, color: layout === o.v ? "#0a0f0a" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "4px 12px" }}>{o.l}</button>
+            ))}
+          </div>
+          {layout === "two" ? (
+            <>
+              <GraphicCard cardRef={cardRef} label="Card 1 of 2: the story">
+                <MatchStatsCard s={s} headline={headline} badgeMode={badgeMode} animate={animate} part="story" />
+              </GraphicCard>
+              <button onClick={() => download(false, 1)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+                {downloading ? "Generating..." : "⬇ Download card 1 of 2"}
+              </button>
+              <GraphicCard cardRef={cardRef2} label="Card 2 of 2: the full picture">
+                <MatchStatsCard s={s} headline={headline} badgeMode={badgeMode} animate={animate} part="detail" />
+              </GraphicCard>
+              <button onClick={() => download(false, 2)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+                {downloading ? "Generating..." : "⬇ Download card 2 of 2"}
+              </button>
+              <button onClick={() => download(true, 1)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+                {downloading ? "Generating..." : "⬇ Card 1 Transparent PNG"}
+              </button>
+              <button onClick={() => download(true, 2)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+                {downloading ? "Generating..." : "⬇ Card 2 Transparent PNG"}
+              </button>
+            </>
+          ) : (
+            <>
+              <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+                <MatchStatsCard s={s} headline={headline} badgeMode={badgeMode} animate={animate} />
+              </GraphicCard>
+              <button onClick={() => download(false, 1)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+                {downloading ? "Generating..." : "⬇ Download PNG"}
+              </button>
+              <button onClick={() => download(true, 1)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+                {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
+              </button>
+            </>
+          )}
         </>
       )}
     </div>
