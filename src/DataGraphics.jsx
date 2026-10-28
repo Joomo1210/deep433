@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import DeepInsightsPanel from "./DeepInsightsPanel";
 import MatchStatsCard, { buildStory } from "./MatchStatsCard";
+import MatchdayCard from "./MatchdayCard";
 
 // Country name -> ISO code, for flag images (flagcdn.com) — covers national teams
 const TEAM_FLAG_CODES = {
@@ -901,6 +902,124 @@ function LeagueTableGraphic() {
   );
 }
 
+
+// ─── MATCHDAY LIST GRAPHIC ──────────────────────────────────────────────────
+// Tick up to 10 fixtures, pull kick-off, last-5 form and bookmaker-average
+// odds from the API, and get one card per 5 matches. Odds are shown only as
+// implied chances (plus the average decimal price), never tied to a bookmaker.
+function MatchdayGraphic() {
+  const cardRefs = useRef([]);
+  const [picked, setPicked] = useState([]);
+  const [rows, setRows] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState("");
+  const [title, setTitle] = useState("Matchday");
+  const [dateLabel, setDateLabel] = useState("");
+
+  const add = (f) => {
+    if (picked.length >= 10 || picked.some(p => p.fixtureId === f.fixtureId)) return;
+    setPicked([...picked, f]);
+    setRows(null);
+  };
+  const remove = (id) => { setPicked(picked.filter(p => p.fixtureId !== id)); setRows(null); };
+
+  const build = async () => {
+    if (!picked.length) return;
+    setLoading(true); setError(""); setRows(null);
+    try {
+      const results = await Promise.all(picked.map(async (f) => {
+        try {
+          const r = await fetch(`/api/fixture-data?type=matchday&fixtureId=${f.fixtureId}`);
+          const d = await r.json();
+          if (d && d.available) return d;
+        } catch {}
+        // Fall back to what the picker already knows, so a match is never dropped.
+        return {
+          available: true, fixtureId: f.fixtureId, kickoff: f.kickoff, league: f.leagueLabel,
+          home: { name: f.home, logo: f.homeLogo, form: "" },
+          away: { name: f.away, logo: f.awayLogo, form: "" },
+          odds: null,
+        };
+      }));
+      results.sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+      const fmt = (iso, opts) => new Date(iso).toLocaleDateString("en-GB", { timeZone: "Europe/London", ...opts });
+      const first = results[0]?.kickoff;
+      const isToday = first && fmt(first, {}) === fmt(new Date().toISOString(), {});
+      setTitle(isToday ? `Today's ${results.length}` : "Matchday");
+      setDateLabel(first ? `${fmt(first, { weekday: "short", day: "numeric", month: "short" })} · UK times` : "UK times");
+      setRows(results);
+    } catch (e) { setError(e.message); }
+    setLoading(false);
+  };
+
+  const chunks = [];
+  if (rows) for (let i = 0; i < rows.length; i += 5) chunks.push(rows.slice(i, i + 5));
+
+  const download = async (i, transparent = false) => {
+    setDownloading(true);
+    await new Promise(res => setTimeout(res, 200));
+    try {
+      const suffix = chunks.length > 1 ? `-${i + 1}of${chunks.length}` : "";
+      await downloadCardImage(cardRefs.current[i], `deep433-matchday${suffix}.png`, undefined, transparent);
+    } catch { alert("Download failed — try screenshotting manually"); }
+    setDownloading(false);
+  };
+
+  const missingOdds = rows ? rows.filter(r => !r.odds).length : 0;
+  const missingForm = rows ? rows.filter(r => !r.home.form || !r.away.form).length : 0;
+  const btn = { background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 13, color: "#e2e8f0" }}>
+        Tap fixtures to add them (up to 10). Kick-off, last-5 form and odds are pulled from the API when you build the card.
+      </div>
+      <FixturePicker onSelect={add} />
+
+      {picked.length > 0 && (
+        <div style={{ background: "#13131f", borderRadius: 8, padding: "10px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700 }}>Selected ({picked.length}/10)</div>
+          {picked.map(f => (
+            <div key={f.fixtureId} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 14, color: "#f0f0f0" }}>
+              <span>{f.home} v {f.away}</span>
+              <button onClick={() => remove(f.fixtureId)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, padding: "2px 8px" }}>Remove</button>
+            </div>
+          ))}
+          <button onClick={build} disabled={loading} style={{ ...btn, fontSize: 16, padding: "10px", marginTop: 4 }}>
+            {loading ? "Pulling odds and form..." : "Build matchday card"}
+          </button>
+        </div>
+      )}
+      {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
+
+      {rows && (
+        <>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Title" style={{ flex: 1, minWidth: 0, background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+            <input value={dateLabel} onChange={e => setDateLabel(e.target.value)} placeholder="Date label" style={{ flex: 1, minWidth: 0, background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" }} />
+          </div>
+          {(missingOdds > 0 || missingForm > 0) && (
+            <div style={{ fontSize: 13, color: "#f59e0b" }}>
+              {missingOdds > 0 && `${missingOdds} of ${rows.length} matches have no odds from the API (hidden on the card). `}
+              {missingForm > 0 && `${missingForm} have incomplete form.`}
+            </div>
+          )}
+          {chunks.map((chunk, i) => (
+            <React.Fragment key={i}>
+              <GraphicCard cardRef={(el) => { cardRefs.current[i] = el; }} label={chunks.length > 1 ? `Card ${i + 1} of ${chunks.length}` : "Tap Download to save and share"}>
+                <MatchdayCard matches={chunk} title={title} dateLabel={dateLabel} pageLabel={chunks.length > 1 ? `${i + 1}/${chunks.length}` : ""} />
+              </GraphicCard>
+              <button onClick={() => download(i)} disabled={downloading} style={btn}>
+                {downloading ? "Generating..." : chunks.length > 1 ? `⬇ Download card ${i + 1} of ${chunks.length}` : "⬇ Download PNG"}
+              </button>
+            </React.Fragment>
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
 
 function MatchStatsGraphic() {
   const cardRef = useRef(null);
@@ -12523,6 +12642,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "timing",   label: "⏱️ Goal Timing" },
     { id: "halftime", label: "⏸ Halftime Recap" },
     { id: "match",    label: "📈 Match Stats" },
+    { id: "matchday", label: "📅 Matchday list" },
     { id: "player",   label: "⭐ Player Ratings" },
     { id: "top",      label: "🥇 Leaderboard" },
     { id: "team",     label: "🛡 Team Stats" },
@@ -12607,6 +12727,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "timing"   && <GoalTimingGraphic />}
       {activeSection === "halftime" && <HalftimeRecapGraphic />}
       {activeSection === "match"    && <MatchStatsGraphic />}
+      {activeSection === "matchday" && <MatchdayGraphic />}
       {activeSection === "player"   && <PlayerRatingsGraphic />}
       {activeSection === "top"      && <TopScorersGraphic />}
       {activeSection === "team"     && <TeamStatsGraphic />}
