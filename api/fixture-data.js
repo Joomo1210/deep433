@@ -6,6 +6,49 @@
 //   /api/fixture-data?type=ratings&fixtureId=X   (per-player match ratings)
 //   /api/fixture-data?type=injuries&fixtureId=X  (pre-match unavailability)
 //   /api/fixture-data?type=odds&fixtureId=X      (pre-match 1X2 implied chances)
+//   /api/fixture-data?type=matchday&fixtureId=X  (kick-off, last-5 form and odds for a list card)
+
+// Pre-match 1X2 odds, averaged across bookmakers with the margin removed.
+// Returns { available:false } when the league/fixture has no odds.
+async function fetchOdds(fixtureId, apiKey) {
+  try {
+    const response = await fetch(`https://v3.football.api-sports.io/odds?fixture=${fixtureId}`, { headers: { "x-apisports-key": apiKey } });
+    if (!response.ok) return { available: false };
+    const data = await response.json();
+    const books = data.response?.[0]?.bookmakers || [];
+    const prices = [];
+    books.forEach(b => {
+      const bet = (b.bets || []).find(x => x.id === 1 || x.name === "Match Winner");
+      if (!bet) return;
+      const get = (v) => parseFloat((bet.values || []).find(x => x.value === v)?.odd);
+      const h = get("Home"), d = get("Draw"), a = get("Away");
+      if ([h, d, a].every(n => n > 1)) prices.push([h, d, a]);
+    });
+    if (!prices.length) return { available: false };
+
+    const avg = (i) => prices.reduce((s, p) => s + p[i], 0) / prices.length;
+    // Per bookmaker: implied = (1/odd) / sum(1/odds), which strips the margin.
+    const implied = [0, 0, 0];
+    prices.forEach(p => {
+      const inv = p.map(o => 1 / o);
+      const sum = inv.reduce((s, v) => s + v, 0);
+      inv.forEach((v, i) => { implied[i] += (v / sum) / prices.length; });
+    });
+    const pct = implied.map(v => Math.round(v * 100));
+    // Keep the three rounded numbers adding to exactly 100.
+    const diff = 100 - pct.reduce((s, v) => s + v, 0);
+    if (diff) pct[pct.indexOf(Math.max(...pct))] += diff;
+
+    return {
+      available: true,
+      bookmakers: prices.length,
+      odds: { home: +avg(0).toFixed(2), draw: +avg(1).toFixed(2), away: +avg(2).toFixed(2) },
+      implied: { home: pct[0], draw: pct[1], away: pct[2] },
+    };
+  } catch (err) {
+    return { available: false, error: err.message };
+  }
+}
 
 export default async function handler(req, res) {
   const { type, fixtureId } = req.query;
@@ -221,45 +264,62 @@ export default async function handler(req, res) {
   // for every league, and API-Football only keeps pre-match odds for a limited
   // time, so this returns { available: false } instead of guessing.
   if (type === "odds") {
+    const o = await fetchOdds(fixtureId, apiKey);
+    if (o.available) res.setHeader("Cache-Control", "public, s-maxage=1800, stale-while-revalidate=3600");
+    return res.status(200).json(o);
+  }
+
+  // ── Matchday row: kick-off, teams, last-5 form and odds in one call ──
+  // Used by the Matchday list card. Form is read from each team's last five
+  // finished fixtures across all competitions (W/D/L by 90-minute score,
+  // oldest to latest), and odds come from the same helper as type=odds.
+  if (type === "matchday") {
     try {
-      const response = await fetch(`https://v3.football.api-sports.io/odds?fixture=${fixtureId}`, { headers: { "x-apisports-key": apiKey } });
-      if (!response.ok) return res.status(200).json({ available: false });
-      const data = await response.json();
-      const books = data.response?.[0]?.bookmakers || [];
-      const prices = [];
-      books.forEach(b => {
-        const bet = (b.bets || []).find(x => x.id === 1 || x.name === "Match Winner");
-        if (!bet) return;
-        const get = (v) => parseFloat((bet.values || []).find(x => x.value === v)?.odd);
-        const h = get("Home"), d = get("Draw"), a = get("Away");
-        if ([h, d, a].every(n => n > 1)) prices.push([h, d, a]);
-      });
-      if (!prices.length) return res.status(200).json({ available: false });
+      const headers = { "x-apisports-key": apiKey };
+      const fr = await fetch(`https://v3.football.api-sports.io/fixtures?id=${fixtureId}`, { headers });
+      const fd = await fr.json();
+      const fx = fd.response?.[0];
+      if (!fx) return res.status(200).json({ available: false });
 
-      const avg = (i) => prices.reduce((s, p) => s + p[i], 0) / prices.length;
-      // Per bookmaker: implied = (1/odd) / sum(1/odds), which strips the margin.
-      const implied = [0, 0, 0];
-      prices.forEach(p => {
-        const inv = p.map(o => 1 / o);
-        const sum = inv.reduce((s, v) => s + v, 0);
-        inv.forEach((v, i) => { implied[i] += (v / sum) / prices.length; });
-      });
-      const pct = implied.map(v => Math.round(v * 100));
-      // Keep the three rounded numbers adding to exactly 100.
-      const diff = 100 - pct.reduce((s, v) => s + v, 0);
-      if (diff) pct[pct.indexOf(Math.max(...pct))] += diff;
+      const formFor = async (teamId) => {
+        try {
+          const r = await fetch(`https://v3.football.api-sports.io/fixtures?team=${teamId}&last=5`, { headers });
+          const d = await r.json();
+          return (d.response || [])
+            .filter(f => f.goals?.home !== null && f.goals?.away !== null && f.fixture?.id !== fx.fixture?.id)
+            .sort((a, b) => new Date(a.fixture.date) - new Date(b.fixture.date))
+            .slice(-5)
+            .map(f => {
+              const mine = f.teams?.home?.id === teamId ? f.goals.home : f.goals.away;
+              const theirs = f.teams?.home?.id === teamId ? f.goals.away : f.goals.home;
+              return mine > theirs ? "W" : mine < theirs ? "L" : "D";
+            })
+            .join("");
+        } catch { return ""; }
+      };
 
-      res.setHeader("Cache-Control", "public, s-maxage=1800, stale-while-revalidate=3600");
+      const [homeForm, awayForm, odds] = await Promise.all([
+        formFor(fx.teams?.home?.id),
+        formFor(fx.teams?.away?.id),
+        fetchOdds(fixtureId, apiKey),
+      ]);
+
+      res.setHeader("Cache-Control", "public, s-maxage=600, stale-while-revalidate=1200");
       return res.status(200).json({
         available: true,
-        bookmakers: prices.length,
-        odds: { home: +avg(0).toFixed(2), draw: +avg(1).toFixed(2), away: +avg(2).toFixed(2) },
-        implied: { home: pct[0], draw: pct[1], away: pct[2] },
+        fixtureId: Number(fixtureId),
+        kickoff: fx.fixture?.date,
+        status: fx.fixture?.status?.short,
+        league: fx.league?.name,
+        round: fx.league?.round,
+        home: { name: fx.teams?.home?.name, logo: fx.teams?.home?.logo, form: homeForm },
+        away: { name: fx.teams?.away?.name, logo: fx.teams?.away?.logo, form: awayForm },
+        odds: odds.available ? odds : null,
       });
     } catch (err) {
       return res.status(200).json({ available: false, error: err.message });
     }
   }
 
-  return res.status(400).json({ error: "Unknown type — use events, stats, ratings, injuries, or odds" });
+  return res.status(400).json({ error: "Unknown type — use events, stats, ratings, injuries, odds, or matchday" });
 }
