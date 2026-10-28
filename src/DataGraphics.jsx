@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import DeepInsightsPanel from "./DeepInsightsPanel";
+import MatchStatsCard, { buildStory } from "./MatchStatsCard";
 
 // Country name -> ISO code, for flag images (flagcdn.com) — covers national teams
 const TEAM_FLAG_CODES = {
@@ -910,12 +911,15 @@ function MatchStatsGraphic() {
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState("");
   const [animate, setAnimate] = useState(true);
+  const [headline, setHeadline] = useState("");
+  const [badgeMode, setBadgeMode] = useState("auto"); // "auto" | "on" | "off"
 
   const handleSelect = (f) => {
     setSelectedFixture(f);
     setFixtureId(f.fixtureId);
     setData(null);
     setError("");
+    setHeadline("");
   };
 
   const fetch_ = async (id) => {
@@ -923,9 +927,10 @@ function MatchStatsGraphic() {
     if (!fid) return;
     setLoading(true); setError(""); setData(null);
     try {
-      const [statsR, ratingsR] = await Promise.all([
+      const [statsR, ratingsR, oddsR] = await Promise.all([
         fetch(`/api/fixture-data?type=stats&fixtureId=${fid}`),
         fetch(`/api/fixture-data?type=ratings&fixtureId=${fid}`),
+        fetch(`/api/fixture-data?type=odds&fixtureId=${fid}`).catch(() => null),
       ]);
       const d = await statsR.json();
       if (!d.available) throw new Error("No stats available for this fixture yet — try after kickoff");
@@ -943,6 +948,12 @@ function MatchStatsGraphic() {
           };
         }
       } catch {}
+      // Pre-match bookmaker odds are optional: the card simply leaves the
+      // "Before kick-off" strip out when a league or fixture has none.
+      try {
+        const oddsD = oddsR ? await oddsR.json() : null;
+        if (oddsD && oddsD.available) d.odds = oddsD;
+      } catch {}
       setData(d);
       setAnimate(true);
     } catch (e) { setError(e.message); }
@@ -953,7 +964,7 @@ function MatchStatsGraphic() {
     setDownloading(true);
     // Ensure bars/numbers are in their settled state before capturing
     setAnimate(false);
-    await new Promise(res => setTimeout(res, 120));
+    await new Promise(res => setTimeout(res, 350));
     try {
       await downloadCardImage(cardRef.current, `deep433-match-stats-${fixtureId}.png`, undefined, transparent);
     } catch { alert("Download failed — try screenshotting manually"); }
@@ -983,91 +994,22 @@ function MatchStatsGraphic() {
 
       {s && (
         <>
-          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "44px 18px 18px" }}>
-              {/* Team header */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 16, marginTop: 8 }}>
-                <div style={{ textAlign: "center" }}>
-                  {s.home.logo && <img src={s.home.logo} alt="" crossOrigin="anonymous" style={{ width: 34, height: 34, objectFit: "contain", marginBottom: 4, display: "block", margin: "0 auto 6px" }} />}
-                  <div style={{ fontSize: 15, fontWeight: 800, color: "#4ade80" }}>{s.home.team}</div>
-                </div>
-                <div style={{ textAlign: "center", padding: "0 12px" }}>
-                  {s.goals && (s.goals.home !== null || s.goals.away !== null) && (
-                    <div style={{ fontSize: 26, fontWeight: 900, color: "#f0f0f0", marginBottom: 2 }}>
-                      {s.goals.home ?? "—"} - {s.goals.away ?? "—"}
-                    </div>
-                  )}
-                  <div style={{ fontSize: 12, color: "#e2e8f0", textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Match Stats</div>
-                </div>
-                <div style={{ textAlign: "center" }}>
-                  {s.away.logo && <img src={s.away.logo} alt="" crossOrigin="anonymous" style={{ width: 34, height: 34, objectFit: "contain", marginBottom: 4, display: "block", margin: "0 auto 6px" }} />}
-                  <div style={{ fontSize: 15, fontWeight: 800, color: "#f59e0b" }}>{s.away.team}</div>
-                </div>
-              </div>
-
-              {/* HERO: Possession — large signature card */}
-              <div style={{
-                background: "linear-gradient(135deg, #4ade8014, #f59e0b0e)",
-                border: "1px solid #4ade8033",
-                borderRadius: 12, padding: "16px 18px", marginBottom: 10,
-              }}>
-                <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 10, textAlign: "center" }}>⚽ Possession</div>
-                <PossessionHero home={s.home.stats.possession} awayVal={s.away.stats.possession} animate={animate} />
-              </div>
-
-              {/* Only renders when API-Football actually returns this stat —
-                  it's real xG data when present, not every league/plan tier
-                  supplies it, so this section is hidden entirely rather than
-                  showing a blank or fabricated number when it's missing. */}
-              {(s.home.stats.expectedGoals != null || s.away.stats.expectedGoals != null) && (
-                <div style={{
-                  background: "linear-gradient(135deg, #818cf814, #4ade8010)",
-                  border: "1px solid #818cf833",
-                  borderRadius: 12, padding: "16px 18px", marginBottom: 10,
-                }}>
-                  <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 10, textAlign: "center" }}>📈 Expected Goals (xG)</div>
-                  <AnimatedStatBar label="xG" homeVal={s.home.stats.expectedGoals} awayVal={s.away.stats.expectedGoals} animate={animate} />
-                </div>
-              )}
-
-              {/* Bento grid — 2x2 */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-                <BentoBox title="Attack" icon="🎯" color="#4ade80">
-                  <AnimatedStatBar label="Total Shots" homeVal={s.home.stats.shotsTotal} awayVal={s.away.stats.shotsTotal} animate={animate} />
-                  <AnimatedStatBar label="On Target" homeVal={s.home.stats.shotsOnGoal} awayVal={s.away.stats.shotsOnGoal} animate={animate} />
-                  <AnimatedStatBar label="Inside Box" homeVal={s.home.stats.shotsInsideBox} awayVal={s.away.stats.shotsInsideBox} animate={animate} />
-                  <AnimatedStatBar label="Outside Box" homeVal={s.home.stats.shotsOutsideBox} awayVal={s.away.stats.shotsOutsideBox} animate={animate} />
-                  <AnimatedStatBar label="Corners" homeVal={s.home.stats.corners} awayVal={s.away.stats.corners} animate={animate} />
-                </BentoBox>
-
-                <BentoBox title="Discipline" icon="🟨" color="#f59e0b">
-                  <AnimatedStatBar label="Fouls" homeVal={s.home.stats.fouls} awayVal={s.away.stats.fouls} animate={animate} />
-                  <AnimatedStatBar label="Yellow Cards" homeVal={s.home.stats.yellowCards} awayVal={s.away.stats.yellowCards} animate={animate} />
-                  <AnimatedStatBar label="Red Cards" homeVal={s.home.stats.redCards} awayVal={s.away.stats.redCards} animate={animate} />
-                  <AnimatedStatBar label="Offsides" homeVal={s.home.stats.offsides} awayVal={s.away.stats.offsides} animate={animate} />
-                </BentoBox>
-              </div>
-
-              <BentoBox title="Efficiency" icon="🧤" color="#818cf8">
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                  <AnimatedStatBar label="Total Passes" homeVal={s.home.stats.passesTotal} awayVal={s.away.stats.passesTotal} animate={animate} />
-                  <AnimatedStatBar label="Passes Completed" homeVal={s.home.stats.passesAccurate} awayVal={s.away.stats.passesAccurate} animate={animate} />
-                  <AnimatedStatBar label="Pass Accuracy" homeVal={s.home.stats.passAccuracy} awayVal={s.away.stats.passAccuracy} unit="%" animate={animate} />
-                  <AnimatedStatBar label="Saves" homeVal={s.home.stats.saves} awayVal={s.away.stats.saves} animate={animate} />
-                </div>
-              </BentoBox>
-
-              {/* Derived from summing individual players' post-match stats —
-                  team-level tackles/interceptions aren't part of API-
-                  Football's standard match-statistics endpoint at all, so
-                  this only appears once ratings data exists (full-time). */}
-              {s.defensive && (
-                <BentoBox title="Defensive Work" icon="🛡️" color="#f87171">
-                  <AnimatedStatBar label="Tackles" homeVal={s.defensive.home.tackles} awayVal={s.defensive.away.tackles} animate={animate} />
-                  <AnimatedStatBar label="Interceptions" homeVal={s.defensive.home.interceptions} awayVal={s.defensive.away.interceptions} animate={animate} />
-                </BentoBox>
-              )}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, background: "#13131f", borderRadius: 8, padding: "10px 12px" }}>
+            <input
+              value={headline}
+              onChange={e => setHeadline(e.target.value)}
+              placeholder={buildStory(s).headline}
+              style={{ background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "9px 12px", outline: "none", fontFamily: "inherit" }}
+            />
+            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              <span style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700 }}>Shocker badge</span>
+              {[{ v: "auto", l: "Auto" }, { v: "on", l: "On" }, { v: "off", l: "Off" }].map(o => (
+                <button key={o.v} onClick={() => setBadgeMode(o.v)} style={{ background: badgeMode === o.v ? "#4ade80" : "none", border: `1px solid ${badgeMode === o.v ? "#4ade80" : "#2a2a3a"}`, borderRadius: 14, color: badgeMode === o.v ? "#0a0f0a" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "4px 12px" }}>{o.l}</button>
+              ))}
             </div>
+          </div>
+          <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
+            <MatchStatsCard s={s} headline={headline} badgeMode={badgeMode} animate={animate} />
           </GraphicCard>
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
