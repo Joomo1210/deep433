@@ -182,7 +182,10 @@ function MirrorRow({ label, h, a, unit = "", neutral = false, on, animate }) {
 }
 
 // ── The card ─────────────────────────────────────────────────────────────────
-export default function MatchStatsCard({ s, headline = "", badgeMode = "auto", animate = true }) {
+// part: "story" (card 1/2), "detail" (card 2/2) or "all" (one long card).
+export default function MatchStatsCard({ s, headline = "", badgeMode = "auto", animate = true, part = "all" }) {
+  const showStory = part !== "detail";
+  const showDetail = part !== "story";
   const [on, setOn] = useState(false);
   useEffect(() => { const t = setTimeout(() => setOn(true), 80); return () => clearTimeout(t); }, []);
   const settled = on || !animate;
@@ -244,6 +247,7 @@ export default function MatchStatsCard({ s, headline = "", badgeMode = "auto", a
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 300, background: `radial-gradient(ellipse at 50% 0%, ${accent}40, transparent 70%)` }} />
 
       <div style={{ position: "relative" }}>
+        {showStory && (<>
         {/* badge */}
         <div style={{ textAlign: "center", marginTop: 6 }}>
           <span style={{
@@ -382,8 +386,29 @@ export default function MatchStatsCard({ s, headline = "", badgeMode = "auto", a
           </>
         )}
 
-        {/* full picture */}
-        <SectionTitle color={accent}>The full picture</SectionTitle>
+        </>)}
+
+        {showDetail && (<>
+        {part === "detail" && (
+          <>
+            <div style={{ textAlign: "center", marginTop: 6 }}>
+              <span style={{ display: "inline-block", padding: "6px 16px", borderRadius: 999, background: "#1e1e32", border: "1px solid #2e2e48", color: "#fff", fontSize: 13, fontWeight: 900, letterSpacing: 2.4, textTransform: "uppercase" }}>The full picture</span>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) auto minmax(0,1fr)", alignItems: "center", columnGap: 6, margin: "16px 0 6px" }}>
+              <div style={{ textAlign: "center", minWidth: 0 }}>
+                <Logo src={s.home.logo} name={s.home.team} color={HOME} size={38} />
+                <div style={{ fontSize: 13, fontWeight: 800, color: HOME, marginTop: 4, lineHeight: 1.15 }}>{s.home.team}</div>
+              </div>
+              <div style={{ fontSize: 34, fontWeight: 900, color: TEXT, lineHeight: 1, whiteSpace: "nowrap", padding: "0 6px" }}>{hasScore ? `${hg} - ${ag}` : "vs"}</div>
+              <div style={{ textAlign: "center", minWidth: 0 }}>
+                <Logo src={s.away.logo} name={s.away.team} color={AWAY} size={38} />
+                <div style={{ fontSize: 13, fontWeight: 800, color: AWAY, marginTop: 4, lineHeight: 1.15 }}>{s.away.team}</div>
+              </div>
+            </div>
+          </>
+        )}
+        {part !== "detail" && <SectionTitle color={accent}>The full picture</SectionTitle>}
+        {part === "detail" && <div style={{ height: 8 }} />}
         {groups.map((g) => {
           const rows = g.rows.filter((r) => num(r[1]) !== null || num(r[2]) !== null);
           if (!rows.length) return null;
@@ -397,8 +422,10 @@ export default function MatchStatsCard({ s, headline = "", badgeMode = "auto", a
           );
         })}
 
+        </>)}
+
         <div style={{ textAlign: "center", fontSize: 12, fontWeight: 700, color: SOFT, marginTop: 14, letterSpacing: 0.6 }}>
-          Predict free on <span style={{ color: HOME, fontWeight: 900 }}>Deep433</span>
+          {part === "story" ? "1/2 · Full breakdown on the next card" : part === "detail" ? <>2/2 · Predict free on <span style={{ color: HOME, fontWeight: 900 }}>Deep433</span></> : <>Predict free on <span style={{ color: HOME, fontWeight: 900 }}>Deep433</span></>}
         </div>
       </div>
     </div>
