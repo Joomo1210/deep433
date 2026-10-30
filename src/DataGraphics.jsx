@@ -44,8 +44,8 @@ const BOARDS = {
   weekly: {
     id: "weekly", emoji: "🏅", name: "Weekly League", switchLabel: "Weekly league",
     fixturesTable: "leaderboard_fixtures",
-    startIso: "2026-10-09T05:30:00Z",          // keep in step with the cutoff in App.jsx and the SQL trigger
-    endsText: "",                              // e.g. "Round 4 ends Sunday 23:59" once the next weekly round is set
+    startIso: "2026-10-30T18:00:00Z",          // keep in step with the cutoff in App.jsx and the SQL trigger
+    endsText: "Round ends Sunday 23:59 UK",// e.g. "Round 4 ends Sunday 23:59" once the next weekly round is set
     headStart: true,                           // ROUND_HEAD_START applies (set the table to {} when it expires)
   },
   monday: {
@@ -1982,7 +1982,7 @@ function RecapGraphic({ history = [], supabase }) {
 // Live count of predictions that count towards the round (curated matches only,
 // made on or after the round start, admin accounts left out). Keep the start in
 // step with the other round-start cutoffs when a new round begins.
-const LOCKED_IN_ROUND_START_ISO = new Date("2026-10-09T05:30:00Z").toISOString();
+const LOCKED_IN_ROUND_START_ISO = new Date("2026-10-30T18:00:00Z").toISOString();
 
 // UK calendar day for a kick-off time (used to split the card by match day).
 const ukDayKey = d => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(d));
