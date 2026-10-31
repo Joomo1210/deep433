@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import DeepInsightsPanel from "./DeepInsightsPanel";
 import MatchStatsCard, { buildStory } from "./MatchStatsCard";
 import MatchdayCard from "./MatchdayCard";
+import PicksReportCard, { PICK_OPTIONS, gradeRow } from "./PicksReportCard";
 
 // Country name -> ISO code, for flag images (flagcdn.com) — covers national teams
 const TEAM_FLAG_CODES = {
@@ -1009,6 +1010,169 @@ function MatchdayGraphic() {
             <React.Fragment key={i}>
               <GraphicCard cardRef={(el) => { cardRefs.current[i] = el; }} label={chunks.length > 1 ? `Card ${i + 1} of ${chunks.length}` : "Tap Download to save and share"}>
                 <MatchdayCard matches={chunk} title={title} dateLabel={dateLabel} pageLabel={chunks.length > 1 ? `${i + 1}/${chunks.length}` : ""} />
+              </GraphicCard>
+              <button onClick={() => download(i)} disabled={downloading} style={btn}>
+                {downloading ? "Generating..." : chunks.length > 1 ? `⬇ Download card ${i + 1} of ${chunks.length}` : "⬇ Download PNG"}
+              </button>
+            </React.Fragment>
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── PICKS REPORT CARD ──────────────────────────────────────────────────────
+// Our calls for a day or week, graded as the matches finish. Add fixtures, set the
+// call for each, build the card, then press Refresh (or switch on auto-refresh)
+// until everything has finished. Picks are kept in this browser so the card can be
+// reopened later. Calls are judged on the 90-minute score.
+const PICKS_REPORT_KEY = "deep433_picks_report_v1";
+
+function PicksReportGraphic() {
+  const cardRefs = useRef([]);
+  const load = () => {
+    try { const raw = localStorage.getItem(PICKS_REPORT_KEY); if (raw) return JSON.parse(raw); } catch {}
+    return {};
+  };
+  const saved = useRef(load()).current;
+  const [picks, setPicks] = useState(saved.picks || []);
+  const [title, setTitle] = useState(saved.title || "Deep433 calls");
+  const [dateLabel, setDateLabel] = useState(saved.dateLabel || "");
+  const [results, setResults] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [auto, setAuto] = useState(false);
+  const [updated, setUpdated] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    try { localStorage.setItem(PICKS_REPORT_KEY, JSON.stringify({ picks, title, dateLabel })); } catch {}
+  }, [picks, title, dateLabel]);
+
+  const add = (f) => {
+    if (picks.length >= 12 || picks.some(p => p.fixtureId === f.fixtureId)) return;
+    setPicks([...picks, {
+      fixtureId: f.fixtureId, home: f.home, away: f.away, kickoff: f.kickoff, league: f.leagueLabel,
+      call: { pick: "1", btts: false, goals: "" },
+    }]);
+  };
+  const remove = (id) => setPicks(picks.filter(p => p.fixtureId !== id));
+  const setCall = (id, patch) => setPicks(picks.map(p => p.fixtureId === id ? { ...p, call: { ...p.call, ...patch } } : p));
+  const clearAll = () => { setPicks([]); setResults({}); setUpdated(""); };
+
+  const refresh = async () => {
+    if (!picks.length) return;
+    setLoading(true); setError("");
+    try {
+      const out = {};
+      await Promise.all(picks.map(async (p) => {
+        try {
+          const r = await fetch(`/api/fixture-data?type=result&fixtureId=${p.fixtureId}`);
+          const d = await r.json();
+          if (d && d.available) out[p.fixtureId] = d;
+        } catch {}
+      }));
+      setResults(prev => ({ ...prev, ...out }));
+      setUpdated(new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/London" }));
+    } catch (e) { setError(e.message); }
+    setLoading(false);
+  };
+
+  // Pull results once when the tool opens with saved picks.
+  useEffect(() => { if (picks.length) refresh(); /* eslint-disable-next-line */ }, []);
+
+  const rows = [...picks]
+    .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff))
+    .map(p => ({ ...p, result: results[p.fixtureId] || null }));
+  const allDone = rows.length > 0 && rows.every(r => ["landed", "missed", "void"].includes(gradeRow(r).state));
+
+  // Auto-refresh every minute until everything has finished.
+  useEffect(() => {
+    if (!auto || allDone || !picks.length) return undefined;
+    const t = setInterval(refresh, 60000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line
+  }, [auto, allDone, picks.length]);
+
+  const chunks = [];
+  for (let i = 0; i < rows.length; i += 6) chunks.push(rows.slice(i, i + 6));
+
+  useEffect(() => {
+    if (!dateLabel && rows[0]?.kickoff) {
+      setDateLabel(new Date(rows[0].kickoff).toLocaleDateString("en-GB", { timeZone: "Europe/London", weekday: "short", day: "numeric", month: "short" }));
+    }
+    // eslint-disable-next-line
+  }, [rows.length]);
+
+  const download = async (i, transparent = false) => {
+    setDownloading(true);
+    await new Promise(res => setTimeout(res, 200));
+    try {
+      const suffix = chunks.length > 1 ? `-${i + 1}of${chunks.length}` : "";
+      await downloadCardImage(cardRefs.current[i], `deep433-picks-report${suffix}.png`, undefined, transparent);
+    } catch { alert("Download failed — try screenshotting manually"); }
+    setDownloading(false);
+  };
+
+  const inp = { background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "8px 10px", outline: "none", fontFamily: "inherit", minWidth: 0 };
+  const btn = { background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 16, fontWeight: 800, padding: "12px", width: "100%" };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 13, color: "#e2e8f0" }}>
+        Add the matches we are calling (up to 12), set our call for each, then press Refresh results. The card shows kick-off times while matches wait, live scores while they play, and a tick or cross when they finish. Come back later and press Refresh again.
+      </div>
+      <FixturePicker onSelect={add} />
+
+      {picks.length > 0 && (
+        <div style={{ background: "#13131f", borderRadius: 8, padding: "10px 12px", display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700 }}>Our calls ({picks.length}/12)</div>
+          {rows.map(p => (
+            <div key={p.fixtureId} style={{ borderTop: "1px solid #26263a", paddingTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 14, color: "#f0f0f0" }}>
+                <span>{p.home} v {p.away}</span>
+                <button onClick={() => remove(p.fixtureId)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, padding: "2px 8px" }}>Remove</button>
+              </div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                <select value={p.call.pick} onChange={e => setCall(p.fixtureId, { pick: e.target.value })} style={{ ...inp, flex: "1 1 160px" }}>
+                  {PICK_OPTIONS.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
+                </select>
+                <select value={p.call.goals} onChange={e => setCall(p.fixtureId, { goals: e.target.value })} style={{ ...inp, flex: "1 1 110px" }}>
+                  <option value="">No goals call</option>
+                  <option value="over">Over 2.5</option>
+                  <option value="under">Under 2.5</option>
+                </select>
+                <label style={{ fontSize: 13, color: "#e2e8f0", display: "flex", alignItems: "center", gap: 4 }}>
+                  <input type="checkbox" checked={p.call.btts} onChange={e => setCall(p.fixtureId, { btts: e.target.checked })} /> BTTS
+                </label>
+              </div>
+            </div>
+          ))}
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={refresh} disabled={loading} style={{ ...btn, fontSize: 15, padding: "10px" }}>
+              {loading ? "Pulling results..." : "Refresh results"}
+            </button>
+            <button onClick={clearAll} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, padding: "0 14px" }}>Clear</button>
+          </div>
+          <label style={{ fontSize: 13, color: "#e2e8f0", display: "flex", alignItems: "center", gap: 6 }}>
+            <input type="checkbox" checked={auto} onChange={e => setAuto(e.target.checked)} /> Auto-refresh every minute until all matches finish
+          </label>
+          {updated && <div style={{ fontSize: 12, color: "#94a3b8" }}>Last updated {updated} UK{allDone ? " · all matches settled" : ""}</div>}
+        </div>
+      )}
+      {error && <div style={{ color: "#f87171", fontSize: 16 }}>{error}</div>}
+
+      {rows.length > 0 && (
+        <>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Title" style={{ ...inp, flex: 1 }} />
+            <input value={dateLabel} onChange={e => setDateLabel(e.target.value)} placeholder="Date label" style={{ ...inp, flex: 1 }} />
+          </div>
+          {chunks.map((chunk, i) => (
+            <React.Fragment key={i}>
+              <GraphicCard cardRef={(el) => { cardRefs.current[i] = el; }} label={chunks.length > 1 ? `Card ${i + 1} of ${chunks.length}` : "Tap Download to save and share"}>
+                <PicksReportCard rows={chunk} tallyRows={rows} title={title} dateLabel={dateLabel} pageLabel={chunks.length > 1 ? `${i + 1}/${chunks.length}` : ""} />
               </GraphicCard>
               <button onClick={() => download(i)} disabled={downloading} style={btn}>
                 {downloading ? "Generating..." : chunks.length > 1 ? `⬇ Download card ${i + 1} of ${chunks.length}` : "⬇ Download PNG"}
@@ -12643,6 +12807,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "halftime", label: "⏸ Halftime Recap" },
     { id: "match",    label: "📈 Match Stats" },
     { id: "matchday", label: "📅 Matchday list" },
+    { id: "picksreport", label: "✅ Picks report card" },
     { id: "player",   label: "⭐ Player Ratings" },
     { id: "top",      label: "🥇 Leaderboard" },
     { id: "team",     label: "🛡 Team Stats" },
@@ -12728,6 +12893,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "halftime" && <HalftimeRecapGraphic />}
       {activeSection === "match"    && <MatchStatsGraphic />}
       {activeSection === "matchday" && <MatchdayGraphic />}
+      {activeSection === "picksreport" && <PicksReportGraphic />}
       {activeSection === "player"   && <PlayerRatingsGraphic />}
       {activeSection === "top"      && <TopScorersGraphic />}
       {activeSection === "team"     && <TeamStatsGraphic />}
