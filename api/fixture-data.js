@@ -7,6 +7,7 @@
 //   /api/fixture-data?type=injuries&fixtureId=X  (pre-match unavailability)
 //   /api/fixture-data?type=odds&fixtureId=X      (pre-match 1X2 implied chances)
 //   /api/fixture-data?type=matchday&fixtureId=X  (kick-off, last-5 form and odds for a list card)
+//   /api/fixture-data?type=result&fixtureId=X    (status, live/final score and 90-minute score, for the picks report card)
 
 // Pre-match 1X2 odds, averaged across bookmakers with the margin removed.
 // Returns { available:false } when the league/fixture has no odds.
@@ -321,5 +322,36 @@ export default async function handler(req, res) {
     }
   }
 
-  return res.status(400).json({ error: "Unknown type — use events, stats, ratings, injuries, odds, or matchday" });
+  // ── Result: status and score for the picks report card ──
+  // One call per fixture. ft is the 90-minute score (used to judge calls),
+  // goals is the live or full score. Live matches are cached for 30 seconds,
+  // finished ones for an hour, waiting ones for two minutes.
+  if (type === "result") {
+    try {
+      const r = await fetch(`https://v3.football.api-sports.io/fixtures?id=${fixtureId}`, { headers: { "x-apisports-key": apiKey } });
+      const d = await r.json();
+      const fx = d.response?.[0];
+      if (!fx) return res.status(200).json({ available: false });
+      const status = fx.fixture?.status?.short;
+      const finished = ["FT", "AET", "PEN", "PST", "CANC", "ABD", "AWD", "WO"].includes(status);
+      const waiting = ["NS", "TBD"].includes(status);
+      res.setHeader("Cache-Control", finished ? "public, s-maxage=3600, stale-while-revalidate=7200" : waiting ? "public, s-maxage=120" : "public, s-maxage=30, stale-while-revalidate=60");
+      return res.status(200).json({
+        available: true,
+        fixtureId: Number(fixtureId),
+        kickoff: fx.fixture?.date,
+        status,
+        elapsed: fx.fixture?.status?.elapsed,
+        league: fx.league?.name,
+        home: fx.teams?.home?.name,
+        away: fx.teams?.away?.name,
+        goals: { home: fx.goals?.home, away: fx.goals?.away },
+        ft: { home: fx.score?.fulltime?.home, away: fx.score?.fulltime?.away },
+      });
+    } catch (err) {
+      return res.status(200).json({ available: false, error: err.message });
+    }
+  }
+
+  return res.status(400).json({ error: "Unknown type — use events, stats, ratings, injuries, odds, matchday, or result" });
 }
