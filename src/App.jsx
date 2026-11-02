@@ -52,6 +52,10 @@ const EURO_START_DATE = new Date("2026-10-12T00:00:00Z");
 // Monday Night board: a one-night board on its own table (monday_fixtures). The leader after the night
 // takes all 5K, top 10 shown. To run another Monday, change this date, clear monday_fixtures and add the new matches.
 const MONDAY_START_DATE = new Date("2026-10-18T00:00:00Z");
+// Daily board: a stand-alone board for days the Weekly round is not running. Own table (daily_fixtures), no prediction cap,
+// top 3 win, top 10 shown. To run another Daily round: change this date, clear daily_fixtures and add the new matches.
+// Keep in step with BOARDS.daily.startIso in DataGraphics.jsx.
+const DAILY_START_DATE = new Date("2026-11-01T00:00:00Z");
 
 // ─── Past leaderboard rounds (display only) ──────────────────────────────────
 // Saved round results come from the leaderboard_round_results table. If the
@@ -825,9 +829,10 @@ export default function FootballPredictor() {
   const [leaderboardFixtures, setLeaderboardFixtures] = useState([]);
   // "weekly" = the usual weekly leaderboard, "euro" = Champions League + Europa League board.
   const [contest, setContest] = useState("weekly");
-  const fxTable = contest === "euro" ? "euro_fixtures" : contest === "monday" ? "monday_fixtures" : "leaderboard_fixtures";
+  const fxTable = contest === "euro" ? "euro_fixtures" : contest === "monday" ? "monday_fixtures" : contest === "daily" ? "daily_fixtures" : "leaderboard_fixtures";
   const [euroBadgeKeys, setEuroBadgeKeys] = useState(() => new Set());
   const [mondayBadgeKeys, setMondayBadgeKeys] = useState(() => new Set());
+  const [dailyBadgeKeys, setDailyBadgeKeys] = useState(() => new Set());
   // Display only: set of curated match keys (lowercased home|away) used to
   // badge fixtures that count toward the leaderboard. Never used for scoring.
   const [curatedBadgeKeys, setCuratedBadgeKeys] = useState(() => new Set());
@@ -1030,7 +1035,7 @@ export default function FootballPredictor() {
     // warning and nothing to undo it. A round's cutoff should only ever
     // move when someone deliberately changes this line for a genuinely
     // new round, never on its own just because the month changed.
-    const LEADERBOARD_START_DATE = contest === "euro" ? EURO_START_DATE : contest === "monday" ? MONDAY_START_DATE : new Date("2026-10-09T05:30:00Z");
+    const LEADERBOARD_START_DATE = contest === "euro" ? EURO_START_DATE : contest === "monday" ? MONDAY_START_DATE : contest === "daily" ? DAILY_START_DATE : new Date("2026-10-09T05:30:00Z");
     const cutoff = LEADERBOARD_START_DATE.toISOString();
     // Supabase returns at most 1000 rows per request, so a busy round was silently cut off
     // (newest predictions dropped). Fetch in pages until everything is loaded.
@@ -1064,7 +1069,7 @@ export default function FootballPredictor() {
         step: "waiting for results",
         predsFetched: 0,
         predictionsWaitingForResults: waiting ?? "unknown",
-        board: contest === "euro" ? "Euro Cups" : contest === "monday" ? "Monday Night" : "Weekly",
+        board: contest === "euro" ? "Euro Cups" : contest === "monday" ? "Monday Night" : contest === "daily" ? "Daily" : "Weekly",
         note: "No finished matches have been scored yet, so the board is empty. Predictions are saved and will score once results are confirmed (use the pending predictions list to confirm a result).",
       });
       setLeaderboardLoading(false); return;
@@ -1191,7 +1196,7 @@ export default function FootballPredictor() {
       .filter(r => r.role !== "admin")
       .sort((a, b) => b.points - a.points);
     // Top 20 (Monday Night: top 10), but anyone level on points with the last place stays on the board too.
-    const boardCap = contest === "monday" ? 10 : 20;
+    const boardCap = contest === "monday" || contest === "daily" ? 10 : 20;
     const rows = rowsSorted.length > boardCap ? rowsSorted.filter(r => r.points >= rowsSorted[boardCap - 1].points) : rowsSorted;
 
     // Full visibility into every user who had eligible predictions this
@@ -1277,6 +1282,11 @@ export default function FootballPredictor() {
         if (cancelled || !md) return;
         setMondayBadgeKeys(new Set(md.map(f => `${(f.home_team || "").trim().toLowerCase()}|${(f.away_team || "").trim().toLowerCase()}`)));
       } catch (e) { /* no monday badges, nothing else affected */ }
+      try {
+        const { data: dd } = await supabase.from("daily_fixtures").select("home_team, away_team");
+        if (cancelled || !dd) return;
+        setDailyBadgeKeys(new Set(dd.map(f => `${(f.home_team || "").trim().toLowerCase()}|${(f.away_team || "").trim().toLowerCase()}`)));
+      } catch (e) { /* no daily badges, nothing else affected */ }
     })();
     return () => { cancelled = true; };
   }, [tab]);
@@ -1350,13 +1360,14 @@ export default function FootballPredictor() {
     let cancelled = false;
     (async () => {
       try {
-        const [w, e, m] = await Promise.all([
+        const [w, e, m, d] = await Promise.all([
           supabase.from("leaderboard_fixtures").select("home_team, away_team, kickoff, league_label"),
           supabase.from("euro_fixtures").select("home_team, away_team, kickoff, league_label"),
           supabase.from("monday_fixtures").select("home_team, away_team, kickoff, league_label"),
+          supabase.from("daily_fixtures").select("home_team, away_team, kickoff, league_label"),
         ]);
         const now = Date.now();
-        const todo = [...(w.data || []), ...(e.data || []), ...(m.data || [])].filter(r =>
+        const todo = [...(w.data || []), ...(e.data || []), ...(m.data || []), ...(d.data || [])].filter(r =>
           r.home_team && r.away_team && r.kickoff &&
           new Date(r.kickoff).getTime() > now && new Date(r.kickoff).getTime() < now + 36 * 3600e3 &&
           !warmedAi.current.has(`${r.home_team}|${r.away_team}`));
@@ -1404,10 +1415,11 @@ export default function FootballPredictor() {
       setFixturesLoading(true);
       (async () => {
         try {
-          const [w, e, m] = await Promise.all([
+          const [w, e, m, d] = await Promise.all([
             supabase.from("leaderboard_fixtures").select("home_team, away_team, kickoff, league_label"),
             supabase.from("euro_fixtures").select("home_team, away_team, kickoff, league_label"),
             supabase.from("monday_fixtures").select("home_team, away_team, kickoff, league_label"),
+            supabase.from("daily_fixtures").select("home_team, away_team, kickoff, league_label"),
           ]);
           if (cancelled) return;
           const cutoff = Date.now() - 150 * 60000; // keep a match visible (locked) until about 2.5h after kickoff
@@ -1415,7 +1427,7 @@ export default function FootballPredictor() {
           // even if the admin listed it days earlier. (The database enforces the same rule on save.)
           const ukDay = (d) => new Date(d).toLocaleDateString("en-CA", { timeZone: "Europe/London" });
           const todayUk = ukDay(Date.now());
-          const list = [...(w.data || []), ...(e.data || []), ...(m.data || [])]
+          const list = [...(w.data || []), ...(e.data || []), ...(m.data || []), ...(d.data || [])]
             .filter(r => r.home_team && r.away_team && (!r.kickoff || new Date(r.kickoff).getTime() > cutoff))
             .filter(r => !r.kickoff || ukDay(r.kickoff) <= todayUk)
             .map(r => ({
@@ -1744,6 +1756,13 @@ useEffect(() => {
       const { data: euroFx } = await supabase.from("euro_fixtures").select("home_team, away_team");
       euroKeysForCap = new Set((euroFx || []).map(f => keyOf(f.home_team, f.away_team)));
     } catch (e) { /* weekly cap logic below still applies */ }
+    // Daily matches (daily_fixtures) have no cap, unless the match is also on another board.
+    let dailyOnlyForCap = false;
+    try {
+      const { data: dayFx } = await supabase.from("daily_fixtures").select("home_team, away_team");
+      const dayKeys = new Set((dayFx || []).map(f => keyOf(f.home_team, f.away_team)));
+      dailyOnlyForCap = dayKeys.has(keyOf(homeTeam, awayTeam));
+    } catch (e) { /* no daily table yet */ }
     // Monday Night matches (monday_fixtures) have their own cap of 5 per player.
     let mondayOnlyForCap = false;
     let monKeys = new Set();
@@ -1752,7 +1771,17 @@ useEffect(() => {
       monKeys = new Set((monFx || []).map(f => keyOf(f.home_team, f.away_team)));
       mondayOnlyForCap = monKeys.has(keyOf(homeTeam, awayTeam)) && !euroKeysForCap.has(keyOf(homeTeam, awayTeam));
     } catch (e) { /* no monday table yet */ }
-    if (mondayOnlyForCap) {
+    // Daily-only = on the Daily list and on no other board, so no cap applies.
+    let dailyNoCap = false;
+    if (dailyOnlyForCap && !euroKeysForCap.has(keyOf(homeTeam, awayTeam)) && !monKeys.has(keyOf(homeTeam, awayTeam))) {
+      try {
+        const { data: wkFx } = await supabase.from("leaderboard_fixtures").select("home_team, away_team");
+        dailyNoCap = !(wkFx || []).some(f => keyOf(f.home_team, f.away_team) === keyOf(homeTeam, awayTeam));
+      } catch (e) { /* assume weekly rules */ }
+    }
+    if (dailyNoCap) {
+      // no cap for the Daily board
+    } else if (mondayOnlyForCap) {
       const mondayCount = history.filter(h =>
         new Date(h.created_at) >= MONDAY_START_DATE && monKeys.has(keyOf(h.home_team, h.away_team))
       ).length;
@@ -2511,7 +2540,7 @@ if (!session && !guestMode) {
                   const upcoming = fixtures
                     .filter(f => f.kickoff && new Date(f.kickoff) > new Date() && !hasExistingPrediction(f.home, f.away) && getMatchStatus(f.home, f.away) !== "finished" && getMatchStatus(f.home, f.away) !== "live")
                     .sort((x, y) => new Date(x.kickoff) - new Date(y.kickoff));
-                  const feat = upcoming.find(f => curatedBadgeKeys.has(keyOf(f)) || euroBadgeKeys.has(keyOf(f)) || mondayBadgeKeys.has(keyOf(f))) || upcoming[0];
+                  const feat = upcoming.find(f => curatedBadgeKeys.has(keyOf(f)) || euroBadgeKeys.has(keyOf(f)) || mondayBadgeKeys.has(keyOf(f)) || dailyBadgeKeys.has(keyOf(f))) || upcoming[0];
                   if (!feat) return null;
                   const k = new Date(feat.kickoff);
                   const dayTxt = k.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" }).replace(",", "");
@@ -2531,9 +2560,9 @@ if (!session && !guestMode) {
                         <div style={{ color: "#8b98a5", fontWeight: 800, fontSize: 13, padding: "0 8px" }}>VS</div>
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 14 }}>{crest(feat.awayLogo, feat.away)}{feat.away}</div>
                       </div>
-                      {(curatedBadgeKeys.has(keyOf(feat)) || euroBadgeKeys.has(keyOf(feat)) || mondayBadgeKeys.has(keyOf(feat))) && (
-                        <div style={{ textAlign: "center", fontSize: 11, fontWeight: 800, color: curatedBadgeKeys.has(keyOf(feat)) ? "#fbbf24" : mondayBadgeKeys.has(keyOf(feat)) && !euroBadgeKeys.has(keyOf(feat)) ? "#c4b5fd" : "#818cf8" }}>
-                          {curatedBadgeKeys.has(keyOf(feat)) ? "🏅 CURATED · Leaderboard match" : euroBadgeKeys.has(keyOf(feat)) ? "🇪🇺 CURATED · Euro board match" : "🌙 CURATED · Monday Night match"}
+                      {(curatedBadgeKeys.has(keyOf(feat)) || euroBadgeKeys.has(keyOf(feat)) || mondayBadgeKeys.has(keyOf(feat)) || dailyBadgeKeys.has(keyOf(feat))) && (
+                        <div style={{ textAlign: "center", fontSize: 11, fontWeight: 800, color: curatedBadgeKeys.has(keyOf(feat)) ? "#fbbf24" : dailyBadgeKeys.has(keyOf(feat)) && !euroBadgeKeys.has(keyOf(feat)) ? "#5eead4" : mondayBadgeKeys.has(keyOf(feat)) && !euroBadgeKeys.has(keyOf(feat)) ? "#c4b5fd" : "#818cf8" }}>
+                          {curatedBadgeKeys.has(keyOf(feat)) ? "🏅 CURATED · Leaderboard match" : euroBadgeKeys.has(keyOf(feat)) ? "🇪🇺 CURATED · Euro board match" : dailyBadgeKeys.has(keyOf(feat)) ? "📅 CURATED · Daily match" : "🌙 CURATED · Monday Night match"}
                         </div>
                       )}
                       <button
@@ -2630,7 +2659,10 @@ if (!session && !guestMode) {
                               {mondayBadgeKeys.has(`${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`) && (
                                 <div style={{ display: "inline-block", fontSize: 10, fontWeight: 900, color: "#c4b5fd", background: "#a855f718", border: "1px solid #a855f766", borderRadius: 6, padding: "2px 7px", marginTop: 4, marginLeft: 4, whiteSpace: "nowrap", letterSpacing: 0.4 }}>🌙 CURATED · MONDAY NIGHT</div>
                               )}
-                              {(curatedBadgeKeys.has(`${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`) || mondayBadgeKeys.has(`${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`) || euroBadgeKeys.has(`${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`)) && (
+                              {dailyBadgeKeys.has(`${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`) && (
+                                <div style={{ display: "inline-block", fontSize: 10, fontWeight: 900, color: "#5eead4", background: "#14b8a618", border: "1px solid #14b8a666", borderRadius: 6, padding: "2px 7px", marginTop: 4, marginLeft: 4, whiteSpace: "nowrap", letterSpacing: 0.4 }}>📅 CURATED · DAILY</div>
+                              )}
+                              {(curatedBadgeKeys.has(`${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`) || mondayBadgeKeys.has(`${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`) || dailyBadgeKeys.has(`${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`) || euroBadgeKeys.has(`${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`)) && (
                                 <div style={{ fontSize: 10, fontWeight: 600, color: "#8b98a5", marginTop: 4, whiteSpace: "nowrap" }}>{STANDARD_POINTS_LINE}</div>
                               )}
                             </div>
@@ -2648,7 +2680,7 @@ if (!session && !guestMode) {
                 <div className="fx-mob-only fx-list-mob">
                   {(() => {
                     const keyOf = f => `${(f.home || "").trim().toLowerCase()}|${(f.away || "").trim().toLowerCase()}`;
-                    const isCur = f => curatedBadgeKeys.has(keyOf(f)) || euroBadgeKeys.has(keyOf(f)) || mondayBadgeKeys.has(keyOf(f));
+                    const isCur = f => curatedBadgeKeys.has(keyOf(f)) || euroBadgeKeys.has(keyOf(f)) || mondayBadgeKeys.has(keyOf(f)) || dailyBadgeKeys.has(keyOf(f));
                     const flat = Object.values(fixturesByDate).flat();
                     const groups = [];
                     flat.forEach(f => {
@@ -3358,12 +3390,12 @@ if (!session && !guestMode) {
                   {liveTop.rows.length > 0 && (
                     <div style={{ marginBottom: 12 }}>
                       <div style={{ fontSize: 13, fontWeight: 800, color: "#f0f0f0", marginBottom: 6 }}>Leading now · last night's snapshot ({new Date(liveTop.date).toLocaleDateString("en-GB")})</div>
-                      {["weekly", "euro", "monday"].map(bd => {
+                      {["weekly", "euro", "monday", "daily"].map(bd => {
                         const r = liveTop.rows.filter(x => x.board === bd);
                         if (!r.length) return null;
                         return (
                           <div key={bd} style={{ background: "#0d0d18", border: "1px solid #2a2a3a", borderRadius: 8, padding: 10, marginBottom: 8 }}>
-                            <div style={{ fontSize: 12, fontWeight: 800, color: "#818cf8", marginBottom: 4 }}>{bd === "euro" ? "🇪🇺 Euro board" : bd === "monday" ? "🌙 Monday Night board" : "🏅 Weekly board"}</div>
+                            <div style={{ fontSize: 12, fontWeight: 800, color: "#818cf8", marginBottom: 4 }}>{bd === "euro" ? "🇪🇺 Euro board" : bd === "monday" ? "🌙 Monday Night board" : bd === "daily" ? "📅 Daily board" : "🏅 Weekly board"}</div>
                             {r.map((x, i) => <div key={i} style={{ fontSize: 13, color: "#e2e8f0" }}>{x.position === 1 ? "🥇" : "🏆"} {x.position}. <b>{x.name}</b> · {x.points} pts</div>)}
                           </div>
                         );
@@ -3590,7 +3622,7 @@ if (!session && !guestMode) {
       {tab === "leaderboard" && (
         <div style={{ maxWidth: PAGE_MAX_WIDTH, margin: "0 auto", padding: "14px 12px" }}>
           <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
-            {[{ id: "weekly", label: "🏅 Weekly" }, { id: "euro", label: "🇪🇺 Champions & Europa League" }, { id: "monday", label: "🌙 Monday Night" }].map(c => (
+            {[{ id: "weekly", label: "🏅 Weekly" }, { id: "euro", label: "🇪🇺 Champions & Europa League" }, { id: "monday", label: "🌙 Monday Night" }, { id: "daily", label: "📅 Daily" }].map(c => (
               <button key={c.id}
                 onClick={() => { setContest(c.id); setAdminFixtureLeague(c.id === "euro" ? "ucl" : "pl"); }}
                 style={{ flex: 1, background: contest === c.id ? "linear-gradient(135deg,#818cf8,#6366f1)" : "none", border: `1px solid ${contest === c.id ? "#818cf8" : "#2a2a3a"}`, borderRadius: 8, color: contest === c.id ? "#fff" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 800, padding: "8px 6px" }}>
@@ -3598,7 +3630,7 @@ if (!session && !guestMode) {
               </button>
             ))}
           </div>
-          <div style={{ fontSize: 16, fontWeight: 900, color: "#f0f0f0", marginBottom: 2 }}>{contest === "euro" ? "🇪🇺 European Leaderboard" : contest === "monday" ? "🌙 Monday Night Leaderboard" : "🏅 Leaderboard"}</div>
+          <div style={{ fontSize: 16, fontWeight: 900, color: "#f0f0f0", marginBottom: 2 }}>{contest === "euro" ? "🇪🇺 European Leaderboard" : contest === "monday" ? "🌙 Monday Night Leaderboard" : contest === "daily" ? "📅 Daily Leaderboard" : "🏅 Leaderboard"}</div>
           {contest === "euro" && (
             <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", marginBottom: 6 }}>Champions League Tue and Wed, Europa League Thu · started Tue 13 Oct · one running table</div>
           )}
@@ -3606,7 +3638,7 @@ if (!session && !guestMode) {
             Exact: 5pts · Outcome only: 3pts · O/U: +1pt
           </div>
           <div style={{ fontSize: 12, fontWeight: 800, color: "#fbbf24", marginBottom: 10 }}>
-            {contest === "monday" ? "🏆 Predict free · The leader after Monday night takes all 5K" : "🏆 Predict free · Top 5 win cash every round"}
+            {contest === "monday" ? "🏆 Predict free · The leader after Monday night takes all 5K" : contest === "daily" ? "🏆 Predict free · Top 3 win every Daily round · no limit on predictions" : "🏆 Predict free · Top 5 win cash every round"}
           </div>
           {userRole === "admin" && (
             <button
@@ -3766,7 +3798,8 @@ if (!session && !guestMode) {
               );
             }
             const myRank = 1 + leaderboard.filter(r => r.points > me.points).length;
-            const fifth = leaderboard.length >= 5 ? [...leaderboard].sort((a, b) => b.points - a.points)[4] : null;
+            const topN = contest === "daily" ? 3 : 5; // Daily board pays the top 3
+            const fifth = leaderboard.length >= topN ? [...leaderboard].sort((a, b) => b.points - a.points)[topN - 1] : null;
             const gap = fifth ? Math.max(0, fifth.points - me.points) : 0;
             if (userRole !== "admin") {
               // Players see their own points and their own position (shared ranks on ties). No other player's name or points.
@@ -3774,10 +3807,10 @@ if (!session && !guestMode) {
               const tied = leaderboard.filter(r => r.points === me.points).length > 1;
               const posText = `You are currently in ${tied ? "joint " : ""}${ord(myRank)} position`;
               const band = {
-                text: myRank === 1 ? `${posText} 🔥` : myRank <= 5 ? `${posText} 🏆` : posText,
+                text: myRank === 1 ? `${posText} 🔥` : myRank <= topN ? `${posText} 🏆` : posText,
                 sub: myRank === 1 ? "You are leading the board. Hold your place."
-                  : myRank <= 5 ? "You are in the top 5. Keep your picks sharp."
-                  : fifth ? `${gap} pt${gap === 1 ? "" : "s"} off the top 5. Every exact score moves you up.`
+                  : myRank <= topN ? `You are in the top ${topN}. Keep your picks sharp.`
+                  : fifth ? `${gap} pt${gap === 1 ? "" : "s"} off the top ${topN}. Every exact score moves you up.`
                   : "Keep predicting, every exact score moves you up.",
               };
               const pctMe = Math.min(100, Math.round((me.total / 30) * 100));
@@ -3796,16 +3829,16 @@ if (!session && !guestMode) {
                       })}
                     </div>
                   )}
-                  <div style={{ fontSize: 11, color: "#94a3b8", margin: "14px 0 4px" }}>{me.total} of 30 predictions made</div>
-                  <div style={{ height: 6, background: "#1a1a2e", borderRadius: 4, overflow: "hidden" }}>
+                  <div style={{ fontSize: 11, color: "#94a3b8", margin: "14px 0 4px" }}>{contest === "daily" ? `${me.total} prediction${me.total === 1 ? "" : "s"} made` : `${me.total} of 30 predictions made`}</div>
+                  <div style={{ height: contest === "daily" ? 0 : 6, background: "#1a1a2e", borderRadius: 4, overflow: "hidden" }}>
                     <div style={{ width: `${pctMe}%`, height: "100%", background: "linear-gradient(90deg,#4ade80,#22c55e)" }} />
                   </div>
                 </div>
               );
             }
             const msg = myRank === 1 ? "You are leading 🔥"
-              : myRank <= 5 ? "You are in the top 5 🏆"
-              : fifth ? `${gap} pt${gap === 1 ? "" : "s"} off the top 5`
+              : myRank <= topN ? `You are in the top ${topN} 🏆`
+              : fifth ? `${gap} pt${gap === 1 ? "" : "s"} off the top ${topN}`
               : "Keep predicting to climb";
             const pct = Math.min(100, Math.round((me.total / 30) * 100));
             return (
@@ -3814,8 +3847,8 @@ if (!session && !guestMode) {
                   <div style={{ fontSize: 14, fontWeight: 800, color: "#f0f0f0" }}>You are {myRank}{myRank % 10 === 1 && myRank !== 11 ? "st" : myRank % 10 === 2 && myRank !== 12 ? "nd" : myRank % 10 === 3 && myRank !== 13 ? "rd" : "th"} · {me.points} pts</div>
                   <div style={{ fontSize: 12, fontWeight: 700, color: "#fbbf24" }}>{msg}</div>
                 </div>
-                <div style={{ fontSize: 11, color: "#94a3b8", margin: "8px 0 4px" }}>{me.total} of 30 leaderboard predictions made</div>
-                <div style={{ height: 6, background: "#1a1a2e", borderRadius: 4, overflow: "hidden" }}>
+                <div style={{ fontSize: 11, color: "#94a3b8", margin: "8px 0 4px" }}>{contest === "daily" ? `${me.total} predictions made` : `${me.total} of 30 leaderboard predictions made`}</div>
+                <div style={{ height: contest === "daily" ? 0 : 6, background: "#1a1a2e", borderRadius: 4, overflow: "hidden" }}>
                   <div style={{ width: `${pct}%`, height: "100%", background: "linear-gradient(90deg,#4ade80,#22c55e)" }} />
                 </div>
               </div>
