@@ -3372,7 +3372,7 @@ if (!session && !guestMode) {
                       <div style={{ fontSize: 14, fontWeight: 700, color: earned ? d.color : "#e2e8f0", marginBottom: 4, lineHeight: 1.3 }}>{d.name}</div>
                       <div style={{ fontSize: 13, color: "#444", lineHeight: 1.4 }}>{d.desc}</div>
                       {BOARD_BADGE_CASH[d.code] > 0 && <div style={{ fontSize: 13, fontWeight: 900, color: "#fbbf24", marginTop: 6 }}>💷 £{BOARD_BADGE_CASH[d.code]} prize</div>}
-                      {earned ? <div style={{ fontSize: 12, color: d.color, marginTop: 6 }}>{got.map(g => badgeMonthLabel(g.period)).join(", ")}</div> : <div style={{ fontSize: 13, color: "#2a2a2a", marginTop: 6 }}>🔒 Locked</div>}
+                      {earned ? <div style={{ fontSize: 12, color: d.color, marginTop: 6 }}>{got.map(g => `${g.board === "euro" ? "🇪🇺 Euro" : g.board === "monday" ? "🌙 Monday Night" : g.board === "daily" ? "📅 Daily" : "🏅 Weekly"}${g.period ? " · " + badgeMonthLabel(g.period) : ""}`).join(", ")}</div> : <div style={{ fontSize: 13, color: "#2a2a2a", marginTop: 6 }}>🔒 Locked</div>}
                     </div>
                   );
                 })}
