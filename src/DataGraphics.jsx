@@ -45,7 +45,7 @@ const BOARDS = {
   weekly: {
     id: "weekly", emoji: "🏅", name: "Weekly League", switchLabel: "Weekly league",
     fixturesTable: "leaderboard_fixtures",
-    startIso: "2026-10-30T18:00:00Z",          // keep in step with the cutoff in App.jsx and the SQL trigger
+    startIso: "2026-10-30T00:00:00Z",          // round opens Fri 00:00 UK (first match-day reveal); keep in step with App.jsx and the SQL trigger
     endsText: "Round ends Sunday 23:59 UK",// e.g. "Round 4 ends Sunday 23:59" once the next weekly round is set
     headStart: true,                           // ROUND_HEAD_START applies (set the table to {} when it expires)
   },
@@ -54,6 +54,13 @@ const BOARDS = {
     fixturesTable: "monday_fixtures",
     startIso: "2026-10-18T00:00:00Z",          // keep in step with MONDAY_START_DATE in App.jsx
     endsText: "Leader after the night takes all 5K",
+    headStart: false,
+  },
+  daily: {
+    id: "daily", emoji: "📅", name: "Daily", switchLabel: "Daily board",
+    fixturesTable: "daily_fixtures",
+    startIso: "2026-11-01T00:00:00Z",          // keep in step with DAILY_START_DATE in App.jsx
+    endsText: "Top 3 win the Daily round",
     headStart: false,
   },
 };
@@ -72,6 +79,7 @@ const fetchBonusById = async (supabase) => {
   } catch (e) { /* table missing: no bonus */ }
   return out;
 };
+const boardWinners = () => (ACTIVE_BOARD === "daily" ? 3 : 5); // places that win on the active board
 const boardHeadStart = (id) => (activeBoard().headStart ? (ROUND_HEAD_START[id] || 0) : 0);
 const boardRoundLabel = () => activeBoard().name;
 const boardEndsText = () => activeBoard().endsText;
@@ -2146,7 +2154,7 @@ function RecapGraphic({ history = [], supabase }) {
 // Live count of predictions that count towards the round (curated matches only,
 // made on or after the round start, admin accounts left out). Keep the start in
 // step with the other round-start cutoffs when a new round begins.
-const LOCKED_IN_ROUND_START_ISO = new Date("2026-10-30T18:00:00Z").toISOString();
+const LOCKED_IN_ROUND_START_ISO = new Date("2026-10-30T00:00:00Z").toISOString();
 
 // UK calendar day for a kick-off time (used to split the card by match day).
 const ukDayKey = d => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(d));
@@ -2195,7 +2203,7 @@ function LockedInCardBody({ data, roundLabel, endsText, dayLabel, part = 1, part
       )}
 
       <div style={{ marginTop: 18, textAlign: "center" }}>
-        <div style={{ fontSize: 13, fontWeight: 800, color: "#fbbf24" }}>Free to play · Top 5 win every round</div>
+        <div style={{ fontSize: 13, fontWeight: 800, color: "#fbbf24" }}>Free to play · Top {boardWinners()} win every round</div>
         {endsText && <div style={{ fontSize: 12, fontWeight: 600, color: "#94a3b8", marginTop: 3 }}>{endsText}</div>}
       </div>
     </div>
@@ -2382,7 +2390,7 @@ function ResultsCardBody({ stat, home, away, score, roundLabel }) {
         </div>
       </div>
 
-      <div style={{ marginTop: 16, textAlign: "center", fontSize: 13, fontWeight: 800, color: "#fbbf24" }}>Free to play · Top 5 win every round</div>
+      <div style={{ marginTop: 16, textAlign: "center", fontSize: 13, fontWeight: 800, color: "#fbbf24" }}>Free to play · Top {boardWinners()} win every round</div>
     </div>
   );
 }
@@ -2564,7 +2572,7 @@ function RoundupCardBody({ rows, roundLabel, dayLabel, part = 1, parts = 1, grou
       <div style={{ marginTop: 12, display: "flex", justifyContent: "center", gap: 12, fontSize: 10, fontWeight: 700, color: "#94a3b8" }}>
         <span>🎯 Exact 5</span><span>✅ Right result 3</span><span>⚽ Over/Under +1</span>
       </div>
-      <div style={{ marginTop: 10, textAlign: "center", fontSize: 13, fontWeight: 800, color: "#fbbf24" }}>Free to play · Top 5 win every round</div>
+      <div style={{ marginTop: 10, textAlign: "center", fontSize: 13, fontWeight: 800, color: "#fbbf24" }}>Free to play · Top {boardWinners()} win every round</div>
     </div>
   );
 }
@@ -4417,14 +4425,14 @@ function LeaderboardGraphic({ supabase }) {
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#e2e8f0", textTransform: "uppercase", textAlign: "center" }}>Pts</span>
                 </div>
                 {rows.map((r, i) => {
-                  const top5 = tieRank(rows, i) <= 5;
-                  const cut = i > 0 && !top5 && tieRank(rows, i - 1) <= 5;
+                  const top5 = tieRank(rows, i) <= boardWinners();
+                  const cut = i > 0 && !top5 && tieRank(rows, i - 1) <= boardWinners();
                   return (
                   <React.Fragment key={i}>
                   {cut && (
                     <div style={{ position: "relative", height: 18, background: "#0a0a12" }}>
                       <div style={{ position: "absolute", left: 0, right: 0, top: 9, borderTop: "2px dashed #F5C518" }} />
-                      <span style={{ position: "absolute", left: "50%", top: 0, transform: "translateX(-50%)", background: "#0a0a12", padding: "0 10px", fontSize: 10, lineHeight: "18px", fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: "#F5C518", whiteSpace: "nowrap" }}>Top 5 win</span>
+                      <span style={{ position: "absolute", left: "50%", top: 0, transform: "translateX(-50%)", background: "#0a0a12", padding: "0 10px", fontSize: 10, lineHeight: "18px", fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: "#F5C518", whiteSpace: "nowrap" }}>Top {boardWinners()} win</span>
                     </div>
                   )}
                   <div style={{
@@ -4470,8 +4478,8 @@ function LeaderboardGraphic({ supabase }) {
                     <span style={{ fontSize: 12, color: "#e2e8f0" }}>Premium match points from X (exact 10, outcome 5, O/U 3), already counted in Pts</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: "#0A0F14", background: "#F5C518", border: "1px solid #F5C518", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Top 5</span>
-                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Gold bar, gold points and dashed line mark the top 5 who win</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#0A0F14", background: "#F5C518", border: "1px solid #F5C518", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Top {boardWinners()}</span>
+                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Gold bar, gold points and dashed line mark the top {boardWinners()} who win</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 11, fontWeight: 800, color: "#0b0f1a", background: "#fbbf24", border: "1px solid #fbbf24", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Pts</span>
@@ -4628,14 +4636,14 @@ function Top5ExplainedGraphic({ supabase }) {
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#e2e8f0", textTransform: "uppercase", textAlign: "center" }}>Pts</span>
                 </div>
                 {rows.map((r, i) => {
-                  const top5 = tieRank(rows, i) <= 5;
-                  const cut = i > 0 && !top5 && tieRank(rows, i - 1) <= 5;
+                  const top5 = tieRank(rows, i) <= boardWinners();
+                  const cut = i > 0 && !top5 && tieRank(rows, i - 1) <= boardWinners();
                   return (
                   <React.Fragment key={i}>
                   {cut && (
                     <div style={{ position: "relative", height: 18, background: "#0a0a12" }}>
                       <div style={{ position: "absolute", left: 0, right: 0, top: 9, borderTop: "2px dashed #F5C518" }} />
-                      <span style={{ position: "absolute", left: "50%", top: 0, transform: "translateX(-50%)", background: "#0a0a12", padding: "0 10px", fontSize: 10, lineHeight: "18px", fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: "#F5C518", whiteSpace: "nowrap" }}>Top 5 win</span>
+                      <span style={{ position: "absolute", left: "50%", top: 0, transform: "translateX(-50%)", background: "#0a0a12", padding: "0 10px", fontSize: 10, lineHeight: "18px", fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: "#F5C518", whiteSpace: "nowrap" }}>Top {boardWinners()} win</span>
                     </div>
                   )}
                   <div style={{
@@ -4681,8 +4689,8 @@ function Top5ExplainedGraphic({ supabase }) {
                     <span style={{ fontSize: 12, color: "#e2e8f0" }}>Premium match points from X (exact 10, outcome 5, O/U 3), already counted in Pts</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: "#0A0F14", background: "#F5C518", border: "1px solid #F5C518", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Top 5</span>
-                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Gold bar, gold points and dashed line mark the top 5 who win</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#0A0F14", background: "#F5C518", border: "1px solid #F5C518", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Top {boardWinners()}</span>
+                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Gold bar, gold points and dashed line mark the top {boardWinners()} who win</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 11, fontWeight: 800, color: "#0b0f1a", background: "#fbbf24", border: "1px solid #fbbf24", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Pts</span>
@@ -4827,7 +4835,7 @@ function CuratedMatchCard({ cardRef, groups, partNo, partTotal, startNo, count, 
           <div style={{ fontSize: 20, fontWeight: 600, color: "#8A99AA", marginTop: 4 }}>All times shown in {tzLabel}</div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 10 }}>
             <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, borderRadius: "50%", objectFit: "cover" }} />
-            <span style={{ fontSize: 20, fontWeight: 800, color: "#C9D4E0" }}>Predict free · Top 5 win every round</span>
+            <span style={{ fontSize: 20, fontWeight: 800, color: "#C9D4E0" }}>Predict free · Top {boardWinners()} win every round</span>
           </div>
         </div>
       </div>
@@ -4846,7 +4854,7 @@ function CuratedMatchesGraphic({ supabase }) {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [loaded, setLoaded] = useState(false);
-  const [source, setSource] = useState("euro"); // "weekly" | "euro" | "monday" | "both"
+  const [source, setSource] = useState("euro"); // "weekly" | "euro" | "monday" | "daily" | "both"
 
   const MAX_CARDS = 8;
   const [crests, setCrests] = useState({});
@@ -4854,7 +4862,7 @@ function CuratedMatchesGraphic({ supabase }) {
   const loadMatches = async () => {
     setLoading(true); setError(""); setLoaded(false);
     try {
-      const tables = source === "both" ? ["leaderboard_fixtures", "euro_fixtures", "monday_fixtures"] : source === "euro" ? ["euro_fixtures"] : source === "monday" ? ["monday_fixtures"] : ["leaderboard_fixtures"];
+      const tables = source === "both" ? ["leaderboard_fixtures", "euro_fixtures", "monday_fixtures", "daily_fixtures"] : source === "euro" ? ["euro_fixtures"] : source === "monday" ? ["monday_fixtures"] : source === "daily" ? ["daily_fixtures"] : ["leaderboard_fixtures"];
       let data = [], err = null;
       for (const t of tables) {
         const r = await supabase.from(t).select("home_team, away_team, kickoff, league_label");
@@ -4983,6 +4991,7 @@ function CuratedMatchesGraphic({ supabase }) {
             <option value="euro">Euro Cups board</option>
             <option value="weekly">Weekly league</option>
             <option value="monday">Monday Night board</option>
+            <option value="daily">Daily board</option>
             <option value="both">All boards</option>
           </select>
         </label>
