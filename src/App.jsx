@@ -3400,7 +3400,7 @@ if (!session && !guestMode) {
                           </div>
                         );
                       })}
-                      <div style={{ fontSize: 11, color: "#94a3b8" }}>Whoever is 1st on the last night of the month becomes Champion.</div>
+                      <div style={{ fontSize: 11, color: "#94a3b8" }}>Champion is the best average position across the whole month. Joint averages share the prize.</div>
                     </div>
                   )}
                   {keys.length === 0 && <div style={{ fontSize: 13, color: "#e2e8f0" }}>No monthly badges awarded yet. The first are awarded on 1 Nov 2026.</div>}
