@@ -51,9 +51,9 @@ const EURO_ROUND_LABEL = "🇪🇺 Euro Cups board · 30 predictions across 2 we
 const EURO_START_DATE = new Date("2026-10-12T00:00:00Z");
 // Monday Night board: a one-night board on its own table (monday_fixtures). The leader after the night
 // takes all 5K, top 10 shown. To run another Monday, change this date, clear monday_fixtures and add the new matches.
-const MONDAY_START_DATE = new Date("2026-10-18T00:00:00Z");
+const MONDAY_START_DATE = new Date("2026-11-02T00:00:00Z");
 // Daily board: a stand-alone board for days the Weekly round is not running. Own table (daily_fixtures), no prediction cap,
-// top 3 win, top 10 shown. To run another Daily round: change this date, clear daily_fixtures and add the new matches.
+// 1st takes 7K, 2nd takes 3K, top 10 shown. To run another Daily round: change this date, clear daily_fixtures and add the new matches.
 // Keep in step with BOARDS.daily.startIso in DataGraphics.jsx.
 const DAILY_START_DATE = new Date("2026-11-01T00:00:00Z");
 
@@ -3638,7 +3638,7 @@ if (!session && !guestMode) {
             Exact: 5pts · Outcome only: 3pts · O/U: +1pt
           </div>
           <div style={{ fontSize: 12, fontWeight: 800, color: "#fbbf24", marginBottom: 10 }}>
-            {contest === "monday" ? "🏆 Predict free · The leader after Monday night takes all 5K" : contest === "daily" ? "🏆 Predict free · Top 3 win every Daily round · no limit on predictions" : "🏆 Predict free · Top 5 win cash every round"}
+            {contest === "monday" ? "🏆 Predict free · The leader after Monday night takes all 5K" : contest === "daily" ? "🏆 Predict free · 1st takes 7K · 2nd takes 3K · no limit on predictions" : "🏆 Predict free · Top 5 win cash every round"}
           </div>
           {userRole === "admin" && (
             <button
@@ -3798,7 +3798,7 @@ if (!session && !guestMode) {
               );
             }
             const myRank = 1 + leaderboard.filter(r => r.points > me.points).length;
-            const topN = contest === "daily" ? 3 : 5; // Daily board pays the top 3
+            const topN = contest === "daily" ? 2 : 5; // Daily board: 1st and 2nd win
             const fifth = leaderboard.length >= topN ? [...leaderboard].sort((a, b) => b.points - a.points)[topN - 1] : null;
             const gap = fifth ? Math.max(0, fifth.points - me.points) : 0;
             if (userRole !== "admin") {
@@ -3872,7 +3872,7 @@ if (!session && !guestMode) {
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#818cf8", background: "#818cf818", border: "1px solid #818cf833", borderRadius: 5, padding: "2px 6px" }}>{row.outcomeOnly} O</span>
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#fbbf24", background: "#fbbf2418", border: "1px solid #fbbf2433", borderRadius: 5, padding: "2px 6px" }}>{row.overUnderHits} OU</span>
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8" }}>{row.total} preds</span>
-                  {row.bonus > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: "#F5C518", background: "#F5C51818", border: "1px solid #F5C51833", borderRadius: 5, padding: "2px 6px" }}>+{row.bonus} Premium</span>}
+                  {row.bonus > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: "#F5C518", background: "#F5C51818", border: "1px solid #F5C51833", borderRadius: 5, padding: "2px 6px" }}>+{row.bonus} {contest === "monday" ? "Bonus" : "Premium"}</span>}
                   {row.headStart > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: "#c4b5fd", background: "#818cf818", border: "1px solid #818cf833", borderRadius: 5, padding: "2px 6px" }}>+{row.headStart} head start</span>}
                 </div>
                 {userRole === "admin" && (
