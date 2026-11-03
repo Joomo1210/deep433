@@ -71,12 +71,22 @@ const boardFxTable = () => activeBoard().fixturesTable;
 const boardStartIso = () => new Date(activeBoard().startIso).toISOString();
 const tieRank = (rows, i) => rows.findIndex(x => x.points === rows[i].points) + 1;
 const rankColour = (n) => (n === 1 ? "#F5C518" : n === 2 ? "#cbd5e1" : n === 3 ? "#e39a5b" : "#818cf8");
+// What the extra-points column should be called on the card: "Bonus" when every extra row on the board is a
+// Bonus-match row, "Prem" when none are, "Prem+Bonus" for a mix. Set each time the board's points are fetched.
+let BONUS_COLUMN = "Prem";
+const bonusLabel = () => BONUS_COLUMN;
+const bonusWord = () => (BONUS_COLUMN === "Bonus" ? "Bonus" : BONUS_COLUMN === "Prem+Bonus" ? "Premium and Bonus" : "Premium");
 const fetchBonusById = async (supabase) => {
   const out = {};
+  let nBonus = 0, nPrem = 0;
   try {
-    const { data } = await supabase.from("bonus_points").select("user_id, points").eq("board", activeBoard().id).gte("created_at", boardStartIso()); // only this round's Premium points
-    (data || []).forEach(b => { out[b.user_id] = (out[b.user_id] || 0) + (b.points || 0); });
+    const { data } = await supabase.from("bonus_points").select("user_id, points, reason").eq("board", activeBoard().id).gte("created_at", boardStartIso()); // only this round's Premium points
+    (data || []).forEach(b => {
+      out[b.user_id] = (out[b.user_id] || 0) + (b.points || 0);
+      if (/^\s*bonus/i.test(b.reason || "")) nBonus++; else nPrem++;
+    });
   } catch (e) { /* table missing: no bonus */ }
+  BONUS_COLUMN = nBonus > 0 && nPrem === 0 ? "Bonus" : nBonus > 0 ? "Prem+Bonus" : "Prem";
   return out;
 };
 const boardWinners = () => (ACTIVE_BOARD === "daily" ? 2 : 5); // places that win on the active board
@@ -4407,7 +4417,7 @@ function LeaderboardGraphic({ supabase }) {
                 }}>🏅 {title}</span>
               </div>
               <div style={{ textAlign: "center", fontSize: 12, color: "#e2e8f0", fontWeight: 700, marginBottom: 22 }}>
-                Exact: 5pts · Outcome only: 3pts · O/U: +1pt · {ACTIVE_BOARD === "monday" ? "Bonus: from X" : "Premium: from X"}
+                Exact: 5pts · Outcome only: 3pts · O/U: +1pt · {bonusWord()}: from X
               </div>
 
               <div style={{ border: "1px solid #23232f", borderRadius: 12, overflow: "hidden" }}>
@@ -4421,7 +4431,7 @@ function LeaderboardGraphic({ supabase }) {
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#4ade80", textTransform: "uppercase", textAlign: "center" }}>E</span>
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#818cf8", textTransform: "uppercase", textAlign: "center" }}>O</span>
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#fbbf24", textTransform: "uppercase", textAlign: "center" }}>OU</span>
-                  <span style={{ fontSize: 10.5, fontWeight: 900, color: "#F5C518", textTransform: "uppercase", textAlign: "center" }}>{ACTIVE_BOARD === "monday" ? "Bonus" : "Prem"}</span>
+                  <span style={{ fontSize: 10.5, fontWeight: 900, color: "#F5C518", textTransform: "uppercase", textAlign: "center" }}>{bonusLabel()}</span>
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#e2e8f0", textTransform: "uppercase", textAlign: "center" }}>Pts</span>
                 </div>
                 {rows.map((r, i) => {
@@ -4474,8 +4484,8 @@ function LeaderboardGraphic({ supabase }) {
                     <span style={{ fontSize: 12, color: "#e2e8f0" }}>Over/Under goals correct — +1 point each, always additive</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: "#F5C518", background: "#F5C51820", border: "1px solid #F5C51844", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>{ACTIVE_BOARD === "monday" ? "Bonus" : "Prem"}</span>
-                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>{ACTIVE_BOARD === "monday" ? "Bonus match points from X (5 for the right result), already counted in Pts" : "Premium match points from X (exact 10, outcome 5, O/U 3), already counted in Pts"}</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#F5C518", background: "#F5C51820", border: "1px solid #F5C51844", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>{bonusLabel()}</span>
+                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>{BONUS_COLUMN === "Bonus" ? "Bonus match points from X (5 for the right result), already counted in Pts" : BONUS_COLUMN === "Prem+Bonus" ? "Premium points from X (exact 10, outcome 5, O/U 3) and Bonus match points (5), already counted in Pts" : "Premium match points from X (exact 10, outcome 5, O/U 3), already counted in Pts"}</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 11, fontWeight: 800, color: "#0A0F14", background: "#F5C518", border: "1px solid #F5C518", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Top {boardWinners()}</span>
@@ -4618,7 +4628,7 @@ function Top5ExplainedGraphic({ supabase }) {
                 }}>🏅 {title}</span>
               </div>
               <div style={{ textAlign: "center", fontSize: 12, color: "#e2e8f0", fontWeight: 700, marginBottom: 22 }}>
-                Exact: 5pts · Outcome only: 3pts · O/U: +1pt · {ACTIVE_BOARD === "monday" ? "Bonus: from X" : "Premium: from X"}
+                Exact: 5pts · Outcome only: 3pts · O/U: +1pt · {bonusWord()}: from X
               </div>
 
               <div style={{ border: "1px solid #23232f", borderRadius: 12, overflow: "hidden" }}>
@@ -4632,7 +4642,7 @@ function Top5ExplainedGraphic({ supabase }) {
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#4ade80", textTransform: "uppercase", textAlign: "center" }}>E</span>
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#818cf8", textTransform: "uppercase", textAlign: "center" }}>O</span>
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#fbbf24", textTransform: "uppercase", textAlign: "center" }}>OU</span>
-                  <span style={{ fontSize: 10.5, fontWeight: 900, color: "#F5C518", textTransform: "uppercase", textAlign: "center" }}>{ACTIVE_BOARD === "monday" ? "Bonus" : "Prem"}</span>
+                  <span style={{ fontSize: 10.5, fontWeight: 900, color: "#F5C518", textTransform: "uppercase", textAlign: "center" }}>{bonusLabel()}</span>
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#e2e8f0", textTransform: "uppercase", textAlign: "center" }}>Pts</span>
                 </div>
                 {rows.map((r, i) => {
@@ -4685,8 +4695,8 @@ function Top5ExplainedGraphic({ supabase }) {
                     <span style={{ fontSize: 12, color: "#e2e8f0" }}>Over/Under goals correct — +1 point each, always additive</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: "#F5C518", background: "#F5C51820", border: "1px solid #F5C51844", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>{ACTIVE_BOARD === "monday" ? "Bonus" : "Prem"}</span>
-                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>{ACTIVE_BOARD === "monday" ? "Bonus match points from X (5 for the right result), already counted in Pts" : "Premium match points from X (exact 10, outcome 5, O/U 3), already counted in Pts"}</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#F5C518", background: "#F5C51820", border: "1px solid #F5C51844", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>{bonusLabel()}</span>
+                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>{BONUS_COLUMN === "Bonus" ? "Bonus match points from X (5 for the right result), already counted in Pts" : BONUS_COLUMN === "Prem+Bonus" ? "Premium points from X (exact 10, outcome 5, O/U 3) and Bonus match points (5), already counted in Pts" : "Premium match points from X (exact 10, outcome 5, O/U 3), already counted in Pts"}</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 11, fontWeight: 800, color: "#0A0F14", background: "#F5C518", border: "1px solid #F5C518", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Top {boardWinners()}</span>
