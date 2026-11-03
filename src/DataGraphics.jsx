@@ -53,14 +53,14 @@ const BOARDS = {
     id: "monday", emoji: "🌙", name: "Monday Night", switchLabel: "Monday Night board",
     fixturesTable: "monday_fixtures",
     startIso: "2026-11-02T00:00:00Z",          // keep in step with MONDAY_START_DATE in App.jsx
-    endsText: "Leader after the night takes all 5K",
+    endsText: "Leader after the night wins",
     headStart: false,
   },
   daily: {
     id: "daily", emoji: "📅", name: "Daily", switchLabel: "Daily board",
     fixturesTable: "daily_fixtures",
     startIso: "2026-11-01T00:00:00Z",          // keep in step with DAILY_START_DATE in App.jsx
-    endsText: "1st takes 7K · 2nd takes 3K",
+    endsText: "Top 2 win the Daily round",
     headStart: false,
   },
 };
@@ -90,8 +90,6 @@ const fetchBonusById = async (supabase) => {
   return out;
 };
 const boardWinners = () => (ACTIVE_BOARD === "daily" ? 2 : ACTIVE_BOARD === "monday" ? 1 : 5); // places that win on the active board
-// The line every card uses to say who wins. Weekly and Euro: top 5. Monday Night: the leader takes it all. Daily: 1st and 2nd.
-const boardWinLine = () => (ACTIVE_BOARD === "daily" ? "1st takes 7K · 2nd takes 3K" : ACTIVE_BOARD === "monday" ? "The leader takes all 5K" : "Top 5 win every round");
 const boardWinBadge = () => (boardWinners() === 1 ? "Winner takes all" : `Top ${boardWinners()} win`);
 const boardHeadStart = (id) => (activeBoard().headStart ? (ROUND_HEAD_START[id] || 0) : 0);
 const boardRoundLabel = () => activeBoard().name;
@@ -2216,7 +2214,6 @@ function LockedInCardBody({ data, roundLabel, endsText, dayLabel, part = 1, part
       )}
 
       <div style={{ marginTop: 18, textAlign: "center" }}>
-        <div style={{ fontSize: 13, fontWeight: 800, color: "#fbbf24" }}>Free to play · {boardWinLine()}</div>
         {endsText && <div style={{ fontSize: 12, fontWeight: 600, color: "#94a3b8", marginTop: 3 }}>{endsText}</div>}
       </div>
     </div>
@@ -2403,7 +2400,6 @@ function ResultsCardBody({ stat, home, away, score, roundLabel }) {
         </div>
       </div>
 
-      <div style={{ marginTop: 16, textAlign: "center", fontSize: 13, fontWeight: 800, color: "#fbbf24" }}>Free to play · {boardWinLine()}</div>
     </div>
   );
 }
@@ -2585,7 +2581,6 @@ function RoundupCardBody({ rows, roundLabel, dayLabel, part = 1, parts = 1, grou
       <div style={{ marginTop: 12, display: "flex", justifyContent: "center", gap: 12, fontSize: 10, fontWeight: 700, color: "#94a3b8" }}>
         <span>🎯 Exact 5</span><span>✅ Right result 3</span><span>⚽ Over/Under +1</span>
       </div>
-      <div style={{ marginTop: 10, textAlign: "center", fontSize: 13, fontWeight: 800, color: "#fbbf24" }}>Free to play · {boardWinLine()}</div>
     </div>
   );
 }
@@ -4765,7 +4760,7 @@ const CMIconTrophy = ({ size = 20, color = "#8B8CF8" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0V4z" /><path d="M8 6H4v1a4 4 0 0 0 4 4M16 6h4v1a4 4 0 0 1-4 4M12 13v4M8 21h8M10 17h4" /></svg>
 );
 
-function CuratedMatchCard({ cardRef, groups, partNo, partTotal, startNo, count, title, tzLabel, eyebrow, crests, timeOf, winLine }) {
+function CuratedMatchCard({ cardRef, groups, partNo, partTotal, startNo, count, title, tzLabel, eyebrow, crests, timeOf }) {
   let matchNo = startNo;
   return (
     <div ref={cardRef} style={{
@@ -4848,7 +4843,6 @@ function CuratedMatchCard({ cardRef, groups, partNo, partTotal, startNo, count, 
           <div style={{ fontSize: 20, fontWeight: 600, color: "#8A99AA", marginTop: 4 }}>All times shown in {tzLabel}</div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 10 }}>
             <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, borderRadius: "50%", objectFit: "cover" }} />
-            <span style={{ fontSize: 20, fontWeight: 800, color: "#C9D4E0" }}>Predict free · {winLine || boardWinLine()}</span>
           </div>
         </div>
       </div>
@@ -5049,9 +5043,7 @@ function CuratedMatchesGraphic({ supabase }) {
           ? (dayKeyOf(firstK) === todayKey ? "TODAY'S" : `${new Date(firstK).toLocaleDateString("en-GB", { weekday: "long", timeZone: tz }).toUpperCase()}'S`)
           : "THIS ROUND'S";
         const scale = typeof window !== "undefined" ? Math.min(1, (window.innerWidth - 32) / 1080) : 0.4;
-        const common = { groups, partNo: ci + 1, partTotal: cards.length, startNo, count: card.length, title: (title || "Curated Matches").toUpperCase(), tzLabel, eyebrow, crests, timeOf,
-          // The win line follows the "Matches from" choice, not the board switch at the top of the page.
-          winLine: source === "daily" ? "1st takes 7K · 2nd takes 3K" : source === "monday" ? "The leader takes all 5K" : "Top 5 win every round" };
+        const common = { groups, partNo: ci + 1, partTotal: cards.length, startNo, count: card.length, title: (title || "Curated Matches").toUpperCase(), tzLabel, eyebrow, crests, timeOf };
         return (
           <div key={ci}>
             {/* Visible preview (scaled). The download uses the hidden full-size copy below. */}
