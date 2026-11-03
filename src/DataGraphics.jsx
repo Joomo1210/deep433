@@ -52,7 +52,7 @@ const BOARDS = {
   monday: {
     id: "monday", emoji: "🌙", name: "Monday Night", switchLabel: "Monday Night board",
     fixturesTable: "monday_fixtures",
-    startIso: "2026-10-18T00:00:00Z",          // keep in step with MONDAY_START_DATE in App.jsx
+    startIso: "2026-11-02T00:00:00Z",          // keep in step with MONDAY_START_DATE in App.jsx
     endsText: "Leader after the night takes all 5K",
     headStart: false,
   },
@@ -60,7 +60,7 @@ const BOARDS = {
     id: "daily", emoji: "📅", name: "Daily", switchLabel: "Daily board",
     fixturesTable: "daily_fixtures",
     startIso: "2026-11-01T00:00:00Z",          // keep in step with DAILY_START_DATE in App.jsx
-    endsText: "Top 3 win the Daily round",
+    endsText: "1st takes 7K · 2nd takes 3K",
     headStart: false,
   },
 };
@@ -79,7 +79,7 @@ const fetchBonusById = async (supabase) => {
   } catch (e) { /* table missing: no bonus */ }
   return out;
 };
-const boardWinners = () => (ACTIVE_BOARD === "daily" ? 3 : 5); // places that win on the active board
+const boardWinners = () => (ACTIVE_BOARD === "daily" ? 2 : 5); // places that win on the active board
 const boardHeadStart = (id) => (activeBoard().headStart ? (ROUND_HEAD_START[id] || 0) : 0);
 const boardRoundLabel = () => activeBoard().name;
 const boardEndsText = () => activeBoard().endsText;
@@ -4407,7 +4407,7 @@ function LeaderboardGraphic({ supabase }) {
                 }}>🏅 {title}</span>
               </div>
               <div style={{ textAlign: "center", fontSize: 12, color: "#e2e8f0", fontWeight: 700, marginBottom: 22 }}>
-                Exact: 5pts · Outcome only: 3pts · O/U: +1pt · Premium: from X
+                Exact: 5pts · Outcome only: 3pts · O/U: +1pt · {ACTIVE_BOARD === "monday" ? "Bonus: from X" : "Premium: from X"}
               </div>
 
               <div style={{ border: "1px solid #23232f", borderRadius: 12, overflow: "hidden" }}>
@@ -4421,7 +4421,7 @@ function LeaderboardGraphic({ supabase }) {
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#4ade80", textTransform: "uppercase", textAlign: "center" }}>E</span>
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#818cf8", textTransform: "uppercase", textAlign: "center" }}>O</span>
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#fbbf24", textTransform: "uppercase", textAlign: "center" }}>OU</span>
-                  <span style={{ fontSize: 10.5, fontWeight: 900, color: "#F5C518", textTransform: "uppercase", textAlign: "center" }}>Prem</span>
+                  <span style={{ fontSize: 10.5, fontWeight: 900, color: "#F5C518", textTransform: "uppercase", textAlign: "center" }}>{ACTIVE_BOARD === "monday" ? "Bonus" : "Prem"}</span>
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#e2e8f0", textTransform: "uppercase", textAlign: "center" }}>Pts</span>
                 </div>
                 {rows.map((r, i) => {
@@ -4474,8 +4474,8 @@ function LeaderboardGraphic({ supabase }) {
                     <span style={{ fontSize: 12, color: "#e2e8f0" }}>Over/Under goals correct — +1 point each, always additive</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: "#F5C518", background: "#F5C51820", border: "1px solid #F5C51844", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Prem</span>
-                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Premium match points from X (exact 10, outcome 5, O/U 3), already counted in Pts</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#F5C518", background: "#F5C51820", border: "1px solid #F5C51844", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>{ACTIVE_BOARD === "monday" ? "Bonus" : "Prem"}</span>
+                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>{ACTIVE_BOARD === "monday" ? "Bonus match points from X (5 for the right result), already counted in Pts" : "Premium match points from X (exact 10, outcome 5, O/U 3), already counted in Pts"}</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 11, fontWeight: 800, color: "#0A0F14", background: "#F5C518", border: "1px solid #F5C518", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Top {boardWinners()}</span>
@@ -4618,7 +4618,7 @@ function Top5ExplainedGraphic({ supabase }) {
                 }}>🏅 {title}</span>
               </div>
               <div style={{ textAlign: "center", fontSize: 12, color: "#e2e8f0", fontWeight: 700, marginBottom: 22 }}>
-                Exact: 5pts · Outcome only: 3pts · O/U: +1pt · Premium: from X
+                Exact: 5pts · Outcome only: 3pts · O/U: +1pt · {ACTIVE_BOARD === "monday" ? "Bonus: from X" : "Premium: from X"}
               </div>
 
               <div style={{ border: "1px solid #23232f", borderRadius: 12, overflow: "hidden" }}>
@@ -4632,7 +4632,7 @@ function Top5ExplainedGraphic({ supabase }) {
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#4ade80", textTransform: "uppercase", textAlign: "center" }}>E</span>
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#818cf8", textTransform: "uppercase", textAlign: "center" }}>O</span>
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#fbbf24", textTransform: "uppercase", textAlign: "center" }}>OU</span>
-                  <span style={{ fontSize: 10.5, fontWeight: 900, color: "#F5C518", textTransform: "uppercase", textAlign: "center" }}>Prem</span>
+                  <span style={{ fontSize: 10.5, fontWeight: 900, color: "#F5C518", textTransform: "uppercase", textAlign: "center" }}>{ACTIVE_BOARD === "monday" ? "Bonus" : "Prem"}</span>
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#e2e8f0", textTransform: "uppercase", textAlign: "center" }}>Pts</span>
                 </div>
                 {rows.map((r, i) => {
@@ -4685,8 +4685,8 @@ function Top5ExplainedGraphic({ supabase }) {
                     <span style={{ fontSize: 12, color: "#e2e8f0" }}>Over/Under goals correct — +1 point each, always additive</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: "#F5C518", background: "#F5C51820", border: "1px solid #F5C51844", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Prem</span>
-                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Premium match points from X (exact 10, outcome 5, O/U 3), already counted in Pts</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#F5C518", background: "#F5C51820", border: "1px solid #F5C51844", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>{ACTIVE_BOARD === "monday" ? "Bonus" : "Prem"}</span>
+                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>{ACTIVE_BOARD === "monday" ? "Bonus match points from X (5 for the right result), already counted in Pts" : "Premium match points from X (exact 10, outcome 5, O/U 3), already counted in Pts"}</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 11, fontWeight: 800, color: "#0A0F14", background: "#F5C518", border: "1px solid #F5C518", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Top {boardWinners()}</span>
