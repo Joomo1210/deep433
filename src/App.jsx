@@ -1163,9 +1163,14 @@ export default function FootballPredictor() {
     const userIds = Object.keys(byUser);
     // Bonus points (Premium matches, scored by hand) live in the bonus_points table, per board.
     const bonusById = {};
+    const bonusKindById = {}; // "bonus" = only Bonus-match rows, "premium" = only Premium rows, "both" = a mix
     try {
-      const { data: bonusData } = await supabase.from("bonus_points").select("user_id, points").eq("board", contest).gte("created_at", cutoff); // only this round's Premium points
-      (bonusData || []).forEach(b => { bonusById[b.user_id] = (bonusById[b.user_id] || 0) + (b.points || 0); });
+      const { data: bonusData } = await supabase.from("bonus_points").select("user_id, points, reason").eq("board", contest).gte("created_at", cutoff); // only this round's Premium points
+      (bonusData || []).forEach(b => {
+        bonusById[b.user_id] = (bonusById[b.user_id] || 0) + (b.points || 0);
+        const kind = /^\s*bonus/i.test(b.reason || "") ? "bonus" : "premium";
+        bonusKindById[b.user_id] = !bonusKindById[b.user_id] || bonusKindById[b.user_id] === kind ? kind : "both";
+      });
     } catch (e) { /* table missing: no bonus */ }
     const { data: profilesData } = await supabase
       .from("profiles")
@@ -1183,6 +1188,7 @@ export default function FootballPredictor() {
         total: byUser[id].total,
         points: byUser[id].points + (contest !== "weekly" ? 0 : (ROUND_HEAD_START[id] || 0)) + (bonusById[id] || 0),
         bonus: bonusById[id] || 0,
+        bonusKind: bonusKindById[id] || "premium",
         headStart: contest !== "weekly" ? 0 : (ROUND_HEAD_START[id] || 0),
         exact: byUser[id].exact,
         outcomeOnly: byUser[id].outcomeOnly,
@@ -3872,7 +3878,7 @@ if (!session && !guestMode) {
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#818cf8", background: "#818cf818", border: "1px solid #818cf833", borderRadius: 5, padding: "2px 6px" }}>{row.outcomeOnly} O</span>
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#fbbf24", background: "#fbbf2418", border: "1px solid #fbbf2433", borderRadius: 5, padding: "2px 6px" }}>{row.overUnderHits} OU</span>
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8" }}>{row.total} preds</span>
-                  {row.bonus > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: "#F5C518", background: "#F5C51818", border: "1px solid #F5C51833", borderRadius: 5, padding: "2px 6px" }}>+{row.bonus} {contest === "monday" ? "Bonus" : "Premium"}</span>}
+                  {row.bonus > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: "#F5C518", background: "#F5C51818", border: "1px solid #F5C51833", borderRadius: 5, padding: "2px 6px" }}>+{row.bonus} {row.bonusKind === "bonus" ? "Bonus" : row.bonusKind === "both" ? "Premium + Bonus" : "Premium"}</span>}
                   {row.headStart > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: "#c4b5fd", background: "#818cf818", border: "1px solid #818cf833", borderRadius: 5, padding: "2px 6px" }}>+{row.headStart} head start</span>}
                 </div>
                 {userRole === "admin" && (
