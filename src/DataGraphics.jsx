@@ -89,7 +89,10 @@ const fetchBonusById = async (supabase) => {
   BONUS_COLUMN = nBonus > 0 && nPrem === 0 ? "Bonus" : nBonus > 0 ? "Prem+Bonus" : "Prem";
   return out;
 };
-const boardWinners = () => (ACTIVE_BOARD === "daily" ? 2 : 5); // places that win on the active board
+const boardWinners = () => (ACTIVE_BOARD === "daily" ? 2 : ACTIVE_BOARD === "monday" ? 1 : 5); // places that win on the active board
+// The line every card uses to say who wins. Weekly and Euro: top 5. Monday Night: the leader takes it all. Daily: 1st and 2nd.
+const boardWinLine = () => (ACTIVE_BOARD === "daily" ? "1st takes 7K · 2nd takes 3K" : ACTIVE_BOARD === "monday" ? "The leader takes all 5K" : "Top 5 win every round");
+const boardWinBadge = () => (boardWinners() === 1 ? "Winner takes all" : `Top ${boardWinners()} win`);
 const boardHeadStart = (id) => (activeBoard().headStart ? (ROUND_HEAD_START[id] || 0) : 0);
 const boardRoundLabel = () => activeBoard().name;
 const boardEndsText = () => activeBoard().endsText;
@@ -2213,7 +2216,7 @@ function LockedInCardBody({ data, roundLabel, endsText, dayLabel, part = 1, part
       )}
 
       <div style={{ marginTop: 18, textAlign: "center" }}>
-        <div style={{ fontSize: 13, fontWeight: 800, color: "#fbbf24" }}>Free to play · Top {boardWinners()} win every round</div>
+        <div style={{ fontSize: 13, fontWeight: 800, color: "#fbbf24" }}>Free to play · {boardWinLine()}</div>
         {endsText && <div style={{ fontSize: 12, fontWeight: 600, color: "#94a3b8", marginTop: 3 }}>{endsText}</div>}
       </div>
     </div>
@@ -2400,7 +2403,7 @@ function ResultsCardBody({ stat, home, away, score, roundLabel }) {
         </div>
       </div>
 
-      <div style={{ marginTop: 16, textAlign: "center", fontSize: 13, fontWeight: 800, color: "#fbbf24" }}>Free to play · Top {boardWinners()} win every round</div>
+      <div style={{ marginTop: 16, textAlign: "center", fontSize: 13, fontWeight: 800, color: "#fbbf24" }}>Free to play · {boardWinLine()}</div>
     </div>
   );
 }
@@ -2582,7 +2585,7 @@ function RoundupCardBody({ rows, roundLabel, dayLabel, part = 1, parts = 1, grou
       <div style={{ marginTop: 12, display: "flex", justifyContent: "center", gap: 12, fontSize: 10, fontWeight: 700, color: "#94a3b8" }}>
         <span>🎯 Exact 5</span><span>✅ Right result 3</span><span>⚽ Over/Under +1</span>
       </div>
-      <div style={{ marginTop: 10, textAlign: "center", fontSize: 13, fontWeight: 800, color: "#fbbf24" }}>Free to play · Top {boardWinners()} win every round</div>
+      <div style={{ marginTop: 10, textAlign: "center", fontSize: 13, fontWeight: 800, color: "#fbbf24" }}>Free to play · {boardWinLine()}</div>
     </div>
   );
 }
@@ -4442,7 +4445,7 @@ function LeaderboardGraphic({ supabase }) {
                   {cut && (
                     <div style={{ position: "relative", height: 18, background: "#0a0a12" }}>
                       <div style={{ position: "absolute", left: 0, right: 0, top: 9, borderTop: "2px dashed #F5C518" }} />
-                      <span style={{ position: "absolute", left: "50%", top: 0, transform: "translateX(-50%)", background: "#0a0a12", padding: "0 10px", fontSize: 10, lineHeight: "18px", fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: "#F5C518", whiteSpace: "nowrap" }}>Top {boardWinners()} win</span>
+                      <span style={{ position: "absolute", left: "50%", top: 0, transform: "translateX(-50%)", background: "#0a0a12", padding: "0 10px", fontSize: 10, lineHeight: "18px", fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: "#F5C518", whiteSpace: "nowrap" }}>{boardWinBadge()}</span>
                     </div>
                   )}
                   <div style={{
@@ -4488,8 +4491,8 @@ function LeaderboardGraphic({ supabase }) {
                     <span style={{ fontSize: 12, color: "#e2e8f0" }}>{BONUS_COLUMN === "Bonus" ? "Bonus match points from X (5 for the right result), already counted in Pts" : BONUS_COLUMN === "Prem+Bonus" ? "Premium points from X (exact 10, outcome 5, O/U 3) and Bonus match points (5), already counted in Pts" : "Premium match points from X (exact 10, outcome 5, O/U 3), already counted in Pts"}</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: "#0A0F14", background: "#F5C518", border: "1px solid #F5C518", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Top {boardWinners()}</span>
-                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Gold bar, gold points and dashed line mark the top {boardWinners()} who win</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#0A0F14", background: "#F5C518", border: "1px solid #F5C518", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>{boardWinners() === 1 ? "Winner" : `Top ${boardWinners()}`}</span>
+                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Gold bar, gold points and dashed line mark {boardWinners() === 1 ? "the leader who wins" : `the top ${boardWinners()} who win`}</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 11, fontWeight: 800, color: "#0b0f1a", background: "#fbbf24", border: "1px solid #fbbf24", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Pts</span>
@@ -4653,7 +4656,7 @@ function Top5ExplainedGraphic({ supabase }) {
                   {cut && (
                     <div style={{ position: "relative", height: 18, background: "#0a0a12" }}>
                       <div style={{ position: "absolute", left: 0, right: 0, top: 9, borderTop: "2px dashed #F5C518" }} />
-                      <span style={{ position: "absolute", left: "50%", top: 0, transform: "translateX(-50%)", background: "#0a0a12", padding: "0 10px", fontSize: 10, lineHeight: "18px", fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: "#F5C518", whiteSpace: "nowrap" }}>Top {boardWinners()} win</span>
+                      <span style={{ position: "absolute", left: "50%", top: 0, transform: "translateX(-50%)", background: "#0a0a12", padding: "0 10px", fontSize: 10, lineHeight: "18px", fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: "#F5C518", whiteSpace: "nowrap" }}>{boardWinBadge()}</span>
                     </div>
                   )}
                   <div style={{
@@ -4699,8 +4702,8 @@ function Top5ExplainedGraphic({ supabase }) {
                     <span style={{ fontSize: 12, color: "#e2e8f0" }}>{BONUS_COLUMN === "Bonus" ? "Bonus match points from X (5 for the right result), already counted in Pts" : BONUS_COLUMN === "Prem+Bonus" ? "Premium points from X (exact 10, outcome 5, O/U 3) and Bonus match points (5), already counted in Pts" : "Premium match points from X (exact 10, outcome 5, O/U 3), already counted in Pts"}</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: "#0A0F14", background: "#F5C518", border: "1px solid #F5C518", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Top {boardWinners()}</span>
-                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Gold bar, gold points and dashed line mark the top {boardWinners()} who win</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#0A0F14", background: "#F5C518", border: "1px solid #F5C518", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>{boardWinners() === 1 ? "Winner" : `Top ${boardWinners()}`}</span>
+                    <span style={{ fontSize: 12, color: "#e2e8f0" }}>Gold bar, gold points and dashed line mark {boardWinners() === 1 ? "the leader who wins" : `the top ${boardWinners()} who win`}</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 11, fontWeight: 800, color: "#0b0f1a", background: "#fbbf24", border: "1px solid #fbbf24", borderRadius: 6, padding: "3px 8px", flexShrink: 0 }}>Pts</span>
@@ -4845,7 +4848,7 @@ function CuratedMatchCard({ cardRef, groups, partNo, partTotal, startNo, count, 
           <div style={{ fontSize: 20, fontWeight: 600, color: "#8A99AA", marginTop: 4 }}>All times shown in {tzLabel}</div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 10 }}>
             <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, borderRadius: "50%", objectFit: "cover" }} />
-            <span style={{ fontSize: 20, fontWeight: 800, color: "#C9D4E0" }}>Predict free · Top {boardWinners()} win every round</span>
+            <span style={{ fontSize: 20, fontWeight: 800, color: "#C9D4E0" }}>Predict free · {boardWinLine()}</span>
           </div>
         </div>
       </div>
