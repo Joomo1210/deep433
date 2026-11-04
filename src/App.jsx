@@ -921,9 +921,10 @@ export default function FootballPredictor() {
         getLocalDateString(new Date(created.getTime() + 86400000)),
       ];
       for (const dateStr of datesToCheck) {
-        for (const league of SCORES_TAB_LEAGUES) {
+        // One request per date for every league (it used to be 13 per date).
+        for (const league of [{ id: "all" }]) {
           try {
-            const res = await cachedFetch(`/api/live-scores?leagueId=${league.id}&date=${dateStr}`, 120000);
+            const res = await cachedFetch(`/api/live-scores?leagueId=all&date=${dateStr}`, 120000);
             if (!res.ok) continue;
             const data = await res.json();
             const match = (data.fixtures || []).find(f => {
@@ -1522,18 +1523,19 @@ const SCORES_TAB_LEAGUES = [
 useEffect(() => {
   const fetchLive = async () => {
     try {
+      // One request for the whole day, shared by every league and every viewer, instead of one per league.
       const allFixtures = [];
-      for (const league of SCORES_TAB_LEAGUES) {
-        try {
-          const res = await cachedFetch(`/api/live-scores?leagueId=${league.id}&date=${scoresDate}`, scoresDate === getLocalDateString() ? 120000 : 600000);
-          if (res.ok) {
-            const data = await res.json();
-            const tagged = (data.fixtures || []).map(f => ({ ...f, leagueLabel: league.label }));
-            allFixtures.push(...tagged);
-          }
-        } catch {}
-        await new Promise(resolve => setTimeout(resolve, 150));
-      }
+      const labelByKey = {};
+      SCORES_TAB_LEAGUES.forEach(l => { labelByKey[l.id] = l.label; });
+      try {
+        const res = await cachedFetch(`/api/live-scores?leagueId=all&date=${scoresDate}`, scoresDate === getLocalDateString() ? 120000 : 600000);
+        if (res.ok) {
+          const data = await res.json();
+          (data.fixtures || []).forEach(f => {
+            if (labelByKey[f.leagueKey]) allFixtures.push({ ...f, leagueLabel: labelByKey[f.leagueKey] });
+          });
+        }
+      } catch {}
       setLiveData(allFixtures);
       setScoresLeagueFilter("all");
     } catch {
