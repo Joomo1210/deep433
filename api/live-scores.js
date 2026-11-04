@@ -74,12 +74,17 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "leagueId and date are required" });
   }
 
-  const league = LEAGUE_MAP[leagueId];
-  if (!league) {
+  // leagueId=all: ONE provider call for the whole day, then keep only the leagues we track.
+  // The Scores tab used to make one call per league (13 per refresh), which was the main quota drain.
+  const isAll = leagueId === "all";
+  const league = isAll ? null : LEAGUE_MAP[leagueId];
+  if (!isAll && !league) {
     return res.status(400).json({ error: `Unknown leagueId: ${leagueId}` });
   }
+  const keyById = {};
+  Object.entries(LEAGUE_MAP).forEach(([k, v]) => { keyById[v.id] = k; });
 
-  const seasonToUse = season || league.season;
+  const seasonToUse = isAll ? null : (season || league.season);
   const apiKey = process.env.API_FOOTBALL_KEY;
 
   if (!apiKey) {
@@ -87,7 +92,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    const url = `https://v3.football.api-sports.io/fixtures?league=${league.id}&season=${seasonToUse}&date=${date}`;
+    const url = isAll
+      ? `https://v3.football.api-sports.io/fixtures?date=${date}`
+      : `https://v3.football.api-sports.io/fixtures?league=${league.id}&season=${seasonToUse}&date=${date}`;
     const response = await fetch(url, { headers: { "x-apisports-key": apiKey } });
 
     if (!response.ok) {
@@ -96,13 +103,23 @@ export default async function handler(req, res) {
     }
 
     const data = await response.json();
-    const rawFixtures = data.response || [];
+    // The provider answers 200 with an "errors" object when the daily quota is gone or a plan limit is hit.
+    // Treat that as a failure so it is not cached for minutes as an empty list.
+    const errCount = Array.isArray(data.errors) ? data.errors.length : Object.keys(data.errors || {}).length;
+    if (errCount > 0) {
+      res.setHeader("Cache-Control", "no-store");
+      return res.status(502).json({ error: "API-Football returned an error", detail: data.errors });
+    }
+    let rawFixtures = data.response || [];
+    if (isAll) rawFixtures = rawFixtures.filter(f => keyById[f.league?.id]);
 
     // For live matches, fetch statistics + events in parallel
+    // Capped so a night with many live games cannot burn the quota: two provider calls per live match.
+    const MAX_DETAIL = 12;
     const liveFixtures = rawFixtures.filter(f => {
       const s = f.fixture?.status?.short;
       return ["1H", "HT", "2H", "ET", "BT", "P", "INT"].includes(s);
-    });
+    }).slice(0, MAX_DETAIL);
 
     const extraData = {};
     if (liveFixtures.length > 0) {
@@ -166,6 +183,7 @@ export default async function handler(req, res) {
         elapsed: f.fixture?.status?.elapsed,
         kickoff: f.fixture?.date,
         fixtureId: id,
+        leagueKey: keyById[f.league?.id] || null,
         score: {
           home: f.goals?.home,
           away: f.goals?.away,
@@ -180,7 +198,7 @@ export default async function handler(req, res) {
     // short while a match is live, longer when nothing is in play.
     const anyLive = fixtures.some(f => f.status === "live");
     res.setHeader("Cache-Control", anyLive
-      ? "public, s-maxage=30, stale-while-revalidate=60"
+      ? "public, s-maxage=60, stale-while-revalidate=60"
       : "public, s-maxage=120, stale-while-revalidate=300");
     return res.status(200).json({ fixtures });
   } catch (err) {
