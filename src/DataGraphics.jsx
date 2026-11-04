@@ -75,6 +75,8 @@ const rankColour = (n) => (n === 1 ? "#F5C518" : n === 2 ? "#cbd5e1" : n === 3 ?
 // Bonus-match row, "Prem" when none are, "Prem+Bonus" for a mix. Set each time the board's points are fetched.
 let BONUS_COLUMN = "Prem";
 const bonusLabel = () => BONUS_COLUMN;
+// "Prem+Bonus" is wider than the other labels, so its column needs more room or it runs into Pts.
+const bonusColW = () => (BONUS_COLUMN === "Prem+Bonus" ? "78px" : "40px");
 const bonusWord = () => (BONUS_COLUMN === "Bonus" ? "Bonus" : BONUS_COLUMN === "Prem+Bonus" ? "Premium and Bonus" : "Premium");
 const fetchBonusById = async (supabase) => {
   const out = {};
@@ -4420,7 +4422,7 @@ function LeaderboardGraphic({ supabase }) {
 
               <div style={{ border: "1px solid #23232f", borderRadius: 12, overflow: "hidden" }}>
                 <div style={{
-                  display: "grid", gridTemplateColumns: "28px minmax(0,1fr) 30px 30px 30px 30px 40px 46px",
+                  display: "grid", gridTemplateColumns: `28px minmax(0,1fr) 30px 30px 30px 30px ${bonusColW()} 46px`,
                   background: "#1a1a28", padding: "10px 12px", gap: 4,
                 }}>
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase" }}>Pos</span>
@@ -4444,7 +4446,7 @@ function LeaderboardGraphic({ supabase }) {
                     </div>
                   )}
                   <div style={{
-                    display: "grid", gridTemplateColumns: "28px minmax(0,1fr) 30px 30px 30px 30px 40px 46px",
+                    display: "grid", gridTemplateColumns: `28px minmax(0,1fr) 30px 30px 30px 30px ${bonusColW()} 46px`,
                     alignItems: "center", gap: 4, padding: "12px 12px",
                     background: top5 ? "linear-gradient(rgba(245,197,24,0.06),rgba(245,197,24,0.06)), " + (i % 2 === 0 ? "#13131f" : "#0f0f18") : (i % 2 === 0 ? "#13131f" : "#0f0f18"),
                     borderTop: cut ? "none" : "1px solid #1e1e2a",
@@ -4631,7 +4633,7 @@ function Top5ExplainedGraphic({ supabase }) {
 
               <div style={{ border: "1px solid #23232f", borderRadius: 12, overflow: "hidden" }}>
                 <div style={{
-                  display: "grid", gridTemplateColumns: "28px minmax(0,1fr) 30px 30px 30px 30px 40px 46px",
+                  display: "grid", gridTemplateColumns: `28px minmax(0,1fr) 30px 30px 30px 30px ${bonusColW()} 46px`,
                   background: "#1a1a28", padding: "10px 12px", gap: 4,
                 }}>
                   <span style={{ fontSize: 10.5, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase" }}>Pos</span>
@@ -4655,7 +4657,7 @@ function Top5ExplainedGraphic({ supabase }) {
                     </div>
                   )}
                   <div style={{
-                    display: "grid", gridTemplateColumns: "28px minmax(0,1fr) 30px 30px 30px 30px 40px 46px",
+                    display: "grid", gridTemplateColumns: `28px minmax(0,1fr) 30px 30px 30px 30px ${bonusColW()} 46px`,
                     alignItems: "center", gap: 4, padding: "12px 12px",
                     background: top5 ? "linear-gradient(rgba(245,197,24,0.06),rgba(245,197,24,0.06)), " + (i % 2 === 0 ? "#13131f" : "#0f0f18") : (i % 2 === 0 ? "#13131f" : "#0f0f18"),
                     borderTop: cut ? "none" : "1px solid #1e1e2a",
@@ -4760,8 +4762,9 @@ const CMIconTrophy = ({ size = 20, color = "#8B8CF8" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0V4z" /><path d="M8 6H4v1a4 4 0 0 0 4 4M16 6h4v1a4 4 0 0 1-4 4M12 13v4M8 21h8M10 17h4" /></svg>
 );
 
-function CuratedMatchCard({ cardRef, groups, partNo, partTotal, startNo, count, title, tzLabel, eyebrow, crests, timeOf, winNote }) {
+function CuratedMatchCard({ cardRef, groups, partNo, partTotal, startNo, count, title, tzLabel, eyebrow, crests, timeOf, winNote, bonus }) {
   let matchNo = startNo;
+  const BONUS_H = 104;
   return (
     <div ref={cardRef} style={{
       width: 1080, height: 1350, boxSizing: "border-box", position: "relative", overflow: "hidden",
@@ -4790,7 +4793,7 @@ function CuratedMatchCard({ cardRef, groups, partNo, partTotal, startNo, count, 
         </div>
 
         {/* ROWS (904) */}
-        <div style={{ height: 904 + 34, flexShrink: 0, overflow: "hidden", paddingTop: 34 }}>
+        <div style={{ height: 904 + 34 - (bonus ? BONUS_H : 0), flexShrink: 0, overflow: "hidden", paddingTop: 34 }}>
           {groups.map((g, gi) => (
             <div key={gi}>
               <div style={{ height: 56, marginBottom: 16, borderRadius: 999, border: "1.5px solid rgba(245,197,24,0.55)", background: "rgba(245,197,24,0.07)", display: "flex", alignItems: "center", justifyContent: "center", gap: 14, boxSizing: "border-box" }}>
@@ -4837,6 +4840,15 @@ function CuratedMatchCard({ cardRef, groups, partNo, partTotal, startNo, count, 
           ))}
         </div>
 
+        {bonus && (
+          <div style={{ height: BONUS_H - 14, marginTop: 14, borderRadius: 16, border: "1.5px solid rgba(168,85,247,0.7)", background: "rgba(168,85,247,0.12)", display: "flex", alignItems: "center", gap: 18, padding: "0 22px", boxSizing: "border-box" }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 30, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Bonus match: {bonus.home} <span style={{ color: "#6B7A8C", fontSize: 20 }}>vs</span> {bonus.away}</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: "#D8B4FE", marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{[bonus.when, "Comment home win, draw or away win · 5 points", bonus.closes ? `Comments close ${bonus.closes}` : ""].filter(Boolean).join(" · ")}</div>
+            </div>
+          </div>
+        )}
+
         {/* FOOTER (140) */}
         <div style={{ position: "absolute", left: 56, right: 56, bottom: 0, height: 140, borderTop: "1px solid #1F2A36", textAlign: "center", paddingTop: 16, boxSizing: "border-box" }}>
           <div style={{ fontSize: 26, fontWeight: 700, color: "#fff" }}>Only these matches count toward the leaderboard.</div>
@@ -4862,6 +4874,11 @@ function CuratedMatchesGraphic({ supabase }) {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [loaded, setLoaded] = useState(false);
+  const [bonusOn, setBonusOn] = useState(false);
+  const [bonusHome, setBonusHome] = useState("");
+  const [bonusAway, setBonusAway] = useState("");
+  const [bonusWhen, setBonusWhen] = useState("");
+  const [bonusCloses, setBonusCloses] = useState("");
   const [source, setSource] = useState("euro"); // "weekly" | "euro" | "monday" | "daily" | "both"
 
   const MAX_CARDS = 8;
@@ -4922,7 +4939,7 @@ function CuratedMatchesGraphic({ supabase }) {
     for (const r of filtered) {
       const key = r.kickoff ? dayKeyOf(r.kickoff) : "tbc";
       const cost = ROW_H + (key !== lastKey ? BAR_H : 0);
-      if (cur.length > 0 && used + cost > CARD_AVAIL) {
+      if (cur.length > 0 && used + cost > CARD_AVAIL - (cards.length === 0 && bonusOn && bonusHome && bonusAway ? 104 : 0)) {
         cards.push(cur); cur = []; used = 0; lastKey = null;
       }
       const c = ROW_H + (key !== lastKey ? BAR_H : 0);
@@ -5012,6 +5029,17 @@ function CuratedMatchesGraphic({ supabase }) {
       </div>
       <div style={{ fontSize: 11, color: "#94a3b8" }}>Leave both dates empty to include every curated match. Set them to this round's Friday–Sunday to leave out older matches still on the list.</div>
 
+      <label style={{ fontSize: 12, color: "#D8B4FE", fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+        <input type="checkbox" checked={bonusOn} onChange={e => setBonusOn(e.target.checked)} /> Add a bonus match strip (comment only, 5 points)
+      </label>
+      {bonusOn && (
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {[["Home team", bonusHome, setBonusHome], ["Away team", bonusAway, setBonusAway], ["When (e.g. Tue 3 Nov · 20:00 UK)", bonusWhen, setBonusWhen], ["Comments close (e.g. 19:55 UK, optional)", bonusCloses, setBonusCloses]].map(([ph, v, set]) => (
+            <input key={ph} value={v} onChange={e => set(e.target.value)} placeholder={ph} style={{ flex: 1, minWidth: 160, background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", padding: "8px 10px", fontSize: 12, fontFamily: "inherit" }} />
+          ))}
+        </div>
+      )}
+
       <button onClick={loadMatches} disabled={loading} style={{ background: "linear-gradient(135deg,#818cf8,#6366f1)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
         {loading ? "Loading matches..." : "Load Curated Matches"}
       </button>
@@ -5046,7 +5074,8 @@ function CuratedMatchesGraphic({ supabase }) {
         const scale = typeof window !== "undefined" ? Math.min(1, (window.innerWidth - 32) / 1080) : 0.4;
         const common = { groups, partNo: ci + 1, partTotal: cards.length, startNo, count: card.length, title: (title || "Curated Matches").toUpperCase(), tzLabel, eyebrow, crests, timeOf,
           // Only the Daily board says who wins on the card, and never an amount.
-          winNote: source === "daily" ? "First two win" : "" };
+          winNote: source === "daily" ? "First two win" : "",
+          bonus: ci === 0 && bonusOn && bonusHome && bonusAway ? { home: bonusHome, away: bonusAway, when: bonusWhen, closes: bonusCloses } : null };
         return (
           <div key={ci}>
             {/* Visible preview (scaled). The download uses the hidden full-size copy below. */}
@@ -5071,6 +5100,153 @@ function CuratedMatchesGraphic({ supabase }) {
           {downloading ? "Generating..." : `⬇ Download all ${cards.length} cards`}
         </button>
       )}
+    </div>
+  );
+}
+
+// ───────── PREMIUM MATCH CARD (standard) ─────────
+const PM_FORM_COL = { W: "#22c55e", D: "#94a3b8", L: "#ef4444" };
+const PM_EMPTY_SIDE = { pos: "", pts: "", gd: "", form: "", gf: "", ga: "", cs: "", avgFor: "", avgAgainst: "" };
+
+function PremiumMatchCard({ cardRef, d }) {
+  const h = d.home_stats, a = d.away_stats;
+  const formDots = (f) => (f || "").toUpperCase().replace(/[^WDL]/g, "").split("").slice(0, 5).map((x, i) => (
+    <span key={i} style={{ display: "inline-block", width: 26, height: 26, lineHeight: "26px", borderRadius: "50%", fontSize: 15, fontWeight: 900, color: "#fff", margin: "0 3px", background: PM_FORM_COL[x] }}>{x}</span>
+  ));
+  const rows = [
+    ["League position", h.pos, a.pos],
+    ["Points", h.pts, a.pts],
+    ["Goal difference", h.gd, a.gd],
+    ["Last 5", formDots(h.form), formDots(a.form)],
+    ["Goals for - against", `${h.gf}-${h.ga}`, `${a.gf}-${a.ga}`],
+    ["Clean sheets", h.cs, a.cs],
+    ["Avg scored / conceded", `${h.avgFor} / ${h.avgAgainst}`, `${a.avgFor} / ${a.avgAgainst}`],
+  ];
+  const notes = (d.notes || "").split("\n").map(x => x.trim()).filter(Boolean).slice(0, 4);
+  const window = d.opens && d.closes ? `${d.opens} - ${d.closes}` : (d.opens ? `from ${d.opens}` : "");
+  const Y = "#F5C518";
+  return (
+    <div ref={cardRef} style={{ width: 1080, height: 1350, boxSizing: "border-box", position: "relative", overflow: "hidden", background: "#0b1220", color: "#fff", fontFamily: "'Inter','Helvetica Neue',Arial,sans-serif" }}>
+      <div style={{ position: "absolute", top: -240, left: 160, width: 760, height: 760, borderRadius: "50%", background: "radial-gradient(circle, rgba(245,197,24,0.22), rgba(245,197,24,0) 65%)" }} />
+      <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "28px 64px 0" }}>
+        <div style={{ fontWeight: 900, fontSize: 34, letterSpacing: 2 }}>DEEP<span style={{ color: "#22c55e" }}>433</span></div>
+        <div style={{ fontSize: 20, color: "#9fb0c8", letterSpacing: 3, textTransform: "uppercase" }}>{d.board}</div>
+      </div>
+      <div style={{ marginTop: 20, background: Y, color: "#111827", textAlign: "center", padding: "18px 0 16px", position: "relative" }}>
+        <div style={{ fontSize: 22, letterSpacing: 12 }}>★ ★ ★</div>
+        <div style={{ fontSize: 60, lineHeight: 1, fontWeight: 900, letterSpacing: 4, marginTop: 4 }}>PREMIUM MATCH</div>
+        <div style={{ fontSize: 25, fontWeight: 800, marginTop: 8, letterSpacing: 1 }}>{d.date} · {d.ko} UK</div>
+      </div>
+      <div style={{ textAlign: "center", marginTop: 22, position: "relative" }}>
+        <div style={{ fontSize: 22, color: Y, letterSpacing: 4, textTransform: "uppercase", fontWeight: 800 }}>{d.league}</div>
+        <div style={{ fontSize: 62, fontWeight: 900, lineHeight: 1.04, marginTop: 6, letterSpacing: -1 }}>{d.home || "Home"}</div>
+        <div style={{ fontSize: 26, color: "#6b7f9e", fontWeight: 800, letterSpacing: 8, marginTop: 4 }}>VS</div>
+        <div style={{ fontSize: 62, fontWeight: 900, lineHeight: 1.04, marginTop: 4, letterSpacing: -1 }}>{d.away || "Away"}</div>
+      </div>
+      <div style={{ display: "flex", gap: 16, margin: "20px 64px 0", position: "relative" }}>
+        {[["10", "Exact score"], ["5", "Outcome"], ["3", "Over/Under 2.5"]].map(([n, l]) => (
+          <div key={l} style={{ flex: 1, background: "#121b2e", border: `1px solid ${Y}`, borderRadius: 18, padding: 8, textAlign: "center", fontSize: 20, color: "#cfe0f7", fontWeight: 600 }}>
+            <div style={{ fontSize: 44, lineHeight: 1.05, color: Y, fontWeight: 900 }}>{n}</div>{l}
+          </div>
+        ))}
+      </div>
+      <div style={{ textAlign: "center", marginTop: 8, fontSize: 21, color: "#9fb0c8", position: "relative" }}>Exact score + Over/Under = <b style={{ color: "#fff" }}>13 points max</b></div>
+      {d.showStats && (
+        <div style={{ margin: "16px 64px 0", background: "#121b2e", border: "1px solid #1f2d47", borderRadius: 18, overflow: "hidden", position: "relative" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 250px 1fr", background: "#1a2640", padding: "8px 16px", fontSize: 21, fontWeight: 900, textAlign: "center" }}>
+            <div>{d.home}</div><div style={{ color: Y, fontSize: 15, letterSpacing: 2, textTransform: "uppercase", alignSelf: "center" }}>{d.statsTitle}</div><div>{d.away}</div>
+          </div>
+          {rows.map(([l, hv, av]) => (
+            <div key={l} style={{ display: "grid", gridTemplateColumns: "1fr 250px 1fr", alignItems: "center", padding: "0 16px", height: 36, borderTop: "1px solid #1d2a44", textAlign: "center" }}>
+              <div style={{ fontSize: 22, fontWeight: 900 }}>{hv}</div>
+              <div style={{ fontSize: 15, color: "#9fb0c8", fontWeight: 700, letterSpacing: 0.5 }}>{l}</div>
+              <div style={{ fontSize: 22, fontWeight: 900 }}>{av}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      {notes.length > 0 && (
+        <div style={{ margin: "12px 64px 0", position: "relative" }}>
+          <div style={{ fontSize: 17, letterSpacing: 3, textTransform: "uppercase", color: Y, marginBottom: 6, fontWeight: 800 }}>Soft edges</div>
+          {notes.map((n, i) => (
+            <div key={i} style={{ fontSize: 21, lineHeight: 1.25, fontWeight: 600, color: "#e2e8f0", padding: "4px 0 4px 24px", position: "relative" }}>
+              <span style={{ position: "absolute", left: 0, top: 12, width: 10, height: 10, borderRadius: "50%", background: Y }} />{n}
+            </div>
+          ))}
+        </div>
+      )}
+      <div style={{ margin: "12px 64px 0", background: "#121b2e", border: "1px solid #1f2d47", borderRadius: 18, padding: "12px 20px", textAlign: "center", fontSize: 24, lineHeight: 1.3, fontWeight: 700, position: "relative" }}>
+        {window && <div style={{ fontSize: 30, fontWeight: 900, color: "#0A0F14", background: Y, borderRadius: 12, padding: "8px 10px", marginBottom: 12, letterSpacing: 0.5 }}>PREDICTIONS OPEN {window} UK</div>}
+        Drop your scoreline <span style={{ color: Y }}>and your reason</span> in the comments{window ? "" : " before kickoff"}
+      </div>
+      <div style={{ position: "absolute", left: 64, right: 64, bottom: 14, textAlign: "center", fontSize: 21, color: "#9fb0c8" }}>Register on <b style={{ color: "#22c55e" }}>Deep433</b> so your points count</div>
+    </div>
+  );
+}
+
+function PremiumMatchGraphic() {
+  const cardRef = useRef(null);
+  const [downloading, setDownloading] = useState(false);
+  const [f, setF] = useState(() => {
+    try { const x = JSON.parse(localStorage.getItem("d433_premium_card") || "null"); if (x) return x; } catch {}
+    return { home: "", away: "", league: "", date: "", ko: "", board: "Daily", opens: "", closes: "", showStats: true, statsTitle: "League 2026/27", notes: "", home_stats: { ...PM_EMPTY_SIDE }, away_stats: { ...PM_EMPTY_SIDE } };
+  });
+  useEffect(() => { try { localStorage.setItem("d433_premium_card", JSON.stringify(f)); } catch {} }, [f]);
+  const set = (k, v) => setF(p => ({ ...p, [k]: v }));
+  const setSide = (side, k, v) => setF(p => ({ ...p, [side]: { ...p[side], [k]: v } }));
+  const inp = { background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", padding: "7px 9px", fontSize: 12, fontFamily: "inherit", width: "100%", boxSizing: "border-box" };
+  const scale = typeof window !== "undefined" ? Math.min(1, (window.innerWidth - 32) / 1080) : 0.4;
+  const statRows = [["pos", "Position"], ["pts", "Points"], ["gd", "Goal diff"], ["form", "Form (e.g. WWDLW)"], ["gf", "Goals for"], ["ga", "Goals against"], ["cs", "Clean sheets"], ["avgFor", "Avg scored"], ["avgAgainst", "Avg conceded"]];
+  const download = async () => {
+    setDownloading(true);
+    try { await downloadCardImage(cardRef.current, `deep433-premium-${(f.home || "home").replace(/\W+/g, "-")}-v-${(f.away || "away").replace(/\W+/g, "-")}.png`, "#0b1220", false, 1); } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Standard Premium match card: 10 / 5 / 3 points, optional stats table, soft-edge notes and the predictions open and close times. No money on the card. Your entries are remembered on this device.</div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <input style={{ ...inp, flex: 1, minWidth: 140 }} placeholder="Home team" value={f.home} onChange={e => set("home", e.target.value)} />
+        <input style={{ ...inp, flex: 1, minWidth: 140 }} placeholder="Away team" value={f.away} onChange={e => set("away", e.target.value)} />
+        <input style={{ ...inp, flex: 1, minWidth: 140 }} placeholder="League (e.g. Champions League)" value={f.league} onChange={e => set("league", e.target.value)} />
+      </div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <input style={{ ...inp, flex: 1, minWidth: 140 }} placeholder="Date (e.g. Tue 3 Nov)" value={f.date} onChange={e => set("date", e.target.value)} />
+        <input style={{ ...inp, flex: 1, minWidth: 100 }} placeholder="Kick-off (e.g. 17:45)" value={f.ko} onChange={e => set("ko", e.target.value)} />
+        <select style={{ ...inp, flex: 1, minWidth: 100 }} value={f.board} onChange={e => set("board", e.target.value)}>
+          {["Daily", "Weekly", "Euro Cups", "Monday Night"].map(b => <option key={b}>{b}</option>)}
+        </select>
+      </div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <input style={{ ...inp, flex: 1, minWidth: 140 }} placeholder="Predictions open (e.g. 16:45)" value={f.opens} onChange={e => set("opens", e.target.value)} />
+        <input style={{ ...inp, flex: 1, minWidth: 140 }} placeholder="Predictions close (e.g. 17:40)" value={f.closes} onChange={e => set("closes", e.target.value)} />
+      </div>
+      <label style={{ fontSize: 12, color: "#e2e8f0", display: "flex", alignItems: "center", gap: 8 }}>
+        <input type="checkbox" checked={f.showStats} onChange={e => set("showStats", e.target.checked)} /> Show the stats table
+      </label>
+      {f.showStats && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <input style={inp} placeholder="Table title (e.g. Champions League 2026/27)" value={f.statsTitle} onChange={e => set("statsTitle", e.target.value)} />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, alignItems: "center" }}>
+            <div />
+            <div style={{ fontSize: 11, color: "#F5C518", fontWeight: 700 }}>{f.home || "Home"}</div>
+            <div style={{ fontSize: 11, color: "#F5C518", fontWeight: 700 }}>{f.away || "Away"}</div>
+            {statRows.map(([k, l]) => (
+              <React.Fragment key={k}>
+                <div style={{ fontSize: 11, color: "#94a3b8" }}>{l}</div>
+                <input style={inp} value={f.home_stats[k]} onChange={e => setSide("home_stats", k, e.target.value)} />
+                <input style={inp} value={f.away_stats[k]} onChange={e => setSide("away_stats", k, e.target.value)} />
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+      )}
+      <textarea style={{ ...inp, minHeight: 80 }} placeholder={"Soft edges, one per line (2 to 4 short facts)"} value={f.notes} onChange={e => set("notes", e.target.value)} />
+      <div style={{ width: 1080 * scale, height: 1350 * scale, margin: "0 auto", overflow: "hidden", borderRadius: 12 }}>
+        <div style={{ width: 1080, height: 1350, transform: `scale(${scale})`, transformOrigin: "top left" }}><PremiumMatchCard d={f} /></div>
+      </div>
+      <div style={{ position: "fixed", left: -20000, top: 0, pointerEvents: "none" }} aria-hidden="true"><PremiumMatchCard d={f} cardRef={cardRef} /></div>
+      <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#F5C518,#d4a017)", border: "none", borderRadius: 8, color: "#111", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 800, padding: "10px 14px" }}>{downloading ? "Generating..." : "⬇ Download Premium card"}</button>
     </div>
   );
 }
@@ -12827,6 +13003,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "match",    label: "📈 Match Stats" },
     { id: "matchday", label: "📅 Matchday list" },
     { id: "picksreport", label: "✅ Picks report card" },
+    { id: "premiumcard", label: "⭐ Premium match card" },
     { id: "player",   label: "⭐ Player Ratings" },
     { id: "top",      label: "🥇 Leaderboard" },
     { id: "team",     label: "🛡 Team Stats" },
@@ -12913,6 +13090,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "match"    && <MatchStatsGraphic />}
       {activeSection === "matchday" && <MatchdayGraphic />}
       {activeSection === "picksreport" && <PicksReportGraphic />}
+      {activeSection === "premiumcard" && <PremiumMatchGraphic />}
       {activeSection === "player"   && <PlayerRatingsGraphic />}
       {activeSection === "top"      && <TopScorersGraphic />}
       {activeSection === "team"     && <TeamStatsGraphic />}
