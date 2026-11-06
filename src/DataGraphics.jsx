@@ -5359,6 +5359,62 @@ function StatBoardCard({ cardRef, league, statKey, rows, season }) {
   );
 }
 
+const ordinal = n => { const v = n % 100; return n + (["th", "st", "nd", "rd"][(v - 20) % 10] || ["th", "st", "nd", "rd"][v] || "th"); };
+
+// Two teams head to head on one stat, for a match preview. Kick-off and bookmaker odds are optional.
+function TwoTeamStatCard({ cardRef, league, season, statKey, a, b, total, ko, odds }) {
+  const def = SB_STATS[statKey];
+  const G = "#22c55e";
+  const aWin = a.rank < b.rank, bWin = b.rank < a.rank;
+  const gap = Math.abs(a.v - b.v);
+  const hasOdds = odds && (odds.h || odds.d || odds.a);
+  const Panel = ({ t, win }) => (
+    <div style={{ flex: 1, background: win ? "rgba(34,197,94,0.14)" : "#121b2e", border: `2px solid ${win ? G : "#1f2d47"}`, borderRadius: 26, padding: "26px 16px 24px", textAlign: "center", minWidth: 0 }}>
+      <div style={{ height: 170, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        {t.logo && <img src={t.logo} alt="" crossOrigin="anonymous" style={{ maxWidth: 170, maxHeight: 170, objectFit: "contain" }} />}
+      </div>
+      <div style={{ fontSize: 40, fontWeight: 900, marginTop: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.team}</div>
+      <div style={{ fontSize: 130, lineHeight: 1, fontWeight: 900, color: win ? G : "#fff", marginTop: 8 }}>{t.v}</div>
+      <div style={{ fontSize: 24, color: "#9fb0c8", fontWeight: 600, marginTop: 4 }}>{t.sub}</div>
+      <div style={{ display: "inline-block", marginTop: 18, padding: "8px 20px", borderRadius: 999, background: win ? G : "#1f2d47", color: win ? "#04120a" : "#cfe0f7", fontSize: 26, fontWeight: 900 }}>{ordinal(t.rank)} of {total}</div>
+    </div>
+  );
+  return (
+    <div ref={cardRef} style={{ width: 1080, height: 1350, boxSizing: "border-box", position: "relative", overflow: "hidden", background: "#0b1220", color: "#fff", fontFamily: "'Inter','Helvetica Neue',Arial,sans-serif" }}>
+      <div style={{ position: "absolute", top: -260, left: 140, width: 800, height: 800, borderRadius: "50%", background: "radial-gradient(circle, rgba(34,197,94,0.20), rgba(34,197,94,0) 65%)" }} />
+      <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "30px 64px 0" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 64, height: 64, borderRadius: "50%", objectFit: "cover" }} />
+          <div style={{ fontWeight: 900, fontSize: 36, letterSpacing: 2 }}>DEEP<span style={{ color: G }}>433</span></div>
+        </div>
+        <div style={{ fontSize: 20, color: "#9fb0c8", letterSpacing: 3, textTransform: "uppercase" }}>Stat of the day</div>
+      </div>
+      <div style={{ position: "relative", textAlign: "center", marginTop: 30, padding: "0 64px" }}>
+        <div style={{ fontSize: 24, color: G, letterSpacing: 5, textTransform: "uppercase", fontWeight: 800 }}>{league} · {season}/{String((season + 1) % 100).padStart(2, "0")}</div>
+        <div style={{ fontSize: 34, fontWeight: 800, marginTop: 14 }}>{a.team} <span style={{ color: "#6b7f9e" }}>v</span> {b.team}{ko ? ` · ${ko}` : ""}</div>
+        <div style={{ fontSize: 70, lineHeight: 1.02, fontWeight: 900, letterSpacing: -1, marginTop: 14 }}>{def.title}</div>
+        <div style={{ fontSize: 26, color: "#9fb0c8", marginTop: 10, fontWeight: 600 }}>{def.unit}</div>
+      </div>
+      <div style={{ position: "relative", display: "flex", gap: 20, margin: "30px 64px 0" }}>
+        <Panel t={a} win={aWin || a.rank === b.rank} />
+        <Panel t={b} win={bWin || a.rank === b.rank} />
+      </div>
+      <div style={{ position: "relative", textAlign: "center", marginTop: 20, fontSize: 28, fontWeight: 800, color: "#cfe0f7" }}>{gap === 0 ? "Level on this stat" : `${gap} apart on ${def.unit}`}</div>
+      {hasOdds && (
+        <div style={{ position: "relative", display: "flex", gap: 14, margin: "26px 64px 0" }}>
+          {[[a.team, odds.h], ["Draw", odds.d], [b.team, odds.a]].map(([l, v], i) => (
+            <div key={i} style={{ flex: 1, background: "#121b2e", border: "1.5px solid #1f2d47", borderRadius: 18, padding: "12px 8px", textAlign: "center", minWidth: 0 }}>
+              <div style={{ fontSize: 34, fontWeight: 900, color: "#F5C518" }}>{v || "-"}</div>
+              <div style={{ fontSize: 20, color: "#9fb0c8", fontWeight: 700, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{l}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      <div style={{ position: "absolute", left: 64, right: 64, bottom: 20, textAlign: "center", fontSize: 21, color: "#9fb0c8" }}>{hasOdds ? "Odds: bookmaker average · " : ""}Season stats so far · only on <b style={{ color: G }}>Deep433</b></div>
+    </div>
+  );
+}
+
 function StatBoardGraphic() {
   const cardRef = useRef(null);
   const [league, setLeague] = useState("pl");
@@ -5369,6 +5425,13 @@ function StatBoardGraphic() {
   const [err, setErr] = useState("");
   const [downloading, setDownloading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [mode, setMode] = useState("table"); // "table" = whole league, "two" = two teams head to head
+  const [teamA, setTeamA] = useState("");
+  const [teamB, setTeamB] = useState("");
+  const [ko, setKo] = useState("");
+  const [oddsH, setOddsH] = useState("");
+  const [oddsD, setOddsD] = useState("");
+  const [oddsA, setOddsA] = useState("");
 
   const load = async (force) => {
     setLoading(true); setErr("");
@@ -5403,6 +5466,12 @@ function StatBoardGraphic() {
         return `📊 ${def.title.charAt(0) + def.title.slice(1).toLowerCase()} in the ${data.league}\n\n${who} ${def.verb}: ${rows[0].v} ${def.unit}${top.length > 1 ? " each" : ""} (${rows[0].sub}).\n\n${data.teams.length === rows.length ? `Every team in the ${data.league} is on the card` : `Everyone in the top ${rows.length} is on the card`} 👇`;
       })()
     : "";
+  const allRanked = data?.teams?.length ? rankTeams(data.teams, statKey, 99) : [];
+  const rowA = allRanked.find(r => r.team === teamA), rowB = allRanked.find(r => r.team === teamB);
+  const twoReady = mode === "two" && rowA && rowB && rowA.team !== rowB.team;
+  const twoNote = twoReady
+    ? `📊 ${def.title.charAt(0) + def.title.slice(1).toLowerCase()} in the ${data.league}\n\n${rowA.team}: ${rowA.v} ${def.unit} (${rowA.sub}), ${ordinal(rowA.rank)} of ${allRanked.length}\n${rowB.team}: ${rowB.v} ${def.unit} (${rowB.sub}), ${ordinal(rowB.rank)} of ${allRanked.length}\n\nDoes this decide ${ko ? "tonight's game" : "the game"}? Drop your scoreline 👇`
+    : "";
   const scale = typeof window !== "undefined" ? Math.min(1, (window.innerWidth - 32) / 1080) : 0.4;
   const inp = { background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", padding: "8px 10px", fontSize: 12, fontFamily: "inherit" };
   const download = async () => {
@@ -5426,10 +5495,43 @@ function StatBoardGraphic() {
         </select>
         <button onClick={() => { if (window.confirm("Refresh from the API? This uses about 20 requests.")) load(true); }} disabled={loading} style={{ ...inp, cursor: "pointer" }}>↻ Refresh</button>
       </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        {[["table", "Whole league"], ["two", "Two teams (match preview)"]].map(([m, l]) => (
+          <button key={m} onClick={() => setMode(m)} style={{ ...inp, cursor: "pointer", borderColor: mode === m ? "#22c55e" : "#2a2a3a", color: mode === m ? "#22c55e" : "#f0f0f0" }}>{l}</button>
+        ))}
+      </div>
+      {mode === "two" && data?.teams?.length > 0 && (
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {[["Home team", teamA, setTeamA], ["Away team", teamB, setTeamB]].map(([ph, v, set]) => (
+            <select key={ph} style={{ ...inp, flex: 1, minWidth: 140 }} value={v} onChange={e => set(e.target.value)}>
+              <option value="">{ph}</option>
+              {[...data.teams].map(t => t.team).sort().map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
+          ))}
+          <input style={{ ...inp, width: 150 }} placeholder="Kick-off (e.g. 20:00 UK)" value={ko} onChange={e => setKo(e.target.value)} />
+          <input style={{ ...inp, flex: 1, minWidth: 110 }} placeholder="Home odds (56% · 1.69)" value={oddsH} onChange={e => setOddsH(e.target.value)} />
+          <input style={{ ...inp, flex: 1, minWidth: 110 }} placeholder="Draw (24% · 4.03)" value={oddsD} onChange={e => setOddsD(e.target.value)} />
+          <input style={{ ...inp, flex: 1, minWidth: 110 }} placeholder="Away odds (20% · 4.83)" value={oddsA} onChange={e => setOddsA(e.target.value)} />
+        </div>
+      )}
+      {data?.missing?.length > 0 && <div style={{ fontSize: 12, color: "#f59e0b" }}>⚠ {data.missing.length} team(s) could not be loaded and are missing from this table: {data.missing.join(", ")}. Press Refresh to try again before posting.</div>}
+      {data && data.expected && data.teams.length < data.expected && !(data.missing?.length) && <div style={{ fontSize: 12, color: "#f59e0b" }}>⚠ Only {data.teams.length} of {data.expected} teams loaded. Press Refresh before posting.</div>}
       {loading && <div style={{ fontSize: 12, color: "#9fb0c8" }}>Loading stats…</div>}
       {err && <div style={{ fontSize: 12, color: "#f87171" }}>{err}</div>}
       {data?.generatedAt && <div style={{ fontSize: 11, color: "#9fb0c8" }}>Data from {new Date(data.generatedAt).toLocaleString("en-GB")} · {data.teams.length} teams</div>}
-      {rows.length > 0 && (
+      {mode === "two" && !twoReady && data && <div style={{ fontSize: 12, color: "#9fb0c8" }}>Pick two different teams to build the card.</div>}
+      {twoReady && (
+        <>
+          <div style={{ width: 1080 * scale, height: 1350 * scale, margin: "0 auto", overflow: "hidden", borderRadius: 12 }}>
+            <div style={{ width: 1080, height: 1350, transform: `scale(${scale})`, transformOrigin: "top left" }}><TwoTeamStatCard league={data.league} season={data.season} statKey={statKey} a={{ ...rowA, logo: data.teams.find(t => t.team === rowA.team)?.logo }} b={{ ...rowB, logo: data.teams.find(t => t.team === rowB.team)?.logo }} total={allRanked.length} ko={ko} odds={{ h: oddsH, d: oddsD, a: oddsA }} /></div>
+          </div>
+          <div style={{ position: "fixed", left: -20000, top: 0, pointerEvents: "none" }} aria-hidden="true"><TwoTeamStatCard cardRef={cardRef} league={data.league} season={data.season} statKey={statKey} a={{ ...rowA, logo: data.teams.find(t => t.team === rowA.team)?.logo }} b={{ ...rowB, logo: data.teams.find(t => t.team === rowB.team)?.logo }} total={allRanked.length} ko={ko} odds={{ h: oddsH, d: oddsD, a: oddsA }} /></div>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#22c55e,#16a34a)", border: "none", borderRadius: 8, color: "#04120a", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 800, padding: "10px 14px" }}>{downloading ? "Generating..." : "⬇ Download two-team card"}</button>
+          <textarea readOnly value={twoNote} style={{ ...inp, minHeight: 130, width: "100%", boxSizing: "border-box" }} />
+          <button onClick={() => { try { navigator.clipboard.writeText(twoNote); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch {} }} style={{ ...inp, cursor: "pointer" }}>{copied ? "Copied ✓" : "Copy note"}</button>
+        </>
+      )}
+      {mode === "table" && rows.length > 0 && (
         <>
           <div style={{ width: 1080 * scale, height: 1350 * scale, margin: "0 auto", overflow: "hidden", borderRadius: 12 }}>
             <div style={{ width: 1080, height: 1350, transform: `scale(${scale})`, transformOrigin: "top left" }}><StatBoardCard league={data.league} statKey={statKey} rows={rows} season={data.season} /></div>
