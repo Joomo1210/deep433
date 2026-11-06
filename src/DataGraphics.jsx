@@ -5376,7 +5376,7 @@ function TwoTeamStatCard({ cardRef, league, season, statKey, a, b, total, ko, od
       <div style={{ fontSize: 40, fontWeight: 900, marginTop: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.team}</div>
       <div style={{ fontSize: 130, lineHeight: 1, fontWeight: 900, color: win ? G : "#fff", marginTop: 8 }}>{t.v}</div>
       <div style={{ fontSize: 24, color: "#9fb0c8", fontWeight: 600, marginTop: 4 }}>{t.sub}</div>
-      <div style={{ display: "inline-block", marginTop: 18, padding: "8px 20px", borderRadius: 999, background: win ? G : "#1f2d47", color: win ? "#04120a" : "#cfe0f7", fontSize: 26, fontWeight: 900 }}>{ordinal(t.rank)} of {total}</div>
+      <div style={{ display: "inline-block", marginTop: 18, padding: "8px 20px", borderRadius: 999, background: win ? G : "#1f2d47", color: win ? "#04120a" : "#cfe0f7", fontSize: 26, fontWeight: 900 }}>{ordinal(t.rank)} in the league</div>
     </div>
   );
   return (
@@ -5470,7 +5470,7 @@ function StatBoardGraphic() {
   const rowA = allRanked.find(r => r.team === teamA), rowB = allRanked.find(r => r.team === teamB);
   const twoReady = mode === "two" && rowA && rowB && rowA.team !== rowB.team;
   const twoNote = twoReady
-    ? `📊 ${def.title.charAt(0) + def.title.slice(1).toLowerCase()} in the ${data.league}\n\n${rowA.team}: ${rowA.v} ${def.unit} (${rowA.sub}), ${ordinal(rowA.rank)} of ${allRanked.length}\n${rowB.team}: ${rowB.v} ${def.unit} (${rowB.sub}), ${ordinal(rowB.rank)} of ${allRanked.length}\n\nDoes this decide ${ko ? "tonight's game" : "the game"}? Drop your scoreline 👇`
+    ? `📊 ${def.title.charAt(0) + def.title.slice(1).toLowerCase()} in the ${data.league}\n\n${rowA.team}: ${rowA.v} ${def.unit} (${rowA.sub}), ${ordinal(rowA.rank)}\n${rowB.team}: ${rowB.v} ${def.unit} (${rowB.sub}), ${ordinal(rowB.rank)}\n\nDoes this decide ${ko ? "tonight's game" : "the game"}? Drop your scoreline 👇`
     : "";
   const scale = typeof window !== "undefined" ? Math.min(1, (window.innerWidth - 32) / 1080) : 0.4;
   const inp = { background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", padding: "8px 10px", fontSize: 12, fontFamily: "inherit" };
