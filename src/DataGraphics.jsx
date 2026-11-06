@@ -5264,9 +5264,16 @@ function PremiumMatchGraphic() {
 // ───────── STAT OF THE DAY (standard card, data from /api/stat-board) ─────────
 const SB_LEAGUES = [
   ["pl", "Premier League"], ["championship", "Championship"], ["laliga", "La Liga"], ["seriea", "Serie A"],
-  ["bundesliga", "Bundesliga"], ["ligue1", "Ligue 1"], ["scotprem", "Scottish Premiership"],
-  ["ucl", "Champions League"], ["uel", "Europa League"],
+  ["bundesliga", "Bundesliga"], ["ligue1", "Ligue 1"], ["ucl", "Champions League"], ["uel", "Europa League"],
+  ["uecl", "Conference League"], ["scotprem", "Scottish Premiership"], ["primeiraliga", "Primeira Liga (Portugal)"],
+  ["eredivisie", "Eredivisie (Netherlands)"], ["belgianpro", "Belgian Pro League"], ["superlig", "Süper Lig (Turkey)"],
+  ["superleaguegr", "Super League Greece"], ["austrianbl", "Austrian Bundesliga"], ["swisssl", "Swiss Super League"],
+  ["danishsl", "Danish Superliga"], ["eliteserien", "Eliteserien (Norway)"], ["czechfl", "Czech First League"],
+  ["croatiahnl", "Croatian HNL"], ["serbiasl", "Serbian SuperLiga"], ["ukraine", "Ukrainian Premier League"],
+  ["ligue2", "Ligue 2"], ["bundesliga2", "2. Bundesliga"], ["serieb", "Serie B"], ["segunda", "Segunda División"], ["npfl", "NPFL (Nigeria)"],
 ];
+// "2026/27" for a season that spans two years, plain "2026" for a calendar-year league.
+const seasonText = (season, calendar) => (calendar ? String(season) : `${season}/${String((season + 1) % 100).padStart(2, "0")}`);
 const pg = (v, n) => (n ? (v / n).toFixed(1) : "0.0");
 // dir: 1 = highest first, -1 = lowest first. val() is the ranked number, sub() the small line under it.
 const SB_STATS = {
@@ -5300,7 +5307,7 @@ function rankTeams(teams, key, n) {
   });
 }
 
-function StatBoardCard({ cardRef, league, statKey, rows, season }) {
+function StatBoardCard({ cardRef, league, statKey, rows, season, calendar }) {
   const def = SB_STATS[statKey];
   const G = "#22c55e";
   const max = Math.max(1, ...rows.map(r => r.v));
@@ -5326,7 +5333,7 @@ function StatBoardCard({ cardRef, league, statKey, rows, season }) {
         <div style={{ fontSize: 20, color: "#9fb0c8", letterSpacing: 3, textTransform: "uppercase" }}>Stat of the day</div>
       </div>
       <div style={{ position: "relative", textAlign: "center", marginTop: 34, padding: "0 64px" }}>
-        <div style={{ fontSize: 24, color: G, letterSpacing: 5, textTransform: "uppercase", fontWeight: 800 }}>{league} · {season}/{String((season + 1) % 100).padStart(2, "0")}</div>
+        <div style={{ fontSize: 24, color: G, letterSpacing: 5, textTransform: "uppercase", fontWeight: 800 }}>{league} · {seasonText(season, calendar)}</div>
         <div style={{ fontSize: 76, lineHeight: 1.02, fontWeight: 900, letterSpacing: -1, marginTop: 10 }}>{def.title}</div>
         <div style={{ fontSize: 26, color: "#9fb0c8", marginTop: 12, fontWeight: 600 }}>{def.unit}</div>
       </div>
@@ -5363,7 +5370,7 @@ const ordinal = n => { const v = n % 100; return n + (["th", "st", "nd", "rd"][(
 
 // Two teams head to head on one stat, for a match preview. Kick-off and bookmaker odds are optional.
 // Compact 1080 x 1080 card. Kept to plain colours, borders and shadows so html2canvas draws it faithfully.
-function TwoTeamStatCard({ cardRef, league, season, statKey, a, b, total, ko, odds }) {
+function TwoTeamStatCard({ cardRef, league, season, calendar, statKey, a, b, total, ko, odds }) {
   const def = SB_STATS[statKey];
   const G = "#22c55e", GOLD = "#E8C766", MUTED = "#8fa3c0";
   const level = a.rank === b.rank;
@@ -5395,7 +5402,7 @@ function TwoTeamStatCard({ cardRef, league, season, statKey, a, b, total, ko, od
       </div>
 
       <div style={{ position: "relative", textAlign: "center", marginTop: 26, padding: "0 64px" }}>
-        <div style={{ fontSize: 20, color: GOLD, letterSpacing: 6, textTransform: "uppercase", fontWeight: 700 }}>{league} · {season}/{String((season + 1) % 100).padStart(2, "0")}</div>
+        <div style={{ fontSize: 20, color: GOLD, letterSpacing: 6, textTransform: "uppercase", fontWeight: 700 }}>{league} · {seasonText(season, calendar)}</div>
         <div style={{ fontSize: 66, lineHeight: 1, fontWeight: 900, letterSpacing: 1, marginTop: 14 }}>{def.title}</div>
         <div style={{ width: 90, height: 3, background: GOLD, margin: "14px auto 0", borderRadius: 2 }} />
         <div style={{ fontSize: 34, fontWeight: 800, marginTop: 16, color: "#f1f5f9" }}>
@@ -5582,9 +5589,9 @@ function StatBoardGraphic() {
       {twoReady && (
         <>
           <div style={{ width: 1080 * scale, height: 1080 * scale, margin: "0 auto", overflow: "hidden", borderRadius: 12 }}>
-            <div style={{ width: 1080, height: 1080, transform: `scale(${scale})`, transformOrigin: "top left" }}><TwoTeamStatCard league={data.league} season={data.season} statKey={statKey} a={{ ...rowA, logo: data.teams.find(t => t.team === rowA.team)?.logo }} b={{ ...rowB, logo: data.teams.find(t => t.team === rowB.team)?.logo }} total={allRanked.length} ko={ko} odds={{ h: oddsH, d: oddsD, a: oddsA }} /></div>
+            <div style={{ width: 1080, height: 1080, transform: `scale(${scale})`, transformOrigin: "top left" }}><TwoTeamStatCard league={data.league} season={data.season} calendar={data.calendar} statKey={statKey} a={{ ...rowA, logo: data.teams.find(t => t.team === rowA.team)?.logo }} b={{ ...rowB, logo: data.teams.find(t => t.team === rowB.team)?.logo }} total={allRanked.length} ko={ko} odds={{ h: oddsH, d: oddsD, a: oddsA }} /></div>
           </div>
-          <div style={{ position: "fixed", left: -20000, top: 0, pointerEvents: "none" }} aria-hidden="true"><TwoTeamStatCard cardRef={cardRef} league={data.league} season={data.season} statKey={statKey} a={{ ...rowA, logo: data.teams.find(t => t.team === rowA.team)?.logo }} b={{ ...rowB, logo: data.teams.find(t => t.team === rowB.team)?.logo }} total={allRanked.length} ko={ko} odds={{ h: oddsH, d: oddsD, a: oddsA }} /></div>
+          <div style={{ position: "fixed", left: -20000, top: 0, pointerEvents: "none" }} aria-hidden="true"><TwoTeamStatCard cardRef={cardRef} league={data.league} season={data.season} calendar={data.calendar} statKey={statKey} a={{ ...rowA, logo: data.teams.find(t => t.team === rowA.team)?.logo }} b={{ ...rowB, logo: data.teams.find(t => t.team === rowB.team)?.logo }} total={allRanked.length} ko={ko} odds={{ h: oddsH, d: oddsD, a: oddsA }} /></div>
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#22c55e,#16a34a)", border: "none", borderRadius: 8, color: "#04120a", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 800, padding: "10px 14px" }}>{downloading ? "Generating..." : "⬇ Download two-team card"}</button>
           <textarea readOnly value={twoNote} style={{ ...inp, minHeight: 130, width: "100%", boxSizing: "border-box" }} />
           <button onClick={() => { try { navigator.clipboard.writeText(twoNote); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch {} }} style={{ ...inp, cursor: "pointer" }}>{copied ? "Copied ✓" : "Copy note"}</button>
@@ -5593,9 +5600,9 @@ function StatBoardGraphic() {
       {mode === "table" && rows.length > 0 && (
         <>
           <div style={{ width: 1080 * scale, height: 1350 * scale, margin: "0 auto", overflow: "hidden", borderRadius: 12 }}>
-            <div style={{ width: 1080, height: 1350, transform: `scale(${scale})`, transformOrigin: "top left" }}><StatBoardCard league={data.league} statKey={statKey} rows={rows} season={data.season} /></div>
+            <div style={{ width: 1080, height: 1350, transform: `scale(${scale})`, transformOrigin: "top left" }}><StatBoardCard league={data.league} statKey={statKey} rows={rows} season={data.season} calendar={data.calendar} /></div>
           </div>
-          <div style={{ position: "fixed", left: -20000, top: 0, pointerEvents: "none" }} aria-hidden="true"><StatBoardCard cardRef={cardRef} league={data.league} statKey={statKey} rows={rows} season={data.season} /></div>
+          <div style={{ position: "fixed", left: -20000, top: 0, pointerEvents: "none" }} aria-hidden="true"><StatBoardCard cardRef={cardRef} league={data.league} statKey={statKey} rows={rows} season={data.season} calendar={data.calendar} /></div>
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#22c55e,#16a34a)", border: "none", borderRadius: 8, color: "#04120a", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 800, padding: "10px 14px" }}>{downloading ? "Generating..." : "⬇ Download stat card"}</button>
           <textarea readOnly value={note} style={{ ...inp, minHeight: 110, width: "100%", boxSizing: "border-box" }} />
           <button onClick={() => { try { navigator.clipboard.writeText(note); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch {} }} style={{ ...inp, cursor: "pointer" }}>{copied ? "Copied ✓" : "Copy note"}</button>
