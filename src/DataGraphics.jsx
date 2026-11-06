@@ -5276,13 +5276,16 @@ const SB_ORDER = ["attack", "defence", "clean", "late", "early", "yellow", "home
 function rankTeams(teams, key, n) {
   const def = SB_STATS[key];
   const sorted = [...teams].sort((a, b) => (def.val(b) - def.val(a)) * def.dir || def.tie(a) - def.tie(b));
-  const rows = sorted.slice(0, n);
+  let end = Math.min(n, sorted.length);
+  // Everyone level with the last team shown is included too, so nobody tied is left off the card.
+  while (end < sorted.length && end < 14 && def.val(sorted[end]) === def.val(sorted[end - 1])) end++;
+  const rows = sorted.slice(0, end);
   // Equal values share a rank number.
   let rank = 0, prev = null;
   return rows.map((t, i) => {
     const v = def.val(t);
     if (v !== prev) { rank = i + 1; prev = v; }
-    return { rank, team: t.team, v, sub: def.sub(t) };
+    return { rank, team: t.team, logo: t.logo, v, sub: def.sub(t) };
   });
 }
 
@@ -5292,11 +5295,17 @@ function StatBoardCard({ cardRef, league, statKey, rows, season }) {
   const max = Math.max(1, ...rows.map(r => r.v));
   const min = Math.min(...rows.map(r => r.v));
   const lowerIsBetter = def.dir === -1;
+  // Rows shrink a little when ties add extra teams, so the card always fits.
+  const rowH = Math.min(98, Math.floor(960 / Math.max(1, rows.length)) - 10);
+  const f = rowH / 98;
   return (
     <div ref={cardRef} style={{ width: 1080, height: 1350, boxSizing: "border-box", position: "relative", overflow: "hidden", background: "#0b1220", color: "#fff", fontFamily: "'Inter','Helvetica Neue',Arial,sans-serif" }}>
       <div style={{ position: "absolute", top: -260, left: 140, width: 800, height: 800, borderRadius: "50%", background: "radial-gradient(circle, rgba(34,197,94,0.20), rgba(34,197,94,0) 65%)" }} />
       <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "30px 64px 0" }}>
-        <div style={{ fontWeight: 900, fontSize: 34, letterSpacing: 2 }}>DEEP<span style={{ color: G }}>433</span></div>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 64, height: 64, borderRadius: "50%", objectFit: "cover" }} />
+          <div style={{ fontWeight: 900, fontSize: 36, letterSpacing: 2 }}>DEEP<span style={{ color: G }}>433</span></div>
+        </div>
         <div style={{ fontSize: 20, color: "#9fb0c8", letterSpacing: 3, textTransform: "uppercase" }}>Stat of the day</div>
       </div>
       <div style={{ position: "relative", textAlign: "center", marginTop: 34, padding: "0 64px" }}>
@@ -5309,14 +5318,17 @@ function StatBoardCard({ cardRef, league, statKey, rows, season }) {
           const frac = lowerIsBetter ? (r.v === 0 ? 1 : Math.max(0.18, min / r.v)) : r.v / max;
           const top = r.rank === 1;
           return (
-            <div key={i} style={{ display: "flex", alignItems: "center", height: 98, marginBottom: 10, background: top ? "rgba(34,197,94,0.14)" : "#121b2e", border: `1.5px solid ${top ? G : "#1f2d47"}`, borderRadius: 18, padding: "0 22px", boxSizing: "border-box", overflow: "hidden", position: "relative" }}>
+            <div key={i} style={{ display: "flex", alignItems: "center", height: rowH, marginBottom: 10, background: top ? "rgba(34,197,94,0.14)" : "#121b2e", border: `1.5px solid ${top ? G : "#1f2d47"}`, borderRadius: 18, padding: "0 22px", boxSizing: "border-box", overflow: "hidden", position: "relative" }}>
               <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${Math.round(frac * 100)}%`, background: top ? "rgba(34,197,94,0.18)" : "rgba(99,102,241,0.14)" }} />
-              <div style={{ position: "relative", width: 56, fontSize: 38, fontWeight: 900, color: top ? G : "#9fb0c8" }}>{r.rank}</div>
-              <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 36, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.team}</div>
-                <div style={{ fontSize: 20, color: "#9fb0c8", fontWeight: 600, marginTop: 2 }}>{r.sub}</div>
+              <div style={{ position: "relative", width: 56, fontSize: Math.round(38 * f), fontWeight: 900, color: top ? G : "#9fb0c8" }}>{r.rank}</div>
+              <div style={{ position: "relative", width: Math.round(rowH * 0.66), height: Math.round(rowH * 0.66), marginRight: 18, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {r.logo && <img src={r.logo} alt="" crossOrigin="anonymous" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />}
               </div>
-              <div style={{ position: "relative", fontSize: 54, fontWeight: 900, color: top ? G : "#fff" }}>{r.v}</div>
+              <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: Math.round(36 * f), fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.team}</div>
+                <div style={{ fontSize: Math.max(15, Math.round(20 * f)), color: "#9fb0c8", fontWeight: 600, marginTop: 2 }}>{r.sub}</div>
+              </div>
+              <div style={{ position: "relative", fontSize: Math.round(54 * f), fontWeight: 900, color: top ? G : "#fff" }}>{r.v}</div>
             </div>
           );
         })}
@@ -5367,7 +5379,7 @@ function StatBoardGraphic() {
     ? (() => {
         const top = rows.filter(r => r.rank === 1).map(r => r.team);
         const who = top.length > 1 ? top.join(" and ") : top[0];
-        return `📊 ${def.title.charAt(0) + def.title.slice(1).toLowerCase()} in the ${data.league}\n\n${who} ${def.verb}: ${rows[0].v} ${def.unit}${top.length > 1 ? " each" : ""} (${rows[0].sub}).\n\nFull top ${rows.length} on the card 👇`;
+        return `📊 ${def.title.charAt(0) + def.title.slice(1).toLowerCase()} in the ${data.league}\n\n${who} ${def.verb}: ${rows[0].v} ${def.unit}${top.length > 1 ? " each" : ""} (${rows[0].sub}).\n\nEveryone in the top ${rows.length} is on the card 👇`;
       })()
     : "";
   const scale = typeof window !== "undefined" ? Math.min(1, (window.innerWidth - 32) / 1080) : 0.4;
