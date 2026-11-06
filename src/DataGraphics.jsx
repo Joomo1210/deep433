@@ -13385,20 +13385,8 @@ const LAB_GROUPS = [
 function LabMenu({ sections, active, onPick }) {
   const metaOf = id => LAB_META[id] || [null, "chart", "posts"];
   const [group, setGroup] = useState(() => metaOf(active)[2]);
-  const [stuck, setStuck] = useState(false);
-  const [top, setTop] = useState(0);
-  const sentinel = useRef(null);
   const headingRef = useRef(null);
 
-  useEffect(() => {
-    const hdr = document.querySelector(".hdr");
-    const t = hdr ? hdr.offsetHeight : 0;
-    setTop(t);
-    if (!sentinel.current || typeof IntersectionObserver === "undefined") return;
-    const io = new IntersectionObserver(([e]) => setStuck(!e.isIntersecting && e.boundingClientRect.top < t), { rootMargin: `-${t + 1}px 0px 0px 0px`, threshold: 0 });
-    io.observe(sentinel.current);
-    return () => io.disconnect();
-  }, []);
 
   const fullName = id => (sections.find(x => x.id === id)?.label || "").replace(/^[^A-Za-z0-9]+/u, "").trim();
   const order = Object.keys(LAB_META);
@@ -13430,11 +13418,8 @@ function LabMenu({ sections, active, onPick }) {
         .d433-grps{gap:4px}
         @media(max-width:520px){.d433-grps{gap:0;justify-content:space-between}}
       `}</style>
-      <div ref={sentinel} style={{ height: 1 }} />
-      <div style={{ position: "sticky", top, zIndex: 20, background: stuck ? "#0a0a0f" : "transparent", padding: stuck ? "8px 0" : 0, borderBottom: stuck ? "1px solid #1F2A36" : "none" }}>
-        {stuck ? (
-          <div className="d433-row">{visible.map(pill)}</div>
-        ) : (
+      <div>
+        {(
           <>
             <div className="d433-row d433-grps" style={{ marginBottom: 10 }}>
               {LAB_GROUPS.map(g => <button key={g.id} className={"d433-grp" + (group === g.id ? " on" : "")} onClick={() => setGroup(g.id)}>{g.label}</button>)}
