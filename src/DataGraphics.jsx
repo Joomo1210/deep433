@@ -13325,11 +13325,137 @@ function RoundCompareGraphic({ supabase }) {
   );
 }
 
+// ---------- Stats Lab menu: always-visible pills, grouped, no dropdown ----------
+const LAB_ICON_PATHS = {
+  chart: "M3 3v18h18M7 16V10M12 16V6M17 16v-4",
+  swords: "M14.5 17.5 3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2M14.5 6.5 18 3h3v3l-3.5 3.5M5 14l4 4M7 17l-3 3M3 19l2 2",
+  star: "M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z",
+  user: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
+  sparkles: "M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z",
+  down: "M22 17l-8.5-8.5-5 5L2 7M16 17h6v-6",
+  layers: "M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5",
+  trophy: "M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3",
+  list: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01",
+  calendar: "M3 5h18v16H3zM16 3v4M8 3v4M3 11h18",
+  target: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12zM12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4z",
+  share: "M4 12v8h16v-8M16 6l-4-4-4 4M12 2v14",
+  shield: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
+  clock: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 6v6l4 2",
+  swap: "M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3",
+  mic: "M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3zM19 10v2a7 7 0 0 1-14 0v-2M12 19v3",
+  grid: "M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z",
+};
+function LabIcon({ name, size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }} aria-hidden="true">
+      <path d={LAB_ICON_PATHS[name] || LAB_ICON_PATHS.chart} />
+    </svg>
+  );
+}
+
+// id -> [short pill label, icon, group]
+const LAB_META = {
+  match: ["Match Stats", "chart", "core"], matchh2h: ["H2H", "swords", "core"], motm: ["Man of the Match", "star", "core"],
+  spotlight: ["Spotlight", "user", "core"], brilliant: ["Best", "sparkles", "core"], worst: ["Worst", "down", "core"],
+  squaddepth: ["Squad Depth", "layers", "core"], leaguetable: ["League Table", "trophy", "core"],
+  matchday: ["Matchday list", "list", "matches"], insights: ["Insights", "chart", "matches"], pitch: ["Pitch View", "grid", "matches"],
+  teamnews: ["Team News", "list", "matches"], predictedlineup: ["Predicted XI", "list", "matches"], halftime: ["Halftime", "clock", "matches"],
+  timing: ["Goal Timing", "clock", "matches"], fixtureresults: ["Fixtures", "calendar", "matches"], watchalong: ["Listen Along", "mic", "matches"],
+  beyondscoresheet: ["Beyond Scoresheet", "target", "matches"], recap: ["Recap", "list", "matches"], bracket: ["Bracket", "trophy", "matches"],
+  h2h: ["Player H2H", "swords", "players"], player: ["Ratings", "star", "players"], playertrajectory: ["Trajectory", "chart", "players"],
+  glove: ["Golden Glove", "shield", "players"], gameweekrating: ["GW Rating", "star", "players"], valuation: ["Valuation", "target", "players"],
+  transfer: ["Transfer Fit", "swap", "players"], transferalert: ["Transfer Alerts", "swap", "players"], euroassists: ["Assists", "target", "players"],
+  teamofweek: ["Team of Week", "star", "players"], percentileradar: ["Percentile Radar", "target", "players"], positionradar: ["Position Radar", "target", "players"],
+  zoneofinfluence: ["Zone of Influence", "grid", "players"], advancedstats: ["Pass / GK / Def", "chart", "players"], awardrace: ["Award Race", "trophy", "players"],
+  quickvs: ["The Battle", "swords", "players"],
+  team: ["Team Stats", "shield", "teams"], teamcompare: ["Team Compare", "swords", "teams"], currentseasoncompare: ["Season Compare", "swords", "teams"],
+  leaguetotals: ["League Totals", "chart", "teams"], bestofeurope: ["Best of Europe", "trophy", "teams"], teambattle: ["Team Battle", "swords", "teams"],
+  backfourbattle: ["Back Four", "shield", "teams"], triobattle: ["Trio Battle", "swords", "teams"], statboard: ["Stat of the day", "chart", "teams"],
+  weeklypicks: ["Weekly Picks", "target", "predictions"], weeklyresults: ["Picks Results", "chart", "predictions"], lockedin: ["Locked In", "list", "predictions"],
+  matchresults: ["Match Results", "chart", "predictions"], resultsroundup: ["Roundup", "sparkles", "predictions"], curatedmatches: ["Curated", "list", "predictions"],
+  premiumcard: ["Premium card", "star", "predictions"], picksreport: ["Picks report", "list", "predictions"],
+  leaderboardshare: ["Leaderboard Card", "trophy", "posts"], top5explained: ["Top 5 Explained", "trophy", "posts"], roundcompare: ["Round Compare", "chart", "posts"],
+  top: ["Leaderboard", "trophy", "posts"], noticeboard: ["Notice Board", "list", "posts"], pastestats: ["Paste Stats", "share", "posts"],
+};
+const LAB_GROUPS = [
+  { id: "core", label: "Core" }, { id: "matches", label: "Matches" }, { id: "players", label: "Players" },
+  { id: "teams", label: "Teams" }, { id: "predictions", label: "Picks" }, { id: "posts", label: "Posts" }, { id: "all", label: "All" },
+];
+
+function LabMenu({ sections, active, onPick }) {
+  const metaOf = id => LAB_META[id] || [null, "chart", "posts"];
+  const [group, setGroup] = useState(() => metaOf(active)[2]);
+  const [stuck, setStuck] = useState(false);
+  const [top, setTop] = useState(0);
+  const sentinel = useRef(null);
+  const headingRef = useRef(null);
+
+  useEffect(() => {
+    const hdr = document.querySelector(".hdr");
+    const t = hdr ? hdr.offsetHeight : 0;
+    setTop(t);
+    if (!sentinel.current || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([e]) => setStuck(!e.isIntersecting && e.boundingClientRect.top < t), { rootMargin: `-${t + 1}px 0px 0px 0px`, threshold: 0 });
+    io.observe(sentinel.current);
+    return () => io.disconnect();
+  }, []);
+
+  const fullName = id => (sections.find(x => x.id === id)?.label || "").replace(/^[^A-Za-z0-9]+/u, "").trim();
+  const order = Object.keys(LAB_META);
+  const gi = id => LAB_GROUPS.findIndex(g => g.id === metaOf(id)[2]);
+  const visible = [...(group === "all" ? sections : sections.filter(x => metaOf(x.id)[2] === group))]
+    .sort((p, q) => (gi(p.id) - gi(q.id)) || (order.indexOf(p.id) - order.indexOf(q.id)));
+  const pill = (x, i) => {
+    const [short, icon] = metaOf(x.id);
+    const on = x.id === active;
+    return (
+      <button key={x.id + i} className={"d433-pill" + (on ? " on" : "")} onClick={() => { onPick(x.id); setGroup(g => g === "all" ? g : metaOf(x.id)[2]); }} aria-pressed={on}>
+        <LabIcon name={icon} />
+        <span>{short || fullName(x.id)}</span>
+      </button>
+    );
+  };
+
+  return (
+    <>
+      <style>{`
+        .d433-pill{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:999px;font-size:13px;font-weight:600;font-family:inherit;line-height:1;background:#111820;border:1px solid #1F2A36;color:#C9D1D9;cursor:pointer;white-space:nowrap;transition:border-color .15s,background .15s,box-shadow .15s;-webkit-tap-highlight-color:transparent}
+        .d433-pill:hover,.d433-pill:active{border-color:#2EE66B}
+        .d433-pill.on{background:#2EE66B;border-color:#2EE66B;color:#0A0F14;box-shadow:0 0 14px rgba(46,230,107,.35)}
+        .d433-grp{height:28px;padding:0 8px;border-radius:999px;font-size:12px;font-weight:700;font-family:inherit;background:none;border:1px solid transparent;color:#8B98A5;cursor:pointer;white-space:nowrap}
+        .d433-grp.on{color:#2EE66B;border-color:#1F2A36;background:#0d141b}
+        .d433-wrap{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-start}
+        .d433-row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+        .d433-row::-webkit-scrollbar{display:none}
+        .d433-grps{gap:4px}
+        @media(max-width:520px){.d433-grps{gap:0;justify-content:space-between}}
+      `}</style>
+      <div ref={sentinel} style={{ height: 1 }} />
+      <div style={{ position: "sticky", top, zIndex: 20, background: stuck ? "#0a0a0f" : "transparent", padding: stuck ? "8px 0" : 0, borderBottom: stuck ? "1px solid #1F2A36" : "none" }}>
+        {stuck ? (
+          <div className="d433-row">{visible.map(pill)}</div>
+        ) : (
+          <>
+            <div className="d433-row d433-grps" style={{ marginBottom: 10 }}>
+              {LAB_GROUPS.map(g => <button key={g.id} className={"d433-grp" + (group === g.id ? " on" : "")} onClick={() => setGroup(g.id)}>{g.label}</button>)}
+            </div>
+            <div className="d433-wrap">{visible.map(pill)}</div>
+          </>
+        )}
+      </div>
+      <div ref={headingRef} style={{ marginTop: 14, fontSize: 15, fontWeight: 800, color: "#e2e8f0", letterSpacing: 0.2 }}>{fullName(active)}</div>
+    </>
+  );
+}
+
 export default function DataGraphics({ history = [], supabase }) {
-  const [activeSection, setActiveSection] = useState("match");
+  const [activeSection, setActiveSectionRaw] = useState(() => {
+    try { const v = localStorage.getItem("d433_lab_section"); if (v) return v; } catch (e) {}
+    return "match";
+  });
+  const setActiveSection = id => { setActiveSectionRaw(id); try { localStorage.setItem("d433_lab_section", id); } catch (e) {} };
   const [board, setBoard] = useState("euro");
   ACTIVE_BOARD = board;
-  const [sectionMenuOpen, setSectionMenuOpen] = useState(false);
 
   const sections = [
     { id: "insights", label: "📊 Brief Insights" },
@@ -13397,21 +13523,7 @@ export default function DataGraphics({ history = [], supabase }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');`}</style>
 
-      <div style={{ position: "relative" }}>
-        <button onClick={() => setSectionMenuOpen(o => !o)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", background: "#13131f", border: "1px solid #a855f7", borderRadius: 10, color: "#a855f7", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "12px 16px" }}>
-          <span>{sections.find(s => s.id === activeSection)?.label}</span>
-          <span style={{ fontSize: 12 }}>{sectionMenuOpen ? "▲" : "▼"}</span>
-        </button>
-        {sectionMenuOpen && (
-          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 30, marginTop: 4, background: "#0a0a0f", border: "1px solid #2a2a3a", borderRadius: 10, maxHeight: 400, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4, padding: 6 }}>
-            {sections.map(s => (
-              <button key={s.id} onClick={() => { setActiveSection(s.id); setSectionMenuOpen(false); }} style={{ background: activeSection === s.id ? "#a855f722" : "none", border: "none", borderRadius: 8, color: activeSection === s.id ? "#a855f7" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "10px 12px", textAlign: "left", width: "100%" }}>
-                {s.label}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      <LabMenu sections={sections} active={activeSection} onPick={setActiveSection} />
 
       {activeSection === "insights" && <DeepInsightsGraphic history={history} />}
       {activeSection === "pitch"    && <MatchPitchViewGraphic />}
