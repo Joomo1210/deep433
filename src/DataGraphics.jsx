@@ -5450,6 +5450,45 @@ function StatBoardGraphic() {
   const [oddsH, setOddsH] = useState("");
   const [oddsD, setOddsD] = useState("");
   const [oddsA, setOddsA] = useState("");
+  const [pulling, setPulling] = useState(false);
+  const [pullMsg, setPullMsg] = useState("");
+
+  // Finds the fixture for the two chosen teams, then fills in kick-off and bookmaker-average odds.
+  // Costs 1 request for the fixture list (cached for a few minutes) and 1 for the odds.
+  const pullFixture = async () => {
+    if (!teamA || !teamB || teamA === teamB) return;
+    setPulling(true); setPullMsg("");
+    try {
+      const r = await fetch(`/api/fixtures?leagueId=${league}`);
+      const d = await r.json();
+      const list = d.fixtures || [];
+      let f = list.find(x => x.home === teamA && x.away === teamB);
+      let swapped = false;
+      if (!f) { f = list.find(x => x.home === teamB && x.away === teamA); swapped = !!f; }
+      if (!f) { setPullMsg("No fixture between these two teams in the next few weeks in this league. Enter the kick-off and odds by hand."); setPulling(false); return; }
+      if (swapped) { setTeamA(teamB); setTeamB(teamA); }
+      const dt = new Date(f.kickoff);
+      const time = dt.toLocaleTimeString("en-GB", { timeZone: "Europe/London", hour: "2-digit", minute: "2-digit" });
+      const dayKey = x => x.toLocaleDateString("en-GB", { timeZone: "Europe/London" });
+      const isToday = dayKey(dt) === dayKey(new Date());
+      setKo(isToday ? `${time} UK` : `${dt.toLocaleDateString("en-GB", { timeZone: "Europe/London", weekday: "short", day: "numeric", month: "short" })} · ${time} UK`);
+      let msg = swapped ? "Kick-off found (teams swapped so the home side is first). " : "Kick-off found. ";
+      try {
+        const o = await (await fetch(`/api/fixture-data?type=odds&fixtureId=${f.fixtureId}`)).json();
+        if (o && o.available && o.implied) {
+          const dec = o.odds || {};
+          const fmt = (pct, price) => `${pct}%${typeof price === "number" ? ` · ${price.toFixed(2)}` : ""}`;
+          setOddsH(fmt(o.implied.home, dec.home)); setOddsD(fmt(o.implied.draw, dec.draw)); setOddsA(fmt(o.implied.away, dec.away));
+          msg += "Odds found (bookmaker average).";
+        } else {
+          setOddsH(""); setOddsD(""); setOddsA("");
+          msg += "No odds from the API for this match, so the odds bar is hidden. You can type them in.";
+        }
+      } catch { msg += "Could not load odds."; }
+      setPullMsg(msg);
+    } catch (e) { setPullMsg("Could not load the fixture: " + e.message); }
+    setPulling(false);
+  };
 
   const load = async (force) => {
     setLoading(true); setErr("");
@@ -5526,12 +5565,14 @@ function StatBoardGraphic() {
               {[...data.teams].map(t => t.team).sort().map(n => <option key={n} value={n}>{n}</option>)}
             </select>
           ))}
+          <button onClick={pullFixture} disabled={pulling || !teamA || !teamB || teamA === teamB} style={{ ...inp, cursor: "pointer", fontWeight: 700, color: "#22c55e", borderColor: "#22c55e" }}>{pulling ? "Pulling…" : "⚡ Pull kick-off and odds"}</button>
           <input style={{ ...inp, width: 150 }} placeholder="Kick-off (e.g. 20:00 UK)" value={ko} onChange={e => setKo(e.target.value)} />
           <input style={{ ...inp, flex: 1, minWidth: 110 }} placeholder="Home odds (56% · 1.69)" value={oddsH} onChange={e => setOddsH(e.target.value)} />
           <input style={{ ...inp, flex: 1, minWidth: 110 }} placeholder="Draw (24% · 4.03)" value={oddsD} onChange={e => setOddsD(e.target.value)} />
           <input style={{ ...inp, flex: 1, minWidth: 110 }} placeholder="Away odds (20% · 4.83)" value={oddsA} onChange={e => setOddsA(e.target.value)} />
         </div>
       )}
+      {mode === "two" && pullMsg && <div style={{ fontSize: 12, color: "#e2e8f0" }}>{pullMsg}</div>}
       {data?.missing?.length > 0 && <div style={{ fontSize: 12, color: "#f59e0b" }}>⚠ {data.missing.length} team(s) could not be loaded and are missing from this table: {data.missing.join(", ")}. Press Refresh to try again before posting.</div>}
       {data && data.expected && data.teams.length < data.expected && !(data.missing?.length) && <div style={{ fontSize: 12, color: "#f59e0b" }}>⚠ Only {data.teams.length} of {data.expected} teams loaded. Press Refresh before posting.</div>}
       {loading && <div style={{ fontSize: 12, color: "#9fb0c8" }}>Loading stats…</div>}
