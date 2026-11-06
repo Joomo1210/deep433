@@ -293,12 +293,22 @@ function FixturePicker({ onSelect }) {
     ? fixtures.filter(f => f.home.toLowerCase().includes(search.toLowerCase()) || f.away.toLowerCase().includes(search.toLowerCase()))
     : fixtures;
 
-  const byDate = filtered.reduce((acc, f) => {
-    const label = getDateLabel(f.date);
-    if (!acc[label]) acc[label] = [];
-    acc[label].push(f);
-    return acc;
-  }, {});
+  // Today first, then upcoming days in date order, then finished days with the most
+  // recent first. (The list used to run from the start of the season, so today's
+  // matches were buried at the bottom.)
+  const todayStr = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  })();
+  const groups = {};
+  filtered.forEach(f => {
+    if (!groups[f.date]) groups[f.date] = [];
+    groups[f.date].push(f);
+  });
+  const rawDates = Object.keys(groups);
+  const upcoming = rawDates.filter(d => d >= todayStr).sort();
+  const earlier = rawDates.filter(d => d < todayStr).sort().reverse();
+  const byDate = [...upcoming, ...earlier].map(d => [getDateLabel(d), groups[d]]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -330,7 +340,7 @@ function FixturePicker({ onSelect }) {
 
       {/* Fixture list */}
       <div style={{ maxHeight: 260, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
-        {Object.entries(byDate).map(([date, dateFixtures]) => (
+        {byDate.map(([date, dateFixtures]) => (
           <div key={date}>
             <div style={{ fontSize: 13, color: date === "Today" ? "#4ade80" : date === "Yesterday" ? "#e2e8f0" : date === "Tomorrow" ? "#f59e0b" : "#444", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, padding: "6px 0 4px" }}>{date}</div>
             {dateFixtures.map((f, i) => (
