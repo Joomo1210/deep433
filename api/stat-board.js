@@ -59,54 +59,72 @@ export default async function handler(req, res) {
       form: row.form,
     })).filter(t => t.id);
 
-    // Batches of 10 so we stay well under the per-minute limit.
-    const out = [];
-    for (let i = 0; i < teams.length; i += 10) {
-      const batch = teams.slice(i, i + 10);
+    const toRow = (t, s) => {
+      const played = num(s.fixtures?.played?.total);
+      const yellow = Object.values(s.cards?.yellow || {}).reduce((a, b) => a + num(b?.total), 0);
+      const red = Object.values(s.cards?.red || {}).reduce((a, b) => a + num(b?.total), 0);
+      return {
+        team: t.name,
+        logo: t.logo,
+        rank: t.rank,
+        points: t.points,
+        form: t.form,
+        played,
+        goalsFor: num(s.goals?.for?.total?.total),
+        goalsAgainst: num(s.goals?.against?.total?.total),
+        cleanSheets: num(s.clean_sheet?.total),
+        failedToScore: num(s.failed_to_score?.total),
+        lateGoalsFor: sumBuckets(s.goals?.for?.minute, ["76-90", "91-105", "106-120"]),
+        earlyGoalsAgainst: num(s.goals?.against?.minute?.["0-15"]?.total),
+        yellow,
+        red,
+        homePoints: num(s.fixtures?.wins?.home) * 3 + num(s.fixtures?.draws?.home),
+        awayPoints: num(s.fixtures?.wins?.away) * 3 + num(s.fixtures?.draws?.away),
+        homePlayed: num(s.fixtures?.played?.home),
+        awayPlayed: num(s.fixtures?.played?.away),
+        winStreak: num(s.biggest?.streak?.wins),
+        drawStreak: num(s.biggest?.streak?.draws),
+        loseStreak: num(s.biggest?.streak?.loses),
+        penScored: num(s.penalty?.scored?.total),
+        penMissed: num(s.penalty?.missed?.total),
+      };
+    };
+
+    // Batches of 10 so we stay well under the per-minute limit. Any team whose request
+    // fails is tried once more, and anyone still missing is reported rather than dropped silently.
+    const fetchBatch = async batch => {
+      const done = [], failed = [];
       const results = await Promise.allSettled(
         batch.map(t => get(`teams/statistics?league=${league.id}&season=${league.season}&team=${t.id}`))
       );
       results.forEach((r, j) => {
-        const t = batch[j];
-        if (r.status !== "fulfilled" || !r.value || Array.isArray(r.value)) return;
-        const s = r.value;
-        const played = num(s.fixtures?.played?.total);
-        const yellow = Object.values(s.cards?.yellow || {}).reduce((a, b) => a + num(b?.total), 0);
-        const red = Object.values(s.cards?.red || {}).reduce((a, b) => a + num(b?.total), 0);
-        out.push({
-          team: t.name,
-          logo: t.logo,
-          rank: t.rank,
-          points: t.points,
-          form: t.form,
-          played,
-          goalsFor: num(s.goals?.for?.total?.total),
-          goalsAgainst: num(s.goals?.against?.total?.total),
-          cleanSheets: num(s.clean_sheet?.total),
-          failedToScore: num(s.failed_to_score?.total),
-          lateGoalsFor: sumBuckets(s.goals?.for?.minute, ["76-90", "91-105", "106-120"]),
-          earlyGoalsAgainst: num(s.goals?.against?.minute?.["0-15"]?.total),
-          yellow,
-          red,
-          homePoints: num(s.fixtures?.wins?.home) * 3 + num(s.fixtures?.draws?.home),
-          awayPoints: num(s.fixtures?.wins?.away) * 3 + num(s.fixtures?.draws?.away),
-          homePlayed: num(s.fixtures?.played?.home),
-          awayPlayed: num(s.fixtures?.played?.away),
-          winStreak: num(s.biggest?.streak?.wins),
-          drawStreak: num(s.biggest?.streak?.draws),
-          loseStreak: num(s.biggest?.streak?.loses),
-          penScored: num(s.penalty?.scored?.total),
-          penMissed: num(s.penalty?.missed?.total),
-        });
+        if (r.status === "fulfilled" && r.value && !Array.isArray(r.value)) done.push(toRow(batch[j], r.value));
+        else failed.push(batch[j]);
       });
+      return { done, failed };
+    };
+    const out = [];
+    let retry = [];
+    for (let i = 0; i < teams.length; i += 10) {
+      const { done, failed } = await fetchBatch(teams.slice(i, i + 10));
+      out.push(...done);
+      retry.push(...failed);
+    }
+    let missing = [];
+    if (retry.length) {
+      const { done, failed } = await fetchBatch(retry);
+      out.push(...done);
+      missing = failed.map(t => t.name);
     }
 
-    res.setHeader("Cache-Control", "public, s-maxage=86400, stale-while-revalidate=86400");
+    res.setHeader("Cache-Control", missing.length ? "public, s-maxage=300" : "public, s-maxage=86400, stale-while-revalidate=86400");
     return res.status(200).json({
       available: true,
       league: league.label,
       season: league.season,
       generatedAt: new Date().toISOString(),
+      expected: teams.length,
+      missing,
       teams: out,
     });
   } catch (err) {
