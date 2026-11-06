@@ -5362,55 +5362,73 @@ function StatBoardCard({ cardRef, league, statKey, rows, season }) {
 const ordinal = n => { const v = n % 100; return n + (["th", "st", "nd", "rd"][(v - 20) % 10] || ["th", "st", "nd", "rd"][v] || "th"); };
 
 // Two teams head to head on one stat, for a match preview. Kick-off and bookmaker odds are optional.
+// Compact 1080 x 1080 card. Kept to plain colours, borders and shadows so html2canvas draws it faithfully.
 function TwoTeamStatCard({ cardRef, league, season, statKey, a, b, total, ko, odds }) {
   const def = SB_STATS[statKey];
-  const G = "#22c55e";
-  const aWin = a.rank < b.rank, bWin = b.rank < a.rank;
+  const G = "#22c55e", GOLD = "#E8C766", MUTED = "#8fa3c0";
+  const level = a.rank === b.rank;
+  const aWin = level || a.rank < b.rank, bWin = level || b.rank < a.rank;
   const gap = Math.abs(a.v - b.v);
   const hasOdds = odds && (odds.h || odds.d || odds.a);
   const Panel = ({ t, win }) => (
-    <div style={{ flex: 1, background: win ? "rgba(34,197,94,0.14)" : "#121b2e", border: `2px solid ${win ? G : "#1f2d47"}`, borderRadius: 26, padding: "26px 16px 24px", textAlign: "center", minWidth: 0 }}>
-      <div style={{ height: 170, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        {t.logo && <img src={t.logo} alt="" crossOrigin="anonymous" style={{ maxWidth: 170, maxHeight: 170, objectFit: "contain" }} />}
+    <div style={{ flex: 1, minWidth: 0, textAlign: "center", padding: "26px 14px 24px", borderRadius: 28, boxSizing: "border-box", background: win ? "linear-gradient(180deg, rgba(34,197,94,0.20), rgba(34,197,94,0.06))" : "linear-gradient(180deg, rgba(148,163,184,0.10), rgba(148,163,184,0.03))", border: `1.5px solid ${win ? "rgba(34,197,94,0.75)" : "rgba(148,163,184,0.22)"}`, boxShadow: win ? "0 10px 40px rgba(34,197,94,0.18)" : "0 10px 30px rgba(0,0,0,0.25)" }}>
+      <div style={{ height: 124, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        {t.logo && <img src={t.logo} alt="" crossOrigin="anonymous" style={{ maxWidth: 124, maxHeight: 124, objectFit: "contain" }} />}
       </div>
-      <div style={{ fontSize: 40, fontWeight: 900, marginTop: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.team}</div>
-      <div style={{ fontSize: 130, lineHeight: 1, fontWeight: 900, color: win ? G : "#fff", marginTop: 8 }}>{t.v}</div>
-      <div style={{ fontSize: 24, color: "#9fb0c8", fontWeight: 600, marginTop: 4 }}>{t.sub}</div>
-      <div style={{ display: "inline-block", marginTop: 18, padding: "8px 20px", borderRadius: 999, background: win ? G : "#1f2d47", color: win ? "#04120a" : "#cfe0f7", fontSize: 26, fontWeight: 900 }}>{ordinal(t.rank)} in the league</div>
+      <div style={{ fontSize: 33, fontWeight: 800, letterSpacing: 0.5, marginTop: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.team}</div>
+      <div style={{ fontSize: 112, lineHeight: 1, fontWeight: 900, letterSpacing: -2, marginTop: 6, color: win ? G : "#f1f5f9" }}>{t.v}</div>
+      <div style={{ fontSize: 22, color: MUTED, fontWeight: 600, letterSpacing: 1, marginTop: 4 }}>{t.sub}</div>
+      <div style={{ display: "inline-block", marginTop: 16, padding: "9px 22px", borderRadius: 999, fontSize: 19, fontWeight: 900, letterSpacing: 3, textTransform: "uppercase", background: win ? G : "transparent", color: win ? "#04120a" : "#cbd5e1", border: win ? "none" : "1.5px solid rgba(148,163,184,0.4)" }}>{ordinal(t.rank)} in the league</div>
     </div>
   );
   return (
-    <div ref={cardRef} style={{ width: 1080, height: 1350, boxSizing: "border-box", position: "relative", overflow: "hidden", background: "#0b1220", color: "#fff", fontFamily: "'Inter','Helvetica Neue',Arial,sans-serif" }}>
-      <div style={{ position: "absolute", top: -260, left: 140, width: 800, height: 800, borderRadius: "50%", background: "radial-gradient(circle, rgba(34,197,94,0.20), rgba(34,197,94,0) 65%)" }} />
-      <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "30px 64px 0" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 64, height: 64, borderRadius: "50%", objectFit: "cover" }} />
-          <div style={{ fontWeight: 900, fontSize: 36, letterSpacing: 2 }}>DEEP<span style={{ color: G }}>433</span></div>
+    <div ref={cardRef} style={{ width: 1080, height: 1080, boxSizing: "border-box", position: "relative", overflow: "hidden", background: "linear-gradient(180deg, #0a1020 0%, #0b1426 55%, #08101d 100%)", color: "#fff", fontFamily: "'Inter','Helvetica Neue',Arial,sans-serif" }}>
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 5, background: "linear-gradient(90deg, #22c55e, #E8C766, #22c55e)" }} />
+      <div style={{ position: "absolute", top: -300, left: 190, width: 700, height: 700, borderRadius: "50%", background: "radial-gradient(circle, rgba(34,197,94,0.20), rgba(34,197,94,0) 65%)" }} />
+
+      <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "34px 64px 0" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(232,199,102,0.7)" }} />
+          <div style={{ fontWeight: 900, fontSize: 32, letterSpacing: 3 }}>DEEP<span style={{ color: G }}>433</span></div>
         </div>
-        <div style={{ fontSize: 20, color: "#9fb0c8", letterSpacing: 3, textTransform: "uppercase" }}>Stat of the day</div>
+        <div style={{ fontSize: 18, color: GOLD, letterSpacing: 5, textTransform: "uppercase", fontWeight: 700 }}>Stat of the day</div>
       </div>
-      <div style={{ position: "relative", textAlign: "center", marginTop: 30, padding: "0 64px" }}>
-        <div style={{ fontSize: 24, color: G, letterSpacing: 5, textTransform: "uppercase", fontWeight: 800 }}>{league} · {season}/{String((season + 1) % 100).padStart(2, "0")}</div>
-        <div style={{ fontSize: 34, fontWeight: 800, marginTop: 14 }}>{a.team} <span style={{ color: "#6b7f9e" }}>v</span> {b.team}{ko ? ` · ${ko}` : ""}</div>
-        <div style={{ fontSize: 70, lineHeight: 1.02, fontWeight: 900, letterSpacing: -1, marginTop: 14 }}>{def.title}</div>
-        <div style={{ fontSize: 26, color: "#9fb0c8", marginTop: 10, fontWeight: 600 }}>{def.unit}</div>
+
+      <div style={{ position: "relative", textAlign: "center", marginTop: 26, padding: "0 64px" }}>
+        <div style={{ fontSize: 20, color: GOLD, letterSpacing: 6, textTransform: "uppercase", fontWeight: 700 }}>{league} · {season}/{String((season + 1) % 100).padStart(2, "0")}</div>
+        <div style={{ fontSize: 66, lineHeight: 1, fontWeight: 900, letterSpacing: 1, marginTop: 14 }}>{def.title}</div>
+        <div style={{ width: 90, height: 3, background: GOLD, margin: "14px auto 0", borderRadius: 2 }} />
+        <div style={{ fontSize: 34, fontWeight: 800, marginTop: 16, color: "#f1f5f9" }}>
+          {a.team} <span style={{ color: MUTED, fontWeight: 500, padding: "0 6px" }}>v</span> {b.team}
+          {ko ? <span style={{ color: GOLD, fontWeight: 800 }}> · {ko}</span> : null}
+        </div>
+        <div style={{ fontSize: 20, color: MUTED, marginTop: 8, fontWeight: 600, letterSpacing: 3, textTransform: "uppercase" }}>{def.unit}</div>
       </div>
-      <div style={{ position: "relative", display: "flex", gap: 20, margin: "30px 64px 0" }}>
-        <Panel t={a} win={aWin || a.rank === b.rank} />
-        <Panel t={b} win={bWin || a.rank === b.rank} />
+
+      <div style={{ position: "relative", display: "flex", gap: 28, margin: "26px 64px 0" }}>
+        <Panel t={a} win={aWin} />
+        <Panel t={b} win={bWin} />
+        <div style={{ position: "absolute", left: "50%", top: "50%", marginLeft: -30, marginTop: -30, width: 60, height: 60, borderRadius: "50%", background: "#0a1020", border: `2px solid ${GOLD}`, color: GOLD, fontSize: 20, fontWeight: 900, letterSpacing: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>VS</div>
       </div>
-      <div style={{ position: "relative", textAlign: "center", marginTop: 20, fontSize: 28, fontWeight: 800, color: "#cfe0f7" }}>{gap === 0 ? "Level on this stat" : `${gap} apart on ${def.unit}`}</div>
+
+      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 18, margin: "22px 64px 0" }}>
+        <div style={{ flex: 1, height: 1, background: "rgba(232,199,102,0.35)" }} />
+        <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: 3, textTransform: "uppercase", color: "#e2e8f0" }}>{gap === 0 ? "Level on this stat" : `${gap} apart · ${def.unit}`}</div>
+        <div style={{ flex: 1, height: 1, background: "rgba(232,199,102,0.35)" }} />
+      </div>
+
       {hasOdds && (
-        <div style={{ position: "relative", display: "flex", gap: 14, margin: "26px 64px 0" }}>
+        <div style={{ position: "relative", display: "flex", margin: "20px 64px 0", borderRadius: 20, border: "1.5px solid rgba(232,199,102,0.45)", background: "rgba(232,199,102,0.06)", overflow: "hidden" }}>
           {[[a.team, odds.h], ["Draw", odds.d], [b.team, odds.a]].map(([l, v], i) => (
-            <div key={i} style={{ flex: 1, background: "#121b2e", border: "1.5px solid #1f2d47", borderRadius: 18, padding: "12px 8px", textAlign: "center", minWidth: 0 }}>
-              <div style={{ fontSize: 34, fontWeight: 900, color: "#F5C518" }}>{v || "-"}</div>
-              <div style={{ fontSize: 20, color: "#9fb0c8", fontWeight: 700, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{l}</div>
+            <div key={i} style={{ flex: 1, minWidth: 0, textAlign: "center", padding: "14px 6px 12px", borderLeft: i ? "1px solid rgba(232,199,102,0.3)" : "none" }}>
+              <div style={{ fontSize: 17, color: MUTED, fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{l}</div>
+              <div style={{ fontSize: 33, fontWeight: 900, color: GOLD, marginTop: 4 }}>{v || "-"}</div>
             </div>
           ))}
         </div>
       )}
-      <div style={{ position: "absolute", left: 64, right: 64, bottom: 20, textAlign: "center", fontSize: 21, color: "#9fb0c8" }}>{hasOdds ? "Odds: bookmaker average · " : ""}Season stats so far · only on <b style={{ color: G }}>Deep433</b></div>
+
+      <div style={{ position: "absolute", left: 64, right: 64, bottom: 22, textAlign: "center", fontSize: 18, color: MUTED, letterSpacing: 1.5 }}>{hasOdds ? "Bookmaker average odds · " : ""}Season stats so far · only on <b style={{ color: G }}>Deep433</b></div>
     </div>
   );
 }
@@ -5522,8 +5540,8 @@ function StatBoardGraphic() {
       {mode === "two" && !twoReady && data && <div style={{ fontSize: 12, color: "#9fb0c8" }}>Pick two different teams to build the card.</div>}
       {twoReady && (
         <>
-          <div style={{ width: 1080 * scale, height: 1350 * scale, margin: "0 auto", overflow: "hidden", borderRadius: 12 }}>
-            <div style={{ width: 1080, height: 1350, transform: `scale(${scale})`, transformOrigin: "top left" }}><TwoTeamStatCard league={data.league} season={data.season} statKey={statKey} a={{ ...rowA, logo: data.teams.find(t => t.team === rowA.team)?.logo }} b={{ ...rowB, logo: data.teams.find(t => t.team === rowB.team)?.logo }} total={allRanked.length} ko={ko} odds={{ h: oddsH, d: oddsD, a: oddsA }} /></div>
+          <div style={{ width: 1080 * scale, height: 1080 * scale, margin: "0 auto", overflow: "hidden", borderRadius: 12 }}>
+            <div style={{ width: 1080, height: 1080, transform: `scale(${scale})`, transformOrigin: "top left" }}><TwoTeamStatCard league={data.league} season={data.season} statKey={statKey} a={{ ...rowA, logo: data.teams.find(t => t.team === rowA.team)?.logo }} b={{ ...rowB, logo: data.teams.find(t => t.team === rowB.team)?.logo }} total={allRanked.length} ko={ko} odds={{ h: oddsH, d: oddsD, a: oddsA }} /></div>
           </div>
           <div style={{ position: "fixed", left: -20000, top: 0, pointerEvents: "none" }} aria-hidden="true"><TwoTeamStatCard cardRef={cardRef} league={data.league} season={data.season} statKey={statKey} a={{ ...rowA, logo: data.teams.find(t => t.team === rowA.team)?.logo }} b={{ ...rowB, logo: data.teams.find(t => t.team === rowB.team)?.logo }} total={allRanked.length} ko={ko} odds={{ h: oddsH, d: oddsD, a: oddsA }} /></div>
           <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#22c55e,#16a34a)", border: "none", borderRadius: 8, color: "#04120a", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 800, padding: "10px 14px" }}>{downloading ? "Generating..." : "⬇ Download two-team card"}</button>
