@@ -5278,7 +5278,8 @@ function rankTeams(teams, key, n) {
   const sorted = [...teams].sort((a, b) => (def.val(b) - def.val(a)) * def.dir || def.tie(a) - def.tie(b));
   let end = Math.min(n, sorted.length);
   // Everyone level with the last team shown is included too, so nobody tied is left off the card.
-  while (end < sorted.length && end < 14 && def.val(sorted[end]) === def.val(sorted[end - 1])) end++;
+  const tieCap = n >= 99 ? sorted.length : 14;
+  while (end < sorted.length && end < tieCap && def.val(sorted[end]) === def.val(sorted[end - 1])) end++;
   const rows = sorted.slice(0, end);
   // Equal values share a rank number.
   let rank = 0, prev = null;
@@ -5296,8 +5297,14 @@ function StatBoardCard({ cardRef, league, statKey, rows, season }) {
   const min = Math.min(...rows.map(r => r.v));
   const lowerIsBetter = def.dir === -1;
   // Rows shrink a little when ties add extra teams, so the card always fits.
-  const rowH = Math.min(98, Math.floor(960 / Math.max(1, rows.length)) - 10);
+  // More than 12 teams switches to two columns so a whole league fits on one card.
+  const cols = rows.length > 12 ? 2 : 1;
+  const perCol = Math.max(1, Math.ceil(rows.length / cols));
+  const rowH = Math.min(98, Math.floor(960 / perCol) - 8);
   const f = rowH / 98;
+  const showSub = rowH >= 64;
+  const wide = cols === 1;
+  const chunks = cols === 1 ? [rows] : [rows.slice(0, perCol), rows.slice(perCol)];
   return (
     <div ref={cardRef} style={{ width: 1080, height: 1350, boxSizing: "border-box", position: "relative", overflow: "hidden", background: "#0b1220", color: "#fff", fontFamily: "'Inter','Helvetica Neue',Arial,sans-serif" }}>
       <div style={{ position: "absolute", top: -260, left: 140, width: 800, height: 800, borderRadius: "50%", background: "radial-gradient(circle, rgba(34,197,94,0.20), rgba(34,197,94,0) 65%)" }} />
@@ -5313,25 +5320,29 @@ function StatBoardCard({ cardRef, league, statKey, rows, season }) {
         <div style={{ fontSize: 76, lineHeight: 1.02, fontWeight: 900, letterSpacing: -1, marginTop: 10 }}>{def.title}</div>
         <div style={{ fontSize: 26, color: "#9fb0c8", marginTop: 12, fontWeight: 600 }}>{def.unit}</div>
       </div>
-      <div style={{ position: "relative", margin: "34px 64px 0" }}>
-        {rows.map((r, i) => {
-          const frac = lowerIsBetter ? (r.v === 0 ? 1 : Math.max(0.18, min / r.v)) : r.v / max;
-          const top = r.rank === 1;
-          return (
-            <div key={i} style={{ display: "flex", alignItems: "center", height: rowH, marginBottom: 10, background: top ? "rgba(34,197,94,0.14)" : "#121b2e", border: `1.5px solid ${top ? G : "#1f2d47"}`, borderRadius: 18, padding: "0 22px", boxSizing: "border-box", overflow: "hidden", position: "relative" }}>
-              <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${Math.round(frac * 100)}%`, background: top ? "rgba(34,197,94,0.18)" : "rgba(99,102,241,0.14)" }} />
-              <div style={{ position: "relative", width: 56, fontSize: Math.round(38 * f), fontWeight: 900, color: top ? G : "#9fb0c8" }}>{r.rank}</div>
-              <div style={{ position: "relative", width: Math.round(rowH * 0.66), height: Math.round(rowH * 0.66), marginRight: 18, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                {r.logo && <img src={r.logo} alt="" crossOrigin="anonymous" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />}
-              </div>
-              <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: Math.round(36 * f), fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.team}</div>
-                <div style={{ fontSize: Math.max(15, Math.round(20 * f)), color: "#9fb0c8", fontWeight: 600, marginTop: 2 }}>{r.sub}</div>
-              </div>
-              <div style={{ position: "relative", fontSize: Math.round(54 * f), fontWeight: 900, color: top ? G : "#fff" }}>{r.v}</div>
-            </div>
-          );
-        })}
+      <div style={{ position: "relative", margin: "30px 64px 0", display: "flex", gap: 14, alignItems: "flex-start" }}>
+        {chunks.map((chunk, ci) => (
+          <div key={ci} style={{ flex: 1, minWidth: 0 }}>
+            {chunk.map((r, i) => {
+              const frac = lowerIsBetter ? (r.v === 0 ? 1 : Math.max(0.18, min / r.v)) : r.v / max;
+              const top = r.rank === 1;
+              return (
+                <div key={i} style={{ display: "flex", alignItems: "center", height: rowH, marginBottom: 8, background: top ? "rgba(34,197,94,0.14)" : "#121b2e", border: `1.5px solid ${top ? G : "#1f2d47"}`, borderRadius: wide ? 18 : 14, padding: wide ? "0 22px" : "0 12px", boxSizing: "border-box", overflow: "hidden", position: "relative" }}>
+                  <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${Math.round(frac * 100)}%`, background: top ? "rgba(34,197,94,0.18)" : "rgba(99,102,241,0.14)" }} />
+                  <div style={{ position: "relative", width: wide ? 56 : 40, fontSize: Math.round((wide ? 38 : 30) * f), fontWeight: 900, color: top ? G : "#9fb0c8", flexShrink: 0 }}>{r.rank}</div>
+                  <div style={{ position: "relative", width: Math.round(rowH * 0.66), height: Math.round(rowH * 0.66), marginRight: wide ? 18 : 10, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    {r.logo && <img src={r.logo} alt="" crossOrigin="anonymous" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />}
+                  </div>
+                  <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: Math.max(16, Math.round((wide ? 36 : 29) * f)), fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.team}</div>
+                    {showSub && <div style={{ fontSize: Math.max(14, Math.round((wide ? 20 : 16) * f)), color: "#9fb0c8", fontWeight: 600, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.sub}</div>}
+                  </div>
+                  <div style={{ position: "relative", fontSize: Math.max(20, Math.round((wide ? 54 : 40) * f)), fontWeight: 900, color: top ? G : "#fff", marginLeft: 8, flexShrink: 0 }}>{r.v}</div>
+                </div>
+              );
+            })}
+          </div>
+        ))}
       </div>
       <div style={{ position: "absolute", left: 64, right: 64, bottom: 20, textAlign: "center", fontSize: 21, color: "#9fb0c8" }}>Season stats so far · only on <b style={{ color: G }}>Deep433</b></div>
     </div>
@@ -5342,7 +5353,7 @@ function StatBoardGraphic() {
   const cardRef = useRef(null);
   const [league, setLeague] = useState("pl");
   const [statKey, setStatKey] = useState("attack");
-  const [count, setCount] = useState(8);
+  const [count, setCount] = useState(99);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
@@ -5379,7 +5390,7 @@ function StatBoardGraphic() {
     ? (() => {
         const top = rows.filter(r => r.rank === 1).map(r => r.team);
         const who = top.length > 1 ? top.join(" and ") : top[0];
-        return `📊 ${def.title.charAt(0) + def.title.slice(1).toLowerCase()} in the ${data.league}\n\n${who} ${def.verb}: ${rows[0].v} ${def.unit}${top.length > 1 ? " each" : ""} (${rows[0].sub}).\n\nEveryone in the top ${rows.length} is on the card 👇`;
+        return `📊 ${def.title.charAt(0) + def.title.slice(1).toLowerCase()} in the ${data.league}\n\n${who} ${def.verb}: ${rows[0].v} ${def.unit}${top.length > 1 ? " each" : ""} (${rows[0].sub}).\n\n${data.teams.length === rows.length ? `Every team in the ${data.league} is on the card` : `Everyone in the top ${rows.length} is on the card`} 👇`;
       })()
     : "";
   const scale = typeof window !== "undefined" ? Math.min(1, (window.innerWidth - 32) / 1080) : 0.4;
@@ -5400,7 +5411,8 @@ function StatBoardGraphic() {
           {SB_ORDER.map(k => <option key={k} value={k}>{SB_STATS[k].title}</option>)}
         </select>
         <select style={{ ...inp, width: 90 }} value={count} onChange={e => setCount(Number(e.target.value))}>
-          {[5, 6, 7, 8].map(n => <option key={n} value={n}>Top {n}</option>)}
+          <option value={99}>All teams</option>
+          {[5, 8, 10].map(n => <option key={n} value={n}>Top {n}</option>)}
         </select>
         <button onClick={() => { if (window.confirm("Refresh from the API? This uses about 20 requests.")) load(true); }} disabled={loading} style={{ ...inp, cursor: "pointer" }}>↻ Refresh</button>
       </div>
