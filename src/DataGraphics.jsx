@@ -5251,6 +5251,165 @@ function PremiumMatchGraphic() {
   );
 }
 
+// ───────── STAT OF THE DAY (standard card, data from /api/stat-board) ─────────
+const SB_LEAGUES = [
+  ["pl", "Premier League"], ["championship", "Championship"], ["laliga", "La Liga"], ["seriea", "Serie A"],
+  ["bundesliga", "Bundesliga"], ["ligue1", "Ligue 1"], ["scotprem", "Scottish Premiership"],
+  ["ucl", "Champions League"], ["uel", "Europa League"],
+];
+const pg = (v, n) => (n ? (v / n).toFixed(1) : "0.0");
+// dir: 1 = highest first, -1 = lowest first. val() is the ranked number, sub() the small line under it.
+const SB_STATS = {
+  attack:   { title: "BEST ATTACK", unit: "goals scored", dir: 1, val: t => t.goalsFor, sub: t => `${pg(t.goalsFor, t.played)} per game`, tie: t => -t.played, verb: "have scored the most goals" },
+  defence:  { title: "BEST DEFENCE", unit: "goals conceded", dir: -1, val: t => t.goalsAgainst, sub: t => `${pg(t.goalsAgainst, t.played)} per game`, tie: t => t.played, verb: "have conceded the fewest goals" },
+  clean:    { title: "CLEAN SHEET KINGS", unit: "clean sheets", dir: 1, val: t => t.cleanSheets, sub: t => `in ${t.played} games`, tie: t => -t.played, verb: "have the most clean sheets" },
+  late:     { title: "LATE GOAL SPECIALISTS", unit: "goals after the 75th minute", dir: 1, val: t => t.lateGoalsFor, sub: t => `${t.goalsFor ? Math.round((t.lateGoalsFor / t.goalsFor) * 100) : 0}% of their goals`, tie: t => -t.played, verb: "have scored the most goals after the 75th minute" },
+  early:    { title: "SLOW STARTERS", unit: "goals conceded in the first 15", dir: 1, val: t => t.earlyGoalsAgainst, sub: t => `${t.goalsAgainst ? Math.round((t.earlyGoalsAgainst / t.goalsAgainst) * 100) : 0}% of goals conceded`, tie: t => -t.played, verb: "have conceded the most goals in the first 15 minutes" },
+  yellow:   { title: "MOST BOOKED", unit: "yellow cards", dir: 1, val: t => t.yellow, sub: t => `${pg(t.yellow, t.played)} per game`, tie: t => -t.played, verb: "have picked up the most yellow cards" },
+  home:     { title: "BEST HOME RECORD", unit: "home points", dir: 1, val: t => t.homePoints, sub: t => `from ${t.homePlayed} home games`, tie: t => t.homePlayed, verb: "have the best home record" },
+  away:     { title: "BEST AWAY RECORD", unit: "away points", dir: 1, val: t => t.awayPoints, sub: t => `from ${t.awayPlayed} away games`, tie: t => t.awayPlayed, verb: "have the best away record" },
+  blank:    { title: "STRUGGLE TO SCORE", unit: "games without a goal", dir: 1, val: t => t.failedToScore, sub: t => `in ${t.played} games`, tie: t => -t.played, verb: "have failed to score in the most games" },
+  streak:   { title: "LONGEST WINNING RUN", unit: "wins in a row", dir: 1, val: t => t.winStreak, sub: t => `${t.played} played`, tie: t => -t.played, verb: "have the longest winning run" },
+};
+const SB_ORDER = ["attack", "defence", "clean", "late", "early", "yellow", "home", "away", "blank", "streak"];
+
+function rankTeams(teams, key, n) {
+  const def = SB_STATS[key];
+  const sorted = [...teams].sort((a, b) => (def.val(b) - def.val(a)) * def.dir || def.tie(a) - def.tie(b));
+  const rows = sorted.slice(0, n);
+  // Equal values share a rank number.
+  let rank = 0, prev = null;
+  return rows.map((t, i) => {
+    const v = def.val(t);
+    if (v !== prev) { rank = i + 1; prev = v; }
+    return { rank, team: t.team, v, sub: def.sub(t) };
+  });
+}
+
+function StatBoardCard({ cardRef, league, statKey, rows, season }) {
+  const def = SB_STATS[statKey];
+  const G = "#22c55e";
+  const max = Math.max(1, ...rows.map(r => r.v));
+  const min = Math.min(...rows.map(r => r.v));
+  const lowerIsBetter = def.dir === -1;
+  return (
+    <div ref={cardRef} style={{ width: 1080, height: 1350, boxSizing: "border-box", position: "relative", overflow: "hidden", background: "#0b1220", color: "#fff", fontFamily: "'Inter','Helvetica Neue',Arial,sans-serif" }}>
+      <div style={{ position: "absolute", top: -260, left: 140, width: 800, height: 800, borderRadius: "50%", background: "radial-gradient(circle, rgba(34,197,94,0.20), rgba(34,197,94,0) 65%)" }} />
+      <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "30px 64px 0" }}>
+        <div style={{ fontWeight: 900, fontSize: 34, letterSpacing: 2 }}>DEEP<span style={{ color: G }}>433</span></div>
+        <div style={{ fontSize: 20, color: "#9fb0c8", letterSpacing: 3, textTransform: "uppercase" }}>Stat of the day</div>
+      </div>
+      <div style={{ position: "relative", textAlign: "center", marginTop: 34, padding: "0 64px" }}>
+        <div style={{ fontSize: 24, color: G, letterSpacing: 5, textTransform: "uppercase", fontWeight: 800 }}>{league} · {season}/{String((season + 1) % 100).padStart(2, "0")}</div>
+        <div style={{ fontSize: 76, lineHeight: 1.02, fontWeight: 900, letterSpacing: -1, marginTop: 10 }}>{def.title}</div>
+        <div style={{ fontSize: 26, color: "#9fb0c8", marginTop: 12, fontWeight: 600 }}>{def.unit}</div>
+      </div>
+      <div style={{ position: "relative", margin: "34px 64px 0" }}>
+        {rows.map((r, i) => {
+          const frac = lowerIsBetter ? (r.v === 0 ? 1 : Math.max(0.18, min / r.v)) : r.v / max;
+          const top = r.rank === 1;
+          return (
+            <div key={i} style={{ display: "flex", alignItems: "center", height: 98, marginBottom: 10, background: top ? "rgba(34,197,94,0.14)" : "#121b2e", border: `1.5px solid ${top ? G : "#1f2d47"}`, borderRadius: 18, padding: "0 22px", boxSizing: "border-box", overflow: "hidden", position: "relative" }}>
+              <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${Math.round(frac * 100)}%`, background: top ? "rgba(34,197,94,0.18)" : "rgba(99,102,241,0.14)" }} />
+              <div style={{ position: "relative", width: 56, fontSize: 38, fontWeight: 900, color: top ? G : "#9fb0c8" }}>{r.rank}</div>
+              <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 36, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.team}</div>
+                <div style={{ fontSize: 20, color: "#9fb0c8", fontWeight: 600, marginTop: 2 }}>{r.sub}</div>
+              </div>
+              <div style={{ position: "relative", fontSize: 54, fontWeight: 900, color: top ? G : "#fff" }}>{r.v}</div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ position: "absolute", left: 64, right: 64, bottom: 20, textAlign: "center", fontSize: 21, color: "#9fb0c8" }}>Season stats so far · only on <b style={{ color: G }}>Deep433</b></div>
+    </div>
+  );
+}
+
+function StatBoardGraphic() {
+  const cardRef = useRef(null);
+  const [league, setLeague] = useState("pl");
+  const [statKey, setStatKey] = useState("attack");
+  const [count, setCount] = useState(8);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+  const [downloading, setDownloading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const load = async (force) => {
+    setLoading(true); setErr("");
+    const lsKey = `d433_statboard_${league}`;
+    try {
+      if (!force) {
+        const c = JSON.parse(localStorage.getItem(lsKey) || "null");
+        if (c && Date.now() - c.t < 6 * 3600 * 1000) { setData(c.data); setLoading(false); return; }
+      }
+    } catch {}
+    try {
+      // Refresh adds a timestamp so it skips the shared cache (this costs about 20 API requests).
+      const res = await fetch(`/api/stat-board?leagueId=${league}${force ? `&t=${Date.now()}` : ""}`);
+      const json = await res.json();
+      if (!res.ok || json.available === false) {
+        setData(null); setErr(json.error ? `${json.error}${json.detail ? ": " + json.detail : ""}` : "No stats available for this league yet.");
+      } else {
+        setData(json);
+        try { localStorage.setItem(lsKey, JSON.stringify({ t: Date.now(), data: json })); } catch {}
+      }
+    } catch (e) { setData(null); setErr("Could not load stats: " + e.message); }
+    setLoading(false);
+  };
+  useEffect(() => { load(false); /* eslint-disable-next-line */ }, [league]);
+
+  const rows = data?.teams?.length ? rankTeams(data.teams, statKey, count) : [];
+  const def = SB_STATS[statKey];
+  const note = rows.length && data
+    ? (() => {
+        const top = rows.filter(r => r.rank === 1).map(r => r.team);
+        const who = top.length > 1 ? top.join(" and ") : top[0];
+        return `📊 ${def.title.charAt(0) + def.title.slice(1).toLowerCase()} in the ${data.league}\n\n${who} ${def.verb}: ${rows[0].v} ${def.unit}${top.length > 1 ? " each" : ""} (${rows[0].sub}).\n\nFull top ${rows.length} on the card 👇`;
+      })()
+    : "";
+  const scale = typeof window !== "undefined" ? Math.min(1, (window.innerWidth - 32) / 1080) : 0.4;
+  const inp = { background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", padding: "8px 10px", fontSize: 12, fontFamily: "inherit" };
+  const download = async () => {
+    setDownloading(true);
+    try { await downloadCardImage(cardRef.current, `deep433-stat-${league}-${statKey}.png`, "#0b1220", false, 1); } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Pick a league and a stat. Stats are loaded once per league and kept for 24 hours (about 20 API requests the first time), so switching stats is free.</div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <select style={{ ...inp, flex: 1, minWidth: 150 }} value={league} onChange={e => setLeague(e.target.value)}>
+          {SB_LEAGUES.map(([id, l]) => <option key={id} value={id}>{l}</option>)}
+        </select>
+        <select style={{ ...inp, flex: 1, minWidth: 150 }} value={statKey} onChange={e => setStatKey(e.target.value)}>
+          {SB_ORDER.map(k => <option key={k} value={k}>{SB_STATS[k].title}</option>)}
+        </select>
+        <select style={{ ...inp, width: 90 }} value={count} onChange={e => setCount(Number(e.target.value))}>
+          {[5, 6, 7, 8].map(n => <option key={n} value={n}>Top {n}</option>)}
+        </select>
+        <button onClick={() => { if (window.confirm("Refresh from the API? This uses about 20 requests.")) load(true); }} disabled={loading} style={{ ...inp, cursor: "pointer" }}>↻ Refresh</button>
+      </div>
+      {loading && <div style={{ fontSize: 12, color: "#9fb0c8" }}>Loading stats…</div>}
+      {err && <div style={{ fontSize: 12, color: "#f87171" }}>{err}</div>}
+      {data?.generatedAt && <div style={{ fontSize: 11, color: "#9fb0c8" }}>Data from {new Date(data.generatedAt).toLocaleString("en-GB")} · {data.teams.length} teams</div>}
+      {rows.length > 0 && (
+        <>
+          <div style={{ width: 1080 * scale, height: 1350 * scale, margin: "0 auto", overflow: "hidden", borderRadius: 12 }}>
+            <div style={{ width: 1080, height: 1350, transform: `scale(${scale})`, transformOrigin: "top left" }}><StatBoardCard league={data.league} statKey={statKey} rows={rows} season={data.season} /></div>
+          </div>
+          <div style={{ position: "fixed", left: -20000, top: 0, pointerEvents: "none" }} aria-hidden="true"><StatBoardCard cardRef={cardRef} league={data.league} statKey={statKey} rows={rows} season={data.season} /></div>
+          <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#22c55e,#16a34a)", border: "none", borderRadius: 8, color: "#04120a", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 800, padding: "10px 14px" }}>{downloading ? "Generating..." : "⬇ Download stat card"}</button>
+          <textarea readOnly value={note} style={{ ...inp, minHeight: 110, width: "100%", boxSizing: "border-box" }} />
+          <button onClick={() => { try { navigator.clipboard.writeText(note); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch {} }} style={{ ...inp, cursor: "pointer" }}>{copied ? "Copied ✓" : "Copy note"}</button>
+        </>
+      )}
+    </div>
+  );
+}
+
 function NoticeBoardGraphic() {
   const cardRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
@@ -13004,6 +13163,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "matchday", label: "📅 Matchday list" },
     { id: "picksreport", label: "✅ Picks report card" },
     { id: "premiumcard", label: "⭐ Premium match card" },
+    { id: "statboard", label: "📊 Stat of the day" },
     { id: "player",   label: "⭐ Player Ratings" },
     { id: "top",      label: "🥇 Leaderboard" },
     { id: "team",     label: "🛡 Team Stats" },
@@ -13091,6 +13251,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "matchday" && <MatchdayGraphic />}
       {activeSection === "picksreport" && <PicksReportGraphic />}
       {activeSection === "premiumcard" && <PremiumMatchGraphic />}
+      {activeSection === "statboard" && <StatBoardGraphic />}
       {activeSection === "player"   && <PlayerRatingsGraphic />}
       {activeSection === "top"      && <TopScorersGraphic />}
       {activeSection === "team"     && <TeamStatsGraphic />}
