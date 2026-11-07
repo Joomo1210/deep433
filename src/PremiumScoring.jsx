@@ -47,6 +47,29 @@ export default function PremiumScoring({ supabase, defaultBoard = "euro", onSave
 
   useEffect(() => { setBoard(defaultBoard); }, [defaultBoard]);
 
+  // Matches for a chosen day from the API, so live and bonus matches can be picked as well as typed.
+  const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+  const [apiDate, setApiDate] = useState(todayStr());
+  const [apiList, setApiList] = useState([]);
+  const [apiMsg, setApiMsg] = useState("");
+  useEffect(() => {
+    if (!open) return;
+    let off = false;
+    setApiMsg("Loading matches…");
+    fetch(`/api/live-scores?leagueId=all&date=${apiDate}`).then(r => r.json()).then(d => {
+      if (off) return;
+      const list = (d.fixtures || []).slice().sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+      setApiList(list); setApiMsg(list.length ? "" : "No matches found for this day in your leagues. Type the teams below.");
+    }).catch(() => { if (!off) { setApiList([]); setApiMsg("Could not load matches. Type the teams below."); } });
+    return () => { off = true; };
+  }, [open, apiDate]);
+  const pickApi = (i) => {
+    const f = apiList[i]; if (!f) return;
+    setHome(f.home); setAway(f.away);
+    if (f.status === "finished" && f.score?.home != null) { setFh(String(f.score.home)); setFa(String(f.score.away)); setApiMsg(""); }
+    else { setFh(""); setFa(""); setApiMsg(`${f.home} v ${f.away} has not finished${f.status === "live" ? ` (live ${f.score?.home ?? 0}-${f.score?.away ?? 0})` : ""}. Enter the final score once it is over.`); }
+  };
+
   useEffect(() => {
     if (!open) return;
     (async () => {
@@ -142,8 +165,16 @@ export default function PremiumScoring({ supabase, defaultBoard = "euro", onSave
           </div>
           <div>
             <div style={lbl}>Match</div>
+            <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+              <input type="date" value={apiDate} onChange={e => setApiDate(e.target.value || todayStr())} style={{ ...inp, width: 150 }} />
+              <select value="" onChange={e => pickApi(+e.target.value)} style={{ ...inp, flex: 1, minWidth: 0 }}>
+                <option value="">Pick a match from the API…</option>
+                {apiList.map((f, i) => <option key={f.fixtureId || i} value={i}>{f.home} v {f.away} · {new Date(f.kickoff).toLocaleTimeString("en-GB", { timeZone: "Europe/London", hour: "2-digit", minute: "2-digit" })}{f.status === "finished" ? ` · FT ${f.score?.home}-${f.score?.away}` : f.status === "live" ? " · LIVE" : ""}</option>)}
+              </select>
+            </div>
+            {apiMsg && <div style={{ fontSize: 11, color: "#fbbf24", marginBottom: 6 }}>{apiMsg}</div>}
             <select value="" onChange={e => { const m = matches[+e.target.value]; if (m) { setHome(m.home); setAway(m.away); } }} style={{ ...inp, width: "100%", marginBottom: 6 }}>
-              <option value="">Pick a Premium match…</option>
+              <option value="">Or pick a Premium match…</option>
               {matches.map((m, i) => <option key={i} value={i}>{m.home} v {m.away} · {new Date(m.kickoff).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</option>)}
             </select>
             <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
