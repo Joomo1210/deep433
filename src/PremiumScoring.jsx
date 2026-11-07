@@ -24,8 +24,13 @@ const lbl = { fontSize: 11, color: "#94a3b8", fontWeight: 800, textTransform: "u
 
 export default function PremiumScoring({ supabase, defaultBoard = "euro", onSaved }) {
   const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState("premium"); // "premium" | "bonus"
+  const [mode, setMode] = useState("premium"); // "premium" | "bonus" | "live"
   const isBonus = mode === "bonus";
+  const isLive = mode === "live";
+  const isFlat = isBonus || isLive; // flat points per right call, no scorelines
+  const [livePts, setLivePts] = useState(3);
+  const flatPts = isLive ? livePts : BONUS_POINTS;
+  const kindName = isLive ? "Bonus live" : isBonus ? "Bonus" : "Premium";
   const [matches, setMatches] = useState([]);
   const [players, setPlayers] = useState([]);
   const [board, setBoard] = useState(defaultBoard);
@@ -53,7 +58,7 @@ export default function PremiumScoring({ supabase, defaultBoard = "euro", onSave
     })();
   }, [open, supabase]);
 
-  const reason = home && away && fh !== "" && fa !== "" ? `${isBonus ? "Bonus" : "Premium"}: ${home.trim()} ${fh}-${fa} ${away.trim()}` : null;
+  const reason = home && away && fh !== "" && fa !== "" ? `${kindName}: ${home.trim()} ${fh}-${fa} ${away.trim()}` : null;
 
   const loadExisting = async () => {
     if (!reason) { setExisting([]); return; }
@@ -68,8 +73,8 @@ export default function PremiumScoring({ supabase, defaultBoard = "euro", onSave
 
   const scored = rows.map(r => {
     const uid = resolve(r);
-    const complete = isBonus ? !!uid : uid && r.h !== "" && r.a !== "";
-    const pts = !complete ? 0 : isBonus ? BONUS_POINTS : premiumPoints({ h: r.h, a: r.a }, { h: fh, a: fa }, r.rat);
+    const complete = isFlat ? !!uid : uid && r.h !== "" && r.a !== "";
+    const pts = !complete ? 0 : isFlat ? flatPts : premiumPoints({ h: r.h, a: r.a }, { h: fh, a: fa }, r.rat);
     return { ...r, uid, complete, pts, dup: uid && doneIds.has(uid) };
   });
   const toSave = scored.filter(r => r.complete && !r.dup && r.pts > 0);
@@ -95,7 +100,7 @@ export default function PremiumScoring({ supabase, defaultBoard = "euro", onSave
     await loadExisting(); onSaved && onSaved();
   };
   const removeAll = async () => {
-    if (!reason || !window.confirm(`Remove ALL ${isBonus ? "Bonus" : "Premium"} points saved for "${reason}" on the ${board} board?`)) return;
+    if (!reason || !window.confirm(`Remove ALL ${kindName} points saved for "${reason}" on the ${board} board?`)) return;
     await supabase.from("bonus_points").delete().eq("board", board).eq("reason", reason);
     await loadExisting(); onSaved && onSaved();
   };
@@ -111,11 +116,21 @@ export default function PremiumScoring({ supabase, defaultBoard = "euro", onSave
           <div>
             <div style={lbl}>Type</div>
             <div style={{ display: "flex", gap: 6 }}>
-              {[["premium", "⭐ Premium match"], ["bonus", `🎁 Bonus match (flat ${BONUS_POINTS})`]].map(([id, label]) => (
+              {[["premium", "⭐ Premium match"], ["bonus", `🎁 Bonus match (flat ${BONUS_POINTS})`], ["live", "⚡ Live prediction (1, 2 or 3)"]].map(([id, label]) => (
                 <button key={id} onClick={() => { setMode(id); setMsg(null); }} style={{ flex: 1, background: mode === id ? "linear-gradient(135deg,#F5C518,#d4a017)" : "none", border: `1px solid ${mode === id ? "#F5C518" : "#2a2a3a"}`, borderRadius: 8, color: mode === id ? "#0A0F14" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 800, padding: "8px 6px" }}>{label}</button>
               ))}
             </div>
           </div>
+          {isLive && (
+            <div>
+              <div style={lbl}>Points for a right call</div>
+              <div style={{ display: "flex", gap: 6 }}>
+                {[1, 2, 3].map(n => (
+                  <button key={n} onClick={() => setLivePts(n)} style={{ flex: 1, background: livePts === n ? "linear-gradient(135deg,#F5C518,#d4a017)" : "none", border: `1px solid ${livePts === n ? "#F5C518" : "#2a2a3a"}`, borderRadius: 8, color: livePts === n ? "#0A0F14" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 900, padding: "9px 6px" }}>{n} point{n === 1 ? "" : "s"}</button>
+                ))}
+              </div>
+            </div>
+          )}
           <div>
             <div style={lbl}>Board</div>
             <select value={board} onChange={e => setBoard(e.target.value)} style={inp}>
@@ -142,7 +157,7 @@ export default function PremiumScoring({ supabase, defaultBoard = "euro", onSave
           </div>
 
           <div>
-            <div style={lbl}>{isBonus ? `Players who got it right (+${BONUS_POINTS} each)` : "Players and their picks"}</div>
+            <div style={lbl}>{isFlat ? `Players who got it right (+${flatPts} each)` : "Players and their picks"}</div>
             {scored.map((r, i) => (
               <div key={i} style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 6, flexWrap: "wrap" }}>
                 <div style={{ position: "relative", flex: 1, minWidth: 120 }}>
@@ -160,7 +175,7 @@ export default function PremiumScoring({ supabase, defaultBoard = "euro", onSave
                     );
                   })()}
                 </div>
-                {!isBonus && <>
+                {!isFlat && <>
                 <input value={r.h} onChange={e => setRow(i, { h: e.target.value.replace(/\D/g, "") })} inputMode="numeric" placeholder="H" style={num} />
                 <span style={{ color: "#94a3b8" }}>-</span>
                 <input value={r.a} onChange={e => setRow(i, { a: e.target.value.replace(/\D/g, "") })} inputMode="numeric" placeholder="A" style={num} />
@@ -177,7 +192,9 @@ export default function PremiumScoring({ supabase, defaultBoard = "euro", onSave
             <button onClick={() => setRows(rs => [...rs, { q: "", uid: "", h: "", a: "", rat: true }])} style={{ background: "none", border: "1px dashed #4ade80", borderRadius: 8, color: "#4ade80", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 800, padding: "6px 12px" }}>+ Add player</button>
             <div style={{ fontSize: 11, color: loadErr ? "#f87171" : "#94a3b8", marginTop: 6 }}>{loadErr ? "Could not load players: " + loadErr : `${players.length} players loaded (admins are not listed).`}</div>
             <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 6 }}>
-              {isBonus
+              {isLive
+                ? `Live prediction: add only the players who called it right in the comments. Each gets a flat ${livePts} point${livePts === 1 ? "" : "s"}, no scoreline needed. Enter the final score above only so the entry has a name. A red name means no matching player.`
+                : isBonus
                 ? `Bonus match: add only the players who called the right result in the comments. Each gets a flat ${BONUS_POINTS}, no scoreline needed. Enter the final score above only so the entry has a name. A red name means no matching player.`
                 : "Exact 10, outcome 5, +3 for the right side of 2.5 goals (max 13). Untick Reason if they gave no rationale: no points. A red name means no matching player."}
             </div>
