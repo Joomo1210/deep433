@@ -397,6 +397,15 @@ function formatRound(round) {
   return round;
 }
 
+// Kick-off from the API as UK date and time, ready to drop into a card.
+function ukKickoff(iso) {
+  const dt = new Date(iso);
+  return {
+    date: dt.toLocaleDateString("en-GB", { timeZone: "Europe/London", weekday: "short", day: "numeric", month: "short" }),
+    time: dt.toLocaleTimeString("en-GB", { timeZone: "Europe/London", hour: "2-digit", minute: "2-digit" }),
+  };
+}
+
 const ratingColor = (r) => {
   const n = parseFloat(r);
   if (!n) return "#e2e8f0";
@@ -4851,10 +4860,12 @@ function CuratedMatchCard({ cardRef, groups, partNo, partTotal, startNo, count, 
         </div>
 
         {bonus && (
-          <div style={{ height: BONUS_H - 14, marginTop: 14, borderRadius: 16, border: "1.5px solid rgba(168,85,247,0.7)", background: "rgba(168,85,247,0.12)", display: "flex", alignItems: "center", gap: 18, padding: "0 22px", boxSizing: "border-box" }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 30, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Bonus match: {bonus.home} <span style={{ color: "#6B7A8C", fontSize: 20 }}>vs</span> {bonus.away}</div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: "#D8B4FE", marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{[bonus.when, "Comment home win, draw or away win · 5 points", bonus.closes ? `Comments close ${bonus.closes}` : ""].filter(Boolean).join(" · ")}</div>
+          <div style={{ height: BONUS_H - 14, marginTop: 14, borderRadius: 16, border: "2px solid #F0ABFC", background: "linear-gradient(135deg, #A855F7 0%, #D946EF 38%, #F0ABFC 52%, #C026D3 70%, #A855F7 100%)", boxShadow: "0 0 26px rgba(217,70,239,0.55)", position: "relative", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", gap: 18, padding: "0 22px", boxSizing: "border-box", width: "100%", marginLeft: "auto", marginRight: "auto" }}>
+            <div style={{ position: "absolute", top: 0, bottom: 0, left: "-10%", width: "55%", background: "linear-gradient(110deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.38) 45%, rgba(255,255,255,0) 75%)", transform: "skewX(-18deg)" }} />
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "46%", background: "linear-gradient(180deg, rgba(255,255,255,0.28), rgba(255,255,255,0))" }} />
+            <div style={{ flex: 1, minWidth: 0, position: "relative", textAlign: "center" }}>
+              <div style={{ fontSize: 30, fontWeight: 900, color: "#1E0A33", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Bonus match: {bonus.home} <span style={{ color: "#4A1D6B", fontSize: 20 }}>vs</span> {bonus.away}</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: "#3B0764", marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{[bonus.when, "Comment home win, draw or away win · 5 points", bonus.closes ? `Comments close ${bonus.closes}` : ""].filter(Boolean).join(" · ")}</div>
             </div>
           </div>
         )}
@@ -4885,6 +4896,7 @@ function CuratedMatchesGraphic({ supabase }) {
   const [toDate, setToDate] = useState("");
   const [loaded, setLoaded] = useState(false);
   const [bonusOn, setBonusOn] = useState(false);
+  const [bonusPick, setBonusPick] = useState(false);
   const [bonusHome, setBonusHome] = useState("");
   const [bonusAway, setBonusAway] = useState("");
   const [bonusWhen, setBonusWhen] = useState("");
@@ -5042,6 +5054,12 @@ function CuratedMatchesGraphic({ supabase }) {
       <label style={{ fontSize: 12, color: "#D8B4FE", fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
         <input type="checkbox" checked={bonusOn} onChange={e => setBonusOn(e.target.checked)} /> Add a bonus match strip (comment only, 5 points)
       </label>
+      {bonusOn && (
+        <button type="button" onClick={() => setBonusPick(v => !v)} style={{ alignSelf: "flex-start", background: "#1a1a24", border: "1.5px solid #D946EF", borderRadius: 8, color: "#F0ABFC", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 800, padding: "7px 12px" }}>{bonusPick ? "Close fixture list" : "📡 Pull bonus match from API"}</button>
+      )}
+      {bonusOn && bonusPick && (
+        <FixturePicker onSelect={f => { const k = ukKickoff(f.kickoff); setBonusHome(f.home); setBonusAway(f.away); setBonusWhen(`${k.date} · ${k.time} UK`); setBonusPick(false); }} />
+      )}
       {bonusOn && (
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {[["Home team", bonusHome, setBonusHome], ["Away team", bonusAway, setBonusAway], ["When (e.g. Tue 3 Nov · 20:00 UK)", bonusWhen, setBonusWhen], ["Comments close (e.g. 19:55 UK, optional)", bonusCloses, setBonusCloses]].map(([ph, v, set]) => (
@@ -5202,7 +5220,13 @@ function PremiumMatchGraphic() {
     return { home: "", away: "", league: "", date: "", ko: "", board: "Daily", opens: "", closes: "", showStats: true, statsTitle: "League 2026/27", notes: "", home_stats: { ...PM_EMPTY_SIDE }, away_stats: { ...PM_EMPTY_SIDE } };
   });
   useEffect(() => { try { localStorage.setItem("d433_premium_card", JSON.stringify(f)); } catch {} }, [f]);
+  const [pickOpen, setPickOpen] = useState(false);
   const set = (k, v) => setF(p => ({ ...p, [k]: v }));
+  const pullMatch = fx => {
+    const k = ukKickoff(fx.kickoff);
+    setF(p => ({ ...p, home: fx.home, away: fx.away, league: fx.leagueLabel || p.league, date: k.date, ko: k.time }));
+    setPickOpen(false);
+  };
   const setSide = (side, k, v) => setF(p => ({ ...p, [side]: { ...p[side], [k]: v } }));
   const inp = { background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", padding: "7px 9px", fontSize: 12, fontFamily: "inherit", width: "100%", boxSizing: "border-box" };
   const scale = typeof window !== "undefined" ? Math.min(1, (window.innerWidth - 32) / 1080) : 0.4;
@@ -5215,6 +5239,8 @@ function PremiumMatchGraphic() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <div style={{ fontSize: 11, color: "#e2e8f0" }}>Standard Premium match card: 10 / 5 / 3 points, optional stats table, soft-edge notes and the predictions open and close times. No money on the card. Your entries are remembered on this device.</div>
+      <button type="button" onClick={() => setPickOpen(v => !v)} style={{ alignSelf: "flex-start", background: "#1a1a24", border: "1.5px solid #F5C518", borderRadius: 8, color: "#F5C518", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 800, padding: "7px 12px" }}>{pickOpen ? "Close fixture list" : "📡 Pull match from API (teams, league, date, kick-off)"}</button>
+      {pickOpen && <FixturePicker onSelect={pullMatch} />}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <input style={{ ...inp, flex: 1, minWidth: 140 }} placeholder="Home team" value={f.home} onChange={e => set("home", e.target.value)} />
         <input style={{ ...inp, flex: 1, minWidth: 140 }} placeholder="Away team" value={f.away} onChange={e => set("away", e.target.value)} />
@@ -5371,10 +5397,11 @@ const ordinal = n => { const v = n % 100; return n + (["th", "st", "nd", "rd"][(
 // Two teams head to head on one stat, for a match preview. Kick-off and bookmaker odds are optional.
 // Compact 1080 x 1080 card. Kept to plain colours, borders and shadows so html2canvas draws it faithfully.
 function TwoTeamStatCard({ cardRef, league, season, calendar, statKey, a, b, total, ko, odds }) {
-  const def = SB_STATS[statKey];
+  const mixed = statKey === "home" || statKey === "away"; // home side shows home record, away side shows away record
+  const def = mixed ? { ...SB_STATS.home, title: "HOME v AWAY RECORD", unit: "points" } : SB_STATS[statKey];
   const G = "#22c55e", GOLD = "#E8C766", MUTED = "#8fa3c0";
-  const level = a.rank === b.rank;
-  const aWin = level || a.rank < b.rank, bWin = level || b.rank < a.rank;
+  const level = mixed ? a.v === b.v : a.rank === b.rank;
+  const aWin = level || (mixed ? a.v > b.v : a.rank < b.rank), bWin = level || (mixed ? b.v > a.v : b.rank < a.rank);
   const gap = Math.abs(a.v - b.v);
   const hasOdds = odds && (odds.h || odds.d || odds.a);
   const Panel = ({ t, win }) => (
@@ -5385,7 +5412,7 @@ function TwoTeamStatCard({ cardRef, league, season, calendar, statKey, a, b, tot
       <div style={{ fontSize: 33, fontWeight: 800, letterSpacing: 0.5, marginTop: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.team}</div>
       <div style={{ fontSize: 112, lineHeight: 1, fontWeight: 900, letterSpacing: -2, marginTop: 6, color: win ? G : "#f1f5f9" }}>{t.v}</div>
       <div style={{ fontSize: 22, color: MUTED, fontWeight: 600, letterSpacing: 1, marginTop: 4 }}>{t.sub}</div>
-      <div style={{ display: "inline-block", marginTop: 16, padding: "9px 22px", borderRadius: 999, fontSize: 19, fontWeight: 900, letterSpacing: 3, textTransform: "uppercase", background: win ? G : "transparent", color: win ? "#04120a" : "#cbd5e1", border: win ? "none" : "1.5px solid rgba(148,163,184,0.4)" }}>{ordinal(t.rank)} in the league</div>
+      <div style={{ display: "inline-block", marginTop: 16, padding: "9px 22px", borderRadius: 999, fontSize: 19, fontWeight: 900, letterSpacing: 3, textTransform: "uppercase", background: win ? G : "transparent", color: win ? "#04120a" : "#cbd5e1", border: win ? "none" : "1.5px solid rgba(148,163,184,0.4)" }}>{mixed ? `${ordinal(t.rank)} ${t.side}` : `${ordinal(t.rank)} in the league`}</div>
     </div>
   );
   return (
@@ -5402,8 +5429,9 @@ function TwoTeamStatCard({ cardRef, league, season, calendar, statKey, a, b, tot
       </div>
 
       <div style={{ position: "relative", textAlign: "center", marginTop: 26, padding: "0 64px" }}>
-        <div style={{ fontSize: 20, color: GOLD, letterSpacing: 6, textTransform: "uppercase", fontWeight: 700 }}>{league} · {seasonText(season, calendar)}</div>
-        <div style={{ fontSize: 66, lineHeight: 1, fontWeight: 900, letterSpacing: 1, marginTop: 14 }}>{def.title}</div>
+        <div style={{ fontSize: 60, lineHeight: 1, fontWeight: 900, letterSpacing: 1, color: "#fff" }}>{league}</div>
+        <div style={{ fontSize: 20, color: GOLD, letterSpacing: 6, textTransform: "uppercase", fontWeight: 700, marginTop: 10 }}>{seasonText(season, calendar)}</div>
+        <div style={{ fontSize: 46, lineHeight: 1, fontWeight: 900, letterSpacing: 2, marginTop: 16, color: G }}>{def.title}</div>
         <div style={{ width: 90, height: 3, background: GOLD, margin: "14px auto 0", borderRadius: 2 }} />
         <div style={{ fontSize: 34, fontWeight: 800, marginTop: 16, color: "#f1f5f9" }}>
           {a.team} <span style={{ color: MUTED, fontWeight: 500, padding: "0 6px" }}>v</span> {b.team}
@@ -5531,10 +5559,16 @@ function StatBoardGraphic() {
       })()
     : "";
   const allRanked = data?.teams?.length ? rankTeams(data.teams, statKey, 99) : [];
-  const rowA = allRanked.find(r => r.team === teamA), rowB = allRanked.find(r => r.team === teamB);
+  const mixedRank = statKey === "home" || statKey === "away";
+  const homeRanked = mixedRank && data?.teams?.length ? rankTeams(data.teams, "home", 99) : [];
+  const awayRanked = mixedRank && data?.teams?.length ? rankTeams(data.teams, "away", 99) : [];
+  const rowA = mixedRank ? (() => { const r = homeRanked.find(x => x.team === teamA); return r && { ...r, side: "at home" }; })() : allRanked.find(r => r.team === teamA);
+  const rowB = mixedRank ? (() => { const r = awayRanked.find(x => x.team === teamB); return r && { ...r, side: "away" }; })() : allRanked.find(r => r.team === teamB);
   const twoReady = mode === "two" && rowA && rowB && rowA.team !== rowB.team;
   const twoNote = twoReady
-    ? `📊 ${def.title.charAt(0) + def.title.slice(1).toLowerCase()} in the ${data.league}\n\n${rowA.team}: ${rowA.v} ${def.unit} (${rowA.sub}), ${ordinal(rowA.rank)}\n${rowB.team}: ${rowB.v} ${def.unit} (${rowB.sub}), ${ordinal(rowB.rank)}\n\nDoes this decide ${ko ? "tonight's game" : "the game"}? Drop your scoreline 👇`
+    ? (mixedRank
+      ? `📊 Home v away record in the ${data.league}\n\n${rowA.team} at home: ${rowA.v} points (${rowA.sub}), ${ordinal(rowA.rank)}\n${rowB.team} away: ${rowB.v} points (${rowB.sub}), ${ordinal(rowB.rank)}\n\nDoes this decide ${ko ? "tonight's game" : "the game"}? Drop your scoreline 👇`
+      : `📊 ${def.title.charAt(0) + def.title.slice(1).toLowerCase()} in the ${data.league}\n\n${rowA.team}: ${rowA.v} ${def.unit} (${rowA.sub}), ${ordinal(rowA.rank)}\n${rowB.team}: ${rowB.v} ${def.unit} (${rowB.sub}), ${ordinal(rowB.rank)}\n\nDoes this decide ${ko ? "tonight's game" : "the game"}? Drop your scoreline 👇`)
     : "";
   const scale = typeof window !== "undefined" ? Math.min(1, (window.innerWidth - 32) / 1080) : 0.4;
   const inp = { background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", padding: "8px 10px", fontSize: 12, fontFamily: "inherit" };
