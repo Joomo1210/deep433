@@ -122,6 +122,19 @@ export default function PremiumScoring({ supabase, defaultBoard = "euro", onSave
     await supabase.from("bonus_points").delete().eq("id", id);
     await loadExisting(); onSaved && onSaved();
   };
+  // One click closes the Daily board: its Premium and Bonus points move to an archive board and stop counting.
+  const closeDaily = async () => {
+    const { data, error } = await supabase.from("bonus_points").select("id, points").eq("board", "daily");
+    if (error) { setMsg({ ok: false, t: "Could not read the Daily board: " + error.message }); return; }
+    if (!data || !data.length) { setMsg({ ok: true, t: "The Daily board has no Premium or Bonus points to archive." }); return; }
+    const total = data.reduce((t, r) => t + (r.points || 0), 0);
+    const tag = "daily_" + new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    if (!window.confirm(`Archive ${data.length} Premium/Bonus entries (${total} points) from the Daily board as "${tag}"? They stop counting on the Daily leaderboard.`)) return;
+    const { error: upErr } = await supabase.from("bonus_points").update({ board: tag }).eq("board", "daily");
+    if (upErr) { setMsg({ ok: false, t: "Archive failed: " + upErr.message }); return; }
+    setMsg({ ok: true, t: `Daily board cleared: ${data.length} entries archived as ${tag}.` });
+    await loadExisting(); onSaved && onSaved();
+  };
   const removeAll = async () => {
     if (!reason || !window.confirm(`Remove ALL ${kindName} points saved for "${reason}" on the ${board} board?`)) return;
     await supabase.from("bonus_points").delete().eq("board", board).eq("reason", reason);
@@ -235,6 +248,8 @@ export default function PremiumScoring({ supabase, defaultBoard = "euro", onSave
             {busy ? "Saving…" : reason ? `Save ${toSave.length} player${toSave.length === 1 ? "" : "s"} · ${reason}` : "Enter teams and final score"}
           </button>
           {msg && <div style={{ fontSize: 12, fontWeight: 700, color: msg.ok ? "#4ade80" : "#f87171" }}>{msg.t}</div>}
+
+          <button onClick={closeDaily} style={{ alignSelf: "flex-start", background: "none", border: "1px solid #f87171", borderRadius: 8, color: "#f87171", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 800, padding: "8px 12px" }}>🧹 Clear the Daily board's Premium and Bonus points</button>
 
           {existing.length > 0 && (
             <div style={{ borderTop: "1px solid #2a2a3a", paddingTop: 10 }}>
