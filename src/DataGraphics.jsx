@@ -5287,6 +5287,531 @@ function PremiumMatchGraphic() {
   );
 }
 
+// ───────── PLAYER STAT OF THE DAY (data from /api/player-board) ─────────
+const per90 = (v, mn) => (mn ? (v / mn) * 90 : 0);
+const f1 = v => (Math.round(v * 10) / 10).toFixed(1);
+const f2 = v => (Math.round(v * 100) / 100).toFixed(2);
+const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
+// val = ranked number, show = how the number reads, sub = small line, min = extra qualifier, gk/outfield = who is eligible.
+const PS_STATS = {
+  goals:    { title: "TOP SCORERS", unit: "goals", dir: 1, val: p => p.g, show: v => v, sub: p => `${f2(per90(p.g, p.mn))} per 90 · ${p.ap} apps`, verb: "has scored the most goals" },
+  assists:  { title: "TOP ASSISTS", unit: "assists", dir: 1, val: p => p.a, show: v => v, sub: p => `${f2(per90(p.a, p.mn))} per 90 · ${p.ap} apps`, verb: "has the most assists" },
+  ga:       { title: "GOALS + ASSISTS", unit: "goal contributions", dir: 1, val: p => p.g + p.a, show: v => v, sub: p => `${p.g} goals · ${p.a} assists`, verb: "has the most goal contributions" },
+  g90:      { title: "GOALS PER 90", unit: "goals per 90 minutes", dir: 1, val: p => per90(p.g, p.mn), show: f2, sub: p => `${p.g} goals in ${p.mn} mins`, verb: "scores most often per 90", needsMin: true },
+  shots:    { title: "MOST SHOTS", unit: "shots", dir: 1, val: p => p.sh, show: v => v, sub: p => `${p.so} on target · ${p.g} goals`, verb: "has taken the most shots" },
+  sot:      { title: "SHOTS ON TARGET", unit: "shots on target", dir: 1, val: p => p.so, show: v => v, sub: p => `${pct(p.so, p.sh)}% of ${p.sh} shots`, verb: "has the most shots on target" },
+  kp:       { title: "KEY PASSES", unit: "passes that led to a shot", dir: 1, val: p => p.kp, show: v => v, sub: p => `${f2(per90(p.kp, p.mn))} per 90`, verb: "has created the most chances" },
+  passes:   { title: "MOST PASSES", unit: "passes", dir: 1, val: p => p.ps, show: v => v, sub: p => `${Math.round(per90(p.ps, p.mn))} per 90`, verb: "has played the most passes" },
+  dribbles: { title: "BEST DRIBBLERS", unit: "dribbles completed", dir: 1, val: p => p.ds, show: v => v, sub: p => `${p.ds} of ${p.dr} attempts`, verb: "has completed the most dribbles" },
+  tackles:  { title: "MOST TACKLES", unit: "tackles", dir: 1, val: p => p.tk, show: v => v, sub: p => `${f1(per90(p.tk, p.mn))} per 90`, verb: "has made the most tackles" },
+  inter:    { title: "MOST INTERCEPTIONS", unit: "interceptions", dir: 1, val: p => p.ic, show: v => v, sub: p => `${f1(per90(p.ic, p.mn))} per 90`, verb: "has made the most interceptions" },
+  duels:    { title: "MOST DUELS WON", unit: "duels won", dir: 1, val: p => p.dw, show: v => v, sub: p => `${pct(p.dw, p.du)}% of ${p.du} duels`, verb: "has won the most duels" },
+  duelpct:  { title: "BEST DUEL WIN RATE", unit: "% of duels won (60+ duels)", dir: 1, val: p => (p.du >= 60 ? pct(p.dw, p.du) : -1), show: v => `${v}%`, sub: p => `${p.dw} of ${p.du} duels`, verb: "wins the highest share of duels", needsMin: true },
+  fouls:    { title: "MOST FOULS", unit: "fouls committed", dir: 1, val: p => p.fc, show: v => v, sub: p => `${f1(per90(p.fc, p.mn))} per 90`, verb: "has committed the most fouls" },
+  fouled:   { title: "MOST FOULED", unit: "fouls won", dir: 1, val: p => p.fd, show: v => v, sub: p => `${f1(per90(p.fd, p.mn))} per 90`, verb: "has been fouled the most" },
+  yellow:   { title: "MOST BOOKED", unit: "yellow cards", dir: 1, val: p => p.y, show: v => v, sub: p => `${p.ap} apps · ${p.fc} fouls`, verb: "has picked up the most yellow cards" },
+  red:      { title: "RED CARDS", unit: "red cards", dir: 1, val: p => p.r, show: v => v, sub: p => `${p.y} yellows too`, verb: "has the most red cards" },
+  rating:   { title: "HIGHEST RATED", unit: "average rating", dir: 1, val: p => p.rt, show: f2, sub: p => `${p.ap} apps · ${p.mn} mins`, verb: "has the highest average rating", needsMin: true },
+  minutes:  { title: "MOST MINUTES", unit: "minutes played", dir: 1, val: p => p.mn, show: v => v, sub: p => `${p.ap} apps`, verb: "has played the most minutes" },
+  pens:     { title: "PENALTIES SCORED", unit: "penalties scored", dir: 1, val: p => p.pn, show: v => v, sub: p => `${p.pm} missed`, verb: "has scored the most penalties" },
+  saves:    { title: "MOST SAVES", unit: "saves", dir: 1, val: p => p.sv, show: v => v, sub: p => `${f1(per90(p.sv, p.mn))} per 90`, verb: "has made the most saves", gk: true },
+  conceded: { title: "FEWEST GOALS CONCEDED", unit: "goals conceded (keepers)", dir: -1, val: p => p.cn, show: v => v, sub: p => `${f2(per90(p.cn, p.mn))} per 90 · ${p.ap} apps`, verb: "has conceded the fewest goals", gk: true, needsMin: true },
+};
+const PS_ORDER = ["goals", "assists", "ga", "g90", "shots", "sot", "kp", "passes", "dribbles", "tackles", "inter", "duels", "duelpct", "fouls", "fouled", "yellow", "red", "rating", "minutes", "pens", "saves", "conceded"];
+const PS_POS = [["all", "All positions"], ["Goalkeeper", "Goalkeepers"], ["Defender", "Defenders"], ["Midfielder", "Midfielders"], ["Attacker", "Attackers"]];
+
+function eligiblePlayers(players, key, minMins, pos) {
+  const def = PS_STATS[key];
+  return players.filter(p => {
+    if (def.gk && p.pos !== "Goalkeeper") return false;
+    if (pos !== "all" && p.pos !== pos) return false;
+    if ((def.needsMin || def.gk) && p.mn < minMins) return false;
+    return true;
+  });
+}
+function rankPlayers(players, key, n, minMins, pos) {
+  const def = PS_STATS[key];
+  const list = eligiblePlayers(players, key, minMins, pos).filter(p => def.val(p) >= 0);
+  const sorted = list.sort((a, b) => (def.val(b) - def.val(a)) * def.dir || a.mn - b.mn);
+  let end = Math.min(n, sorted.length);
+  while (end < sorted.length && end < n + 4 && def.val(sorted[end]) === def.val(sorted[end - 1])) end++; // keep anyone tied with the last shown
+  let rank = 0, prev = null;
+  return sorted.slice(0, end).map((p, i) => {
+    const v = def.val(p);
+    if (v !== prev) { rank = i + 1; prev = v; }
+    return { rank, name: p.n, photo: p.ph, team: p.tm, logo: p.lg, pos: p.pos, v, shown: def.show(v), sub: def.sub(p) };
+  });
+}
+// A player's rank on one stat among everyone eligible (ties share a rank).
+function playerRank(players, key, player, minMins) {
+  const def = PS_STATS[key];
+  const list = eligiblePlayers(players, key, minMins, "all").filter(p => def.val(p) >= 0);
+  const mine = def.val(player);
+  const better = list.filter(p => (def.dir === 1 ? def.val(p) > mine : def.val(p) < mine)).length;
+  return { rank: better + 1, of: list.length };
+}
+
+function PlayerBoardCard({ cardRef, league, statKey, rows, season, calendar, minMins, pos }) {
+  const def = PS_STATS[statKey];
+  const G = "#22c55e";
+  const max = Math.max(1e-9, ...rows.map(r => r.v));
+  const cols = rows.length > 10 ? 2 : 1;
+  const perCol = Math.max(1, Math.ceil(rows.length / cols));
+  const rowH = Math.min(104, Math.floor(980 / perCol) - 8);
+  const f = rowH / 104;
+  const wide = cols === 1;
+  const chunks = cols === 1 ? [rows] : [rows.slice(0, perCol), rows.slice(perCol)];
+  const posLabel = pos === "all" ? "" : ` · ${PS_POS.find(x => x[0] === pos)?.[1]}`;
+  const qual = (def.needsMin || def.gk) ? ` · ${minMins}+ mins` : "";
+  return (
+    <div ref={cardRef} style={{ width: 1080, height: 1350, boxSizing: "border-box", position: "relative", overflow: "hidden", background: "#0b1220", color: "#fff", fontFamily: "'Inter','Helvetica Neue',Arial,sans-serif" }}>
+      <div style={{ position: "absolute", top: -260, left: 140, width: 800, height: 800, borderRadius: "50%", background: "radial-gradient(circle, rgba(34,197,94,0.20), rgba(34,197,94,0) 65%)" }} />
+      <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "30px 64px 0" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 64, height: 64, borderRadius: "50%", objectFit: "cover" }} />
+          <div style={{ fontWeight: 900, fontSize: 36, letterSpacing: 2 }}>DEEP<span style={{ color: G }}>433</span></div>
+        </div>
+        <div style={{ fontSize: 20, color: "#9fb0c8", letterSpacing: 3, textTransform: "uppercase" }}>Player stat of the day</div>
+      </div>
+      <div style={{ position: "relative", textAlign: "center", marginTop: 30, padding: "0 64px" }}>
+        <div style={{ fontSize: 60, lineHeight: 1, fontWeight: 900, letterSpacing: 1 }}>{league}</div>
+        <div style={{ fontSize: 20, color: G, letterSpacing: 6, textTransform: "uppercase", fontWeight: 800, marginTop: 10 }}>{seasonText(season, calendar)}{posLabel}</div>
+        <div style={{ fontSize: 70, lineHeight: 1.02, fontWeight: 900, letterSpacing: -1, marginTop: 14 }}>{def.title}</div>
+        <div style={{ fontSize: 24, color: "#9fb0c8", marginTop: 10, fontWeight: 600 }}>{def.unit}{qual}</div>
+      </div>
+      <div style={{ position: "relative", margin: "26px 64px 0", display: "flex", gap: 14, alignItems: "flex-start" }}>
+        {chunks.map((chunk, ci) => (
+          <div key={ci} style={{ flex: 1, minWidth: 0 }}>
+            {chunk.map((r, i) => {
+              const top = r.rank === 1;
+              const frac = Math.max(0.12, r.v / max);
+              return (
+                <div key={i} style={{ display: "flex", alignItems: "center", height: rowH, marginBottom: 8, background: top ? "rgba(34,197,94,0.14)" : "#121b2e", border: `1.5px solid ${top ? G : "#1f2d47"}`, borderRadius: wide ? 18 : 14, padding: wide ? "0 20px" : "0 10px", boxSizing: "border-box", overflow: "hidden", position: "relative" }}>
+                  <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${Math.round(frac * 100)}%`, background: top ? "rgba(34,197,94,0.18)" : "rgba(99,102,241,0.14)" }} />
+                  <div style={{ position: "relative", width: wide ? 50 : 34, fontSize: Math.round((wide ? 36 : 26) * f), fontWeight: 900, color: top ? G : "#9fb0c8", flexShrink: 0 }}>{r.rank}</div>
+                  <div style={{ position: "relative", width: Math.round(rowH * 0.74), height: Math.round(rowH * 0.74), marginRight: wide ? 16 : 8, flexShrink: 0, borderRadius: "50%", overflow: "hidden", background: "#1f2d47", border: `2px solid ${top ? G : "#2a3a5a"}`, boxSizing: "border-box" }}>
+                    {r.photo && <img src={r.photo} alt="" crossOrigin="anonymous" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+                  </div>
+                  <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{ fontSize: Math.max(15, Math.round((wide ? 33 : 24) * f)), fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</div>
+                      {r.logo && <img src={r.logo} alt="" crossOrigin="anonymous" style={{ width: Math.round(rowH * 0.32), height: Math.round(rowH * 0.32), objectFit: "contain", flexShrink: 0 }} />}
+                    </div>
+                    <div style={{ fontSize: Math.max(12, Math.round((wide ? 19 : 14) * f)), color: "#9fb0c8", fontWeight: 600, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{wide ? `${r.team} · ${r.sub}` : r.sub}</div>
+                  </div>
+                  <div style={{ position: "relative", fontSize: Math.max(20, Math.round((wide ? 52 : 36) * f)), fontWeight: 900, color: top ? G : "#fff", marginLeft: 8, flexShrink: 0 }}>{r.shown}</div>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+      <div style={{ position: "absolute", left: 64, right: 64, bottom: 20, textAlign: "center", fontSize: 21, color: "#9fb0c8" }}>Season stats so far · only on <b style={{ color: G }}>Deep433</b></div>
+    </div>
+  );
+}
+
+// One player, every key stat with his rank in the league. 1080 x 1080.
+const PS_PROFILE = ["goals", "assists", "shots", "kp", "dribbles", "tackles", "duels", "fouls", "yellow", "rating"];
+const PS_PROFILE_GK = ["saves", "conceded", "rating", "minutes", "passes", "yellow"];
+function PlayerProfileCard({ cardRef, league, season, calendar, player, players, minMins }) {
+  const G = "#22c55e";
+  const keys = player.pos === "Goalkeeper" ? PS_PROFILE_GK : PS_PROFILE;
+  const tiles = keys.map(k => {
+    const def = PS_STATS[k];
+    const v = def.val(player);
+    const rk = playerRank(players, k, player, minMins);
+    return { k, title: def.title.split(" ").map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(" "), shown: def.show(v), unit: def.unit, rk, hot: rk.rank <= 3 && v > 0 };
+  });
+  return (
+    <div ref={cardRef} style={{ width: 1080, height: 1080, boxSizing: "border-box", position: "relative", overflow: "hidden", background: "#0b1220", color: "#fff", fontFamily: "'Inter','Helvetica Neue',Arial,sans-serif" }}>
+      <div style={{ position: "absolute", top: -240, left: 140, width: 800, height: 800, borderRadius: "50%", background: "radial-gradient(circle, rgba(34,197,94,0.20), rgba(34,197,94,0) 65%)" }} />
+      <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "28px 56px 0" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 54, height: 54, borderRadius: "50%", objectFit: "cover" }} />
+          <div style={{ fontWeight: 900, fontSize: 32, letterSpacing: 2 }}>DEEP<span style={{ color: G }}>433</span></div>
+        </div>
+        <div style={{ fontSize: 19, color: "#9fb0c8", letterSpacing: 3, textTransform: "uppercase" }}>Player profile</div>
+      </div>
+      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 28, margin: "26px 56px 0", background: "#121b2e", border: "1.5px solid #1f2d47", borderRadius: 22, padding: "20px 28px" }}>
+        <div style={{ width: 150, height: 150, borderRadius: "50%", overflow: "hidden", background: "#1f2d47", border: `3px solid ${G}`, boxSizing: "border-box", flexShrink: 0 }}>
+          {player.ph && <img src={player.ph} alt="" crossOrigin="anonymous" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 50, fontWeight: 900, lineHeight: 1.05, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{player.n}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 10 }}>
+            {player.lg && <img src={player.lg} alt="" crossOrigin="anonymous" style={{ width: 38, height: 38, objectFit: "contain" }} />}
+            <div style={{ fontSize: 26, fontWeight: 700, color: "#cbd5e1" }}>{player.tm}</div>
+          </div>
+          <div style={{ fontSize: 21, color: G, fontWeight: 800, letterSpacing: 3, textTransform: "uppercase", marginTop: 10 }}>{player.pos} · {player.ap} apps · {player.mn} mins</div>
+        </div>
+      </div>
+      <div style={{ position: "relative", textAlign: "center", fontSize: 21, color: "#9fb0c8", letterSpacing: 4, textTransform: "uppercase", fontWeight: 700, marginTop: 20 }}>{league} · {seasonText(season, calendar)}</div>
+      <div style={{ position: "relative", margin: "16px 56px 0", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
+        {tiles.map(t => (
+          <div key={t.k} style={{ background: t.hot ? "rgba(34,197,94,0.14)" : "#121b2e", border: `1.5px solid ${t.hot ? G : "#1f2d47"}`, borderRadius: 18, padding: "16px 18px", boxSizing: "border-box", textAlign: "center" }}>
+            <div style={{ fontSize: 19, color: "#9fb0c8", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.title}</div>
+            <div style={{ fontSize: 58, fontWeight: 900, lineHeight: 1.1, marginTop: 4, color: t.hot ? G : "#fff" }}>{t.shown}</div>
+            <div style={{ fontSize: 19, color: t.hot ? G : "#cbd5e1", fontWeight: 800, marginTop: 2 }}>{ordinal(t.rk.rank)} of {t.rk.of}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ position: "absolute", left: 56, right: 56, bottom: 18, textAlign: "center", fontSize: 19, color: "#9fb0c8" }}>Ranked among players with {minMins}+ minutes · only on <b style={{ color: G }}>Deep433</b></div>
+    </div>
+  );
+}
+
+// Head to head: two players, same stats side by side. 1080 x 1080.
+const PS_CMP = ["goals", "assists", "shots", "sot", "kp", "dribbles", "tackles", "inter", "duels", "fouls", "yellow", "rating"];
+const PS_CMP_GK = ["saves", "conceded", "rating", "minutes", "passes", "yellow"];
+const PS_NEUTRAL = ["fouls", "yellow", "red", "minutes", "pens"]; // more is not "better"
+function cmpKeys(a, b) { return a.pos === "Goalkeeper" && b.pos === "Goalkeeper" ? PS_CMP_GK : PS_CMP; }
+function PlayerCompareCard({ cardRef, league, season, calendar, a, b }) {
+  const G = "#22c55e", B = "#60a5fa";
+  const keys = cmpKeys(a, b);
+  const rowH = Math.min(66, Math.floor(600 / keys.length) - 6);
+  const head = (p, col, right) => (
+    <div style={{ flex: 1, minWidth: 0, textAlign: "center" }}>
+      <div style={{ width: 150, height: 150, borderRadius: "50%", overflow: "hidden", background: "#1f2d47", border: `4px solid ${col}`, boxSizing: "border-box", margin: "0 auto" }}>
+        {p.ph && <img src={p.ph} alt="" crossOrigin="anonymous" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+      </div>
+      <div style={{ fontSize: 34, fontWeight: 900, marginTop: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.n}</div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 4 }}>
+        {p.lg && <img src={p.lg} alt="" crossOrigin="anonymous" style={{ width: 28, height: 28, objectFit: "contain" }} />}
+        <div style={{ fontSize: 20, color: "#cbd5e1", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.tm}</div>
+      </div>
+      <div style={{ fontSize: 16, color: col, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", marginTop: 4 }}>{p.pos} · {p.ap} apps · {p.mn} mins</div>
+    </div>
+  );
+  return (
+    <div ref={cardRef} style={{ width: 1080, height: 1080, boxSizing: "border-box", position: "relative", overflow: "hidden", background: "#0b1220", color: "#fff", fontFamily: "'Inter','Helvetica Neue',Arial,sans-serif" }}>
+      <div style={{ position: "absolute", top: -240, left: 140, width: 800, height: 800, borderRadius: "50%", background: "radial-gradient(circle, rgba(34,197,94,0.16), rgba(34,197,94,0) 65%)" }} />
+      <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "26px 56px 0" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 52, height: 52, borderRadius: "50%", objectFit: "cover" }} />
+          <div style={{ fontWeight: 900, fontSize: 30, letterSpacing: 2 }}>DEEP<span style={{ color: G }}>433</span></div>
+        </div>
+        <div style={{ fontSize: 18, color: "#9fb0c8", letterSpacing: 3, textTransform: "uppercase" }}>{league} · {seasonText(season, calendar)}</div>
+      </div>
+      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 10, margin: "20px 56px 0" }}>
+        {head(a, G)}
+        <div style={{ fontSize: 40, fontWeight: 900, color: "#9fb0c8", flexShrink: 0 }}>VS</div>
+        {head(b, B)}
+      </div>
+      <div style={{ position: "relative", margin: "20px 56px 0" }}>
+        {keys.map(k => {
+          const def = PS_STATS[k];
+          const va = def.val(a), vb = def.val(b);
+          const neutral = PS_NEUTRAL.includes(k) || va === vb;
+          const aWin = !neutral && (def.dir === 1 ? va > vb : va < vb);
+          const bWin = !neutral && (def.dir === 1 ? vb > va : vb < va);
+          const tot = (va + vb) || 1;
+          const fa = def.dir === 1 ? va / tot : vb / tot;
+          const label = def.title.split(" ").map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(" ");
+          return (
+            <div key={k} style={{ height: rowH, marginBottom: 6, display: "flex", alignItems: "center", gap: 14, background: "#121b2e", border: "1.5px solid #1f2d47", borderRadius: 14, padding: "0 20px", boxSizing: "border-box", position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", left: 0, bottom: 0, height: 5, width: `${Math.round(fa * 100)}%`, background: G, opacity: 0.8 }} />
+              <div style={{ position: "absolute", right: 0, bottom: 0, height: 5, width: `${Math.round((1 - fa) * 100)}%`, background: B, opacity: 0.8 }} />
+              <div style={{ width: 150, textAlign: "left", fontSize: 36, fontWeight: 900, color: aWin ? G : "#fff" }}>{def.show(va)}</div>
+              <div style={{ flex: 1, textAlign: "center", fontSize: 20, color: "#9fb0c8", fontWeight: 700 }}>{label}</div>
+              <div style={{ width: 150, textAlign: "right", fontSize: 36, fontWeight: 900, color: bWin ? B : "#fff" }}>{def.show(vb)}</div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ position: "absolute", left: 56, right: 56, bottom: 16, textAlign: "center", fontSize: 19, color: "#9fb0c8" }}>Season stats so far · only on <b style={{ color: G }}>Deep433</b></div>
+    </div>
+  );
+}
+
+// One player, this season v last season, on one stat. 1080 x 1080.
+const sameP = (x, y) => (x.ph && y.ph ? x.ph === y.ph : x.n === y.n);
+function PlayerSeasonCard({ cardRef, league, season, calendar, cur, prev, curAll, prevAll, statKey, minMins }) {
+  const G = "#22c55e", B = "#60a5fa";
+  const def = PS_STATS[statKey];
+  const tile = (p, all, col, label) => {
+    if (!p) return { label, col, none: true };
+    const v = def.val(p);
+    return { label, col, v, shown: def.show(v), rk: playerRank(all, statKey, p, minMins), p90: per90(v, p.mn), mn: p.mn, ap: p.ap, tm: p.tm, sub: def.sub(p) };
+  };
+  const A = tile(prev, prevAll, B, seasonText(season - 1, calendar));
+  const C = tile(cur, curAll, G, seasonText(season, calendar));
+  const diff = A.none || C.none ? null : C.v - A.v;
+  const col = d => (d > 0 ? G : d < 0 ? "#f87171" : "#9fb0c8");
+  const box = t => (
+    <div style={{ flex: 1, background: "#121b2e", border: `2px solid ${t.col}`, borderRadius: 22, padding: "22px 20px", textAlign: "center", boxSizing: "border-box" }}>
+      <div style={{ fontSize: 26, fontWeight: 900, color: t.col, letterSpacing: 3 }}>{t.label}</div>
+      {t.none ? <div style={{ fontSize: 28, color: "#9fb0c8", marginTop: 60, fontWeight: 700 }}>No data in this league</div> : (
+        <>
+          <div style={{ fontSize: 120, fontWeight: 900, lineHeight: 1.05, marginTop: 8 }}>{t.shown}</div>
+          <div style={{ fontSize: 24, color: "#cbd5e1", fontWeight: 700 }}>{def.unit}</div>
+          <div style={{ fontSize: 34, fontWeight: 900, color: t.col, marginTop: 14 }}>{ordinal(t.rk.rank)} of {t.rk.of}</div>
+          <div style={{ fontSize: 22, color: "#9fb0c8", fontWeight: 600, marginTop: 10 }}>{f2(t.p90)} per 90</div>
+          <div style={{ fontSize: 22, color: "#9fb0c8", fontWeight: 600, marginTop: 4 }}>{t.sub}</div>
+          <div style={{ fontSize: 20, color: "#9fb0c8", marginTop: 4 }}>{t.ap} apps · {t.mn} mins</div>
+          <div style={{ fontSize: 20, color: "#9fb0c8", marginTop: 4 }}>{t.tm}</div>
+        </>
+      )}
+    </div>
+  );
+  const pl = cur || prev;
+  return (
+    <div ref={cardRef} style={{ width: 1080, height: 1080, boxSizing: "border-box", position: "relative", overflow: "hidden", background: "#0b1220", color: "#fff", fontFamily: "'Inter','Helvetica Neue',Arial,sans-serif" }}>
+      <div style={{ position: "absolute", top: -240, left: 140, width: 800, height: 800, borderRadius: "50%", background: "radial-gradient(circle, rgba(34,197,94,0.16), rgba(34,197,94,0) 65%)" }} />
+      <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "26px 56px 0" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 52, height: 52, borderRadius: "50%", objectFit: "cover" }} />
+          <div style={{ fontWeight: 900, fontSize: 30, letterSpacing: 2 }}>DEEP<span style={{ color: G }}>433</span></div>
+        </div>
+        <div style={{ fontSize: 18, color: "#9fb0c8", letterSpacing: 3, textTransform: "uppercase" }}>{league}</div>
+      </div>
+      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 24, margin: "22px 56px 0" }}>
+        <div style={{ width: 130, height: 130, borderRadius: "50%", overflow: "hidden", background: "#1f2d47", border: `3px solid ${G}`, boxSizing: "border-box", flexShrink: 0 }}>
+          {pl.ph && <img src={pl.ph} alt="" crossOrigin="anonymous" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 48, fontWeight: 900, lineHeight: 1.05, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{pl.n}</div>
+          <div style={{ fontSize: 24, color: G, fontWeight: 800, letterSpacing: 3, textTransform: "uppercase", marginTop: 8 }}>{def.title} · this season v last</div>
+        </div>
+      </div>
+      <div style={{ position: "relative", display: "flex", gap: 16, alignItems: "stretch", margin: "22px 56px 0" }}>
+        {box(A)}
+        <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", width: 110, flexShrink: 0 }}>
+          <div style={{ fontSize: 22, color: "#9fb0c8", fontWeight: 800 }}>CHANGE</div>
+          <div style={{ fontSize: 54, fontWeight: 900, color: diff === null ? "#9fb0c8" : col(diff) }}>{diff === null ? "–" : (diff > 0 ? "+" : "") + (Number.isInteger(diff) ? diff : f2(diff))}</div>
+        </div>
+        {box(C)}
+      </div>
+      <div style={{ position: "absolute", left: 56, right: 56, bottom: 16, textAlign: "center", fontSize: 19, color: "#9fb0c8" }}>Ranked among players with {minMins}+ minutes in the same league · only on <b style={{ color: G }}>Deep433</b></div>
+    </div>
+  );
+}
+
+function PlayerBoardGraphic() {
+  const cardRef = useRef(null);
+  const [league, setLeague] = useState("pl");
+  const [statKey, setStatKey] = useState("goals");
+  const [count, setCount] = useState(10);
+  const [minMins, setMinMins] = useState(360);
+  const [pos, setPos] = useState("all");
+  const [mode, setMode] = useState("board"); // "board" = league top list, "profile" = one player
+  const [query, setQuery] = useState("");
+  const [pick, setPick] = useState("");
+  const [query2, setQuery2] = useState("");
+  const [prevData, setPrevData] = useState(null);
+  const [prevLoading, setPrevLoading] = useState(false);
+  const [prevErr, setPrevErr] = useState("");
+  const [sStat, setSStat] = useState("dribbles");
+  const [pick2, setPick2] = useState("");
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+  const [downloading, setDownloading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const load = async (force) => {
+    setLoading(true); setErr("");
+    const lsKey = `d433_playerboard_${league}`;
+    try {
+      if (!force) {
+        const c = JSON.parse(localStorage.getItem(lsKey) || "null");
+        if (c && Date.now() - c.t < 6 * 3600 * 1000) { setData(c.data); setLoading(false); return; }
+      }
+    } catch {}
+    try {
+      const res = await fetch(`/api/player-board?leagueId=${league}${force ? `&t=${Date.now()}` : ""}`);
+      const json = await res.json();
+      if (!res.ok || json.available === false) {
+        setData(null); setErr(json.error ? `${json.error}${json.detail ? ": " + json.detail : ""}` : "No player stats available for this league yet.");
+      } else {
+        setData(json);
+        try { localStorage.setItem(lsKey, JSON.stringify({ t: Date.now(), data: json })); } catch {}
+      }
+    } catch (e) { setData(null); setErr("Could not load players: " + e.message); }
+    setLoading(false);
+  };
+  useEffect(() => { load(false); setPick(""); setPick2(""); setPrevData(null); setPrevErr(""); /* eslint-disable-next-line */ }, [league]);
+
+  const players = data?.players || [];
+  const def = PS_STATS[statKey];
+  const rows = players.length ? rankPlayers(players, statKey, count, minMins, pos) : [];
+  const note = rows.length && data
+    ? (() => {
+        const top = rows.filter(r => r.rank === 1);
+        const who = top.length > 1 ? top.map(r => r.name).join(" and ") : top[0].name;
+        const lines = rows.slice(0, 3).map(r => `${r.rank}. ${r.name} (${r.team}) ${r.shown}`).join("\n");
+        return `📊 ${def.title.charAt(0) + def.title.slice(1).toLowerCase()} in the ${data.league}\n\n${who} ${def.verb}: ${rows[0].shown} ${def.unit}${top.length > 1 ? " each" : ""} (${rows[0].sub}).\n\n${lines}\n\nWho else belongs on this list? 👇`;
+      })()
+    : "";
+  const matches = players.filter(p => p.n && p.n.toLowerCase().includes(query.trim().toLowerCase())).sort((a, b) => b.mn - a.mn).slice(0, 60);
+  const loadPrev = async (force) => {
+    if (!data) return;
+    setPrevLoading(true); setPrevErr("");
+    const lsKey = `d433_playerboard_${league}_prev`;
+    try {
+      if (!force) {
+        const c = JSON.parse(localStorage.getItem(lsKey) || "null");
+        if (c && c.data?.season === data.season - 1 && Date.now() - c.t < 24 * 3600 * 1000) { setPrevData(c.data); setPrevLoading(false); return; }
+      }
+    } catch {}
+    try {
+      const res = await fetch(`/api/player-board?leagueId=${league}&season=${data.season - 1}${force ? `&t=${Date.now()}` : ""}`);
+      const json = await res.json();
+      if (!res.ok || json.available === false) { setPrevData(null); setPrevErr(json.error || "No data for last season."); }
+      else { setPrevData(json); try { localStorage.setItem(lsKey, JSON.stringify({ t: Date.now(), data: json })); } catch {} }
+    } catch (e) { setPrevData(null); setPrevErr("Could not load last season: " + e.message); }
+    setPrevLoading(false);
+  };
+  const player = players.find(p => `${p.n}|${p.tm}` === pick);
+  const prevPlayers = prevData?.players || [];
+  const prevMatch = player ? prevPlayers.find(x => sameP(x, player)) : null;
+  const seasonNote = player && prevData && data
+    ? (() => {
+        const d = PS_STATS[sStat];
+        const a = prevMatch ? d.val(prevMatch) : null, c = d.val(player);
+        if (a === null) return `📊 ${player.n}: ${d.show(c)} ${d.unit} so far this season in the ${data.league}. No ${data.league} numbers last season to compare.\n\nWhat do you make of it? 👇`;
+        const ra = playerRank(prevPlayers, sStat, prevMatch, minMins), rc = playerRank(players, sStat, player, minMins);
+        const trend = c > a ? "already past" : c === a ? "already level with" : "still behind";
+        return `📊 ${player.n}, ${d.unit}\n\nLast season: ${d.show(a)} (${ordinal(ra.rank)} in the ${data.league}).\nThis season so far: ${d.show(c)} (${ordinal(rc.rank)}), ${trend} last year's total in ${player.ap} apps.\n\nBetter or worse season so far? 👇`;
+      })()
+    : "";
+  const matches2 = players.filter(p => p.n && p.n.toLowerCase().includes(query2.trim().toLowerCase())).sort((a, b) => b.mn - a.mn).slice(0, 60);
+  const player2 = players.find(p => `${p.n}|${p.tm}` === pick2);
+  const cmpNote = player && player2 && data
+    ? (() => {
+        const keys = cmpKeys(player, player2).filter(k => !PS_NEUTRAL.includes(k));
+        let wa = 0, wb = 0;
+        const lines = keys.map(k => { const d = PS_STATS[k], x = d.val(player), y = d.val(player2); if (x === y) return null; const aw = d.dir === 1 ? x > y : x < y; aw ? wa++ : wb++; return null; });
+        const lead = wa === wb ? "Dead level" : `${wa > wb ? player.n : player2.n} leads ${Math.max(wa, wb)} to ${Math.min(wa, wb)}`;
+        const g = k => `${PS_STATS[k].show(PS_STATS[k].val(player))} v ${PS_STATS[k].show(PS_STATS[k].val(player2))}`;
+        const [k1, k2] = player.pos === "Goalkeeper" && player2.pos === "Goalkeeper" ? ["saves", "conceded"] : ["goals", "assists"];
+        return `⚔️ ${player.n} v ${player2.n}, ${data.league} this season\n\n${lead} on the key stats.\n${PS_STATS[k1].unit}: ${g(k1)}\n${PS_STATS[k2].unit}: ${g(k2)}\n\nWho would you pick? 👇`;
+      })()
+    : "";
+  const profileNote = player && data
+    ? (() => {
+        const keys = player.pos === "Goalkeeper" ? PS_PROFILE_GK : PS_PROFILE;
+        const best = keys.map(k => ({ k, v: PS_STATS[k].val(player), rk: playerRank(players, k, player, minMins) })).filter(x => x.v > 0).sort((a, b) => a.rk.rank - b.rk.rank).slice(0, 3);
+        const parts = best.map(x => `${ordinal(x.rk.rank)} for ${PS_STATS[x.k].unit} (${PS_STATS[x.k].show(x.v)})`).join(", ");
+        return `📊 ${player.n} (${player.tm}) in the ${data.league}\n\n${player.ap} appearances, ${player.mn} minutes. ${parts}.\n\nWhere does he rank for you? 👇`;
+      })()
+    : "";
+  const scale = typeof window !== "undefined" ? Math.min(1, (window.innerWidth - 32) / 1080) : 0.4;
+  const inp = { background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", padding: "8px 10px", fontSize: 12, fontFamily: "inherit" };
+  const cardW = 1080, cardH = mode === "board" ? 1350 : 1080;
+  const ready = mode === "profile" ? !!player : mode === "compare" ? !!(player && player2) : mode === "seasons" ? !!(player && prevData) : rows.length > 0;
+  const download = async () => {
+    setDownloading(true);
+    try { await downloadCardImage(cardRef.current, mode === "profile" ? `deep433-player-${player.n.replace(/\W+/g, "-")}.png` : mode === "seasons" ? `deep433-${player.n.replace(/\W+/g, "-")}-${sStat}-season-v-season.png` : mode === "compare" ? `deep433-${player.n.replace(/\W+/g, "-")}-v-${player2.n.replace(/\W+/g, "-")}.png` : `deep433-players-${league}-${statKey}.png`, "#0b1220", false, 1); } catch { alert("Download failed"); }
+    setDownloading(false);
+  };
+  const copy = async txt => { try { await navigator.clipboard.writeText(txt); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch {} };
+  const shownNote = mode === "profile" ? profileNote : mode === "compare" ? cmpNote : mode === "seasons" ? seasonNote : note;
+  const sel = { ...inp, flex: 1, minWidth: 140 };
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Every player in a league, loaded once and kept for 24 hours (about 25 to 30 API requests the first time). After that, switching stats, positions and players is free.</div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <select style={sel} value={league} onChange={e => setLeague(e.target.value)}>
+          {SB_LEAGUES.map(([id, l]) => <option key={id} value={id}>{l}</option>)}
+        </select>
+        <button onClick={() => { if (window.confirm("Refresh from the API? This uses about 25 to 30 requests.")) load(true); }} disabled={loading} style={{ ...inp, cursor: "pointer" }}>↻ Refresh</button>
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        {[["board", "League top list"], ["profile", "Single player"], ["compare", "Compare two"], ["seasons", "This season v last"]].map(([m, l]) => (
+          <button key={m} onClick={() => setMode(m)} style={{ ...inp, cursor: "pointer", borderColor: mode === m ? "#22c55e" : "#2a2a3a", color: mode === m ? "#22c55e" : "#f0f0f0" }}>{l}</button>
+        ))}
+      </div>
+      {mode === "board" ? (
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <select style={sel} value={statKey} onChange={e => setStatKey(e.target.value)}>
+            {PS_ORDER.map(k => <option key={k} value={k}>{PS_STATS[k].title}</option>)}
+          </select>
+          <select style={{ ...inp, width: 150 }} value={pos} onChange={e => setPos(e.target.value)}>
+            {PS_POS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+          <select style={{ ...inp, width: 90 }} value={count} onChange={e => setCount(Number(e.target.value))}>
+            {[5, 8, 10, 15, 20].map(n => <option key={n} value={n}>Top {n}</option>)}
+          </select>
+          <select style={{ ...inp, width: 120 }} value={minMins} onChange={e => setMinMins(Number(e.target.value))}>
+            {[0, 180, 360, 540, 720, 900].map(n => <option key={n} value={n}>{n}+ mins</option>)}
+          </select>
+        </div>
+      ) : (
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <input style={{ ...inp, flex: 1, minWidth: 140 }} placeholder={mode === "compare" ? "Search player 1" : "Search a player"} value={query} onChange={e => setQuery(e.target.value)} />
+          <select style={sel} value={pick} onChange={e => setPick(e.target.value)}>
+            <option value="">{matches.length} players{query ? " found" : " (most minutes first)"}</option>
+            {matches.map(p => <option key={`${p.n}|${p.tm}`} value={`${p.n}|${p.tm}`}>{p.n} · {p.tm}</option>)}
+          </select>
+          {mode === "profile" && <select style={{ ...inp, width: 120 }} value={minMins} onChange={e => setMinMins(Number(e.target.value))}>
+            {[0, 180, 360, 540, 720, 900].map(n => <option key={n} value={n}>Rank vs {n}+ mins</option>)}
+          </select>}
+          {mode === "seasons" && (
+            <>
+              <select style={sel} value={sStat} onChange={e => setSStat(e.target.value)}>
+                {PS_ORDER.map(k => <option key={k} value={k}>{PS_STATS[k].title}</option>)}
+              </select>
+              <select style={{ ...inp, width: 120 }} value={minMins} onChange={e => setMinMins(Number(e.target.value))}>
+                {[0, 180, 360, 540, 720, 900].map(n => <option key={n} value={n}>Rank vs {n}+ mins</option>)}
+              </select>
+              <button onClick={() => { if (!prevData || window.confirm("Reload last season from the API? About 25 to 30 requests.")) loadPrev(!!prevData); }} disabled={prevLoading || !data} style={{ ...inp, cursor: "pointer", fontWeight: 700 }}>{prevLoading ? "Loading…" : prevData ? "↻ Reload last season" : "Load last season"}</button>
+            </>
+          )}
+          {mode === "compare" && (
+            <>
+              <input style={{ ...inp, flex: 1, minWidth: 140 }} placeholder="Search player 2" value={query2} onChange={e => setQuery2(e.target.value)} />
+              <select style={sel} value={pick2} onChange={e => setPick2(e.target.value)}>
+                <option value="">Player 2: {matches2.length} players{query2 ? " found" : ""}</option>
+                {matches2.map(p => <option key={`${p.n}|${p.tm}`} value={`${p.n}|${p.tm}`}>{p.n} · {p.tm}</option>)}
+              </select>
+            </>
+          )}
+        </div>
+      )}
+      {mode === "board" && (def.needsMin || def.gk) && <div style={{ fontSize: 11, color: "#fbbf24" }}>This stat only counts players with {minMins}+ minutes, so part-timers don't top it.</div>}
+      {mode === "seasons" && !prevData && !prevLoading && <div style={{ fontSize: 11, color: "#fbbf24" }}>Pick a player, then press "Load last season" (about 25 to 30 API requests once, then kept for 24 hours). Players who changed league won't have last season's numbers here.</div>}
+      {mode === "seasons" && prevLoading && <div style={{ fontSize: 12, color: "#fbbf24" }}>Loading last season… can take 10 to 20 seconds.</div>}
+      {mode === "seasons" && prevErr && <div style={{ fontSize: 12, color: "#f87171" }}>{prevErr}</div>}
+      {mode === "seasons" && player && prevData && !prevMatch && <div style={{ fontSize: 12, color: "#fbbf24" }}>{player.n} has no {data.league} numbers last season, so the card shows this season only.</div>}
+      {mode === "seasons" && prevData?.missingPages?.length > 0 && <div style={{ fontSize: 12, color: "#f87171" }}>Warning: {prevData.missingPages.length} page(s) of last season's players failed, so ranks could be off. Press Reload.</div>}
+      {loading && <div style={{ fontSize: 12, color: "#fbbf24" }}>Loading players… the first time for a league can take 10 to 20 seconds.</div>}
+      {err && <div style={{ fontSize: 12, color: "#f87171" }}>{err}</div>}
+      {data && data.missingPages?.length > 0 && <div style={{ fontSize: 12, color: "#f87171" }}>Warning: {data.missingPages.length} page(s) of players failed to load (about {data.missingPages.length * 20} players missing), so some ranks could be wrong. Wait a minute and press Refresh.</div>}
+      {data && <div style={{ fontSize: 11, color: "#94a3b8" }}>{players.length} players · data from {new Date(data.generatedAt).toLocaleString("en-GB")}</div>}
+      {ready && (
+        <>
+          <div style={{ width: cardW * scale, height: cardH * scale, margin: "0 auto", overflow: "hidden", borderRadius: 12 }}>
+            <div style={{ width: cardW, height: cardH, transform: `scale(${scale})`, transformOrigin: "top left" }}>
+              {mode === "seasons"
+                ? <PlayerSeasonCard league={data.league} season={data.season} calendar={data.calendar} cur={player} prev={prevMatch} curAll={players} prevAll={prevPlayers} statKey={sStat} minMins={minMins} />
+                : mode === "compare"
+                ? <PlayerCompareCard league={data.league} season={data.season} calendar={data.calendar} a={player} b={player2} />
+                : mode === "profile"
+                ? <PlayerProfileCard league={data.league} season={data.season} calendar={data.calendar} player={player} players={players} minMins={minMins} />
+                : <PlayerBoardCard league={data.league} statKey={statKey} rows={rows} season={data.season} calendar={data.calendar} minMins={minMins} pos={pos} />}
+            </div>
+          </div>
+          <div style={{ position: "fixed", left: -20000, top: 0, pointerEvents: "none" }} aria-hidden="true">
+            {mode === "seasons"
+              ? <PlayerSeasonCard cardRef={cardRef} league={data.league} season={data.season} calendar={data.calendar} cur={player} prev={prevMatch} curAll={players} prevAll={prevPlayers} statKey={sStat} minMins={minMins} />
+              : mode === "compare"
+              ? <PlayerCompareCard cardRef={cardRef} league={data.league} season={data.season} calendar={data.calendar} a={player} b={player2} />
+              : mode === "profile"
+              ? <PlayerProfileCard cardRef={cardRef} league={data.league} season={data.season} calendar={data.calendar} player={player} players={players} minMins={minMins} />
+              : <PlayerBoardCard cardRef={cardRef} league={data.league} statKey={statKey} rows={rows} season={data.season} calendar={data.calendar} minMins={minMins} pos={pos} />}
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button onClick={download} disabled={downloading} style={{ background: "linear-gradient(135deg,#22c55e,#16a34a)", border: "none", borderRadius: 8, color: "#04120a", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 800, padding: "10px 14px" }}>{downloading ? "Generating..." : "⬇ Download card"}</button>
+            <button onClick={() => copy(shownNote)} style={{ ...inp, cursor: "pointer", fontWeight: 700 }}>{copied ? "Copied ✓" : "Copy note"}</button>
+          </div>
+          <textarea readOnly value={shownNote} style={{ ...inp, minHeight: 140 }} />
+        </>
+      )}
+    </div>
+  );
+}
+
 // ───────── STAT OF THE DAY (standard card, data from /api/stat-board) ─────────
 const SB_LEAGUES = [
   ["pl", "Premier League"], ["championship", "Championship"], ["laliga", "La Liga"], ["seriea", "Serie A"],
@@ -13404,7 +13929,7 @@ const LAB_META = {
   quickvs: ["The Battle", "swords", "players"],
   team: ["Team Stats", "shield", "teams"], teamcompare: ["Team Compare", "swords", "teams"], currentseasoncompare: ["Season Compare", "swords", "teams"],
   leaguetotals: ["League Totals", "chart", "teams"], bestofeurope: ["Best of Europe", "trophy", "teams"], teambattle: ["Team Battle", "swords", "teams"],
-  backfourbattle: ["Back Four", "shield", "teams"], triobattle: ["Trio Battle", "swords", "teams"], statboard: ["Stat of the day", "chart", "teams"],
+  backfourbattle: ["Back Four", "shield", "teams"], triobattle: ["Trio Battle", "swords", "teams"], statboard: ["Stat of the day", "chart", "teams"], playerboard: ["Player stat of the day", "user", "players"],
   weeklypicks: ["Weekly Picks", "target", "predictions"], weeklyresults: ["Picks Results", "chart", "predictions"], lockedin: ["Locked In", "list", "predictions"],
   matchresults: ["Match Results", "chart", "predictions"], resultsroundup: ["Roundup", "sparkles", "predictions"], curatedmatches: ["Curated", "list", "predictions"],
   premiumcard: ["Premium card", "star", "predictions"], picksreport: ["Picks report", "list", "predictions"],
@@ -13511,6 +14036,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "picksreport", label: "✅ Picks report card" },
     { id: "premiumcard", label: "⭐ Premium match card" },
     { id: "statboard", label: "📊 Stat of the day" },
+    { id: "playerboard", label: "🧑 Player stat of the day" },
     { id: "player",   label: "⭐ Player Ratings" },
     { id: "top",      label: "🥇 Leaderboard" },
     { id: "team",     label: "🛡 Team Stats" },
@@ -13585,6 +14111,7 @@ export default function DataGraphics({ history = [], supabase }) {
       {activeSection === "picksreport" && <PicksReportGraphic />}
       {activeSection === "premiumcard" && <PremiumMatchGraphic />}
       {activeSection === "statboard" && <StatBoardGraphic />}
+      {activeSection === "playerboard" && <PlayerBoardGraphic />}
       {activeSection === "player"   && <PlayerRatingsGraphic />}
       {activeSection === "top"      && <TopScorersGraphic />}
       {activeSection === "team"     && <TeamStatsGraphic />}
