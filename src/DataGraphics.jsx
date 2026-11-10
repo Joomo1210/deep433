@@ -5524,40 +5524,56 @@ function PlayerCompareCard({ cardRef, league, season, calendar, a, b }) {
   );
 }
 
-// One player, this season v last season, on one stat. 1080 x 1080.
+// One player, this season v last season on one stat, framed as progress or regress. 1080 x 1080.
 const sameP = (x, y) => (x.ph && y.ph ? x.ph === y.ph : x.n === y.n);
+const PS_RATELIKE = ["g90", "duelpct", "rating"]; // already a rate, not a count
+const PS_OF = { dribbles: p => [p.ds, p.dr], sot: p => [p.so, p.sh], duels: p => [p.dw, p.du] }; // successes out of attempts
+const psRate = (key, p) => (PS_RATELIKE.includes(key) ? PS_STATS[key].val(p) : per90(PS_STATS[key].val(p), p.mn));
+function psRateRank(players, key, p, minMins) {
+  const def = PS_STATS[key];
+  const list = eligiblePlayers(players, key, minMins, "all").filter(x => def.val(x) >= 0);
+  const mine = psRate(key, p);
+  const better = list.filter(x => (def.dir === 1 ? psRate(key, x) > mine : psRate(key, x) < mine)).length;
+  return { rank: better + 1, of: list.length };
+}
+// Everything the card and the note need, in one place.
+function psProgress(key, cur, prev, curAll, prevAll, minMins) {
+  const def = PS_STATS[key];
+  const rc = psRate(key, cur), ra = prev ? psRate(key, prev) : null;
+  const chg = ra && ra > 0 ? ((rc - ra) / ra) * 100 : null;
+  const good = chg === null ? null : def.dir === 1 ? chg : -chg;
+  const verdict = good === null ? "NEW" : good >= 10 ? "PROGRESSING" : good <= -10 ? "REGRESSING" : "HOLDING STEADY";
+  const kc = psRateRank(curAll, key, cur, minMins);
+  const ka = prev ? psRateRank(prevAll, key, prev, minMins) : null;
+  const pace = !PS_RATELIKE.includes(key) && prev ? Math.round((rc / 90) * prev.mn) : null;
+  const of = PS_OF[key];
+  const sc = of ? [cur, of(cur)] : null, sa = of && prev ? of(prev) : null;
+  return { def, rc, ra, chg, good, verdict, kc, ka, pace, rankMove: ka ? ka.rank - kc.rank : null,
+    pcC: sc && sc[1][1] ? Math.round((sc[1][0] / sc[1][1]) * 100) : null, pcA: sa && sa[1] ? Math.round((sa[0] / sa[1]) * 100) : null };
+}
+const psFmtRate = (key, v) => (key === "duelpct" ? `${Math.round(v)}%` : f2(v));
 function PlayerSeasonCard({ cardRef, league, season, calendar, cur, prev, curAll, prevAll, statKey, minMins }) {
-  const G = "#22c55e", B = "#60a5fa";
-  const def = PS_STATS[statKey];
-  const tile = (p, all, col, label) => {
-    if (!p) return { label, col, none: true };
-    const v = def.val(p);
-    return { label, col, v, shown: def.show(v), rk: playerRank(all, statKey, p, minMins), p90: per90(v, p.mn), mn: p.mn, ap: p.ap, tm: p.tm, sub: def.sub(p) };
-  };
-  const A = tile(prev, prevAll, B, seasonText(season - 1, calendar));
-  const C = tile(cur, curAll, G, seasonText(season, calendar));
-  const diff = A.none || C.none ? null : C.v - A.v;
-  const col = d => (d > 0 ? G : d < 0 ? "#f87171" : "#9fb0c8");
-  const box = t => (
-    <div style={{ flex: 1, background: "#121b2e", border: `2px solid ${t.col}`, borderRadius: 22, padding: "22px 20px", textAlign: "center", boxSizing: "border-box" }}>
-      <div style={{ fontSize: 26, fontWeight: 900, color: t.col, letterSpacing: 3 }}>{t.label}</div>
-      {t.none ? <div style={{ fontSize: 28, color: "#9fb0c8", marginTop: 60, fontWeight: 700 }}>No data in this league</div> : (
-        <>
-          <div style={{ fontSize: 120, fontWeight: 900, lineHeight: 1.05, marginTop: 8 }}>{t.shown}</div>
-          <div style={{ fontSize: 24, color: "#cbd5e1", fontWeight: 700 }}>{def.unit}</div>
-          <div style={{ fontSize: 34, fontWeight: 900, color: t.col, marginTop: 14 }}>{ordinal(t.rk.rank)} of {t.rk.of}</div>
-          <div style={{ fontSize: 22, color: "#9fb0c8", fontWeight: 600, marginTop: 10 }}>{f2(t.p90)} per 90</div>
-          <div style={{ fontSize: 22, color: "#9fb0c8", fontWeight: 600, marginTop: 4 }}>{t.sub}</div>
-          <div style={{ fontSize: 20, color: "#9fb0c8", marginTop: 4 }}>{t.ap} apps · {t.mn} mins</div>
-          <div style={{ fontSize: 20, color: "#9fb0c8", marginTop: 4 }}>{t.tm}</div>
-        </>
-      )}
+  const G = "#22c55e", B = "#60a5fa", R = "#f87171", N = "#fbbf24";
+  const P = psProgress(statKey, cur, prev, curAll, prevAll, minMins);
+  const vc = P.verdict === "PROGRESSING" ? G : P.verdict === "REGRESSING" ? R : P.verdict === "NEW" ? B : N;
+  const arrow = P.verdict === "PROGRESSING" ? "▲" : P.verdict === "REGRESSING" ? "▼" : P.verdict === "NEW" ? "★" : "►";
+  const unitRate = PS_RATELIKE.includes(statKey) ? P.def.unit : `${P.def.unit} per 90`;
+  const prevLabel = seasonText(season - 1, calendar), curLabel = seasonText(season, calendar);
+  const row = (label, a, c, tag, tagCol) => (
+    <div style={{ display: "flex", alignItems: "center", background: "#121b2e", border: "1.5px solid #1f2d47", borderRadius: 16, padding: "0 24px", height: 92, marginBottom: 12, boxSizing: "border-box" }}>
+      <div style={{ width: 250, fontSize: 24, color: "#9fb0c8", fontWeight: 700 }}>{label}</div>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 18 }}>
+        <div style={{ fontSize: 38, fontWeight: 900, color: B }}>{a}</div>
+        <div style={{ fontSize: 28, color: "#9fb0c8" }}>→</div>
+        <div style={{ fontSize: 38, fontWeight: 900, color: G }}>{c}</div>
+      </div>
+      <div style={{ width: 160, textAlign: "right", fontSize: 28, fontWeight: 900, color: tagCol }}>{tag}</div>
     </div>
   );
-  const pl = cur || prev;
+  const fmtChg = P.chg === null ? "" : `${P.chg > 0 ? "+" : ""}${Math.round(P.chg)}%`;
   return (
     <div ref={cardRef} style={{ width: 1080, height: 1080, boxSizing: "border-box", position: "relative", overflow: "hidden", background: "#0b1220", color: "#fff", fontFamily: "'Inter','Helvetica Neue',Arial,sans-serif" }}>
-      <div style={{ position: "absolute", top: -240, left: 140, width: 800, height: 800, borderRadius: "50%", background: "radial-gradient(circle, rgba(34,197,94,0.16), rgba(34,197,94,0) 65%)" }} />
+      <div style={{ position: "absolute", top: -240, left: 140, width: 800, height: 800, borderRadius: "50%", background: `radial-gradient(circle, ${vc}30, ${vc}00 65%)` }} />
       <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "26px 56px 0" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 52, height: 52, borderRadius: "50%", objectFit: "cover" }} />
@@ -5565,24 +5581,29 @@ function PlayerSeasonCard({ cardRef, league, season, calendar, cur, prev, curAll
         </div>
         <div style={{ fontSize: 18, color: "#9fb0c8", letterSpacing: 3, textTransform: "uppercase" }}>{league}</div>
       </div>
-      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 24, margin: "22px 56px 0" }}>
-        <div style={{ width: 130, height: 130, borderRadius: "50%", overflow: "hidden", background: "#1f2d47", border: `3px solid ${G}`, boxSizing: "border-box", flexShrink: 0 }}>
-          {pl.ph && <img src={pl.ph} alt="" crossOrigin="anonymous" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 24, margin: "20px 56px 0" }}>
+        <div style={{ width: 120, height: 120, borderRadius: "50%", overflow: "hidden", background: "#1f2d47", border: `3px solid ${vc}`, boxSizing: "border-box", flexShrink: 0 }}>
+          {cur.ph && <img src={cur.ph} alt="" crossOrigin="anonymous" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 48, fontWeight: 900, lineHeight: 1.05, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{pl.n}</div>
-          <div style={{ fontSize: 24, color: G, fontWeight: 800, letterSpacing: 3, textTransform: "uppercase", marginTop: 8 }}>{def.title} · this season v last</div>
+          <div style={{ fontSize: 46, fontWeight: 900, lineHeight: 1.05, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cur.n}</div>
+          <div style={{ fontSize: 22, color: "#cbd5e1", fontWeight: 700, marginTop: 6 }}>{cur.tm} · {P.def.title.charAt(0) + P.def.title.slice(1).toLowerCase()}</div>
         </div>
       </div>
-      <div style={{ position: "relative", display: "flex", gap: 16, alignItems: "stretch", margin: "22px 56px 0" }}>
-        {box(A)}
-        <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", width: 110, flexShrink: 0 }}>
-          <div style={{ fontSize: 22, color: "#9fb0c8", fontWeight: 800 }}>CHANGE</div>
-          <div style={{ fontSize: 54, fontWeight: 900, color: diff === null ? "#9fb0c8" : col(diff) }}>{diff === null ? "–" : (diff > 0 ? "+" : "") + (Number.isInteger(diff) ? diff : f2(diff))}</div>
-        </div>
-        {box(C)}
+      <div style={{ position: "relative", textAlign: "center", marginTop: 20 }}>
+        <div style={{ display: "inline-block", fontSize: 30, fontWeight: 900, letterSpacing: 6, color: "#04120a", background: vc, borderRadius: 40, padding: "8px 34px" }}>{arrow} {P.verdict}</div>
+        {P.chg !== null && <div style={{ fontSize: 150, fontWeight: 900, lineHeight: 1, marginTop: 6, color: vc }}>{fmtChg}</div>}
+        <div style={{ fontSize: 24, color: "#cbd5e1", fontWeight: 700, marginTop: 2 }}>{P.chg !== null ? `${unitRate}, ${curLabel} v ${prevLabel}` : `No ${league} numbers in ${prevLabel} to compare`}</div>
       </div>
-      <div style={{ position: "absolute", left: 56, right: 56, bottom: 16, textAlign: "center", fontSize: 19, color: "#9fb0c8" }}>Ranked among players with {minMins}+ minutes in the same league · only on <b style={{ color: G }}>Deep433</b></div>
+      <div style={{ position: "relative", margin: "20px 56px 0" }}>
+        {P.ka && row(`${unitRate.charAt(0).toUpperCase() + unitRate.slice(1)}`, psFmtRate(statKey, P.ra), psFmtRate(statKey, P.rc), fmtChg, vc)}
+        {P.ka && row("League rank", ordinal(P.ka.rank), ordinal(P.kc.rank), P.rankMove > 0 ? `▲ ${P.rankMove}` : P.rankMove < 0 ? `▼ ${-P.rankMove}` : "–", P.rankMove > 0 ? G : P.rankMove < 0 ? R : "#9fb0c8")}
+        {P.pcA !== null && P.pcC !== null && row("Success rate", `${P.pcA}%`, `${P.pcC}%`, `${P.pcC - P.pcA > 0 ? "+" : ""}${P.pcC - P.pcA} pts`, P.pcC > P.pcA ? G : P.pcC < P.pcA ? R : "#9fb0c8")}
+        {P.pace !== null && row(`Over ${prev.mn} mins`, `${P.def.show(P.def.val(prev))}`, `${P.pace}`, "at this rate", "#9fb0c8")}
+      </div>
+      <div style={{ position: "absolute", left: 56, right: 56, bottom: 16, textAlign: "center", fontSize: 18, color: "#9fb0c8" }}>
+        {curLabel}: {cur.ap} apps, {cur.mn} mins so far · {prevLabel}: {prev ? `${prev.ap} apps, ${prev.mn} mins` : "no data"} · ranked per 90 among {minMins}+ min players · only on <b style={{ color: G }}>Deep433</b>
+      </div>
     </div>
   );
 }
@@ -5667,12 +5688,13 @@ function PlayerBoardGraphic() {
   const prevMatch = player ? prevPlayers.find(x => sameP(x, player)) : null;
   const seasonNote = player && prevData && data
     ? (() => {
-        const d = PS_STATS[sStat];
-        const a = prevMatch ? d.val(prevMatch) : null, c = d.val(player);
-        if (a === null) return `📊 ${player.n}: ${d.show(c)} ${d.unit} so far this season in the ${data.league}. No ${data.league} numbers last season to compare.\n\nWhat do you make of it? 👇`;
-        const ra = playerRank(prevPlayers, sStat, prevMatch, minMins), rc = playerRank(players, sStat, player, minMins);
-        const trend = c > a ? "already past" : c === a ? "already level with" : "still behind";
-        return `📊 ${player.n}, ${d.unit}\n\nLast season: ${d.show(a)} (${ordinal(ra.rank)} in the ${data.league}).\nThis season so far: ${d.show(c)} (${ordinal(rc.rank)}), ${trend} last year's total in ${player.ap} apps.\n\nBetter or worse season so far? 👇`;
+        const P = psProgress(sStat, player, prevMatch, players, prevPlayers, minMins);
+        const d = P.def, unit = PS_RATELIKE.includes(sStat) ? d.unit : `${d.unit} per 90`;
+        if (!prevMatch || P.chg === null) return `📊 ${player.n}: ${psFmtRate(sStat, P.rc)} ${unit} so far this season in the ${data.league}, ${ordinal(P.kc.rank)} in the league. No ${data.league} numbers last season to compare.\n\nWhat do you make of it? 👇`;
+        const head = P.verdict === "PROGRESSING" ? `📈 ${player.n} is progressing.` : P.verdict === "REGRESSING" ? `📉 ${player.n} has gone backwards.` : `➡️ ${player.n} is holding steady.`;
+        const rk = P.rankMove > 0 ? `up from ${ordinal(P.ka.rank)} to ${ordinal(P.kc.rank)} in the ${data.league}` : P.rankMove < 0 ? `down from ${ordinal(P.ka.rank)} to ${ordinal(P.kc.rank)} in the ${data.league}` : `${ordinal(P.kc.rank)} in the ${data.league} both seasons`;
+        const pc = P.pcA !== null && P.pcC !== null ? ` Success rate ${P.pcA}% to ${P.pcC}%.` : "";
+        return `${head}\n\n${d.title.charAt(0) + d.title.slice(1).toLowerCase()}: ${psFmtRate(sStat, P.ra)} to ${psFmtRate(sStat, P.rc)} ${unit} (${P.chg > 0 ? "+" : ""}${Math.round(P.chg)}%), ${rk}.${pc}${d.val(player) < d.val(prevMatch) && P.verdict === "PROGRESSING" ? "\n\nThe raw total looks smaller only because the season is young." : ""}\n\n${P.verdict === "PROGRESSING" ? "Real progress or just a hot start? 👇" : P.verdict === "REGRESSING" ? "Blip or a real decline? 👇" : "What do you make of it? 👇"}`;
       })()
     : "";
   const matches2 = players.filter(p => p.n && p.n.toLowerCase().includes(query2.trim().toLowerCase())).sort((a, b) => b.mn - a.mn).slice(0, 60);
