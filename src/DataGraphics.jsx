@@ -5619,7 +5619,7 @@ function PlayerBoardGraphic() {
       }
     } catch {}
     try {
-      const res = await fetch(`/api/player-board?leagueId=${league}${force ? `&t=${Date.now()}` : ""}`);
+      const res = await fetch(`/api/stat-board?type=players&leagueId=${league}${force ? `&t=${Date.now()}` : ""}`);
       const json = await res.json();
       if (!res.ok || json.available === false) {
         setData(null); setErr(json.error ? `${json.error}${json.detail ? ": " + json.detail : ""}` : "No player stats available for this league yet.");
@@ -5655,7 +5655,7 @@ function PlayerBoardGraphic() {
       }
     } catch {}
     try {
-      const res = await fetch(`/api/player-board?leagueId=${league}&season=${data.season - 1}${force ? `&t=${Date.now()}` : ""}`);
+      const res = await fetch(`/api/stat-board?type=players&leagueId=${league}&season=${data.season - 1}${force ? `&t=${Date.now()}` : ""}`);
       const json = await res.json();
       if (!res.ok || json.available === false) { setPrevData(null); setPrevErr(json.error || "No data for last season."); }
       else { setPrevData(json); try { localStorage.setItem(lsKey, JSON.stringify({ t: Date.now(), data: json })); } catch {} }
