@@ -217,7 +217,7 @@ async function playersHandler(req, res) {
     const ratedMinutes = sum(s => (s.games?.rating ? num(s.games?.minutes) : 0));
     const rt = ratedMinutes ? stats.reduce((t, s) => t + (s.games?.rating ? num(s.games.rating) * num(s.games?.minutes) : 0), 0) / ratedMinutes : 0;
     return {
-      n: item.player?.name, ph: item.player?.photo, tm: last.team?.name, lg: last.team?.logo, pos: last.games?.position,
+      id: item.player?.id, n: item.player?.name, ph: item.player?.photo, tm: last.team?.name, lg: last.team?.logo, pos: last.games?.position,
       mn: sum(s => s.games?.minutes), ap: sum(s => s.games?.appearences), rt: Math.round(rt * 100) / 100,
       g: sum(s => s.goals?.total), a: sum(s => s.goals?.assists), sh: sum(s => s.shots?.total), so: sum(s => s.shots?.on),
       kp: sum(s => s.passes?.key), ps: sum(s => s.passes?.total), tk: sum(s => s.tackles?.total), ic: sum(s => s.tackles?.interceptions),
@@ -230,32 +230,45 @@ async function playersHandler(req, res) {
   };
 
   try {
-    const first = await getPage(1);
+    const only = String(req.query.pages || "").split(",").map(Number).filter(n => n > 0);
+    const pages = {};
+    // Small batches with a pause between them, and up to three passes over anything that failed.
+    const fetchPages = async list => {
+      const failed = [];
+      for (let i = 0; i < list.length; i += 5) {
+        const batch = list.slice(i, i + 5);
+        const results = await Promise.allSettled(batch.map(p => getPage(p)));
+        results.forEach((r, j) => { if (r.status === "fulfilled") pages[batch[j]] = r.value.response || []; else failed.push(batch[j]); });
+        if (i + 5 < list.length) await new Promise(r => setTimeout(r, 250));
+      }
+      return failed;
+    };
+    const retry = async list => {
+      let failed = await fetchPages(list);
+      for (let k = 0; k < 2 && failed.length; k++) { await new Promise(r => setTimeout(r, 700)); failed = await fetchPages(failed); }
+      return failed;
+    };
+    const rowsOf = () => { const byId = new Map(); Object.values(pages).flat().forEach(item => { const row = toRow(item); if (row) byId.set(item.player?.id, row); }); return [...byId.values()]; };
+
+    // ?pages=3,7 : only fetch those pages (used to fill in pages that failed on the first go).
+    if (only.length) {
+      const failed = await retry(only);
+      res.setHeader("Cache-Control", "no-store");
+      return res.status(200).json({ available: true, partial: true, league: league.label, season: league.season, missingPages: failed, players: rowsOf() });
+    }
+
+    let first;
+    try { first = await getPage(1); } catch { await new Promise(r => setTimeout(r, 700)); first = await getPage(1); }
     const totalPages = num(first.paging?.total) || 1;
     if (!(first.response || []).length) {
       res.setHeader("Cache-Control", "no-store");
       return res.status(200).json({ available: false, league: league.label });
     }
-    const pages = { 1: first.response };
-    // Batches of 10 so we stay under the per-minute limit; failed pages get one more try.
-    const fetchPages = async list => {
-      const failed = [];
-      for (let i = 0; i < list.length; i += 10) {
-        const batch = list.slice(i, i + 10);
-        const results = await Promise.allSettled(batch.map(p => getPage(p)));
-        results.forEach((r, j) => { if (r.status === "fulfilled") pages[batch[j]] = r.value.response || []; else failed.push(batch[j]); });
-      }
-      return failed;
-    };
-    const all = Array.from({ length: totalPages - 1 }, (_, i) => i + 2);
-    let failed = await fetchPages(all);
-    if (failed.length) failed = await fetchPages(failed);
+    pages[1] = first.response;
+    const failed = await retry(Array.from({ length: totalPages - 1 }, (_, i) => i + 2));
+    const players = rowsOf();
 
-    const byId = new Map();
-    Object.values(pages).flat().forEach(item => { const row = toRow(item); if (row) byId.set(item.player?.id, row); });
-    const players = [...byId.values()];
-
-    res.setHeader("Cache-Control", failed.length ? "public, s-maxage=300" : "public, s-maxage=86400, stale-while-revalidate=86400");
+    res.setHeader("Cache-Control", failed.length ? "no-store" : "public, s-maxage=86400, stale-while-revalidate=86400");
     return res.status(200).json({
       available: true, league: league.label, season: league.season, calendar: !!league.calendar,
       generatedAt: new Date().toISOString(), pages: totalPages, missingPages: failed, players,
