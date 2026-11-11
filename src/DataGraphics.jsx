@@ -5543,7 +5543,8 @@ function psProgress(key, cur, prev, curAll, prevAll, minMins) {
   const rc = psRate(key, cur), ra = prev ? psRate(key, prev) : null;
   const chg = ra && ra > 0 ? ((rc - ra) / ra) * 100 : null;
   const good = chg === null ? null : def.dir === 1 ? chg : -chg;
-  const verdict = good === null ? "NEW" : good >= 10 ? "PROGRESSING" : good <= -10 ? "REGRESSING" : "HOLDING STEADY";
+  const early = cur.mn < minMins || (prev && prev.mn < minMins);
+  const verdict = good === null ? "NEW" : early ? "EARLY DAYS" : good >= 10 ? "PROGRESSING" : good <= -10 ? "REGRESSING" : "HOLDING STEADY";
   const kc = psRateRank(curAll, key, cur, minMins);
   const ka = prev ? psRateRank(prevAll, key, prev, minMins) : null;
   const pace = !PS_RATELIKE.includes(key) && prev ? Math.round((rc / 90) * prev.mn) : null;
@@ -5557,7 +5558,7 @@ function PlayerSeasonCard({ cardRef, league, season, calendar, cur, prev, curAll
   const G = "#22c55e", B = "#60a5fa", R = "#f87171", N = "#fbbf24";
   const P = psProgress(statKey, cur, prev, curAll, prevAll, minMins);
   const vc = P.verdict === "PROGRESSING" ? G : P.verdict === "REGRESSING" ? R : P.verdict === "NEW" ? B : N;
-  const arrow = P.verdict === "PROGRESSING" ? "▲" : P.verdict === "REGRESSING" ? "▼" : P.verdict === "NEW" ? "★" : "►";
+  const arrow = P.verdict === "PROGRESSING" ? "▲" : P.verdict === "REGRESSING" ? "▼" : P.verdict === "NEW" ? "★" : P.verdict === "EARLY DAYS" ? "●" : "►";
   const unitRate = PS_RATELIKE.includes(statKey) ? P.def.unit : `${P.def.unit} per 90`;
   const prevLabel = seasonText(season - 1, calendar), curLabel = seasonText(season, calendar);
   const fmtChg = P.chg === null ? "" : `${P.chg > 0 ? "+" : ""}${Math.round(P.chg)}%`;
@@ -5605,6 +5606,23 @@ function PlayerSeasonCard({ cardRef, league, season, calendar, cur, prev, curAll
   );
 }
 
+// Pull any pages that failed the first time, merge them in, up to two more tries.
+async function fillMissingPlayers(json, leagueId, season) {
+  let out = json;
+  for (let k = 0; k < 2 && out.missingPages?.length; k++) {
+    try {
+      const res = await fetch(`/api/stat-board?type=players&leagueId=${leagueId}${season ? `&season=${season}` : ""}&pages=${out.missingPages.join(",")}&t=${Date.now()}`);
+      const part = await res.json();
+      if (!res.ok || !part.players) break;
+      const key = p => p.id || `${p.ph}|${p.n}`;
+      const m = new Map(out.players.map(p => [key(p), p]));
+      part.players.forEach(p => m.set(key(p), p));
+      out = { ...out, players: [...m.values()], missingPages: part.missingPages || [] };
+    } catch { break; }
+  }
+  return out;
+}
+
 function PlayerBoardGraphic() {
   const cardRef = useRef(null);
   const [league, setLeague] = useState("pl");
@@ -5642,8 +5660,9 @@ function PlayerBoardGraphic() {
       if (!res.ok || json.available === false) {
         setData(null); setErr(json.error ? `${json.error}${json.detail ? ": " + json.detail : ""}` : "No player stats available for this league yet.");
       } else {
-        setData(json);
-        try { localStorage.setItem(lsKey, JSON.stringify({ t: Date.now(), data: json })); } catch {}
+        const full = await fillMissingPlayers(json, league, 0);
+        setData(full);
+        if (!full.missingPages?.length) { try { localStorage.setItem(lsKey, JSON.stringify({ t: Date.now(), data: full })); } catch {} }
       }
     } catch (e) { setData(null); setErr("Could not load players: " + e.message); }
     setLoading(false);
@@ -5676,7 +5695,11 @@ function PlayerBoardGraphic() {
       const res = await fetch(`/api/stat-board?type=players&leagueId=${league}&season=${data.season - 1}${force ? `&t=${Date.now()}` : ""}`);
       const json = await res.json();
       if (!res.ok || json.available === false) { setPrevData(null); setPrevErr(json.error || "No data for last season."); }
-      else { setPrevData(json); try { localStorage.setItem(lsKey, JSON.stringify({ t: Date.now(), data: json })); } catch {} }
+      else {
+        const full = await fillMissingPlayers(json, league, data.season - 1);
+        setPrevData(full);
+        if (!full.missingPages?.length) { try { localStorage.setItem(lsKey, JSON.stringify({ t: Date.now(), data: full })); } catch {} }
+      }
     } catch (e) { setPrevData(null); setPrevErr("Could not load last season: " + e.message); }
     setPrevLoading(false);
   };
@@ -5688,7 +5711,7 @@ function PlayerBoardGraphic() {
         const P = psProgress(sStat, player, prevMatch, players, prevPlayers, minMins);
         const d = P.def, unit = PS_RATELIKE.includes(sStat) ? d.unit : `${d.unit} per 90`;
         if (!prevMatch || P.chg === null) return `📊 ${player.n}: ${psFmtRate(sStat, P.rc)} ${unit} so far this season in ${inLeague(data.league)}, ${ordinal(P.kc.rank)} in the league. No ${data.league} numbers last season to compare.\n\nWhat do you make of it? 👇`;
-        const head = P.verdict === "PROGRESSING" ? `📈 ${player.n} is progressing.` : P.verdict === "REGRESSING" ? `📉 ${player.n} has gone backwards.` : `➡️ ${player.n} is holding steady.`;
+        const head = P.verdict === "EARLY DAYS" ? `👀 Early days for ${player.n}.` : P.verdict === "PROGRESSING" ? `📈 ${player.n} is progressing.` : P.verdict === "REGRESSING" ? `📉 ${player.n} has gone backwards.` : `➡️ ${player.n} is holding steady.`;
         const rk = P.rankMove > 0 ? `up from ${ordinal(P.ka.rank)} to ${ordinal(P.kc.rank)} in ${inLeague(data.league)}` : P.rankMove < 0 ? `down from ${ordinal(P.ka.rank)} to ${ordinal(P.kc.rank)} in ${inLeague(data.league)}` : `${ordinal(P.kc.rank)} in ${inLeague(data.league)} both seasons`;
         const pc = P.pcA !== null && P.pcC !== null ? ` Success rate ${P.pcA}% to ${P.pcC}%.` : "";
         return `${head}\n\n${d.title.charAt(0) + d.title.slice(1).toLowerCase()}: ${psFmtRate(sStat, P.ra)} to ${psFmtRate(sStat, P.rc)} ${unit} (${P.chg > 0 ? "+" : ""}${Math.round(P.chg)}%), ${rk}.${pc}${d.val(player) < d.val(prevMatch) && P.verdict === "PROGRESSING" ? "\n\nThe raw total looks smaller only because the season is young." : ""}\n\n${P.verdict === "PROGRESSING" ? "Real progress or just a hot start? 👇" : P.verdict === "REGRESSING" ? "Blip or a real decline? 👇" : "What do you make of it? 👇"}`;
