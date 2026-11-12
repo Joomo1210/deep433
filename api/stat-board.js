@@ -217,7 +217,7 @@ async function playersHandler(req, res) {
     const ratedMinutes = sum(s => (s.games?.rating ? num(s.games?.minutes) : 0));
     const rt = ratedMinutes ? stats.reduce((t, s) => t + (s.games?.rating ? num(s.games.rating) * num(s.games?.minutes) : 0), 0) / ratedMinutes : 0;
     return {
-      id: item.player?.id, n: item.player?.name, ph: item.player?.photo, tm: last.team?.name, lg: last.team?.logo, pos: last.games?.position,
+      id: item.player?.id, ag: num(item.player?.age), n: item.player?.name, ph: item.player?.photo, tm: last.team?.name, lg: last.team?.logo, pos: last.games?.position,
       mn: sum(s => s.games?.minutes), ap: sum(s => s.games?.appearences), rt: Math.round(rt * 100) / 100,
       g: sum(s => s.goals?.total), a: sum(s => s.goals?.assists), sh: sum(s => s.shots?.total), so: sum(s => s.shots?.on),
       kp: sum(s => s.passes?.key), ps: sum(s => s.passes?.total), tk: sum(s => s.tackles?.total), ic: sum(s => s.tackles?.interceptions),
