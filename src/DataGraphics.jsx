@@ -5295,28 +5295,28 @@ const f2 = v => (Math.round(v * 100) / 100).toFixed(2);
 const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
 // val = ranked number, show = how the number reads, sub = small line, min = extra qualifier, gk/outfield = who is eligible.
 const PS_STATS = {
-  goals:    { title: "TOP SCORERS", unit: "goals", dir: 1, val: p => p.g, show: v => v, sub: p => `${f2(per90(p.g, p.mn))} per 90 · ${p.ap} apps`, verb: "has scored the most goals" },
-  assists:  { title: "TOP ASSISTS", unit: "assists", dir: 1, val: p => p.a, show: v => v, sub: p => `${f2(per90(p.a, p.mn))} per 90 · ${p.ap} apps`, verb: "has the most assists" },
-  ga:       { title: "GOALS + ASSISTS", unit: "goal contributions", dir: 1, val: p => p.g + p.a, show: v => v, sub: p => `${p.g} goals · ${p.a} assists`, verb: "has the most goal contributions" },
-  g90:      { title: "GOALS PER 90", unit: "goals per 90 minutes", dir: 1, val: p => per90(p.g, p.mn), show: f2, sub: p => `${p.g} goals in ${p.mn} mins`, verb: "scores most often per 90", needsMin: true },
-  shots:    { title: "MOST SHOTS", unit: "shots", dir: 1, val: p => p.sh, show: v => v, sub: p => `${p.so} on target · ${p.g} goals`, verb: "has taken the most shots" },
-  sot:      { title: "SHOTS ON TARGET", unit: "shots on target", dir: 1, val: p => p.so, show: v => v, sub: p => `${pct(p.so, p.sh)}% of ${p.sh} shots`, verb: "has the most shots on target" },
-  kp:       { title: "KEY PASSES", unit: "passes that led to a shot", dir: 1, val: p => p.kp, show: v => v, sub: p => `${f2(per90(p.kp, p.mn))} per 90`, verb: "has created the most chances" },
-  passes:   { title: "MOST PASSES", unit: "passes", dir: 1, val: p => p.ps, show: v => v, sub: p => `${Math.round(per90(p.ps, p.mn))} per 90`, verb: "has played the most passes" },
-  dribbles: { title: "SUCCESSFUL TAKE-ONS", unit: "successful take-ons", dir: 1, val: p => p.ds, show: v => v, sub: p => `${p.ds} of ${p.dr} take-ons`, verb: "has completed the most take-ons" },
-  tackles:  { title: "MOST TACKLES", unit: "tackles", dir: 1, val: p => p.tk, show: v => v, sub: p => `${f1(per90(p.tk, p.mn))} per 90`, verb: "has made the most tackles" },
-  inter:    { title: "MOST INTERCEPTIONS", unit: "interceptions", dir: 1, val: p => p.ic, show: v => v, sub: p => `${f1(per90(p.ic, p.mn))} per 90`, verb: "has made the most interceptions" },
-  duels:    { title: "MOST DUELS WON", unit: "duels won", dir: 1, val: p => p.dw, show: v => v, sub: p => `${pct(p.dw, p.du)}% of ${p.du} duels`, verb: "has won the most duels" },
-  duelpct:  { title: "BEST DUEL WIN RATE", unit: "% of duels won (60+ duels)", dir: 1, val: p => (p.du >= 60 ? pct(p.dw, p.du) : -1), show: v => `${v}%`, sub: p => `${p.dw} of ${p.du} duels`, verb: "wins the highest share of duels", needsMin: true },
-  fouls:    { title: "MOST FOULS", unit: "fouls committed", dir: 1, val: p => p.fc, show: v => v, sub: p => `${f1(per90(p.fc, p.mn))} per 90`, verb: "has committed the most fouls" },
-  fouled:   { title: "MOST FOULED", unit: "fouls won", dir: 1, val: p => p.fd, show: v => v, sub: p => `${f1(per90(p.fd, p.mn))} per 90`, verb: "has been fouled the most" },
-  yellow:   { title: "MOST BOOKED", unit: "yellow cards", dir: 1, val: p => p.y, show: v => v, sub: p => `${p.ap} apps · ${p.fc} fouls`, verb: "has picked up the most yellow cards" },
-  red:      { title: "RED CARDS", unit: "red cards", dir: 1, val: p => p.r, show: v => v, sub: p => `${p.y} yellows too`, verb: "has the most red cards" },
-  rating:   { title: "HIGHEST RATED", unit: "average rating", dir: 1, val: p => p.rt, show: f2, sub: p => `${p.ap} apps · ${p.mn} mins`, verb: "has the highest average rating", needsMin: true },
-  minutes:  { title: "MOST MINUTES", unit: "minutes played", dir: 1, val: p => p.mn, show: v => v, sub: p => `${p.ap} apps`, verb: "has played the most minutes" },
-  pens:     { title: "PENALTIES SCORED", unit: "penalties scored", dir: 1, val: p => p.pn, show: v => v, sub: p => `${p.pm} missed`, verb: "has scored the most penalties" },
-  saves:    { title: "MOST SAVES", unit: "saves", dir: 1, val: p => p.sv, show: v => v, sub: p => `${f1(per90(p.sv, p.mn))} per 90`, verb: "has made the most saves", gk: true },
-  conceded: { title: "FEWEST GOALS CONCEDED", unit: "goals conceded (keepers)", dir: -1, val: p => p.cn, show: v => v, sub: p => `${f2(per90(p.cn, p.mn))} per 90 · ${p.ap} apps`, verb: "has conceded the fewest goals", gk: true, needsMin: true },
+  goals: { title: "TOP SCORERS", name: "goals", unit: "goals", dir: 1, val: p => p.g, show: v => v, sub: p => `${f2(per90(p.g, p.mn))} per 90 · ${p.ap} apps`, verb: "has scored the most goals" },
+  assists: { title: "TOP ASSISTS", name: "assists", unit: "goals set up for teammates", dir: 1, val: p => p.a, show: v => v, sub: p => `${f2(per90(p.a, p.mn))} per 90 · ${p.ap} apps`, verb: "has the most assists" },
+  ga: { title: "GOALS + ASSISTS", name: "goal contributions", unit: "goal contributions", dir: 1, val: p => p.g + p.a, show: v => v, sub: p => `${p.g} goals · ${p.a} assists`, verb: "has the most goal contributions" },
+  g90: { title: "SCORING RATE", name: "goals per 90", unit: "goals per 90 minutes", dir: 1, val: p => per90(p.g, p.mn), show: f2, sub: p => `${p.g} goals in ${p.mn} mins`, verb: "scores most often per 90", needsMin: true },
+  shots: { title: "MOST SHOTS", name: "shots", unit: "attempts at goal", dir: 1, val: p => p.sh, show: v => v, sub: p => `${p.so} on target · ${p.g} goals`, verb: "has taken the most shots" },
+  sot: { title: "SHOTS ON TARGET", name: "shots on target", unit: "efforts that tested the keeper", dir: 1, val: p => p.so, show: v => v, sub: p => `${pct(p.so, p.sh)}% of ${p.sh} shots`, verb: "has the most shots on target" },
+  kp: { title: "KEY PASSES", name: "passes that led to a shot", unit: "passes that led to a shot", dir: 1, val: p => p.kp, show: v => v, sub: p => `${f2(per90(p.kp, p.mn))} per 90`, verb: "has created the most chances" },
+  passes: { title: "BUSIEST PASSERS", name: "passes", unit: "passes played", dir: 1, val: p => p.ps, show: v => v, sub: p => `${Math.round(per90(p.ps, p.mn))} per 90`, verb: "has played the most passes" },
+  dribbles: { title: "SUCCESSFUL TAKE-ONS", name: "successful take-ons", unit: "defenders beaten on the ball", dir: 1, val: p => p.ds, show: v => v, sub: p => `${p.ds} of ${p.dr} take-ons`, verb: "has completed the most take-ons" },
+  tackles: { title: "MOST TACKLES", name: "tackles", unit: "challenges for the ball", dir: 1, val: p => p.tk, show: v => v, sub: p => `${f1(per90(p.tk, p.mn))} per 90`, verb: "has made the most tackles" },
+  inter: { title: "MOST INTERCEPTIONS", name: "interceptions", unit: "passes cut out", dir: 1, val: p => p.ic, show: v => v, sub: p => `${f1(per90(p.ic, p.mn))} per 90`, verb: "has made the most interceptions" },
+  duels: { title: "MOST DUELS WON", name: "duels won", unit: "battles won", dir: 1, val: p => p.dw, show: v => v, sub: p => `${pct(p.dw, p.du)}% of ${p.du} duels`, verb: "has won the most duels" },
+  duelpct: { title: "BEST DUEL WIN RATE", name: "% of duels won (60+ duels)", unit: "% of duels won (60+ duels)", dir: 1, val: p => (p.du >= 60 ? pct(p.dw, p.du) : -1), show: v => `${v}%`, sub: p => `${p.dw} of ${p.du} duels`, verb: "wins the highest share of duels", needsMin: true },
+  fouls: { title: "MOST FOULS", name: "fouls committed", unit: "fouls committed", dir: 1, val: p => p.fc, show: v => v, sub: p => `${f1(per90(p.fc, p.mn))} per 90`, verb: "has committed the most fouls" },
+  fouled: { title: "MOST FOULED", name: "fouls won", unit: "fouls won", dir: 1, val: p => p.fd, show: v => v, sub: p => `${f1(per90(p.fd, p.mn))} per 90`, verb: "has been fouled the most" },
+  yellow: { title: "MOST BOOKED", name: "yellow cards", unit: "yellow cards", dir: 1, val: p => p.y, show: v => v, sub: p => `${p.ap} apps · ${p.fc} fouls`, verb: "has picked up the most yellow cards" },
+  red: { title: "SENT OFF", name: "red cards", unit: "red cards", dir: 1, val: p => p.r, show: v => v, sub: p => `${p.y} yellows too`, verb: "has the most red cards" },
+  rating: { title: "HIGHEST RATED", name: "average rating", unit: "average rating", dir: 1, val: p => p.rt, show: f2, sub: p => `${p.ap} apps · ${p.mn} mins`, verb: "has the highest average rating", needsMin: true },
+  minutes: { title: "MOST MINUTES", name: "minutes played", unit: "minutes played", dir: 1, val: p => p.mn, show: v => v, sub: p => `${p.ap} apps`, verb: "has played the most minutes" },
+  pens: { title: "SPOT-KICK SPECIALISTS", name: "penalties scored", unit: "penalties scored", dir: 1, val: p => p.pn, show: v => v, sub: p => `${p.pm} missed`, verb: "has scored the most penalties" },
+  saves: { title: "MOST SAVES", name: "saves", unit: "shots stopped", dir: 1, val: p => p.sv, show: v => v, sub: p => `${f1(per90(p.sv, p.mn))} per 90`, verb: "has made the most saves", gk: true },
+  conceded: { title: "FEWEST GOALS CONCEDED", name: "goals conceded (keepers)", unit: "goalkeepers only", dir: -1, val: p => p.cn, show: v => v, sub: p => `${f2(per90(p.cn, p.mn))} per 90 · ${p.ap} apps`, verb: "has conceded the fewest goals", gk: true, needsMin: true },
 };
 const PS_ORDER = ["goals", "assists", "ga", "g90", "shots", "sot", "kp", "passes", "dribbles", "tackles", "inter", "duels", "duelpct", "fouls", "fouled", "yellow", "red", "rating", "minutes", "pens", "saves", "conceded"];
 const PS_POS = [["all", "All positions"], ["Goalkeeper", "Goalkeepers"], ["Defender", "Defenders"], ["Midfielder", "Midfielders"], ["Attacker", "Attackers"]];
@@ -5559,7 +5559,7 @@ function PlayerSeasonCard({ cardRef, league, season, calendar, cur, prev, curAll
   const P = psProgress(statKey, cur, prev, curAll, prevAll, minMins);
   const vc = P.verdict === "PROGRESSING" ? G : P.verdict === "REGRESSING" ? R : P.verdict === "NEW" ? B : N;
   const arrow = P.verdict === "PROGRESSING" ? "▲" : P.verdict === "REGRESSING" ? "▼" : P.verdict === "NEW" ? "★" : P.verdict === "EARLY DAYS" ? "●" : "►";
-  const unitRate = PS_RATELIKE.includes(statKey) ? P.def.unit : `${P.def.unit} per 90`;
+  const unitRate = PS_RATELIKE.includes(statKey) ? P.def.name : `${P.def.name} per 90`;
   const prevLabel = seasonText(season - 1, calendar), curLabel = seasonText(season, calendar);
   const fmtChg = P.chg === null ? "" : `${P.chg > 0 ? "+" : ""}${Math.round(P.chg)}%`;
   return (
@@ -5677,7 +5677,7 @@ function PlayerBoardGraphic() {
         const top = rows.filter(r => r.rank === 1);
         const who = top.length > 1 ? top.map(r => r.name).join(" and ") : top[0].name;
         const lines = rows.slice(0, 3).map(r => `${r.rank}. ${r.name} (${r.team}) ${r.shown}`).join("\n");
-        return `📊 ${def.title.charAt(0) + def.title.slice(1).toLowerCase()} in ${inLeague(data.league)}\n\n${who} ${def.verb}: ${rows[0].shown} ${def.unit}${top.length > 1 ? " each" : ""} (${rows[0].sub}).\n\n${lines}\n\nWho else belongs on this list? 👇`;
+        return `📊 ${def.title.charAt(0) + def.title.slice(1).toLowerCase()} in ${inLeague(data.league)}\n\n${who} ${def.verb}: ${rows[0].shown} ${def.name}${top.length > 1 ? " each" : ""} (${rows[0].sub}).\n\n${lines}\n\nWho else belongs on this list? 👇`;
       })()
     : "";
   const matches = players.filter(p => p.n && p.n.toLowerCase().includes(query.trim().toLowerCase())).sort((a, b) => b.mn - a.mn).slice(0, 60);
@@ -5709,7 +5709,7 @@ function PlayerBoardGraphic() {
   const seasonNote = player && prevData && data
     ? (() => {
         const P = psProgress(sStat, player, prevMatch, players, prevPlayers, minMins);
-        const d = P.def, unit = PS_RATELIKE.includes(sStat) ? d.unit : `${d.unit} per 90`;
+        const d = P.def, unit = PS_RATELIKE.includes(sStat) ? d.name : `${d.name} per 90`;
         if (!prevMatch || P.chg === null) return `📊 ${player.n}: ${psFmtRate(sStat, P.rc)} ${unit} so far this season in ${inLeague(data.league)}, ${ordinal(P.kc.rank)} in the league. No ${data.league} numbers last season to compare.\n\nWhat do you make of it? 👇`;
         const head = P.verdict === "EARLY DAYS" ? `👀 Early days for ${player.n}.` : P.verdict === "PROGRESSING" ? `📈 ${player.n} is progressing.` : P.verdict === "REGRESSING" ? `📉 ${player.n} has gone backwards.` : `➡️ ${player.n} is holding steady.`;
         const rk = P.rankMove > 0 ? `up from ${ordinal(P.ka.rank)} to ${ordinal(P.kc.rank)} in ${inLeague(data.league)}` : P.rankMove < 0 ? `down from ${ordinal(P.ka.rank)} to ${ordinal(P.kc.rank)} in ${inLeague(data.league)}` : `${ordinal(P.kc.rank)} in ${inLeague(data.league)} both seasons`;
@@ -5727,14 +5727,14 @@ function PlayerBoardGraphic() {
         const lead = wa === wb ? "Dead level" : `${wa > wb ? player.n : player2.n} leads ${Math.max(wa, wb)} to ${Math.min(wa, wb)}`;
         const g = k => `${PS_STATS[k].show(PS_STATS[k].val(player))} v ${PS_STATS[k].show(PS_STATS[k].val(player2))}`;
         const [k1, k2] = player.pos === "Goalkeeper" && player2.pos === "Goalkeeper" ? ["saves", "conceded"] : ["goals", "assists"];
-        return `⚔️ ${player.n} v ${player2.n}, ${data.league} this season\n\n${lead} on the key stats.\n${PS_STATS[k1].unit}: ${g(k1)}\n${PS_STATS[k2].unit}: ${g(k2)}\n\nWho would you pick? 👇`;
+        return `⚔️ ${player.n} v ${player2.n}, ${data.league} this season\n\n${lead} on the key stats.\n${PS_STATS[k1].name}: ${g(k1)}\n${PS_STATS[k2].name}: ${g(k2)}\n\nWho would you pick? 👇`;
       })()
     : "";
   const profileNote = player && data
     ? (() => {
         const keys = player.pos === "Goalkeeper" ? PS_PROFILE_GK : PS_PROFILE;
         const best = keys.map(k => ({ k, v: PS_STATS[k].val(player), rk: playerRank(players, k, player, minMins) })).filter(x => x.v > 0).sort((a, b) => a.rk.rank - b.rk.rank).slice(0, 3);
-        const parts = best.map(x => `${ordinal(x.rk.rank)} for ${PS_STATS[x.k].unit} (${PS_STATS[x.k].show(x.v)})`).join(", ");
+        const parts = best.map(x => `${ordinal(x.rk.rank)} for ${PS_STATS[x.k].name} (${PS_STATS[x.k].show(x.v)})`).join(", ");
         return `📊 ${player.n} (${player.tm}) in ${inLeague(data.league)}\n\n${player.ap} appearances, ${player.mn} minutes. ${parts}.\n\nWhere does he rank for you? 👇`;
       })()
     : "";
