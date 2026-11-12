@@ -5444,7 +5444,7 @@ function PlayerProfileCard({ cardRef, league, season, calendar, player, players,
             {player.lg && <img src={player.lg} alt="" crossOrigin="anonymous" style={{ width: 38, height: 38, objectFit: "contain" }} />}
             <div style={{ fontSize: 26, fontWeight: 700, color: "#cbd5e1" }}>{player.tm}</div>
           </div>
-          <div style={{ fontSize: 21, color: G, fontWeight: 800, letterSpacing: 3, textTransform: "uppercase", marginTop: 10 }}>{player.pos} · {player.ap} apps · {player.mn} mins</div>
+          <div style={{ fontSize: 21, color: G, fontWeight: 800, letterSpacing: 3, textTransform: "uppercase", marginTop: 10 }}>{player.pos}{player.ag > 0 ? ` · Age ${player.ag}` : ""} · {player.ap} apps · {player.mn} mins</div>
         </div>
       </div>
       <div style={{ position: "relative", textAlign: "center", fontSize: 21, color: "#9fb0c8", letterSpacing: 4, textTransform: "uppercase", fontWeight: 700, marginTop: 20 }}>{league} · {seasonText(season, calendar)}</div>
@@ -5481,7 +5481,7 @@ function PlayerCompareCard({ cardRef, league, season, calendar, a, b }) {
         {p.lg && <img src={p.lg} alt="" crossOrigin="anonymous" style={{ width: 28, height: 28, objectFit: "contain" }} />}
         <div style={{ fontSize: 20, color: "#cbd5e1", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.tm}</div>
       </div>
-      <div style={{ fontSize: 16, color: col, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", marginTop: 4 }}>{p.pos} · {p.ap} apps · {p.mn} mins</div>
+      <div style={{ fontSize: 16, color: col, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", marginTop: 4 }}>{p.pos}{p.ag > 0 ? ` · Age ${p.ag}` : ""} · {p.ap} apps · {p.mn} mins</div>
     </div>
   );
   return (
@@ -5578,7 +5578,7 @@ function PlayerSeasonCard({ cardRef, league, season, calendar, cur, prev, curAll
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 46, fontWeight: 900, lineHeight: 1.05, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cur.n}</div>
-          <div style={{ fontSize: 22, color: "#cbd5e1", fontWeight: 700, marginTop: 6 }}>{cur.tm} · {P.def.title.charAt(0) + P.def.title.slice(1).toLowerCase()}</div>
+          <div style={{ fontSize: 24, color: "#cbd5e1", fontWeight: 700, marginTop: 6 }}>{cur.tm}{cur.ag > 0 ? ` · Age ${cur.ag}` : ""}</div>
         </div>
       </div>
       <div style={{ position: "relative", textAlign: "center", marginTop: 26 }}>
@@ -5711,7 +5711,8 @@ function PlayerBoardGraphic() {
         const P = psProgress(sStat, player, prevMatch, players, prevPlayers, minMins);
         const d = P.def, unit = PS_RATELIKE.includes(sStat) ? d.name : `${d.name} per 90`;
         if (!prevMatch || P.chg === null) return `📊 ${player.n}: ${psFmtRate(sStat, P.rc)} ${unit} so far this season in ${inLeague(data.league)}, ${ordinal(P.kc.rank)} in the league. No ${data.league} numbers last season to compare.\n\nWhat do you make of it? 👇`;
-        const head = P.verdict === "EARLY DAYS" ? `👀 Early days for ${player.n}.` : P.verdict === "PROGRESSING" ? `📈 ${player.n} is progressing.` : P.verdict === "REGRESSING" ? `📉 ${player.n} has gone backwards.` : `➡️ ${player.n} is holding steady.`;
+        const who = player.ag > 0 ? `${player.n} (${player.ag})` : player.n;
+        const head = P.verdict === "EARLY DAYS" ? `👀 Early days for ${who}.` : P.verdict === "PROGRESSING" ? `📈 ${who} is progressing.` : P.verdict === "REGRESSING" ? `📉 ${who} has gone backwards.` : `➡️ ${who} is holding steady.`;
         const rk = P.rankMove > 0 ? `up from ${ordinal(P.ka.rank)} to ${ordinal(P.kc.rank)} in ${inLeague(data.league)}` : P.rankMove < 0 ? `down from ${ordinal(P.ka.rank)} to ${ordinal(P.kc.rank)} in ${inLeague(data.league)}` : `${ordinal(P.kc.rank)} in ${inLeague(data.league)} both seasons`;
         const pc = P.pcA !== null && P.pcC !== null ? ` Success rate ${P.pcA}% to ${P.pcC}%.` : "";
         return `${head}\n\n${d.title.charAt(0) + d.title.slice(1).toLowerCase()}: ${psFmtRate(sStat, P.ra)} to ${psFmtRate(sStat, P.rc)} ${unit} (${P.chg > 0 ? "+" : ""}${Math.round(P.chg)}%), ${rk}.${pc}${d.val(player) < d.val(prevMatch) && P.verdict === "PROGRESSING" ? "\n\nThe raw total looks smaller only because the season is young." : ""}\n\n${P.verdict === "PROGRESSING" ? "Real progress or just a hot start? 👇" : P.verdict === "REGRESSING" ? "Blip or a real decline? 👇" : "What do you make of it? 👇"}`;
