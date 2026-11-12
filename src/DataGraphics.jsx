@@ -5303,7 +5303,7 @@ const PS_STATS = {
   sot:      { title: "SHOTS ON TARGET", unit: "shots on target", dir: 1, val: p => p.so, show: v => v, sub: p => `${pct(p.so, p.sh)}% of ${p.sh} shots`, verb: "has the most shots on target" },
   kp:       { title: "KEY PASSES", unit: "passes that led to a shot", dir: 1, val: p => p.kp, show: v => v, sub: p => `${f2(per90(p.kp, p.mn))} per 90`, verb: "has created the most chances" },
   passes:   { title: "MOST PASSES", unit: "passes", dir: 1, val: p => p.ps, show: v => v, sub: p => `${Math.round(per90(p.ps, p.mn))} per 90`, verb: "has played the most passes" },
-  dribbles: { title: "BEST DRIBBLERS", unit: "dribbles completed", dir: 1, val: p => p.ds, show: v => v, sub: p => `${p.ds} of ${p.dr} attempts`, verb: "has completed the most dribbles" },
+  dribbles: { title: "SUCCESSFUL TAKE-ONS", unit: "successful take-ons", dir: 1, val: p => p.ds, show: v => v, sub: p => `${p.ds} of ${p.dr} take-ons`, verb: "has completed the most take-ons" },
   tackles:  { title: "MOST TACKLES", unit: "tackles", dir: 1, val: p => p.tk, show: v => v, sub: p => `${f1(per90(p.tk, p.mn))} per 90`, verb: "has made the most tackles" },
   inter:    { title: "MOST INTERCEPTIONS", unit: "interceptions", dir: 1, val: p => p.ic, show: v => v, sub: p => `${f1(per90(p.ic, p.mn))} per 90`, verb: "has made the most interceptions" },
   duels:    { title: "MOST DUELS WON", unit: "duels won", dir: 1, val: p => p.dw, show: v => v, sub: p => `${pct(p.dw, p.du)}% of ${p.du} duels`, verb: "has won the most duels" },
