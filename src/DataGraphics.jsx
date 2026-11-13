@@ -5432,7 +5432,7 @@ function PlayerProfileCard({ cardRef, league, season, calendar, player, players,
           <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 54, height: 54, borderRadius: "50%", objectFit: "cover" }} />
           <div style={{ fontWeight: 900, fontSize: 32, letterSpacing: 2 }}>DEEP<span style={{ color: G }}>433</span></div>
         </div>
-        <div style={{ fontSize: 19, color: "#9fb0c8", letterSpacing: 3, textTransform: "uppercase" }}>Player profile</div>
+        <div style={{ fontSize: 40, color: "#ffffff", fontWeight: 900, letterSpacing: 4, textTransform: "uppercase" }}>{league}</div>
       </div>
       <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 28, margin: "26px 56px 0", background: "#121b2e", border: "1.5px solid #1f2d47", borderRadius: 22, padding: "20px 28px" }}>
         <div style={{ width: 150, height: 150, borderRadius: "50%", overflow: "hidden", background: "#1f2d47", border: `3px solid ${G}`, boxSizing: "border-box", flexShrink: 0 }}>
@@ -5447,7 +5447,7 @@ function PlayerProfileCard({ cardRef, league, season, calendar, player, players,
           <div style={{ fontSize: 21, color: G, fontWeight: 800, letterSpacing: 3, textTransform: "uppercase", marginTop: 10 }}>{player.pos}{player.ag > 0 ? ` · Age ${player.ag}` : ""} · {player.ap} apps · {player.mn} mins</div>
         </div>
       </div>
-      <div style={{ position: "relative", textAlign: "center", fontSize: 21, color: "#9fb0c8", letterSpacing: 4, textTransform: "uppercase", fontWeight: 700, marginTop: 20 }}>{league} · {seasonText(season, calendar)}</div>
+      <div style={{ position: "relative", textAlign: "center", fontSize: 21, color: "#9fb0c8", letterSpacing: 4, textTransform: "uppercase", fontWeight: 700, marginTop: 20 }}>Player profile · {seasonText(season, calendar)}</div>
       <div style={{ position: "relative", margin: "16px 56px 0", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
         {tiles.map(t => (
           <div key={t.k} style={{ background: t.hot ? "rgba(34,197,94,0.14)" : "#121b2e", border: `1.5px solid ${t.hot ? G : "#1f2d47"}`, borderRadius: 18, padding: "16px 18px", boxSizing: "border-box", textAlign: "center" }}>
@@ -5492,7 +5492,7 @@ function PlayerCompareCard({ cardRef, league, season, calendar, a, b }) {
           <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 52, height: 52, borderRadius: "50%", objectFit: "cover" }} />
           <div style={{ fontWeight: 900, fontSize: 30, letterSpacing: 2 }}>DEEP<span style={{ color: G }}>433</span></div>
         </div>
-        <div style={{ fontSize: 18, color: "#9fb0c8", letterSpacing: 3, textTransform: "uppercase" }}>{league} · {seasonText(season, calendar)}</div>
+        <div style={{ textAlign: "right" }}><div style={{ fontSize: 40, color: "#ffffff", fontWeight: 900, letterSpacing: 4, textTransform: "uppercase", lineHeight: 1 }}>{league}</div><div style={{ fontSize: 18, color: "#9fb0c8", letterSpacing: 3, marginTop: 4 }}>{seasonText(season, calendar)}</div></div>
       </div>
       <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 10, margin: "20px 56px 0" }}>
         {head(a, G)}
@@ -5570,7 +5570,7 @@ function PlayerSeasonCard({ cardRef, league, season, calendar, cur, prev, curAll
           <img src="/deep433.jpg" alt="" crossOrigin="anonymous" style={{ width: 52, height: 52, borderRadius: "50%", objectFit: "cover" }} />
           <div style={{ fontWeight: 900, fontSize: 30, letterSpacing: 2 }}>DEEP<span style={{ color: G }}>433</span></div>
         </div>
-        <div style={{ fontSize: 18, color: "#9fb0c8", letterSpacing: 3, textTransform: "uppercase" }}>{league}</div>
+        <div style={{ fontSize: 40, color: "#ffffff", fontWeight: 900, letterSpacing: 4, textTransform: "uppercase" }}>{league}</div>
       </div>
       <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 24, margin: "20px 56px 0" }}>
         <div style={{ width: 120, height: 120, borderRadius: "50%", overflow: "hidden", background: "#1f2d47", border: `3px solid ${vc}`, boxSizing: "border-box", flexShrink: 0 }}>
