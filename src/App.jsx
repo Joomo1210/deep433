@@ -5,6 +5,7 @@ import DeepInsightsPanel from "./DeepInsightsPanel";
 import { createClient } from "@supabase/supabase-js";
 import PublicTeamCompare from "./PublicTeamCompare";
 import PremiumScoring from "./PremiumScoring";
+import SquadPicker from "./SquadPicker";
 const supabase = createClient(
   "https://idisdztwpvedtnroiian.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlkaXNkenR3cHZlZHRucm9paWFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NTczOTQsImV4cCI6MjA5NzAzMzM5NH0.YmF0DqWmopuJs9Ci1hdFi0XDMoWRD0yfVwOuuG7WVyE"
@@ -1195,8 +1196,18 @@ export default function FootballPredictor() {
         outcomeOnly: byUser[id].outcomeOnly,
         overUnderHits: byUser[id].overUnderHits,
       }));
+    // Squad board: when the admin has switched "Squad only" on for this board, only the hand-picked players show.
+    let squadIds = null;
+    try {
+      const { data: sqSet } = await supabase.from("squad_settings").select("enabled").eq("board", contest).maybeSingle();
+      if (sqSet?.enabled) {
+        const { data: sq } = await supabase.from("squad_members").select("user_id").eq("board", contest);
+        squadIds = new Set((sq || []).map(x => x.user_id));
+      }
+    } catch (e) { /* tables missing: no squad filter */ }
     const rowsSorted = allRows
       .filter(r => r.name) // leave out anyone without a display name rather than show a raw ID
+      .filter(r => !squadIds || squadIds.has(r.userId))
       // The admin runs the contest and picks which matches count — letting
       // that account also compete on the same board it controls isn't a
       // fair contest, so it's excluded regardless of its own points.
@@ -3895,6 +3906,9 @@ if (!session && !guestMode) {
           ))}
           {userRole === "admin" && (
             <PremiumScoring supabase={supabase} defaultBoard={contest} onSaved={computeLeaderboard} />
+          )}
+          {userRole === "admin" && (
+            <SquadPicker supabase={supabase} board={contest} onSaved={computeLeaderboard} />
           )}
           {/* Last two rounds comparison. Reads saved rounds from leaderboard_round_results. Display only. */}
           {userRole === "admin" && contest === "weekly" && (() => {
