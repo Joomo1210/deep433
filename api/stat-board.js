@@ -189,6 +189,17 @@ const PLAYER_LEAGUES = {
 };
 
 
+// The API's own "age" field can be out of date, so work it out from the date of birth when we have it.
+const ageOf = pl => {
+  const d = pl?.birth?.date ? new Date(pl.birth.date) : null;
+  if (d && !isNaN(d)) {
+    const now = new Date();
+    let a = now.getUTCFullYear() - d.getUTCFullYear();
+    if (now.getUTCMonth() < d.getUTCMonth() || (now.getUTCMonth() === d.getUTCMonth() && now.getUTCDate() < d.getUTCDate())) a--;
+    if (a > 0 && a < 60) return a;
+  }
+  return num(pl?.age);
+};
 async function playersHandler(req, res) {
   const { leagueId } = req.query;
   const base = PLAYER_LEAGUES[leagueId];
@@ -217,7 +228,7 @@ async function playersHandler(req, res) {
     const ratedMinutes = sum(s => (s.games?.rating ? num(s.games?.minutes) : 0));
     const rt = ratedMinutes ? stats.reduce((t, s) => t + (s.games?.rating ? num(s.games.rating) * num(s.games?.minutes) : 0), 0) / ratedMinutes : 0;
     return {
-      id: item.player?.id, ag: num(item.player?.age), n: item.player?.name, ph: item.player?.photo, tm: last.team?.name, lg: last.team?.logo, pos: last.games?.position,
+      id: item.player?.id, ag: ageOf(item.player), n: item.player?.name, ph: item.player?.photo, tm: last.team?.name, lg: last.team?.logo, pos: last.games?.position,
       mn: sum(s => s.games?.minutes), ap: sum(s => s.games?.appearences), rt: Math.round(rt * 100) / 100,
       g: sum(s => s.goals?.total), a: sum(s => s.goals?.assists), sh: sum(s => s.shots?.total), so: sum(s => s.shots?.on),
       kp: sum(s => s.passes?.key), ps: sum(s => s.passes?.total), tk: sum(s => s.tackles?.total), ic: sum(s => s.tackles?.interceptions),
