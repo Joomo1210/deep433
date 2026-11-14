@@ -215,6 +215,7 @@ const LEAGUE_OPTIONS = [
   { id: "ligue1", label: "Ligue 1" },
   { id: "ucl",    label: "Champions League" },
   { id: "uel",    label: "Europa League" },
+  { id: "uefanationsleague", label: "UEFA Nations League" },
   { id: "facup",  label: "FA Cup" },
   { id: "copadelrey", label: "Copa del Rey" },
   { id: "afcon",  label: "AFCON" },
