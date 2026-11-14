@@ -5466,6 +5466,7 @@ function PlayerProfileCard({ cardRef, league, season, calendar, player, players,
 const PS_CMP = ["goals", "assists", "shots", "sot", "kp", "dribbles", "tackles", "inter", "duels", "fouls", "yellow", "rating"];
 const PS_CMP_GK = ["saves", "conceded", "rating", "minutes", "passes", "yellow"];
 const PS_NEUTRAL = ["fouls", "yellow", "red", "minutes", "pens"]; // more is not "better"
+const PS_CMP_LABEL = { goals: "Goals", assists: "Assists", shots: "Shots", sot: "Shots on target", kp: "Key passes", dribbles: "Successful take-ons", tackles: "Tackles", inter: "Interceptions", duels: "Duels won", fouls: "Fouls committed", yellow: "Yellow cards", rating: "Average rating", saves: "Saves", conceded: "Goals conceded", minutes: "Minutes", passes: "Passes" };
 function cmpKeys(a, b) { return a.pos === "Goalkeeper" && b.pos === "Goalkeeper" ? PS_CMP_GK : PS_CMP; }
 function PlayerCompareCard({ cardRef, league, season, calendar, a, b }) {
   const G = "#22c55e", B = "#60a5fa";
@@ -5508,7 +5509,7 @@ function PlayerCompareCard({ cardRef, league, season, calendar, a, b }) {
           const bWin = !neutral && (def.dir === 1 ? vb > va : vb < va);
           const tot = (va + vb) || 1;
           const fa = def.dir === 1 ? va / tot : vb / tot;
-          const label = def.title.split(" ").map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(" ");
+          const label = PS_CMP_LABEL[k] || def.title.split(" ").map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(" ");
           return (
             <div key={k} style={{ height: rowH, marginBottom: 6, display: "flex", alignItems: "center", gap: 14, background: "#121b2e", border: "1.5px solid #1f2d47", borderRadius: 14, padding: "0 20px", boxSizing: "border-box", position: "relative", overflow: "hidden" }}>
               <div style={{ position: "absolute", left: 0, bottom: 0, height: 5, width: `${Math.round(fa * 100)}%`, background: G, opacity: 0.8 }} />
