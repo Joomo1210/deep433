@@ -6,7 +6,7 @@ import { useState, useEffect, useMemo } from "react";
 const box = { background: "#0d0d18", border: "1px solid #2a2a3a", borderRadius: 10, padding: 12, marginTop: 14 };
 const inp = { background: "#1a1a24", border: "1.5px solid #2a2a3a", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "8px 10px", outline: "none", fontFamily: "inherit" };
 const lbl = { fontSize: 11, color: "#94a3b8", fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 };
-const BOARD_NAMES = { weekly: "Weekly", euro: "Champions & Europa League", monday: "Monday Night", daily: "Daily" };
+const BOARD_NAMES = { weekly: "Weekly", euro: "Champions & Europa League", monday: "Monday Night", daily: "Daily", invite: "Invited players (who can predict)" };
 
 export default function SquadPicker({ supabase, board, onSaved }) {
   const [open, setOpen] = useState(false);
@@ -62,7 +62,7 @@ export default function SquadPicker({ supabase, board, onSaved }) {
       const up = await supabase.from("squad_settings").upsert({ board, enabled: enabled && rows.length > 0, updated_at: new Date().toISOString() }, { onConflict: "board" });
       if (up.error) throw up.error;
       if (enabled && !rows.length) setEnabled(false);
-      setMsg(`Saved ${rows.length} on the ${BOARD_NAMES[board] || board} squad. Squad only is ${enabled && rows.length ? "ON" : "OFF"}.`);
+      setMsg(`Saved ${rows.length} on the ${BOARD_NAMES[board] || board} list. ${board === "invite" ? "Invite only" : "Squad only"} is ${enabled && rows.length ? "ON" : "OFF"}.`);
       onSaved && onSaved();
     } catch (e) { setMsg("Could not save: " + (e.message || e)); }
     setBusy(false);
@@ -73,7 +73,7 @@ export default function SquadPicker({ supabase, board, onSaved }) {
   return (
     <div style={box}>
       <button onClick={() => setOpen(o => !o)} style={{ ...inp, cursor: "pointer", fontWeight: 800, width: "100%", textAlign: "left" }}>
-        {open ? "▾" : "▸"} Squad for {BOARD_NAMES[board] || board} {open ? "" : "(hand-picked players)"}
+        {open ? "▾" : "▸"} {board === "invite" ? "Invite list: " : "Squad for "}{BOARD_NAMES[board] || board} {open ? "" : board === "invite" ? "(only these can predict when switched on)" : "(hand-picked players)"}
       </button>
       {open && (
         <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 10 }}>
@@ -98,7 +98,7 @@ export default function SquadPicker({ supabase, board, onSaved }) {
           </div>
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "#f0f0f0", fontWeight: 700 }}>
             <input type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)} />
-            Squad only: this board shows just the ticked players
+            {board === "invite" ? "Invite only: only the ticked players (and admins) can save predictions" : "Squad only: this board shows just the ticked players"}
           </label>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button onClick={save} disabled={busy} style={{ background: "linear-gradient(135deg,#818cf8,#6366f1)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 800, padding: "10px 14px" }}>{busy ? "Saving..." : "Save squad"}</button>
