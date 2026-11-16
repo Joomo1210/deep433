@@ -215,6 +215,13 @@ export default async function handler(req, res) {
         saves: p.statistics?.[0]?.goals?.saves,
         yellowCards: p.statistics?.[0]?.cards?.yellow,
         redCards: p.statistics?.[0]?.cards?.red,
+        passesTotal: p.statistics?.[0]?.passes?.total,
+        duelsTotal: p.statistics?.[0]?.duels?.total,
+        dribblesAttempts: p.statistics?.[0]?.dribbles?.attempts,
+        blocks: p.statistics?.[0]?.tackles?.blocks,
+        foulsDrawn: p.statistics?.[0]?.fouls?.drawn,
+        foulsCommitted: p.statistics?.[0]?.fouls?.committed,
+        goalsConceded: p.statistics?.[0]?.goals?.conceded,
       })).filter(p => p.minutesPlayed > 0) || [];
 
       return res.status(200).json({
