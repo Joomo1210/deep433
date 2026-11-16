@@ -7374,6 +7374,7 @@ function motmStatsForPosition(player) {
   const has = v => v != null && v !== "" && parseFloat(String(v)) >= 1;
   return motmAllStats(player).filter(t => has(t.value)).slice(0, 8);
 }
+function motmSurname(name) { const t = String(name || "").trim().split(/\s+/); return t.length ? t[t.length - 1] : ""; }
 function motmCols(n) { return n <= 4 ? Math.max(n, 1) : n <= 6 ? 3 : 4; }
 
 // ─── Player Spotlight — massive photo + club crest watermark, season stats
@@ -7526,6 +7527,7 @@ function ManOfMatchGraphic() {
   // "use the API's rating as-is"; any other value is a manual override.
   const [customRating, setCustomRating] = useState(null);
   const [motmNote, setMotmNote] = useState(""); // optional one-line reason shown on the card
+  const [motmTitle, setMotmTitle] = useState("motm"); // card heading: Man of the Match, or "<Surname> by the Numbers" / "<Surname> Match Stats"
 
   const handleSelect = async (f) => {
     setSelectedFixture(f);
@@ -7592,6 +7594,14 @@ function ManOfMatchGraphic() {
                 ))}
               </select>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                <span style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700 }}>Card title</span>
+                <select value={motmTitle} onChange={e => setMotmTitle(e.target.value)} style={{ flex: 1, background: "#1a1a24", border: "1.5px solid #fbbf2440", borderRadius: 8, color: "#f0f0f0", fontSize: 14, padding: "8px 10px", outline: "none", fontFamily: "inherit" }}>
+                  <option value="motm">Man of the Match</option>
+                  <option value="numbers">{selectedPlayer ? motmSurname(selectedPlayer.name) : "Player"} by the Numbers</option>
+                  <option value="stats">{selectedPlayer ? motmSurname(selectedPlayer.name) : "Player"} Match Stats</option>
+                </select>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
                 <span style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700 }}>Rating on card</span>
                 <input
                   type="number" step="0.01" min="0" max="10"
@@ -7619,7 +7629,7 @@ function ManOfMatchGraphic() {
             }}>
               <div style={{ position: "absolute", top: -90, left: "50%", marginLeft: -190, width: 380, height: 380, borderRadius: "50%", background: "radial-gradient(circle, rgba(251,191,36,0.28), transparent 65%)", pointerEvents: "none" }} />
               <div style={{ position: "relative" }}>
-                <div style={{ fontSize: 20, fontWeight: 900, textTransform: "uppercase", letterSpacing: 3, marginBottom: 4, color: "#fbbf24" }}>⭐ Man of the Match</div>
+                <div style={{ fontSize: motmTitle === "motm" ? 20 : 24, fontWeight: 900, textTransform: "uppercase", letterSpacing: motmTitle === "motm" ? 3 : 2, marginBottom: 4, color: "#fbbf24" }}>{motmTitle === "motm" ? "⭐ Man of the Match" : `${motmSurname(selectedPlayer.name)} ${motmTitle === "numbers" ? "by the Numbers" : "Match Stats"}`}</div>
                 <div style={{ fontSize: 15, color: "#e2e8f0", fontWeight: 700, marginBottom: 3 }}>{selectedFixture.home} vs {selectedFixture.away}</div>
                 {selectedFixture.leagueLabel && <div style={{ fontSize: 12, color: "#a5b4fc", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>{selectedFixture.leagueLabel}</div>}
 
@@ -7628,7 +7638,7 @@ function ManOfMatchGraphic() {
                     <img src={selectedPlayer.photo} alt="" crossOrigin="anonymous" style={{ width: 96, height: 96, borderRadius: "50%", objectFit: "cover", border: "4px solid #fbbf24", background: "#13131f", boxShadow: "0 0 26px rgba(251,191,36,0.55)" }} />
                   </div>
                 )}
-                <div style={{ fontSize: 30, fontWeight: 900, color: "#fff", marginBottom: 6, lineHeight: 1.1 }}>{selectedPlayer.name}</div>
+                {motmTitle === "motm" && <div style={{ fontSize: 30, fontWeight: 900, color: "#fff", marginBottom: 6, lineHeight: 1.1 }}>{selectedPlayer.name}</div>}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
                   {selectedPlayer.teamLogo && <img src={selectedPlayer.teamLogo} alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, objectFit: "contain" }} />}
                   <span style={{ fontSize: 16, color: "#e2e8f0", fontWeight: 700 }}>{selectedPlayer.team} · {selectedPlayer.position}</span>
