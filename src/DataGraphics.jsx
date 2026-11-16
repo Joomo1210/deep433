@@ -7315,7 +7315,7 @@ function GoldenGloveGraphic() {
 // (Goals/Assists/Shots/Dribbles/Tackles) suited attackers well, but left
 // goalkeepers showing mostly zeros with no mention of saves, their actual
 // contribution, and defenders missing interceptions/duels entirely.
-function motmStatsForPosition(player) {
+function motmAllStats(player) {
   const pos = (player.position || "").toLowerCase().trim();
   const isGK = pos === "g" || pos.includes("goalkeeper") || pos.includes("keeper");
   const isDef = pos === "d" || pos.includes("defender") || pos.includes("back");
@@ -7328,7 +7328,7 @@ function motmStatsForPosition(player) {
     return [
       { label: "Saves", value: player.saves },
       { label: "Goals Conceded", value: player.goalsConceded },
-      { label: "Passes Completed", value: passes },
+      { label: "Passes", value: passes },
       { label: "Duels Won", value: duels },
     ];
   }
@@ -7338,7 +7338,7 @@ function motmStatsForPosition(player) {
       { label: "Interceptions", value: player.interceptions },
       { label: "Duels Won", value: duels },
       { label: "Blocks", value: player.blocks },
-      { label: "Passes Completed", value: passes },
+      { label: "Passes", value: passes },
       { label: "Key Passes", value: player.keyPasses },
       { label: "Take-ons", value: takeOns },
       { label: "Fouls Drawn", value: player.foulsDrawn },
@@ -7350,7 +7350,7 @@ function motmStatsForPosition(player) {
       { label: "Assists", value: player.assists },
       { label: "Take-ons", value: takeOns },
       { label: "Tackles", value: player.tackles },
-      { label: "Passes Completed", value: passes },
+      { label: "Passes", value: passes },
       { label: "Duels Won", value: duels },
       { label: "Interceptions", value: player.interceptions },
       { label: "Fouls Drawn", value: player.foulsDrawn },
@@ -7365,9 +7365,16 @@ function motmStatsForPosition(player) {
     { label: "Key Passes", value: player.keyPasses },
     { label: "Take-ons", value: takeOns },
     { label: "Duels Won", value: duels },
-    { label: "Passes Completed", value: passes },
+    { label: "Passes", value: passes },
   ];
 }
+
+// Only stats worth showing: a value of 1 or more (zeros, blanks and "0/2" style pairs are dropped), at most 8 tiles.
+function motmStatsForPosition(player) {
+  const has = v => v != null && v !== "" && parseFloat(String(v)) >= 1;
+  return motmAllStats(player).filter(t => has(t.value)).slice(0, 8);
+}
+function motmCols(n) { return n <= 4 ? Math.max(n, 1) : n <= 6 ? 3 : 4; }
 
 // ─── Player Spotlight — massive photo + club crest watermark, season stats
 // reduced to a single small caption line. A deliberately different register
@@ -7584,6 +7591,15 @@ function ManOfMatchGraphic() {
                   <option key={p.name} value={p.name}>{p.name} — {p.team} ({parseFloat(p.rating).toFixed(1)})</option>
                 ))}
               </select>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                <span style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 700 }}>Rating on card</span>
+                <input
+                  type="number" step="0.01" min="0" max="10"
+                  value={customRating != null ? customRating : (selectedPlayer?.rating != null ? parseFloat(selectedPlayer.rating).toFixed(2) : "")}
+                  onChange={e => setCustomRating(e.target.value)}
+                  style={{ width: 90, background: "#1a1a24", border: "1.5px solid #fbbf2440", borderRadius: 8, color: "#f0f0f0", fontSize: 15, padding: "7px 10px", outline: "none", fontFamily: "inherit" }}
+                />
+              </div>
               <input
                 value={motmNote} onChange={e => setMotmNote(e.target.value.slice(0, 80))}
                 placeholder="Optional one-line reason on the card, e.g. Scored the winner and led the defence"
@@ -7602,24 +7618,18 @@ function ManOfMatchGraphic() {
               background: "linear-gradient(160deg, #1f1700 0%, #0a0a12 58%)",
             }}>
               <div style={{ position: "absolute", top: -90, left: "50%", marginLeft: -190, width: 380, height: 380, borderRadius: "50%", background: "radial-gradient(circle, rgba(251,191,36,0.28), transparent 65%)", pointerEvents: "none" }} />
-              {selectedPlayer.teamLogo && <img src={selectedPlayer.teamLogo} alt="" crossOrigin="anonymous" style={{ position: "absolute", right: -40, bottom: 70, width: 220, height: 220, objectFit: "contain", opacity: 0.06, pointerEvents: "none" }} />}
               <div style={{ position: "relative" }}>
-                <div style={{
-                  fontSize: 20, fontWeight: 900, textTransform: "uppercase", letterSpacing: 3, marginBottom: 6,
-                  background: "linear-gradient(90deg,#fbbf24,#fde68a,#f59e0b)",
-                  WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-                }}>⭐ Man of the Match</div>
+                <div style={{ fontSize: 20, fontWeight: 900, textTransform: "uppercase", letterSpacing: 3, marginBottom: 4, color: "#fbbf24" }}>⭐ Man of the Match</div>
                 <div style={{ fontSize: 15, color: "#e2e8f0", fontWeight: 700, marginBottom: 3 }}>{selectedFixture.home} vs {selectedFixture.away}</div>
-                {selectedFixture.leagueLabel && <div style={{ fontSize: 12, color: "#a5b4fc", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, marginBottom: 20 }}>{selectedFixture.leagueLabel}</div>}
+                {selectedFixture.leagueLabel && <div style={{ fontSize: 12, color: "#a5b4fc", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>{selectedFixture.leagueLabel}</div>}
 
                 {selectedPlayer.photo && (
-                  <div style={{ position: "relative", width: 150, height: 150, margin: "0 auto 14px" }}>
-                    <div style={{ position: "absolute", inset: -6, borderRadius: "50%", background: "linear-gradient(135deg,#fbbf24,#f59e0b)", filter: "blur(9px)", opacity: 0.65 }} />
-                    <img src={selectedPlayer.photo} alt="" crossOrigin="anonymous" style={{ position: "relative", width: 150, height: 150, borderRadius: "50%", objectFit: "cover", border: "5px solid #fbbf24", background: "#13131f" }} />
+                  <div style={{ width: 96, height: 96, margin: "0 auto 8px" }}>
+                    <img src={selectedPlayer.photo} alt="" crossOrigin="anonymous" style={{ width: 96, height: 96, borderRadius: "50%", objectFit: "cover", border: "4px solid #fbbf24", background: "#13131f", boxShadow: "0 0 26px rgba(251,191,36,0.55)" }} />
                   </div>
                 )}
-                <div style={{ fontSize: 32, fontWeight: 900, color: "#fff", marginBottom: 8, lineHeight: 1.05 }}>{selectedPlayer.name}</div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+                <div style={{ fontSize: 30, fontWeight: 900, color: "#fff", marginBottom: 6, lineHeight: 1.1 }}>{selectedPlayer.name}</div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
                   {selectedPlayer.teamLogo && <img src={selectedPlayer.teamLogo} alt="" crossOrigin="anonymous" style={{ width: 30, height: 30, objectFit: "contain" }} />}
                   <span style={{ fontSize: 16, color: "#e2e8f0", fontWeight: 700 }}>{selectedPlayer.team} · {selectedPlayer.position}</span>
                   {selectedPlayer.minutesPlayed != null && (
@@ -7630,34 +7640,30 @@ function ManOfMatchGraphic() {
                 </div>
 
                 {((selectedPlayer.goals || 0) > 0 || (selectedPlayer.assists || 0) > 0) && (
-                  <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
                     {(selectedPlayer.goals || 0) > 0 && <span style={{ background: "#22c55e", color: "#06210f", fontSize: 14, fontWeight: 900, borderRadius: 999, padding: "5px 14px", letterSpacing: 0.5 }}>⚽ {selectedPlayer.goals} {selectedPlayer.goals === 1 ? "GOAL" : "GOALS"}</span>}
                     {(selectedPlayer.assists || 0) > 0 && <span style={{ background: "#818cf8", color: "#0b0b24", fontSize: 14, fontWeight: 900, borderRadius: 999, padding: "5px 14px", letterSpacing: 0.5 }}>🎯 {selectedPlayer.assists} {selectedPlayer.assists === 1 ? "ASSIST" : "ASSISTS"}</span>}
                   </div>
                 )}
 
-                <div style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)", borderRadius: 14, padding: "10px 30px 8px", display: "inline-block", marginBottom: motmNote.trim() ? 14 : 22, boxShadow: "0 4px 22px rgba(251,191,36,0.3)" }}>
-                  <div style={{ fontSize: 11, color: "#0a0f0a", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5 }}>Match Rating</div>
-                  <input
-                    type="number" step="0.01" min="0" max="10"
-                    value={customRating != null ? customRating : (selectedPlayer.rating != null ? parseFloat(selectedPlayer.rating).toFixed(2) : "")}
-                    onChange={e => setCustomRating(e.target.value)}
-                    style={{ width: 110, fontSize: 40, fontWeight: 900, color: "#0a0f0a", background: "transparent", border: "none", outline: "none", textAlign: "center", fontFamily: "inherit", padding: 0 }}
-                  />
+                <div style={{ background: "#f5b414", borderRadius: 14, padding: "6px 0 6px", width: 180, margin: motmNote.trim() ? "0 auto 10px" : "0 auto 14px", textAlign: "center" }}>
+                  <div style={{ fontSize: 11, color: "#0a0f0a", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, lineHeight: 1.2 }}>Match Rating</div>
+                  <div style={{ fontSize: 34, fontWeight: 900, color: "#0a0f0a", lineHeight: 1.1 }}>{(customRating != null && customRating !== "") ? customRating : (selectedPlayer.rating != null ? parseFloat(selectedPlayer.rating).toFixed(2) : "-")}</div>
                 </div>
 
                 {motmNote.trim() && (
-                  <div style={{ fontSize: 15, color: "#fde68a", fontWeight: 700, fontStyle: "italic", margin: "0 auto 18px", maxWidth: 360, lineHeight: 1.35 }}>&ldquo;{motmNote.trim()}&rdquo;</div>
+                  <div style={{ fontSize: 15, color: "#fde68a", fontWeight: 700, fontStyle: "italic", margin: "0 auto 12px", maxWidth: 360, lineHeight: 1.35 }}>&ldquo;{motmNote.trim()}&rdquo;</div>
                 )}
 
-                <div style={{ display: "grid", gridTemplateColumns: `repeat(${motmStatsForPosition(selectedPlayer).length <= 4 ? motmStatsForPosition(selectedPlayer).length : 4}, 1fr)`, gap: 9, maxWidth: motmStatsForPosition(selectedPlayer).length === 1 ? 160 : "100%", margin: "0 auto" }}>
+                <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 8, margin: "0 auto" }}>
                   {motmStatsForPosition(selectedPlayer).map(s => (
                     <div key={s.label} style={{
+                      width: `calc((100% - ${(motmCols(motmStatsForPosition(selectedPlayer).length) - 1) * 8}px) / ${motmCols(motmStatsForPosition(selectedPlayer).length)})`, boxSizing: "border-box",
                       background: "linear-gradient(135deg, #fbbf2418, #13131f)",
-                      border: "1px solid #fbbf2440", borderRadius: 12, padding: "12px 4px 10px", textAlign: "center",
+                      border: "1px solid #fbbf2440", borderRadius: 12, padding: "9px 4px 8px", textAlign: "center",
                     }}>
-                      <div style={{ fontSize: 26, fontWeight: 900, color: "#fbbf24", lineHeight: 1 }}>{s.value ?? "-"}</div>
-                      <div style={{ fontSize: 10, color: "#e2e8f0", marginTop: 6, textTransform: "uppercase", fontWeight: 700, letterSpacing: 0.4, lineHeight: 1.15 }}>{s.label}</div>
+                      <div style={{ fontSize: 23, fontWeight: 900, color: "#fbbf24", lineHeight: 1 }}>{s.value ?? "-"}</div>
+                      <div style={{ fontSize: 10, color: "#e2e8f0", marginTop: 5, textTransform: "uppercase", fontWeight: 700, letterSpacing: 0.3, lineHeight: 1.15 }}>{s.label}</div>
                     </div>
                   ))}
                 </div>
