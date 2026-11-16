@@ -31,6 +31,16 @@ function getLocalDateString(date = new Date()) {
 // one begins.
 // Head starts removed: no player gets points before the round begins. Keep this empty.
 const ROUND_HEAD_START = {};
+// Tie-breakers, used on every board. Level on points? Then most exact scores, then most correct results
+// (exact + outcome), then most Over/Under hits, then whoever made their first prediction earlier.
+const NO_TIME = 8.64e15;
+const tieCmp = (a, b) =>
+  (b.points - a.points) ||
+  (b.exact - a.exact) ||
+  ((b.exact + b.outcomeOnly) - (a.exact + a.outcomeOnly)) ||
+  (b.overUnderHits - a.overUnderHits) ||
+  ((a.firstAt ?? NO_TIME) - (b.firstAt ?? NO_TIME));
+const sameTie = (a, b) => tieCmp(a, b) === 0;
 
 // Display only: the round start used by the "X of 30 predicted" counter on the
 // Predict tab. Keep in step with the cutoff in computeLeaderboard and submitAndReveal
@@ -1045,7 +1055,7 @@ export default function FootballPredictor() {
     for (let from = 0; ; from += 1000) {
       const { data: page, error: pageErr } = await supabase
         .from("predictions")
-        .select("id, user_id, home_team, away_team, user_prediction, user_outcome, user_over_under, actual_score")
+        .select("id, user_id, home_team, away_team, user_prediction, user_outcome, user_over_under, actual_score, created_at")
         .gte("created_at", cutoff)
         .not("actual_score", "is", null)
         .order("id", { ascending: true })
@@ -1113,8 +1123,9 @@ export default function FootballPredictor() {
     const byUser = {};
     const scoringTrace = [];
     eligiblePreds.forEach(p => {
-      if (!byUser[p.user_id]) byUser[p.user_id] = { total: 0, points: 0, exact: 0, outcomeOnly: 0, overUnderHits: 0 };
+      if (!byUser[p.user_id]) byUser[p.user_id] = { total: 0, points: 0, exact: 0, outcomeOnly: 0, overUnderHits: 0, firstAt: NO_TIME };
       byUser[p.user_id].total += 1;
+      { const t = Date.parse(p.created_at); if (!Number.isNaN(t) && t < byUser[p.user_id].firstAt) byUser[p.user_id].firstAt = t; }
 
       const [actualHome, actualAway] = (p.actual_score || "").split("-").map(n => parseInt(n));
       const hasActual = !Number.isNaN(actualHome) && !Number.isNaN(actualAway);
@@ -1195,6 +1206,7 @@ export default function FootballPredictor() {
         exact: byUser[id].exact,
         outcomeOnly: byUser[id].outcomeOnly,
         overUnderHits: byUser[id].overUnderHits,
+        firstAt: byUser[id].firstAt,
       }));
     // Squad board: when the admin has switched "Squad only" on for this board, only the hand-picked players show.
     let squadIds = null;
@@ -1212,10 +1224,10 @@ export default function FootballPredictor() {
       // that account also compete on the same board it controls isn't a
       // fair contest, so it's excluded regardless of its own points.
       .filter(r => r.role !== "admin")
-      .sort((a, b) => b.points - a.points);
+      .sort(tieCmp);
     // Top 20 (Monday Night: top 10), but anyone level on points with the last place stays on the board too.
     const boardCap = contest === "monday" || contest === "daily" ? 10 : 20;
-    const rows = rowsSorted.length > boardCap ? rowsSorted.filter(r => r.points >= rowsSorted[boardCap - 1].points) : rowsSorted;
+    const rows = rowsSorted.length > boardCap ? rowsSorted.filter(r => tieCmp(r, rowsSorted[boardCap - 1]) <= 0) : rowsSorted;
 
     // Full visibility into every user who had eligible predictions this
     // period, including anyone left off the final board and why — instead
@@ -1760,6 +1772,17 @@ useEffect(() => {
     const derivedOverUnder = (hGoals + aGoals) > 2.5 ? "Over 2.5" : "Under 2.5";
     setUserOutcome(derivedOutcome);
     setUserOverUnder(derivedOverUnder);
+    // Invite-only: when the admin has switched it on, only invited players (and admins) can save predictions.
+    // The database enforces this too (invite_only.sql); this check just gives a friendly message first.
+    if (userRole !== "admin") {
+      try {
+        const { data: inv } = await supabase.from("squad_settings").select("enabled").eq("board", "invite").maybeSingle();
+        if (inv?.enabled) {
+          const { data: me } = await supabase.from("squad_members").select("user_id").eq("board", "invite").eq("user_id", session.user.id).maybeSingle();
+          if (!me) { setError("Predictions are by invitation only right now. Follow Deep433 on X to get invited."); return; }
+        }
+      } catch (e) { /* tables missing: invite-only is not set up, so nothing is blocked */ }
+    }
     // Caps each user at 30 CURATED-match predictions for the contest
     // period, matching the "winner after 30 matches" framing. Fetched
     // fresh here rather than relying on the admin-only leaderboardFixtures
@@ -3816,14 +3839,14 @@ if (!session && !guestMode) {
                 </div>
               );
             }
-            const myRank = 1 + leaderboard.filter(r => r.points > me.points).length;
+            const myRank = 1 + leaderboard.filter(r => tieCmp(r, me) < 0).length;
             const topN = contest === "daily" ? 2 : 5; // Daily board: 1st and 2nd win
-            const fifth = leaderboard.length >= topN ? [...leaderboard].sort((a, b) => b.points - a.points)[topN - 1] : null;
+            const fifth = leaderboard.length >= topN ? [...leaderboard].sort(tieCmp)[topN - 1] : null;
             const gap = fifth ? Math.max(0, fifth.points - me.points) : 0;
             if (userRole !== "admin") {
               // Players see their own points and their own position (shared ranks on ties). No other player's name or points.
               const ord = n => `${n}${n % 10 === 1 && n !== 11 ? "st" : n % 10 === 2 && n !== 12 ? "nd" : n % 10 === 3 && n !== 13 ? "rd" : "th"}`;
-              const tied = leaderboard.filter(r => r.points === me.points).length > 1;
+              const tied = leaderboard.filter(r => sameTie(r, me)).length > 1;
               const posText = `You are currently in ${tied ? "joint " : ""}${ord(myRank)} position`;
               const band = {
                 text: myRank === 1 ? `${posText} 🔥` : myRank <= topN ? `${posText} 🏆` : posText,
@@ -3883,7 +3906,7 @@ if (!session && !guestMode) {
               background: "#0d0d18", border: `1px solid ${session && row.userId === session.user.id ? "#4ade8066" : "#1a1a2e"}`, borderRadius: 10,
               padding: "10px 12px", marginBottom: 6,
             }}>
-              <span style={{ fontSize: 15, fontWeight: 900, color: "#818cf8", width: 20, flexShrink: 0, textAlign: "center" }}>{leaderboard.findIndex(x => x.points === row.points) + 1}</span>
+              <span style={{ fontSize: 15, fontWeight: 900, color: "#818cf8", width: 20, flexShrink: 0, textAlign: "center" }}>{leaderboard.findIndex(x => sameTie(x, row)) + 1}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "#f0f0f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 4 }}>{row.name}{boardBadges.filter(b => b.user_id === row.userId && b.board === contest).map((b, i) => { const def = BOARD_BADGES.find(d => d.code === b.badge); return def ? <span key={i} title={`${def.name}${b.period ? " · " + badgeMonthLabel(b.period) : ""}`} style={{ marginLeft: 4 }}>{def.icon}</span> : null; })}</div>
                 <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
@@ -3904,11 +3927,17 @@ if (!session && !guestMode) {
               </div>
             </div>
           ))}
+          {!lbLocked && leaderboard.length > 1 && (
+            <div style={{ fontSize: 11, color: "#94a3b8", textAlign: "center", margin: "6px 0 2px" }}>Level on points? Most exact scores decide, then most correct results, then Over/Under hits, then who predicted first.</div>
+          )}
           {userRole === "admin" && (
             <PremiumScoring supabase={supabase} defaultBoard={contest} onSaved={computeLeaderboard} />
           )}
           {userRole === "admin" && (
             <SquadPicker supabase={supabase} board={contest} onSaved={computeLeaderboard} />
+          )}
+          {userRole === "admin" && (
+            <SquadPicker supabase={supabase} board="invite" />
           )}
           {/* Last two rounds comparison. Reads saved rounds from leaderboard_round_results. Display only. */}
           {userRole === "admin" && contest === "weekly" && (() => {
