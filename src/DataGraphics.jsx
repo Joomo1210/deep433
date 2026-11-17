@@ -216,6 +216,7 @@ const LEAGUE_OPTIONS = [
   { id: "ucl",    label: "Champions League" },
   { id: "uel",    label: "Europa League" },
   { id: "uefanationsleague", label: "UEFA Nations League" },
+  { id: "afconqualifiers", label: "AFCON Qualification" },
   { id: "facup",  label: "FA Cup" },
   { id: "copadelrey", label: "Copa del Rey" },
   { id: "afcon",  label: "AFCON" },
@@ -5883,8 +5884,34 @@ const SB_STATS = {
   away:     { title: "BEST AWAY RECORD", unit: "away points", dir: 1, val: t => t.awayPoints, sub: t => `from ${t.awayPlayed} away games`, tie: t => t.awayPlayed, verb: "have the best away record" },
   blank:    { title: "STRUGGLE TO SCORE", unit: "games without a goal", dir: 1, val: t => t.failedToScore, sub: t => `in ${t.played} games`, tie: t => -t.played, verb: "have failed to score in the most games" },
   streak:   { title: "LONGEST WINNING RUN", unit: "wins in a row", dir: 1, val: t => t.winStreak, sub: t => `${t.played} played`, tie: t => -t.played, verb: "have the longest winning run" },
+  // VAR boards: built from the match events feed (loaded once, then kept in the browser).
+  varGoalsOut:  { needsVar: true, title: "GOALS RULED OUT BY VAR", unit: "goals disallowed after VAR review", dir: 1, val: t => t.varDis || 0, sub: t => `in ${t.played} games`, tie: t => -t.played, verb: "have had the most goals ruled out by VAR" },
+  varGoalsAgainst: { needsVar: true, title: "VAR DENIED THEIR OPPONENTS", unit: "opposition goals ruled out by VAR", dir: 1, val: t => t.varAgainst || 0, sub: t => `in ${t.played} games`, tie: t => -t.played, verb: "have seen the most opposition goals ruled out by VAR" },
+  varPens:      { needsVar: true, title: "VAR PENALTIES", unit: "penalties confirmed after VAR review", dir: 1, val: t => t.varPen || 0, sub: t => `in ${t.played} games`, tie: t => -t.played, verb: "have had the most penalties confirmed by VAR" },
+  varBusy:      { needsVar: true, title: "BUSIEST WITH VAR", unit: "VAR decisions involving them", dir: 1, val: t => t.varAll || 0, sub: t => `${pg(t.varAll || 0, t.played)} per game`, tie: t => -t.played, verb: "have had the most VAR decisions" },
 };
-const SB_ORDER = ["attack", "defence", "clean", "late", "early", "yellow", "home", "away", "blank", "streak"];
+const SB_ORDER = ["attack", "defence", "clean", "late", "early", "yellow", "home", "away", "blank", "streak", "varGoalsOut", "varGoalsAgainst", "varPens", "varBusy"];
+
+// Turn the saved VAR events into per-team counts. Goal and penalty wording is matched loosely (cancel/disallow/confirm)
+// so small differences in the feed's detail text do not matter.
+function aggregateVar(fixtures, events) {
+  const by = {}, seen = {};
+  const bump = (team, k) => { if (!team) return; (by[team] = by[team] || { varDis: 0, varAgainst: 0, varPen: 0, varAll: 0 })[k]++; };
+  fixtures.forEach(f => {
+    const ev = events[f.id];
+    if (!ev) return;
+    const nameOf = id => (id === f.hid ? f.h : id === f.aid ? f.a : null);
+    ev.forEach(e => {
+      const d = String(e.d || "").toLowerCase();
+      seen[e.d || "(blank)"] = (seen[e.d || "(blank)"] || 0) + 1;
+      const team = nameOf(e.t), opp = team === f.h ? f.a : team === f.a ? f.h : null;
+      bump(team, "varAll");
+      if (/goal/.test(d) && /(cancel|disallow)/.test(d)) { bump(team, "varDis"); bump(opp, "varAgainst"); }
+      if (/penalty/.test(d) && /confirm/.test(d)) bump(team, "varPen");
+    });
+  });
+  return { by, seen };
+}
 
 function rankTeams(teams, key, n) {
   const def = SB_STATS[key];
@@ -6057,6 +6084,42 @@ function StatBoardGraphic() {
   const [oddsA, setOddsA] = useState("");
   const [pulling, setPulling] = useState(false);
   const [pullMsg, setPullMsg] = useState("");
+  const [varMsg, setVarMsg] = useState("");
+  const varBusy = useRef(false);
+
+  // VAR events: one list call, then 30 matches at a time. Each finished match is kept in the browser for good,
+  // so after the first load only new matches cost API requests.
+  const loadVar = async () => {
+    if (varBusy.current || !data?.teams?.length) return;
+    varBusy.current = true;
+    const lsKey = `d433_var_${league}_${data.season}`;
+    try {
+      setVarMsg("Loading VAR data…");
+      const lres = await fetch(`/api/stat-board?type=var&leagueId=${league}`);
+      const list = await lres.json();
+      if (!lres.ok) throw new Error(list.error || "Could not load matches");
+      const fixtures = list.fixtures || [];
+      let cache = {};
+      try { cache = JSON.parse(localStorage.getItem(lsKey) || "{}").events || {}; } catch {}
+      const pending = fixtures.filter(f => !(f.id in cache)).map(f => f.id);
+      let failedCount = 0;
+      for (let i = 0; i < pending.length; i += 30) {
+        setVarMsg(`Loading VAR data… ${Math.min(i, pending.length)} of ${pending.length} new matches`);
+        const r = await fetch(`/api/stat-board?type=var&leagueId=${league}&ids=${pending.slice(i, i + 30).join(",")}&t=${Date.now()}`);
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.error || "Could not load VAR events");
+        Object.assign(cache, j.events || {});
+        failedCount += (j.failed || []).length;
+        try { localStorage.setItem(lsKey, JSON.stringify({ events: cache })); } catch {}
+      }
+      const { by, seen } = aggregateVar(fixtures, cache);
+      const total = Object.values(seen).reduce((a, b) => a + b, 0);
+      setData(d => d && ({ ...d, varReady: true, varFixtures: fixtures.length, varFailed: failedCount, varSeen: seen, teams: d.teams.map(t => ({ ...t, varDis: 0, varAgainst: 0, varPen: 0, varAll: 0, ...(by[t.team] || {}) })) }));
+      setVarMsg(total ? "" : "No VAR events came back for this league. The API may not record VAR for it, so this board would be empty.");
+    } catch (e) { setVarMsg("Could not load VAR data: " + e.message); }
+    varBusy.current = false;
+  };
+  useEffect(() => { if (SB_STATS[statKey]?.needsVar && data?.teams?.length && !data.varReady) loadVar(); /* eslint-disable-next-line */ }, [statKey, league, data?.generatedAt]);
 
   // Finds the fixture for the two chosen teams, then fills in kick-off and bookmaker-average odds.
   // Costs 1 request for the fixture list (cached for a few minutes) and 1 for the odds.
@@ -6119,8 +6182,9 @@ function StatBoardGraphic() {
   };
   useEffect(() => { load(false); /* eslint-disable-next-line */ }, [league]);
 
-  const rows = data?.teams?.length ? rankTeams(data.teams, statKey, count) : [];
   const def = SB_STATS[statKey];
+  const ready = !def.needsVar || !!data?.varReady;
+  const rows = ready && data?.teams?.length ? rankTeams(data.teams, statKey, count) : [];
   const note = rows.length && data
     ? (() => {
         const top = rows.filter(r => r.rank === 1).map(r => r.team);
@@ -6128,7 +6192,7 @@ function StatBoardGraphic() {
         return `📊 ${def.title.charAt(0) + def.title.slice(1).toLowerCase()} in ${inLeague(data.league)}\n\n${who} ${def.verb}: ${rows[0].v} ${def.unit}${top.length > 1 ? " each" : ""} (${rows[0].sub}).\n\n${data.teams.length === rows.length ? `Every team in ${inLeague(data.league)} is on the card` : `Everyone in the top ${rows.length} is on the card`} 👇`;
       })()
     : "";
-  const allRanked = data?.teams?.length ? rankTeams(data.teams, statKey, 99) : [];
+  const allRanked = ready && data?.teams?.length ? rankTeams(data.teams, statKey, 99) : [];
   const mixedRank = statKey === "home" || statKey === "away";
   const homeRanked = mixedRank && data?.teams?.length ? rankTeams(data.teams, "home", 99) : [];
   const awayRanked = mixedRank && data?.teams?.length ? rankTeams(data.teams, "away", 99) : [];
@@ -6188,6 +6252,14 @@ function StatBoardGraphic() {
       {data && data.expected && data.teams.length < data.expected && !(data.missing?.length) && <div style={{ fontSize: 12, color: "#f59e0b" }}>⚠ Only {data.teams.length} of {data.expected} teams loaded. Press Refresh before posting.</div>}
       {loading && <div style={{ fontSize: 12, color: "#9fb0c8" }}>Loading stats…</div>}
       {err && <div style={{ fontSize: 12, color: "#f87171" }}>{err}</div>}
+      {SB_STATS[statKey]?.needsVar && varMsg && <div style={{ fontSize: 12, color: "#f59e0b" }}>{varMsg}</div>}
+      {SB_STATS[statKey]?.needsVar && data?.varReady && (
+        <div style={{ fontSize: 11, color: "#9fb0c8" }}>
+          VAR data from {data.varFixtures} finished matches. Event types seen: {Object.entries(data.varSeen || {}).map(([k, v]) => `${k} ×${v}`).join(", ") || "none"}.
+          {data.varFailed > 0 && <span style={{ color: "#f59e0b" }}> {data.varFailed} match(es) failed to load, reopen this stat to retry.</span>}
+          {" "}Check one known match before posting.
+        </div>
+      )}
       {data?.generatedAt && <div style={{ fontSize: 11, color: "#9fb0c8" }}>Data from {new Date(data.generatedAt).toLocaleString("en-GB")} · {data.teams.length} teams</div>}
       {mode === "two" && !twoReady && data && <div style={{ fontSize: 12, color: "#9fb0c8" }}>Pick two different teams to build the card.</div>}
       {twoReady && (
