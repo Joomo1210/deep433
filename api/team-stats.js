@@ -73,47 +73,72 @@ export default async function handler(req, res) {
   // league) — instead sums the top 20 assist providers per league, clearly
   // labeled as such rather than presented as a full league total.
   // ── Europe's top individual assist providers, combined across the 5 major leagues ──
+  // ── Europe's top individual players, combined across the 5 major leagues ──
+  // stat: assists (default, so the old call still works) | scorers | yellow | red
+  // season: "this" = the current season, anything else = last completed season (the old behaviour)
   if (mode === "euroassists") {
     const BIG5 = ["pl", "laliga", "seriea", "bundesliga", "ligue1"];
     const LEAGUE_LABELS = { pl: "Premier League", laliga: "La Liga", seriea: "Serie A", bundesliga: "Bundesliga", ligue1: "Ligue 1" };
+    const STAT = String(req.query.stat || "assists");
+    const ENDPOINT = { assists: "topassists", scorers: "topscorers", yellow: "topyellowcards", red: "topredcards" }[STAT];
+    if (!ENDPOINT) return res.status(400).json({ players: [], error: "Unknown stat" });
+    const thisSeason = req.query.season === "this";
     try {
       const allPlayers = [];
+      const failed = [];
+      let seasonUsed = null;
 
       for (const leagueKey of BIG5) {
         const league = LEAGUE_MAP[leagueKey];
-        const lastSeason = league.season - 1;
+        const season = thisSeason ? league.season : league.season - 1;
+        seasonUsed = season;
+        let got = false;
 
-        for (let attempt = 0; attempt < 2; attempt++) {
+        for (let attempt = 0; attempt < 2 && !got; attempt++) {
           try {
-            const r = await fetch(`https://v3.football.api-sports.io/players/topassists?league=${league.id}&season=${lastSeason}`, {
+            const r = await fetch(`https://v3.football.api-sports.io/players/${ENDPOINT}?league=${league.id}&season=${season}`, {
               headers: { "x-apisports-key": apiKey }
             });
             const data = await r.json();
             const players = data.response || [];
             if (players.length > 0) {
+              got = true;
               players.forEach(p => {
+                const st = p.statistics?.[0] || {};
+                const yellow = (st.cards?.yellow || 0) + (st.cards?.yellowred || 0);
                 allPlayers.push({
                   name: p.player?.name,
                   photo: p.player?.photo,
                   nationality: p.player?.nationality,
-                  team: p.statistics?.[0]?.team?.name,
-                  teamLogo: p.statistics?.[0]?.team?.logo,
+                  team: st.team?.name,
+                  teamLogo: st.team?.logo,
                   league: leagueKey,
                   leagueLabel: LEAGUE_LABELS[leagueKey],
-                  assists: p.statistics?.[0]?.goals?.assists || 0,
-                  appearances: p.statistics?.[0]?.games?.appearences,
+                  assists: st.goals?.assists || 0,
+                  goals: st.goals?.total || 0,
+                  yellow: st.cards?.yellow || 0,
+                  red: st.cards?.red || 0,
+                  appearances: st.games?.appearences,
+                  minutes: st.games?.minutes,
                 });
               });
-              break;
             } else if (attempt === 0) {
               await new Promise(res => setTimeout(res, 500));
             }
           } catch {}
         }
+        if (!got) failed.push(LEAGUE_LABELS[leagueKey]);
       }
 
-      const sorted = allPlayers.sort((a, b) => (b.assists || 0) - (a.assists || 0)).slice(0, 10);
-      return res.status(200).json({ players: sorted });
+      const key = { assists: "assists", scorers: "goals", yellow: "yellow", red: "red" }[STAT];
+      // Ties: for cards, the other card colour breaks it; otherwise fewer appearances first (better rate).
+      const sorted = allPlayers
+        .sort((a, b) => (b[key] || 0) - (a[key] || 0)
+          || (STAT === "yellow" ? (b.red || 0) - (a.red || 0) : STAT === "red" ? (b.yellow || 0) - (a.yellow || 0) : 0)
+          || ((a.appearances || 999) - (b.appearances || 999)))
+        .slice(0, 10);
+      if (sorted.length && !failed.length) res.setHeader("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=3600");
+      return res.status(200).json({ players: sorted, stat: STAT, season: seasonUsed, failed });
     } catch (err) {
       return res.status(200).json({ players: [], error: err.message });
     }
@@ -729,6 +754,30 @@ export default async function handler(req, res) {
       avgGoalsAgainst: s.goals?.against?.average?.total,
       goalIntervalsFor: s.goals?.for?.minute,
       goalIntervalsAgainst: s.goals?.against?.minute,
+      // ── Everything else teams/statistics gives us ──
+      home: {
+        played: s.fixtures?.played?.home, wins: s.fixtures?.wins?.home, draws: s.fixtures?.draws?.home, losses: s.fixtures?.loses?.home,
+        goalsFor: s.goals?.for?.total?.home, goalsAgainst: s.goals?.against?.total?.home, cleanSheets: s.clean_sheet?.home,
+      },
+      away: {
+        played: s.fixtures?.played?.away, wins: s.fixtures?.wins?.away, draws: s.fixtures?.draws?.away, losses: s.fixtures?.loses?.away,
+        goalsFor: s.goals?.for?.total?.away, goalsAgainst: s.goals?.against?.total?.away, cleanSheets: s.clean_sheet?.away,
+      },
+      streaks: { wins: s.biggest?.streak?.wins, draws: s.biggest?.streak?.draws, losses: s.biggest?.streak?.loses },
+      biggestWinHome: s.biggest?.wins?.home, biggestWinAway: s.biggest?.wins?.away,
+      biggestLossHome: s.biggest?.loses?.home, biggestLossAway: s.biggest?.loses?.away,
+      mostScoredInGame: { home: s.biggest?.goals?.for?.home, away: s.biggest?.goals?.for?.away },
+      mostConcededInGame: { home: s.biggest?.goals?.against?.home, away: s.biggest?.goals?.against?.away },
+      penalty: { scored: s.penalty?.scored?.total, missed: s.penalty?.missed?.total, total: s.penalty?.total },
+      cards: {
+        yellow: Object.values(s.cards?.yellow || {}).reduce((a, b) => a + (b?.total || 0), 0),
+        red: Object.values(s.cards?.red || {}).reduce((a, b) => a + (b?.total || 0), 0),
+      },
+      lateGoalsFor: ["76-90", "91-105", "106-120"].reduce((a, k) => a + (s.goals?.for?.minute?.[k]?.total || 0), 0),
+      lateGoalsAgainst: ["76-90", "91-105", "106-120"].reduce((a, k) => a + (s.goals?.against?.minute?.[k]?.total || 0), 0),
+      earlyGoalsFor: s.goals?.for?.minute?.["0-15"]?.total || 0,
+      earlyGoalsAgainst: s.goals?.against?.minute?.["0-15"]?.total || 0,
+      formations: (s.lineups || []).slice().sort((a, b) => (b.played || 0) - (a.played || 0)).slice(0, 3).map(l => ({ formation: l.formation, played: l.played })),
     });
   } catch (err) {
     res.status(200).json({ available: false, error: err.message });
