@@ -437,16 +437,19 @@ function StatRow({ label, home, away, icon }) {
   );
 }
 
-function GraphicCard({ children, cardRef, label, light = false }) {
+// Shared shell for every card. Dark cards get the Man of the Match look: warm dark background, soft gold glow behind the
+// header, brand accent bar and a gold ring around the logo. Everything is solid colour, gradient and box-shadow only,
+// because html2canvas (used for downloads) drops blur filters, gradient text and inset shadows.
+function GraphicCard({ children, cardRef, label, light = false, accent = "251,191,36" }) {
   return (
     <div>
       <div
         ref={cardRef}
         data-gc="1"
         style={{
-          background: light ? "#ffffff" : "linear-gradient(145deg, #0a0a0f 0%, #0d0d1a 60%, #0a0f0a 100%)",
-          border: light ? "1px solid #e5e5e5" : "1px solid #1e1e30",
-          borderRadius: 14,
+          background: light ? "#ffffff" : "linear-gradient(160deg, #181205 0%, #0b0b13 55%, #090c0a 100%)",
+          border: light ? "1px solid #e5e5e5" : "1px solid #2e2610",
+          borderRadius: 16,
           overflow: "hidden",
           position: "relative",
           fontFamily: "'Inter',sans-serif",
@@ -455,9 +458,10 @@ function GraphicCard({ children, cardRef, label, light = false }) {
           margin: "0 auto",
         }}
       >
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#4ade80,#a855f7,#f59e0b)" }} />
-        <div style={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", zIndex: 2 }}>
-          <img src="/deep433.jpg" alt="Deep433" crossOrigin="anonymous" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }} />
+        {!light && <div style={{ position: "absolute", top: -110, left: "50%", marginLeft: -200, width: 400, height: 400, borderRadius: "50%", background: `radial-gradient(circle, rgba(${accent},0.20), transparent 65%)`, pointerEvents: "none", zIndex: 0 }} />}
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, background: "linear-gradient(90deg,#4ade80,#fbbf24,#a855f7)", zIndex: 2 }} />
+        <div style={{ position: "absolute", top: 12, left: "50%", transform: "translateX(-50%)", zIndex: 2 }}>
+          <img src="/deep433.jpg" alt="Deep433" crossOrigin="anonymous" style={{ width: 30, height: 30, borderRadius: "50%", objectFit: "cover", boxShadow: light ? "none" : "0 0 0 2px #fbbf24" }} />
         </div>
         <div style={{ position: "relative", zIndex: 1 }}>
           {children}
@@ -1844,6 +1848,44 @@ function TeamStatsGraphic() {
                   </div>
                 ))}
               </div>
+
+              {/* Everything else the API gives for a team: scoring, cards, home and away, streaks, formation */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 14 }}>
+                {[
+                  { label: "Failed to Score", value: data.failedToScore,          color: "#f87171" },
+                  { label: "Late Goals 75+",  value: data.lateGoalsFor,           color: "#4ade80" },
+                  { label: "Early Conceded",  value: data.earlyGoalsAgainst,      color: "#f87171" },
+                  { label: "Yellow Cards",    value: data.cards?.yellow,          color: "#facc15" },
+                  { label: "Red Cards",       value: data.cards?.red,             color: "#ef4444" },
+                  { label: "Penalties",       value: data.penalty?.total ? `${data.penalty.scored ?? 0}/${data.penalty.total}` : data.penalty ? "0" : undefined, color: "#60a5fa" },
+                  { label: "Win Streak",      value: data.streaks?.wins,          color: "#4ade80" },
+                  { label: "Lose Streak",     value: data.streaks?.losses,        color: "#f87171" },
+                ].map(t => (
+                  <div key={t.label} style={{ background: "#13131f", borderRadius: 8, padding: "10px 8px", textAlign: "center" }}>
+                    <div style={{ fontSize: 24, fontWeight: 900, color: t.color }}>{t.value ?? "—"}</div>
+                    <div style={{ fontSize: 12, color: "#e2e8f0", marginTop: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{t.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {data.home && data.away && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
+                  {[["Home", data.home], ["Away", data.away]].map(([lbl, h]) => (
+                    <div key={lbl} style={{ background: "#13131f", borderRadius: 8, padding: "10px 10px", textAlign: "center" }}>
+                      <div style={{ fontSize: 12, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: 1.5, fontWeight: 700, marginBottom: 4 }}>{lbl}</div>
+                      <div style={{ fontSize: 17, fontWeight: 900, color: "#f0f0f0" }}>{h.wins ?? 0}W {h.draws ?? 0}D {h.losses ?? 0}L</div>
+                      <div style={{ fontSize: 12, color: "#e2e8f0", marginTop: 3 }}>{h.goalsFor ?? 0} scored · {h.goalsAgainst ?? 0} conceded · {h.cleanSheets ?? 0} clean sheets</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {data.formations?.length > 0 && (
+                <div style={{ textAlign: "center", fontSize: 12, color: "#e2e8f0", marginBottom: 14 }}>
+                  <span style={{ color: "#cbd5e1", textTransform: "uppercase", letterSpacing: 1.5, fontWeight: 700 }}>Formations </span>
+                  {data.formations.map(f => `${f.formation} (${f.played})`).join(" · ")}
+                </div>
+              )}
 
               {(data.biggestWin || data.biggestLoss) && (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
@@ -9570,7 +9612,8 @@ function CurrentSeasonTeamCompareGraphic() {
 }
 
 
-// ─── BEST OF EUROPE (Top 2 from each major league, last season) ─────────────
+// ─── BEST OF EUROPE (this season: top 10 teams across the 5 major leagues; last season: top 2 from each) ───
+const BOE_LEAGUES = [["pl", "Premier League"], ["laliga", "La Liga"], ["seriea", "Serie A"], ["bundesliga", "Bundesliga"], ["ligue1", "Ligue 1"]];
 function BestOfEuropeGraphic() {
   const cardRef = useRef(null);
   const [teams, setTeams] = useState(null);
@@ -9578,22 +9621,70 @@ function BestOfEuropeGraphic() {
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState("");
   const [statKey, setStatKey] = useState("cleanSheets");
+  const [period, setPeriod] = useState("this"); // "this" = current season, all teams in the big 5; "last" = top 2 finishers per league
+  const [progress, setProgress] = useState("");
+  const [seasonLabel, setSeasonLabel] = useState("");
 
-  const STAT_OPTIONS = [
+  const ALL_STATS = [
     { key: "cleanSheets", label: "Clean Sheets", color: "#60a5fa" },
     { key: "goalsFor", label: "Goals Scored", color: "#4ade80" },
     { key: "goalsAgainst", label: "Goals Conceded", color: "#f87171" },
     { key: "wins", label: "Wins", color: "#fbbf24" },
+    { key: "yellow", label: "Yellow Cards", color: "#facc15" },
+    { key: "red", label: "Red Cards", color: "#ef4444" },
   ];
+  // Wins are not in the current-season feed (it carries points, not wins), and cards are not in the last-season feed,
+  // so each of those options only shows for the season that has it.
+  const STAT_OPTIONS = ALL_STATS.filter(s => period === "this" ? s.key !== "wins" : !["yellow", "red"].includes(s.key));
+  const fewestFirst = period === "this" && statKey === "goalsAgainst";
 
-  const load = async () => {
-    setLoading(true); setError(""); setTeams(null);
+  const switchPeriod = (p) => { setPeriod(p); setTeams(null); setError(""); setProgress(""); if ((p === "this" && statKey === "wins") || (p === "last" && ["yellow", "red"].includes(statKey))) setStatKey("cleanSheets"); };
+
+  const loadThis = async (force) => {
+    // Reuses the Stats Lab league cache (6 hours), so leagues already opened there cost nothing.
+    const all = []; const failed = []; let season = null;
+    for (let i = 0; i < BOE_LEAGUES.length; i++) {
+      const [key, label] = BOE_LEAGUES[i];
+      setProgress(`Loading ${label}… (${i + 1} of ${BOE_LEAGUES.length})`);
+      let data = null;
+      const lsKey = `d433_statboard_${key}`;
+      try {
+        const c = !force && JSON.parse(localStorage.getItem(lsKey) || "null");
+        if (c && Date.now() - c.t < 6 * 3600 * 1000) data = c.data;
+      } catch {}
+      if (!data) {
+        try {
+          const r = await fetch(`/api/stat-board?leagueId=${key}${force ? `&t=${Date.now()}` : ""}`);
+          const j = await r.json();
+          if (r.ok && j.available !== false && j.teams?.length) {
+            data = j;
+            try { localStorage.setItem(lsKey, JSON.stringify({ t: Date.now(), data: j })); } catch {}
+          }
+        } catch {}
+      }
+      if (!data) { failed.push(label); continue; }
+      if (season === null) season = seasonText(data.season, data.calendar);
+      data.teams.forEach(t => all.push({ ...t, leagueLabel: label }));
+    }
+    if (!all.length) throw new Error("Could not load this season's stats");
+    setSeasonLabel(season || "");
+    setError(failed.length ? `Not loaded: ${failed.join(", ")}. Those teams are missing from the ranking, press Load again to retry.` : "");
+    return all;
+  };
+
+  const load = async (force) => {
+    setLoading(true); setError(""); setTeams(null); setProgress("");
     try {
-      const r = await fetch(`/api/team-stats?mode=eurotop10`);
-      const d = await r.json();
-      if (!d.teams?.length) throw new Error("Could not load data");
-      setTeams(d.teams);
+      if (period === "this") {
+        setTeams(await loadThis(force === true));
+      } else {
+        const r = await fetch(`/api/team-stats?mode=eurotop10`);
+        const d = await r.json();
+        if (!d.teams?.length) throw new Error("Could not load data");
+        setTeams(d.teams);
+      }
     } catch (e) { setError(e.message); }
+    setProgress("");
     setLoading(false);
   };
 
@@ -9606,22 +9697,38 @@ function BestOfEuropeGraphic() {
   };
 
   const activeStat = STAT_OPTIONS.find(s => s.key === statKey);
-  const sorted = teams ? [...teams].sort((a, b) => (b[statKey] || 0) - (a[statKey] || 0)) : [];
-  const maxVal = sorted.length ? Math.max(...sorted.map(t => t[statKey] || 0), 1) : 1;
+  const val = t => t[statKey] || 0;
+  const ranked = teams
+    ? [...teams].sort((a, b) => (fewestFirst ? val(a) - val(b) : val(b) - val(a)) || ((a.played || 0) - (b.played || 0)))
+    : [];
+  const sorted = period === "this" ? ranked.slice(0, 10) : ranked;
+  const maxVal = sorted.length ? Math.max(...sorted.map(val), 1) : 1;
+  const minVal = sorted.length ? Math.min(...sorted.map(val)) : 0;
+  // For "fewest conceded" a longer bar should mean a better defence, so the bar is scaled the other way round.
+  const barPct = t => fewestFirst ? Math.max(((maxVal + 1 - val(t)) / (maxVal + 1 - minVal)) * 100, 8) : Math.max((val(t) / maxVal) * 100, 4);
+  const statTitle = fewestFirst ? "Fewest Goals Conceded" : activeStat.label;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Top 2 finishers from each of the 5 major leagues, last completed season.</div>
+      <div style={{ display: "flex", gap: 6 }}>
+        {[["this", "This season"], ["last", "Last season"]].map(([id, label]) => (
+          <button key={id} onClick={() => switchPeriod(id)} style={{ background: period === id ? "#4ade8022" : "none", border: `1px solid ${period === id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: period === id ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "5px 14px" }}>{label}</button>
+        ))}
+      </div>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>{period === "this" ? "The top 10 teams across the 5 major leagues for the current season, live from the league tables." : "Top 2 finishers from each of the 5 major leagues, last completed season."}</div>
 
       {!teams && (
-        <button onClick={load} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
-          {loading ? "Loading all 10 teams..." : "Load Best of Europe"}
+        <button onClick={() => load(false)} disabled={loading} style={{ background: "#4ade80", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
+          {loading ? (progress || (period === "this" ? "Loading the 5 leagues..." : "Loading all 10 teams...")) : "Load Best of Europe"}
         </button>
       )}
       {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
 
       {teams && (
         <>
+          {period === "this" && (
+            <button onClick={() => load(true)} disabled={loading} style={{ alignSelf: "flex-start", background: "none", border: "1px solid #2a2a3a", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, padding: "5px 10px" }}>{loading ? (progress || "Refreshing...") : "↻ Refresh from the API (about 100 requests)"}</button>
+          )}
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {STAT_OPTIONS.map(s => (
               <button key={s.key} onClick={() => setStatKey(s.key)} style={{ background: statKey === s.key ? `${s.color}22` : "none", border: `1px solid ${statKey === s.key ? s.color : "#2a2a3a"}`, borderRadius: 16, color: statKey === s.key ? s.color : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "6px 12px" }}>
@@ -9633,10 +9740,10 @@ function BestOfEuropeGraphic() {
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "44px 18px 18px" }}>
               <div style={{ textAlign: "center", marginBottom: 4 }}>
-                <span style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>Best of Europe</span>
+                <span style={{ fontSize: 20, fontWeight: 900, color: "#fbbf24", textTransform: "uppercase", letterSpacing: 2 }}>Best of Europe</span>
               </div>
               <div style={{ textAlign: "center", marginBottom: 18 }}>
-                <span style={{ fontSize: 11, color: activeStat.color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>Ranked by {activeStat.label}</span>
+                <span style={{ fontSize: 11, color: activeStat.color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>Ranked by {statTitle}{period === "this" && seasonLabel ? ` · ${seasonLabel}` : ""}</span>
               </div>
 
               {sorted.map((t, i) => (
@@ -9648,7 +9755,7 @@ function BestOfEuropeGraphic() {
                     <span style={{ fontSize: 17, fontWeight: 900, color: activeStat.color, minWidth: 26, textAlign: "right" }}>{t[statKey] ?? "—"}</span>
                   </div>
                   <div style={{ height: 7, background: "#1a1a24", borderRadius: 4, overflow: "hidden" }}>
-                    <div style={{ width: `${Math.max(((t[statKey] || 0) / maxVal) * 100, 4)}%`, height: "100%", background: activeStat.color, borderRadius: 4 }} />
+                    <div style={{ width: `${barPct(t)}%`, height: "100%", background: activeStat.color, borderRadius: 4 }} />
                   </div>
                 </div>
               ))}
@@ -11261,21 +11368,36 @@ function LeagueTotalsGraphic() {
   );
 }
 
-// ─── EURO TOP ASSISTS (individual players, combined across 5 leagues) ───────
+// ─── EUROPE TOP PLAYERS (scorers, assists, most booked: top 10 combined across the 5 major leagues) ───
+const EURO_PLAYER_STATS = [
+  { key: "scorers", label: "Top Scorers", title: "Europe's Top Scorers", color: "#4ade80", val: p => p.goals || 0, unit: "goals", extra: p => (p.appearances ? `${p.appearances} apps` : "") },
+  { key: "assists", label: "Top Assists", title: "Europe's Top Assists", color: "#a855f7", val: p => p.assists || 0, unit: "assists", extra: p => (p.appearances ? `${p.appearances} apps` : "") },
+  { key: "yellow", label: "Most Yellow Cards", title: "Europe's Most Booked Players", color: "#fbbf24", val: p => p.yellow || 0, unit: "yellow cards", extra: p => (p.red ? `${p.red} red` : "") },
+  { key: "red", label: "Most Red Cards", title: "Europe's Most Sent Off", color: "#f87171", val: p => p.red || 0, unit: "red cards", extra: p => (p.yellow ? `${p.yellow} yellow` : "") },
+];
 function EuroAssistsGraphic() {
   const cardRef = useRef(null);
   const [players, setPlayers] = useState(null);
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState("");
+  const [statKey, setStatKey] = useState("scorers");
+  const [period, setPeriod] = useState("this");
+  const [seasonUsed, setSeasonUsed] = useState(null);
+  const def = EURO_PLAYER_STATS.find(s => s.key === statKey);
+
+  // Changing the stat or the season clears the old card, so a stale list is never shown under a new heading.
+  const pick = (setter, v) => { setter(v); setPlayers(null); setError(""); };
 
   const load = async () => {
     setLoading(true); setError(""); setPlayers(null);
     try {
-      const r = await fetch(`/api/team-stats?mode=euroassists`);
+      const r = await fetch(`/api/team-stats?mode=euroassists&stat=${statKey}&season=${period}`);
       const d = await r.json();
-      if (!d.players?.length) throw new Error("Could not load data");
+      if (!d.players?.length) throw new Error(d.error || "Could not load data");
       setPlayers(d.players);
+      setSeasonUsed(d.season);
+      if (d.failed?.length) setError(`Not loaded: ${d.failed.join(", ")}. Players from those leagues are missing, press Load again to retry.`);
     } catch (e) { setError(e.message); }
     setLoading(false);
   };
@@ -11283,20 +11405,31 @@ function EuroAssistsGraphic() {
   const download = async (transparent = false) => {
     setDownloading(true);
     try {
-      await downloadCardImage(cardRef.current, `deep433-euro-top-assists.png`, undefined, transparent);
+      await downloadCardImage(cardRef.current, `deep433-euro-${statKey}-${period}.png`, undefined, transparent);
     } catch { alert("Download failed"); }
     setDownloading(false);
   };
 
-  const maxVal = players?.length ? Math.max(...players.map(p => p.assists || 0), 1) : 1;
+  const maxVal = players?.length ? Math.max(...players.map(def.val), 1) : 1;
+  const chip = (active, color) => ({ background: active ? `${color}22` : "none", border: `1px solid ${active ? color : "#2a2a3a"}`, borderRadius: 16, color: active ? color : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "5px 14px" });
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Top individual assist providers, combined across the 5 major European leagues.</div>
+      <div style={{ display: "flex", gap: 6 }}>
+        {[["this", "This season"], ["last", "Last season"]].map(([id, label]) => (
+          <button key={id} onClick={() => pick(setPeriod, id)} style={chip(period === id, "#4ade80")}>{label}</button>
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {EURO_PLAYER_STATS.map(st => (
+          <button key={st.key} onClick={() => pick(setStatKey, st.key)} style={chip(statKey === st.key, st.color)}>{st.label}</button>
+        ))}
+      </div>
+      <div style={{ fontSize: 11, color: "#e2e8f0" }}>Top 10 players across the 5 major European leagues, {period === "this" ? "current season" : "last completed season"}. Each load uses 5 API requests.</div>
 
       {!players && (
-        <button onClick={load} disabled={loading} style={{ background: "#a855f7", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
-          {loading ? "Loading all 5 leagues..." : "Load Europe Top Assists"}
+        <button onClick={load} disabled={loading} style={{ background: def.color, border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "10px" }}>
+          {loading ? "Loading all 5 leagues..." : `Load ${def.label}`}
         </button>
       )}
       {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
@@ -11306,10 +11439,10 @@ function EuroAssistsGraphic() {
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
             <div style={{ padding: "44px 18px 18px" }}>
               <div style={{ textAlign: "center", marginBottom: 4 }}>
-                <span style={{ fontSize: 20, fontWeight: 900, color: "#f0f0f0" }}>Europe's Top Assists</span>
+                <span style={{ fontSize: 20, fontWeight: 900, color: "#fbbf24", textTransform: "uppercase", letterSpacing: 2 }}>{def.title}</span>
               </div>
               <div style={{ textAlign: "center", marginBottom: 18 }}>
-                <span style={{ fontSize: 11, color: "#a855f7", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>Big 5 Leagues Combined</span>
+                <span style={{ fontSize: 11, color: def.color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>Big 5 Leagues · {seasonUsed ? seasonText(seasonUsed, false) : ""}</span>
               </div>
 
               {players.map((p, i) => (
@@ -11317,20 +11450,20 @@ function EuroAssistsGraphic() {
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                     {p.photo && <img src={p.photo} alt="" crossOrigin="anonymous" style={{ width: 22, height: 22, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />}
                     <span style={{ fontSize: 13, fontWeight: 800, color: "#f0f0f0", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
-                    <span style={{ fontSize: 10, color: "#e2e8f0" }}>{p.leagueLabel}</span>
-                    <span style={{ fontSize: 17, fontWeight: 900, color: "#a855f7", minWidth: 26, textAlign: "right" }}>{p.assists ?? "—"}</span>
+                    <span style={{ fontSize: 10, color: "#e2e8f0", whiteSpace: "nowrap" }}>{[p.team, def.extra(p)].filter(Boolean).join(" · ")}</span>
+                    <span style={{ fontSize: 17, fontWeight: 900, color: def.color, minWidth: 26, textAlign: "right" }}>{def.val(p)}</span>
                   </div>
                   <div style={{ height: 7, background: "#1a1a24", borderRadius: 4, overflow: "hidden" }}>
-                    <div style={{ width: `${Math.max(((p.assists || 0) / maxVal) * 100, 4)}%`, height: "100%", background: "#a855f7", borderRadius: 4 }} />
+                    <div style={{ width: `${Math.max((def.val(p) / maxVal) * 100, 4)}%`, height: "100%", background: def.color, borderRadius: 4 }} />
                   </div>
                 </div>
               ))}
             </div>
           </GraphicCard>
-          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#a855f7,#7c3aed)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px", width: "100%" }}>
+          <button onClick={() => download(false)} disabled={downloading} style={{ background: "linear-gradient(135deg,#4ade80,#22c55e)", border: "none", borderRadius: 8, color: "#0a0f0a", cursor: "pointer", fontFamily: "inherit", fontSize: 17, fontWeight: 800, padding: "12px" }}>
             {downloading ? "Generating..." : "⬇ Download PNG"}
           </button>
-          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px", width: "100%", marginTop: 6 }}>
+          <button onClick={() => download(true)} disabled={downloading} style={{ background: "none", border: "1px dashed #666", borderRadius: 8, color: "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px" }}>
             {downloading ? "Generating..." : "⬇ Download Transparent PNG"}
           </button>
         </>
@@ -14085,7 +14218,7 @@ const LAB_META = {
   beyondscoresheet: ["Beyond Scoresheet", "target", "matches"], recap: ["Recap", "list", "matches"], bracket: ["Bracket", "trophy", "matches"],
   h2h: ["Player H2H", "swords", "players"], player: ["Ratings", "star", "players"], playertrajectory: ["Trajectory", "chart", "players"],
   glove: ["Golden Glove", "shield", "players"], gameweekrating: ["GW Rating", "star", "players"], valuation: ["Valuation", "target", "players"],
-  transfer: ["Transfer Fit", "swap", "players"], transferalert: ["Transfer Alerts", "swap", "players"], euroassists: ["Assists", "target", "players"],
+  transfer: ["Transfer Fit", "swap", "players"], transferalert: ["Transfer Alerts", "swap", "players"], euroassists: ["Europe Players", "target", "players"],
   teamofweek: ["Team of Week", "star", "players"], percentileradar: ["Percentile Radar", "target", "players"], positionradar: ["Position Radar", "target", "players"],
   zoneofinfluence: ["Zone of Influence", "grid", "players"], advancedstats: ["Pass / GK / Def", "chart", "players"], awardrace: ["Award Race", "trophy", "players"],
   quickvs: ["The Battle", "swords", "players"],
@@ -14206,7 +14339,7 @@ export default function DataGraphics({ history = [], supabase }) {
     { id: "currentseasoncompare", label: "📊 Current Season Compare" },
     { id: "bestofeurope", label: "🏆 Best of Europe" },
     { id: "leaguetotals", label: "📊 League Totals" },
-    { id: "euroassists", label: "🎯 Europe Top Assists" },
+    { id: "euroassists", label: "🎯 Europe Players: Scorers, Assists, Cards" },
     { id: "predictedlineup", label: "📋 Predicted Lineup" },
     { id: "teamofweek", label: "⭐ Team of the Week" },
     { id: "playertrajectory", label: "📈 Player Trajectory" },
