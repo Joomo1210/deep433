@@ -1588,7 +1588,7 @@ function TopScorersGraphic() {
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         {LEAGUE_OPTIONS.map(l => (
-          <button key={l.id} onClick={() => setLeagueId(l.id)} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
+          <button key={l.id} onClick={() => { setLeagueId(l.id); setData(null); setError(""); }} style={{ background: leagueId === l.id ? "#4ade8022" : "none", border: `1px solid ${leagueId === l.id ? "#4ade80" : "#2a2a3a"}`, borderRadius: 16, color: leagueId === l.id ? "#4ade80" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
             {LEAGUE_LOGOS[l.id] && <img src={LEAGUE_LOGOS[l.id]} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />}
             {l.label}
           </button>
@@ -1596,7 +1596,7 @@ function TopScorersGraphic() {
       </div>
       <div style={{ display: "flex", gap: 6 }}>
         {["scorers", "assists", "cards"].map(t => (
-          <button key={t} onClick={() => setType(t)} style={{ flex: 1, background: type === t ? "#a855f7" : "none", border: `1px solid ${type === t ? "#a855f7" : "#2a2a3a"}`, borderRadius: 8, color: type === t ? "#fff" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "8px" }}>
+          <button key={t} onClick={() => { setType(t); setData(null); setError(""); }} style={{ flex: 1, background: type === t ? "#a855f7" : "none", border: `1px solid ${type === t ? "#a855f7" : "#2a2a3a"}`, borderRadius: 8, color: type === t ? "#fff" : "#e2e8f0", cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 700, padding: "8px" }}>
             {typeIcons[t]} {typeLabels[t]}
           </button>
         ))}
@@ -6140,7 +6140,10 @@ function StatBoardGraphic() {
       const lres = await fetch(`/api/stat-board?type=var&leagueId=${league}`);
       const list = await lres.json();
       if (!lres.ok) throw new Error(list.error || "Could not load matches");
-      const fixtures = list.fixtures || [];
+      // An old stat-board.js ignores type=var and answers with the normal team table, which has no match list.
+      if (!Array.isArray(list.fixtures)) throw new Error("the server file stat-board.js is out of date, so it cannot return matches. Deploy the latest stat-board.js and reload");
+      const fixtures = list.fixtures;
+      if (!fixtures.length) throw new Error("the API returned no finished matches for this league and season");
       let cache = {};
       try { cache = JSON.parse(localStorage.getItem(lsKey) || "{}").events || {}; } catch {}
       const pending = fixtures.filter(f => !(f.id in cache)).map(f => f.id);
@@ -6157,7 +6160,7 @@ function StatBoardGraphic() {
       const { by, seen } = aggregateVar(fixtures, cache);
       const total = Object.values(seen).reduce((a, b) => a + b, 0);
       setData(d => d && ({ ...d, varReady: true, varFixtures: fixtures.length, varFailed: failedCount, varSeen: seen, teams: d.teams.map(t => ({ ...t, varDis: 0, varAgainst: 0, varPen: 0, varAll: 0, ...(by[t.team] || {}) })) }));
-      setVarMsg(total ? "" : "No VAR events came back for this league. The API may not record VAR for it, so this board would be empty.");
+      setVarMsg(total ? "" : `Checked ${fixtures.length} finished matches and the API returned no VAR events for any of them. It may not record VAR for this league, so this board would be empty.`);
     } catch (e) { setVarMsg("Could not load VAR data: " + e.message); }
     varBusy.current = false;
   };
@@ -9642,7 +9645,7 @@ function BestOfEuropeGraphic() {
 
   const loadThis = async (force) => {
     // Reuses the Stats Lab league cache (6 hours), so leagues already opened there cost nothing.
-    const all = []; const failed = []; let season = null;
+    const all = []; const failed = []; const gaps = []; let season = null;
     for (let i = 0; i < BOE_LEAGUES.length; i++) {
       const [key, label] = BOE_LEAGUES[i];
       setProgress(`Loading ${label}… (${i + 1} of ${BOE_LEAGUES.length})`);
@@ -9650,7 +9653,8 @@ function BestOfEuropeGraphic() {
       const lsKey = `d433_statboard_${key}`;
       try {
         const c = !force && JSON.parse(localStorage.getItem(lsKey) || "null");
-        if (c && Date.now() - c.t < 6 * 3600 * 1000) data = c.data;
+        // A saved league that was missing teams is not reused, so a retry actually fetches them again.
+        if (c && Date.now() - c.t < 6 * 3600 * 1000 && !c.data?.missing?.length && !(c.data?.expected && c.data.teams.length < c.data.expected)) data = c.data;
       } catch {}
       if (!data) {
         try {
@@ -9658,17 +9662,23 @@ function BestOfEuropeGraphic() {
           const j = await r.json();
           if (r.ok && j.available !== false && j.teams?.length) {
             data = j;
-            try { localStorage.setItem(lsKey, JSON.stringify({ t: Date.now(), data: j })); } catch {}
+            if (!j.missing?.length) { try { localStorage.setItem(lsKey, JSON.stringify({ t: Date.now(), data: j })); } catch {} }
           }
         } catch {}
       }
       if (!data) { failed.push(label); continue; }
+      const gap = data.missing?.length ? data.missing : (data.expected && data.teams.length < data.expected ? [`${data.expected - data.teams.length} team(s)`] : []);
+      if (gap.length) gaps.push(`${label}: ${gap.join(", ")}`);
       if (season === null) season = seasonText(data.season, data.calendar);
       data.teams.forEach(t => all.push({ ...t, leagueLabel: label }));
     }
     if (!all.length) throw new Error("Could not load this season's stats");
     setSeasonLabel(season || "");
-    setError(failed.length ? `Not loaded: ${failed.join(", ")}. Those teams are missing from the ranking, press Load again to retry.` : "");
+    setError([
+      failed.length ? `Not loaded: ${failed.join(", ")}. Those teams are missing from the ranking.` : "",
+      gaps.length ? `Teams that could not be loaded (missing from the ranking): ${gaps.join(" | ")}.` : "",
+      failed.length || gaps.length ? "Press Refresh before posting." : "",
+    ].filter(Boolean).join(" "));
     return all;
   };
 
