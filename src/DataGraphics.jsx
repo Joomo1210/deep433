@@ -5930,15 +5930,30 @@ const SB_STATS = {
   varGoalsOut:  { needsVar: true, title: "GOALS RULED OUT BY VAR", unit: "goals disallowed after VAR review", dir: 1, val: t => t.varDis || 0, sub: t => `in ${t.played} games`, tie: t => -t.played, verb: "have had the most goals ruled out by VAR" },
   varGoalsAgainst: { needsVar: true, title: "VAR SAVED THEM", unit: "opposition goals ruled out by VAR", dir: 1, val: t => t.varAgainst || 0, sub: t => `in ${t.played} games`, tie: t => -t.played, verb: "have seen the most opposition goals ruled out by VAR" },
   varPens:      { needsVar: true, title: "VAR PENALTIES", unit: "penalties confirmed after VAR review", dir: 1, val: t => t.varPen || 0, sub: t => `in ${t.played} games`, tie: t => -t.played, verb: "have had the most penalties confirmed by VAR" },
-  varBusy:      { needsVar: true, title: "VAR INTERVENTIONS", unit: "VAR interventions in their games", dir: 1, val: t => t.varAll || 0, sub: t => `${pg(t.varAll || 0, t.played)} per game`, tie: t => -t.played, verb: "have had the most VAR decisions" },
+  varBusy:      { needsVar: true, title: "VAR INTERVENTIONS", unit: "VAR interventions in their games", dir: 1, val: t => t.varAll || 0, sub: t => varTypesText(t.varTypes) || `${pg(t.varAll || 0, t.played)} per game`, tie: t => -t.played, verb: "have had the most VAR decisions" },
 };
 const SB_ORDER = ["attack", "defence", "clean", "late", "early", "yellow", "home", "away", "blank", "streak", "varGoalsOut", "varGoalsAgainst", "varPens", "varBusy"];
 
 // Turn the saved VAR events into per-team counts. Goal and penalty wording is matched loosely (cancel/disallow/confirm)
 // so small differences in the feed's detail text do not matter.
+// Plain-English label for one VAR event, so the card can say what the interventions were for.
+function varLabel(detail) {
+  const d = String(detail || "").toLowerCase();
+  if (/goal/.test(d) && /(cancel|disallow)/.test(d)) return "goal ruled out";
+  if (/goal/.test(d) && /confirm/.test(d)) return "goal checked";
+  if (/penalty/.test(d) && /confirm/.test(d)) return "penalty given";
+  if (/penalty/.test(d) && /(cancel|no |not )/.test(d)) return "penalty overturned";
+  if (/card/.test(d)) return "card review";
+  return d ? d.replace(/\s+/g, " ").trim() : "other";
+}
+function varTypesText(types) {
+  const e = Object.entries(types || {}).sort((a, b) => b[1] - a[1]);
+  if (!e.length) return "";
+  return e.slice(0, 3).map(([k, v]) => `${v} ${k}`).join(" · ");
+}
 function aggregateVar(fixtures, events) {
   const by = {}, seen = {};
-  const bump = (team, k) => { if (!team) return; (by[team] = by[team] || { varDis: 0, varAgainst: 0, varPen: 0, varAll: 0 })[k]++; };
+  const bump = (team, k) => { if (!team) return; (by[team] = by[team] || { varDis: 0, varAgainst: 0, varPen: 0, varAll: 0, varTypes: {} })[k]++; };
   fixtures.forEach(f => {
     const ev = events[f.id];
     if (!ev) return;
@@ -5948,6 +5963,7 @@ function aggregateVar(fixtures, events) {
       seen[e.d || "(blank)"] = (seen[e.d || "(blank)"] || 0) + 1;
       const team = nameOf(e.t), opp = team === f.h ? f.a : team === f.a ? f.h : null;
       bump(team, "varAll");
+      if (team) { const lb = varLabel(e.d); by[team].varTypes[lb] = (by[team].varTypes[lb] || 0) + 1; }
       if (/goal/.test(d) && /(cancel|disallow)/.test(d)) { bump(team, "varDis"); bump(opp, "varAgainst"); }
       if (/penalty/.test(d) && /confirm/.test(d)) bump(team, "varPen");
     });
