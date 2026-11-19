@@ -5928,9 +5928,9 @@ const SB_STATS = {
   streak:   { title: "LONGEST WINNING RUN", unit: "wins in a row", dir: 1, val: t => t.winStreak, sub: t => `${t.played} played`, tie: t => -t.played, verb: "have the longest winning run" },
   // VAR boards: built from the match events feed (loaded once, then kept in the browser).
   varGoalsOut:  { needsVar: true, title: "GOALS RULED OUT BY VAR", unit: "goals disallowed after VAR review", dir: 1, val: t => t.varDis || 0, sub: t => `in ${t.played} games`, tie: t => -t.played, verb: "have had the most goals ruled out by VAR" },
-  varGoalsAgainst: { needsVar: true, title: "VAR DENIED THEIR OPPONENTS", unit: "opposition goals ruled out by VAR", dir: 1, val: t => t.varAgainst || 0, sub: t => `in ${t.played} games`, tie: t => -t.played, verb: "have seen the most opposition goals ruled out by VAR" },
+  varGoalsAgainst: { needsVar: true, title: "VAR SAVED THEM", unit: "opposition goals ruled out by VAR", dir: 1, val: t => t.varAgainst || 0, sub: t => `in ${t.played} games`, tie: t => -t.played, verb: "have seen the most opposition goals ruled out by VAR" },
   varPens:      { needsVar: true, title: "VAR PENALTIES", unit: "penalties confirmed after VAR review", dir: 1, val: t => t.varPen || 0, sub: t => `in ${t.played} games`, tie: t => -t.played, verb: "have had the most penalties confirmed by VAR" },
-  varBusy:      { needsVar: true, title: "BUSIEST WITH VAR", unit: "VAR decisions involving them", dir: 1, val: t => t.varAll || 0, sub: t => `${pg(t.varAll || 0, t.played)} per game`, tie: t => -t.played, verb: "have had the most VAR decisions" },
+  varBusy:      { needsVar: true, title: "VAR INTERVENTIONS", unit: "VAR interventions in their games", dir: 1, val: t => t.varAll || 0, sub: t => `${pg(t.varAll || 0, t.played)} per game`, tie: t => -t.played, verb: "have had the most VAR decisions" },
 };
 const SB_ORDER = ["attack", "defence", "clean", "late", "early", "yellow", "home", "away", "blank", "streak", "varGoalsOut", "varGoalsAgainst", "varPens", "varBusy"];
 
@@ -5982,7 +5982,11 @@ function StatBoardCard({ cardRef, league, statKey, rows, season, calendar }) {
   // More than 12 teams switches to two columns so a whole league fits on one card.
   const cols = rows.length > 12 ? 2 : 1;
   const perCol = Math.max(1, Math.ceil(rows.length / cols));
-  const rowH = Math.min(98, Math.floor(960 / perCol) - 8);
+  // The title always sits on one line (long ones are scaled down), so the header height is fixed and the
+  // rows can never run into the footer. VAR boards carry a small VAR badge, which takes a little extra height.
+  const titleSize = Math.max(44, Math.min(76, Math.floor(952 / (def.title.length * 0.7))));
+  const rowsBudget = def.needsVar ? 900 : 960;
+  const rowH = Math.min(98, Math.floor(rowsBudget / perCol) - 8);
   const f = rowH / 98;
   const showSub = rowH >= 64;
   const wide = cols === 1;
@@ -5997,9 +6001,19 @@ function StatBoardCard({ cardRef, league, statKey, rows, season, calendar }) {
         </div>
         <div style={{ fontSize: 20, color: "#9fb0c8", letterSpacing: 3, textTransform: "uppercase" }}>Stat of the day</div>
       </div>
-      <div style={{ position: "relative", textAlign: "center", marginTop: 34, padding: "0 64px" }}>
-        <div style={{ fontSize: 24, color: G, letterSpacing: 5, textTransform: "uppercase", fontWeight: 800 }}>{league} · {seasonText(season, calendar)}</div>
-        <div style={{ fontSize: 76, lineHeight: 1.02, fontWeight: 900, letterSpacing: -1, marginTop: 10 }}>{def.title}</div>
+      <div style={{ position: "relative", textAlign: "center", marginTop: 30, padding: "0 64px" }}>
+        <div style={{ fontSize: 30, letterSpacing: 4, textTransform: "uppercase", fontWeight: 900 }}><span style={{ color: "#fff" }}>{league}</span><span style={{ color: G, fontWeight: 800 }}> · {seasonText(season, calendar)}</span></div>
+        {def.needsVar && (
+          <div style={{ display: "flex", justifyContent: "center", marginTop: 14 }}>
+            {/* VAR screen icon: a monitor with the letters VAR, plain boxes so it downloads cleanly */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <div style={{ width: 92, height: 50, boxSizing: "border-box", border: `4px solid ${G}`, borderRadius: 10, background: "#0f2a1c", color: G, fontWeight: 900, fontSize: 30, letterSpacing: 3, lineHeight: "42px", textAlign: "center" }}>VAR</div>
+              <div style={{ width: 8, height: 7, background: G }} />
+              <div style={{ width: 40, height: 5, background: G, borderRadius: 3 }} />
+            </div>
+          </div>
+        )}
+        <div style={{ fontSize: titleSize, lineHeight: 1.02, fontWeight: 900, letterSpacing: -1, marginTop: 10, whiteSpace: "nowrap" }}>{def.title}</div>
         <div style={{ fontSize: 26, color: "#9fb0c8", marginTop: 12, fontWeight: 600 }}>{def.unit}</div>
       </div>
       <div style={{ position: "relative", margin: "30px 64px 0", display: "flex", gap: 14, alignItems: "flex-start" }}>
