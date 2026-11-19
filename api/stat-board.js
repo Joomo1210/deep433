@@ -6,6 +6,7 @@
 //   /api/stat-board?leagueId=pl
 //
 // What comes back per team: played, goals for/against, clean sheets, failed to score,
+// (type=players gives player stats, type=var gives VAR events.)
 // goals in minutes 76+ (late goals for), goals conceded in minutes 0-15, yellow/red cards,
 // home and away points, longest win/draw/loss streaks, penalties, form.
 
@@ -290,7 +291,55 @@ async function playersHandler(req, res) {
   }
 }
 
+// ───── VAR events (also merged here for the 12 function limit) ─────
+// Step 1:  /api/stat-board?type=var&leagueId=pl            -> list of finished fixtures (1 request, cached 10 min)
+// Step 2:  /api/stat-board?type=var&leagueId=pl&ids=1,2,3  -> VAR events for up to 30 fixtures (1 request each)
+// Finished matches never change, so the browser keeps each fixture's events for good and only asks for new ones.
+async function varHandler(req, res) {
+  const league = LEAGUES[req.query.leagueId];
+  if (!league) return res.status(400).json({ error: `Unknown leagueId: ${req.query.leagueId}`, leagues: Object.keys(LEAGUES) });
+  const apiKey = process.env.API_FOOTBALL_KEY;
+  if (!apiKey) return res.status(500).json({ error: "API_FOOTBALL_KEY not configured" });
+  const get = async path => {
+    const r = await fetch(`https://v3.football.api-sports.io/${path}`, { headers: { "x-apisports-key": apiKey } });
+    if (!r.ok) throw new Error(`API-Football ${r.status}`);
+    const data = await r.json();
+    const errCount = Array.isArray(data.errors) ? data.errors.length : Object.keys(data.errors || {}).length;
+    if (errCount > 0) throw new Error(`API-Football: ${JSON.stringify(data.errors)}`);
+    return data.response || [];
+  };
+  try {
+    const idsParam = String(req.query.ids || "").split(",").map(x => parseInt(x, 10)).filter(Boolean).slice(0, 30);
+    if (!idsParam.length) {
+      const fx = await get(`fixtures?league=${league.id}&season=${league.season}&status=FT-AET-PEN`);
+      res.setHeader("Cache-Control", "public, s-maxage=600, stale-while-revalidate=600");
+      return res.status(200).json({
+        league: league.label, season: league.season, calendar: !!league.calendar,
+        fixtures: fx.map(f => ({ id: f.fixture?.id, h: f.teams?.home?.name, a: f.teams?.away?.name, hid: f.teams?.home?.id, aid: f.teams?.away?.id })).filter(f => f.id),
+      });
+    }
+    const out = {}, failed = [];
+    for (let i = 0; i < idsParam.length; i += 10) {
+      const batch = idsParam.slice(i, i + 10);
+      const results = await Promise.allSettled(batch.map(id => get(`fixtures/events?fixture=${id}`)));
+      results.forEach((r, j) => {
+        if (r.status !== "fulfilled") return failed.push(batch[j]);
+        // Keep only the VAR events: team id, minute, the detail text and the player.
+        out[batch[j]] = (r.value || [])
+          .filter(e => String(e.type || "").toLowerCase() === "var")
+          .map(e => ({ t: e.team?.id, m: e.time?.elapsed, d: e.detail || "", p: e.player?.name || "" }));
+      });
+    }
+    res.setHeader("Cache-Control", "no-store");
+    return res.status(200).json({ events: out, failed });
+  } catch (err) {
+    res.setHeader("Cache-Control", "no-store");
+    return res.status(502).json({ error: "Failed to load VAR events", detail: err.message });
+  }
+}
+
 export default async function handler(req, res) {
   if (req.query.type === "players") return playersHandler(req, res);
+  if (req.query.type === "var") return varHandler(req, res);
   return teamsHandler(req, res);
 }
