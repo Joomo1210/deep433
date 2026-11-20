@@ -5921,7 +5921,16 @@ const SB_STATS = {
   clean:    { title: "CLEAN SHEET KINGS", unit: "clean sheets", dir: 1, val: t => t.cleanSheets, sub: t => `in ${t.played} games`, tie: t => -t.played, verb: "have the most clean sheets" },
   late:     { title: "LATE GOAL SPECIALISTS", unit: "goals after the 75th minute", dir: 1, val: t => t.lateGoalsFor, sub: t => `${t.goalsFor ? Math.round((t.lateGoalsFor / t.goalsFor) * 100) : 0}% of their goals`, tie: t => -t.played, verb: "have scored the most goals after the 75th minute" },
   early:    { title: "SLOW STARTERS", unit: "goals conceded in the first 15", dir: 1, val: t => t.earlyGoalsAgainst, sub: t => `${t.goalsAgainst ? Math.round((t.earlyGoalsAgainst / t.goalsAgainst) * 100) : 0}% of goals conceded`, tie: t => -t.played, verb: "have conceded the most goals in the first 15 minutes" },
+  lateConc: { title: "LATE GOALS CONCEDED", unit: "goals conceded after the 75th minute", dir: 1, val: t => t.lateGoalsAgainst || 0, sub: t => `${t.goalsAgainst ? Math.round(((t.lateGoalsAgainst || 0) / t.goalsAgainst) * 100) : 0}% of goals conceded`, tie: t => -t.played, verb: "have conceded the most goals after the 75th minute" },
+  stoppage: { title: "STOPPAGE TIME GOALS", unit: "goals scored from the 91st minute", dir: 1, val: t => t.stoppageGoalsFor || 0, sub: t => `${t.goalsFor ? Math.round(((t.stoppageGoalsFor || 0) / t.goalsFor) * 100) : 0}% of their goals`, tie: t => -t.played, verb: "have scored the most goals in stoppage time" },
+  preHt:    { title: "LEAKY BEFORE THE BREAK", unit: "goals conceded from the 31st to the 45th minute", dir: 1, val: t => t.preHtGoalsAgainst || 0, sub: t => `${t.goalsAgainst ? Math.round(((t.preHtGoalsAgainst || 0) / t.goalsAgainst) * 100) : 0}% of goals conceded`, tie: t => -t.played, verb: "have conceded the most goals just before half-time" },
+  restart:  { title: "LEAKY AFTER THE BREAK", unit: "goals conceded from the 46th to the 60th minute", dir: 1, val: t => t.restartGoalsAgainst || 0, sub: t => `${t.goalsAgainst ? Math.round(((t.restartGoalsAgainst || 0) / t.goalsAgainst) * 100) : 0}% of goals conceded`, tie: t => -t.played, verb: "have conceded the most goals just after half-time" },
+  // Half-time boards: built from the finished match list (half-time and full-time scores), no extra requests.
+  htTrail:  { needsFx: true, title: "TRAILING AT HALF-TIME", unit: "games losing at the break", dir: 1, val: t => t.htTrail || 0, sub: t => `${t.played ? Math.round(((t.htTrail || 0) / t.played) * 100) : 0}% of their games`, tie: t => -t.played, verb: "have trailed at half-time the most" },
+  htDrop:   { needsFx: true, title: "THROWN AWAY LEADS", unit: "points lost from half-time leads", dir: 1, val: t => t.htDropPts || 0, sub: t => `from ${t.htLed || 0} half-time leads`, tie: t => -(t.htLed || 0), verb: "have lost the most points from half-time leads" },
+  htComeback: { needsFx: true, title: "SECOND-HALF COMEBACKS", unit: "points won after trailing at half-time", dir: 1, val: t => t.htComebackPts || 0, sub: t => `from ${t.htTrail || 0} half-time deficits`, tie: t => -(t.htTrail || 0), verb: "have won the most points after trailing at half-time" },
   yellow:   { title: "MOST BOOKED", unit: "yellow cards", dir: 1, val: t => t.yellow, sub: t => `${pg(t.yellow, t.played)} per game`, tie: t => -t.played, verb: "have picked up the most yellow cards" },
+  red:      { title: "MOST RED CARDS", unit: "red cards", dir: 1, val: t => t.red || 0, sub: t => `in ${t.played} games`, tie: t => -t.played, verb: "have had the most players sent off" },
   home:     { title: "BEST HOME RECORD", unit: "home points", dir: 1, val: t => t.homePoints, sub: t => `from ${t.homePlayed} home games`, tie: t => t.homePlayed, verb: "have the best home record" },
   away:     { title: "BEST AWAY RECORD", unit: "away points", dir: 1, val: t => t.awayPoints, sub: t => `from ${t.awayPlayed} away games`, tie: t => t.awayPlayed, verb: "have the best away record" },
   blank:    { title: "STRUGGLE TO SCORE", unit: "games without a goal", dir: 1, val: t => t.failedToScore, sub: t => `in ${t.played} games`, tie: t => -t.played, verb: "have failed to score in the most games" },
@@ -5932,7 +5941,26 @@ const SB_STATS = {
   varPens:      { needsVar: true, title: "VAR PENALTIES", unit: "penalties confirmed after VAR review", dir: 1, val: t => t.varPen || 0, sub: t => `in ${t.played} games`, tie: t => -t.played, verb: "have had the most penalties confirmed by VAR" },
   varBusy:      { needsVar: true, title: "VAR INTERVENTIONS", unit: "VAR interventions in their games", dir: 1, val: t => t.varAll || 0, sub: t => varTypesText(t.varTypes) || `${pg(t.varAll || 0, t.played)} per game`, tie: t => -t.played, verb: "have had the most VAR decisions" },
 };
-const SB_ORDER = ["attack", "defence", "clean", "late", "early", "yellow", "home", "away", "blank", "streak", "varGoalsOut", "varGoalsAgainst", "varPens", "varBusy"];
+// Groups and search words for the stat picker, so a board can be found in two taps or by typing.
+const SB_GROUPS = [
+  ["Attack & Defence", ["attack", "defence", "clean", "blank"]],
+  ["Timing", ["late", "stoppage", "early", "lateConc", "preHt", "restart"]],
+  ["Half-time", ["htTrail", "htDrop", "htComeback"]],
+  ["Discipline", ["yellow", "red"]],
+  ["Home & Away", ["home", "away"]],
+  ["Runs", ["streak"]],
+  ["VAR", ["varGoalsOut", "varGoalsAgainst", "varPens", "varBusy"]],
+];
+const SB_WORDS = {
+  attack: "goals scored best attack", defence: "goals conceded best defence", clean: "clean sheets shutout",
+  blank: "failed to score struggle goalless", late: "late goals 75 clutch last minute winner", early: "slow starters early conceded first 15 minutes",
+  lateConc: "late goals conceded 75 collapse last minute", stoppage: "stoppage time injury time added time 90+ last gasp", preHt: "before half time 31 45 conceded",
+  restart: "after half time second half restart 46 60 conceded", htTrail: "half time losing behind trailing going behind", htDrop: "half time leads thrown away dropped points blown",
+  htComeback: "comeback second half fight back recovered", yellow: "yellow cards booked bookings discipline", red: "red cards sent off dismissals",
+  home: "home record points fortress", away: "away record points travel", streak: "winning run streak form", varGoalsOut: "var goals disallowed ruled out",
+  varGoalsAgainst: "var saved opposition goals ruled out", varPens: "var penalties", varBusy: "var interventions decisions",
+};
+const SB_ORDER = ["attack", "defence", "clean", "late", "early", "lateConc", "stoppage", "preHt", "restart", "htTrail", "htDrop", "htComeback", "yellow", "red", "home", "away", "blank", "streak", "varGoalsOut", "varGoalsAgainst", "varPens", "varBusy"];
 
 // Turn the saved VAR events into per-team counts. Goal and penalty wording is matched loosely (cancel/disallow/confirm)
 // so small differences in the feed's detail text do not matter.
@@ -5950,6 +5978,22 @@ function varTypesText(types) {
   const e = Object.entries(types || {}).sort((a, b) => b[1] - a[1]);
   if (!e.length) return "";
   return e.slice(0, 3).map(([k, v]) => `${v} ${k}`).join(" · ");
+}
+// Half-time boards: points lost from half-time leads, points won from half-time deficits, games trailing at the break.
+function aggregateHT(fixtures) {
+  const by = {};
+  const row = n => (by[n] = by[n] || { htTrail: 0, htLed: 0, htDropPts: 0, htComebackPts: 0 });
+  fixtures.forEach(f => {
+    const [h1, a1] = f.ht || [], [h2, a2] = f.ft || [];
+    if ([h1, a1, h2, a2].some(v => v == null)) return;
+    [[f.h, h1, a1, h2, a2], [f.a, a1, h1, a2, h2]].forEach(([name, myHt, oppHt, myFt, oppFt]) => {
+      if (!name) return;
+      const pts = myFt > oppFt ? 3 : myFt === oppFt ? 1 : 0, r = row(name);
+      if (myHt > oppHt) { r.htLed++; r.htDropPts += 3 - pts; }
+      if (myHt < oppHt) { r.htTrail++; r.htComebackPts += pts; }
+    });
+  });
+  return by;
 }
 function aggregateVar(fixtures, events) {
   const by = {}, seen = {};
@@ -6158,6 +6202,23 @@ function StatBoardGraphic() {
   const [pullMsg, setPullMsg] = useState("");
   const [varMsg, setVarMsg] = useState("");
   const varBusy = useRef(false);
+  const [sbCat, setSbCat] = useState("All");
+  const [sbQuery, setSbQuery] = useState("");
+  const [sbRecent, setSbRecent] = useState(() => { try { return JSON.parse(localStorage.getItem("d433_sb_recent") || "[]").filter(k => SB_STATS[k]); } catch { return []; } });
+  const pickStat = k => {
+    setStatKey(k);
+    const next = [k, ...sbRecent.filter(x => x !== k)].slice(0, 3);
+    setSbRecent(next);
+    try { localStorage.setItem("d433_sb_recent", JSON.stringify(next)); } catch {}
+  };
+  const sbCats = ["All", ...(sbRecent.length ? ["Recent"] : []), ...SB_GROUPS.map(g => g[0])];
+  const sbShown = (() => {
+    const q = sbQuery.trim().toLowerCase();
+    if (q) return SB_ORDER.filter(k => q.split(/\s+/).every(w => (SB_STATS[k].title + " " + SB_STATS[k].unit + " " + SB_WORDS[k]).toLowerCase().includes(w)));
+    if (sbCat === "Recent") return sbRecent;
+    if (sbCat === "All") return SB_ORDER;
+    return (SB_GROUPS.find(g => g[0] === sbCat) || [0, SB_ORDER])[1];
+  })();
 
   // VAR events: one list call, then 30 matches at a time. Each finished match is kept in the browser for good,
   // so after the first load only new matches cost API requests.
@@ -6195,6 +6256,24 @@ function StatBoardGraphic() {
     varBusy.current = false;
   };
   useEffect(() => { if (SB_STATS[statKey]?.needsVar && data?.teams?.length && !data.varReady) loadVar(); /* eslint-disable-next-line */ }, [statKey, league, data?.generatedAt]);
+
+  const loadFx = async () => {
+    if (varBusy.current || !data?.teams?.length) return;
+    varBusy.current = true;
+    try {
+      setVarMsg("Loading half-time scores…");
+      const lres = await fetch(`/api/stat-board?type=var&leagueId=${league}&t=${Date.now()}`);
+      const list = await lres.json();
+      if (!lres.ok) throw new Error(list.error || "Could not load matches");
+      if (!Array.isArray(list.fixtures) || (list.fixtures.length && !list.fixtures[0].ht)) throw new Error("the server file stat-board.js is out of date, so it has no half-time scores. Deploy the latest stat-board.js and reload");
+      if (!list.fixtures.length) throw new Error("the API returned no finished matches for this league and season");
+      const by = aggregateHT(list.fixtures);
+      setData(d => d && ({ ...d, fxReady: true, fxFixtures: list.fixtures.length, teams: d.teams.map(t => ({ ...t, htTrail: 0, htLed: 0, htDropPts: 0, htComebackPts: 0, ...(by[t.team] || {}) })) }));
+      setVarMsg("");
+    } catch (e) { setVarMsg("Could not load half-time data: " + e.message); }
+    varBusy.current = false;
+  };
+  useEffect(() => { if (SB_STATS[statKey]?.needsFx && data?.teams?.length && !data.fxReady) loadFx(); /* eslint-disable-next-line */ }, [statKey, league, data?.generatedAt]);
 
   // Finds the fixture for the two chosen teams, then fills in kick-off and bookmaker-average odds.
   // Costs 1 request for the fixture list (cached for a few minutes) and 1 for the odds.
@@ -6258,7 +6337,7 @@ function StatBoardGraphic() {
   useEffect(() => { load(false); /* eslint-disable-next-line */ }, [league]);
 
   const def = SB_STATS[statKey];
-  const ready = !def.needsVar || !!data?.varReady;
+  const ready = (!def.needsVar || !!data?.varReady) && (!def.needsFx || !!data?.fxReady);
   const rows = ready && data?.teams?.length ? rankTeams(data.teams, statKey, count) : [];
   const note = rows.length && data
     ? (() => {
@@ -6293,14 +6372,26 @@ function StatBoardGraphic() {
         <select style={{ ...inp, flex: 1, minWidth: 150 }} value={league} onChange={e => setLeague(e.target.value)}>
           {SB_LEAGUES.map(([id, l]) => <option key={id} value={id}>{l}</option>)}
         </select>
-        <select style={{ ...inp, flex: 1, minWidth: 150 }} value={statKey} onChange={e => setStatKey(e.target.value)}>
-          {SB_ORDER.map(k => <option key={k} value={k}>{SB_STATS[k].title}</option>)}
-        </select>
         <select style={{ ...inp, width: 90 }} value={count} onChange={e => setCount(Number(e.target.value))}>
           <option value={99}>All teams</option>
           {[5, 8, 10].map(n => <option key={n} value={n}>Top {n}</option>)}
         </select>
         <button onClick={() => { if (window.confirm("Refresh from the API? This uses about 20 requests.")) load(true); }} disabled={loading} style={{ ...inp, cursor: "pointer" }}>↻ Refresh</button>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        <input style={inp} value={sbQuery} onChange={e => setSbQuery(e.target.value)} placeholder="Search stats: late, comeback, VAR, half-time…" />
+        {!sbQuery && (
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {sbCats.map(c => (
+              <button key={c} onClick={() => setSbCat(c)} style={{ padding: "4px 10px", borderRadius: 999, fontSize: 12, cursor: "pointer", border: "1px solid " + (sbCat === c ? "#fbbf24" : "#334155"), background: sbCat === c ? "#fbbf24" : "transparent", color: sbCat === c ? "#0b0b13" : "#e2e8f0", fontWeight: sbCat === c ? 700 : 500 }}>{c === "Recent" ? "⏱ Recent" : c}</button>
+            ))}
+          </div>
+        )}
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {sbShown.length ? sbShown.map(k => (
+            <button key={k} onClick={() => pickStat(k)} style={{ padding: "5px 10px", borderRadius: 8, fontSize: 12, cursor: "pointer", border: "1px solid " + (statKey === k ? "#fbbf24" : "#334155"), background: statKey === k ? "rgba(251,191,36,0.15)" : "#0f172a", color: statKey === k ? "#fbbf24" : "#e2e8f0", fontWeight: statKey === k ? 700 : 500 }}>{SB_STATS[k].title}</button>
+          )) : <div style={{ fontSize: 12, color: "#94a3b8" }}>No stat matches "{sbQuery}".</div>}
+        </div>
       </div>
       <div style={{ display: "flex", gap: 8 }}>
         {[["table", "Whole league"], ["two", "Two teams (match preview)"]].map(([m, l]) => (
@@ -6327,7 +6418,7 @@ function StatBoardGraphic() {
       {data && data.expected && data.teams.length < data.expected && !(data.missing?.length) && <div style={{ fontSize: 12, color: "#f59e0b" }}>⚠ Only {data.teams.length} of {data.expected} teams loaded. Press Refresh before posting.</div>}
       {loading && <div style={{ fontSize: 12, color: "#9fb0c8" }}>Loading stats…</div>}
       {err && <div style={{ fontSize: 12, color: "#f87171" }}>{err}</div>}
-      {SB_STATS[statKey]?.needsVar && varMsg && <div style={{ fontSize: 12, color: "#f59e0b" }}>{varMsg}</div>}
+      {(SB_STATS[statKey]?.needsVar || SB_STATS[statKey]?.needsFx) && varMsg && <div style={{ fontSize: 12, color: "#f59e0b" }}>{varMsg}</div>}
       {SB_STATS[statKey]?.needsVar && data?.varReady && (
         <div style={{ fontSize: 11, color: "#9fb0c8" }}>
           VAR data from {data.varFixtures} finished matches. Event types seen: {Object.entries(data.varSeen || {}).map(([k, v]) => `${k} ×${v}`).join(", ") || "none"}.
