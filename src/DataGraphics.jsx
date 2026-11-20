@@ -5944,7 +5944,7 @@ const SB_STATS = {
 // Groups and search words for the stat picker, so a board can be found in two taps or by typing.
 const SB_GROUPS = [
   ["Attack & Defence", ["attack", "defence", "clean", "blank"]],
-  ["Timing", ["late", "stoppage", "early", "lateConc", "preHt", "restart"]],
+  ["Timing", ["late", "early", "lateConc", "preHt", "restart"]],
   ["Half-time", ["htTrail", "htDrop", "htComeback"]],
   ["Discipline", ["yellow", "red"]],
   ["Home & Away", ["home", "away"]],
@@ -5960,7 +5960,7 @@ const SB_WORDS = {
   home: "home record points fortress", away: "away record points travel", streak: "winning run streak form", varGoalsOut: "var goals disallowed ruled out",
   varGoalsAgainst: "var saved opposition goals ruled out", varPens: "var penalties", varBusy: "var interventions decisions",
 };
-const SB_ORDER = ["attack", "defence", "clean", "late", "early", "lateConc", "stoppage", "preHt", "restart", "htTrail", "htDrop", "htComeback", "yellow", "red", "home", "away", "blank", "streak", "varGoalsOut", "varGoalsAgainst", "varPens", "varBusy"];
+const SB_ORDER = ["attack", "defence", "clean", "late", "early", "lateConc", "preHt", "restart", "htTrail", "htDrop", "htComeback", "yellow", "red", "home", "away", "blank", "streak", "varGoalsOut", "varGoalsAgainst", "varPens", "varBusy"];
 
 // Turn the saved VAR events into per-team counts. Goal and penalty wording is matched loosely (cancel/disallow/confirm)
 // so small differences in the feed's detail text do not matter.
