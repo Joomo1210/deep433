@@ -5921,10 +5921,10 @@ const SB_STATS = {
   clean:    { title: "CLEAN SHEET KINGS", unit: "clean sheets", dir: 1, val: t => t.cleanSheets, sub: t => `in ${t.played} games`, tie: t => -t.played, verb: "have the most clean sheets" },
   late:     { title: "LATE GOAL SPECIALISTS", unit: "goals after the 75th minute", dir: 1, val: t => t.lateGoalsFor, sub: t => `${t.goalsFor ? Math.round((t.lateGoalsFor / t.goalsFor) * 100) : 0}% of their goals`, tie: t => -t.played, verb: "have scored the most goals after the 75th minute" },
   early:    { title: "SLOW STARTERS", unit: "goals conceded in the first 15", dir: 1, val: t => t.earlyGoalsAgainst, sub: t => `${t.goalsAgainst ? Math.round((t.earlyGoalsAgainst / t.goalsAgainst) * 100) : 0}% of goals conceded`, tie: t => -t.played, verb: "have conceded the most goals in the first 15 minutes" },
-  lateConc: { title: "LATE GOALS CONCEDED", unit: "goals conceded after the 75th minute", dir: 1, val: t => t.lateGoalsAgainst || 0, sub: t => `${t.goalsAgainst ? Math.round(((t.lateGoalsAgainst || 0) / t.goalsAgainst) * 100) : 0}% of goals conceded`, tie: t => -t.played, verb: "have conceded the most goals after the 75th minute" },
-  stoppage: { title: "STOPPAGE TIME GOALS", unit: "goals scored from the 91st minute", dir: 1, val: t => t.stoppageGoalsFor || 0, sub: t => `${t.goalsFor ? Math.round(((t.stoppageGoalsFor || 0) / t.goalsFor) * 100) : 0}% of their goals`, tie: t => -t.played, verb: "have scored the most goals in stoppage time" },
-  preHt:    { title: "LEAKY BEFORE THE BREAK", unit: "goals conceded from the 31st to the 45th minute", dir: 1, val: t => t.preHtGoalsAgainst || 0, sub: t => `${t.goalsAgainst ? Math.round(((t.preHtGoalsAgainst || 0) / t.goalsAgainst) * 100) : 0}% of goals conceded`, tie: t => -t.played, verb: "have conceded the most goals just before half-time" },
-  restart:  { title: "LEAKY AFTER THE BREAK", unit: "goals conceded from the 46th to the 60th minute", dir: 1, val: t => t.restartGoalsAgainst || 0, sub: t => `${t.goalsAgainst ? Math.round(((t.restartGoalsAgainst || 0) / t.goalsAgainst) * 100) : 0}% of goals conceded`, tie: t => -t.played, verb: "have conceded the most goals just after half-time" },
+  lateConc: { field: "lateGoalsAgainst", title: "LATE GOALS CONCEDED", unit: "goals conceded after the 75th minute", dir: 1, val: t => t.lateGoalsAgainst || 0, sub: t => `${t.goalsAgainst ? Math.round(((t.lateGoalsAgainst || 0) / t.goalsAgainst) * 100) : 0}% of goals conceded`, tie: t => -t.played, verb: "have conceded the most goals after the 75th minute" },
+  stoppage: { field: "stoppageGoalsFor", title: "STOPPAGE TIME GOALS", unit: "goals scored from the 91st minute", dir: 1, val: t => t.stoppageGoalsFor || 0, sub: t => `${t.goalsFor ? Math.round(((t.stoppageGoalsFor || 0) / t.goalsFor) * 100) : 0}% of their goals`, tie: t => -t.played, verb: "have scored the most goals in stoppage time" },
+  preHt:    { field: "preHtGoalsAgainst", title: "LEAKY BEFORE THE BREAK", unit: "goals conceded from the 31st to the 45th minute", dir: 1, val: t => t.preHtGoalsAgainst || 0, sub: t => `${t.goalsAgainst ? Math.round(((t.preHtGoalsAgainst || 0) / t.goalsAgainst) * 100) : 0}% of goals conceded`, tie: t => -t.played, verb: "have conceded the most goals just before half-time" },
+  restart:  { field: "restartGoalsAgainst", title: "LEAKY AFTER THE BREAK", unit: "goals conceded from the 46th to the 60th minute", dir: 1, val: t => t.restartGoalsAgainst || 0, sub: t => `${t.goalsAgainst ? Math.round(((t.restartGoalsAgainst || 0) / t.goalsAgainst) * 100) : 0}% of goals conceded`, tie: t => -t.played, verb: "have conceded the most goals just after half-time" },
   // Half-time boards: built from the finished match list (half-time and full-time scores), no extra requests.
   htTrail:  { needsFx: true, title: "TRAILING AT HALF-TIME", unit: "games losing at the break", dir: 1, val: t => t.htTrail || 0, sub: t => `${t.played ? Math.round(((t.htTrail || 0) / t.played) * 100) : 0}% of their games`, tie: t => -t.played, verb: "have trailed at half-time the most" },
   htDrop:   { needsFx: true, title: "THROWN AWAY LEADS", unit: "points lost from half-time leads", dir: 1, val: t => t.htDropPts || 0, sub: t => `from ${t.htLed || 0} half-time leads`, tie: t => -(t.htLed || 0), verb: "have lost the most points from half-time leads" },
@@ -5944,7 +5944,7 @@ const SB_STATS = {
 // Groups and search words for the stat picker, so a board can be found in two taps or by typing.
 const SB_GROUPS = [
   ["Attack & Defence", ["attack", "defence", "clean", "blank"]],
-  ["Timing", ["late", "early", "lateConc", "preHt", "restart"]],
+  ["Timing", ["late", "stoppage", "early", "lateConc", "preHt", "restart"]],
   ["Half-time", ["htTrail", "htDrop", "htComeback"]],
   ["Discipline", ["yellow", "red"]],
   ["Home & Away", ["home", "away"]],
@@ -5960,7 +5960,7 @@ const SB_WORDS = {
   home: "home record points fortress", away: "away record points travel", streak: "winning run streak form", varGoalsOut: "var goals disallowed ruled out",
   varGoalsAgainst: "var saved opposition goals ruled out", varPens: "var penalties", varBusy: "var interventions decisions",
 };
-const SB_ORDER = ["attack", "defence", "clean", "late", "early", "lateConc", "preHt", "restart", "htTrail", "htDrop", "htComeback", "yellow", "red", "home", "away", "blank", "streak", "varGoalsOut", "varGoalsAgainst", "varPens", "varBusy"];
+const SB_ORDER = ["attack", "defence", "clean", "late", "early", "lateConc", "stoppage", "preHt", "restart", "htTrail", "htDrop", "htComeback", "yellow", "red", "home", "away", "blank", "streak", "varGoalsOut", "varGoalsAgainst", "varPens", "varBusy"];
 
 // Turn the saved VAR events into per-team counts. Goal and penalty wording is matched loosely (cancel/disallow/confirm)
 // so small differences in the feed's detail text do not matter.
@@ -6337,7 +6337,8 @@ function StatBoardGraphic() {
   useEffect(() => { load(false); /* eslint-disable-next-line */ }, [league]);
 
   const def = SB_STATS[statKey];
-  const ready = (!def.needsVar || !!data?.varReady) && (!def.needsFx || !!data?.fxReady);
+  const stale = !!def.field && !!data?.teams?.length && data.teams.every(t => t[def.field] === undefined);
+  const ready = !stale && (!def.needsVar || !!data?.varReady) && (!def.needsFx || !!data?.fxReady);
   const rows = ready && data?.teams?.length ? rankTeams(data.teams, statKey, count) : [];
   const note = rows.length && data
     ? (() => {
@@ -6418,6 +6419,7 @@ function StatBoardGraphic() {
       {data && data.expected && data.teams.length < data.expected && !(data.missing?.length) && <div style={{ fontSize: 12, color: "#f59e0b" }}>⚠ Only {data.teams.length} of {data.expected} teams loaded. Press Refresh before posting.</div>}
       {loading && <div style={{ fontSize: 12, color: "#9fb0c8" }}>Loading stats…</div>}
       {err && <div style={{ fontSize: 12, color: "#f87171" }}>{err}</div>}
+      {stale && <div style={{ fontSize: 12, color: "#f59e0b" }}>This stat is missing from the saved data. Deploy the latest stat-board.js, then press Refresh to reload this league (about 20 API requests).</div>}
       {(SB_STATS[statKey]?.needsVar || SB_STATS[statKey]?.needsFx) && varMsg && <div style={{ fontSize: 12, color: "#f59e0b" }}>{varMsg}</div>}
       {SB_STATS[statKey]?.needsVar && data?.varReady && (
         <div style={{ fontSize: 11, color: "#9fb0c8" }}>
