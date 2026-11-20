@@ -96,6 +96,10 @@ async function teamsHandler(req, res) {
         failedToScore: num(s.failed_to_score?.total),
         lateGoalsFor: sumBuckets(s.goals?.for?.minute, ["76-90", "91-105", "106-120"]),
         earlyGoalsAgainst: num(s.goals?.against?.minute?.["0-15"]?.total),
+        lateGoalsAgainst: sumBuckets(s.goals?.against?.minute, ["76-90", "91-105", "106-120"]),
+        stoppageGoalsFor: sumBuckets(s.goals?.for?.minute, ["91-105", "106-120"]),
+        preHtGoalsAgainst: num(s.goals?.against?.minute?.["31-45"]?.total),
+        restartGoalsAgainst: num(s.goals?.against?.minute?.["46-60"]?.total),
         yellow,
         red,
         homePoints: num(s.fixtures?.wins?.home) * 3 + num(s.fixtures?.draws?.home),
@@ -315,7 +319,7 @@ async function varHandler(req, res) {
       res.setHeader("Cache-Control", "public, s-maxage=600, stale-while-revalidate=600");
       return res.status(200).json({
         league: league.label, season: league.season, calendar: !!league.calendar,
-        fixtures: fx.map(f => ({ id: f.fixture?.id, h: f.teams?.home?.name, a: f.teams?.away?.name, hid: f.teams?.home?.id, aid: f.teams?.away?.id })).filter(f => f.id),
+        fixtures: fx.map(f => ({ id: f.fixture?.id, h: f.teams?.home?.name, a: f.teams?.away?.name, hid: f.teams?.home?.id, aid: f.teams?.away?.id, ht: [f.score?.halftime?.home, f.score?.halftime?.away], ft: [f.goals?.home, f.goals?.away] })).filter(f => f.id),
       });
     }
     const out = {}, failed = [];
