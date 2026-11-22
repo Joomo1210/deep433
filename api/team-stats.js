@@ -665,6 +665,52 @@ export default async function handler(req, res) {
     }
   }
 
+  // ── Team shots: the team statistics endpoint has no shots, so they are added up from each match. ──
+  // Step 1: ?mode=teamshots&leagueId=pl&teamId=33&season=2026            -> the team's finished match ids (1 request)
+  // Step 2: ?mode=teamshots&leagueId=pl&teamId=33&ids=1,2,3 (max 12)     -> shots for and against in those matches (1 request each)
+  if (mode === "teamshots") {
+    if (!teamId) return res.status(400).json({ error: "teamId required" });
+    const lg = LEAGUE_MAP[leagueId];
+    if (!lg) return res.status(400).json({ error: "Unknown league" });
+    const hdr = { "x-apisports-key": apiKey };
+    const getJson = async path => {
+      const r = await fetch(`https://v3.football.api-sports.io/${path}`, { headers: hdr });
+      if (!r.ok) throw new Error(`API-Football ${r.status}`);
+      const d = await r.json();
+      const errs = Array.isArray(d.errors) ? d.errors.length : Object.keys(d.errors || {}).length;
+      if (errs > 0) throw new Error(`API-Football: ${JSON.stringify(d.errors)}`);
+      return d.response || [];
+    };
+    try {
+      const ids = String(req.query.ids || "").split(",").map(x => parseInt(x, 10)).filter(Boolean).slice(0, 12);
+      if (!ids.length) {
+        const season = req.query.season || lg.season;
+        const fx = await getJson(`fixtures?league=${lg.id}&season=${season}&team=${teamId}&status=FT-AET-PEN`);
+        res.setHeader("Cache-Control", "public, s-maxage=600, stale-while-revalidate=600");
+        return res.status(200).json({ fixtures: fx.map(f => f.fixture?.id).filter(Boolean) });
+      }
+      const num = v => { const n = parseInt(String(v ?? "0").replace(/[^0-9]/g, ""), 10); return Number.isFinite(n) ? n : 0; };
+      const stat = (arr, type) => num((arr || []).find(x => String(x.type).toLowerCase() === type)?.value);
+      const out = {}, failed = [];
+      const results = await Promise.allSettled(ids.map(id => getJson(`fixtures/statistics?fixture=${id}`)));
+      results.forEach((r, i) => {
+        if (r.status !== "fulfilled" || !r.value.length) return failed.push(ids[i]);
+        const mine = r.value.find(t => String(t.team?.id) === String(teamId));
+        const theirs = r.value.find(t => String(t.team?.id) !== String(teamId));
+        if (!mine) return failed.push(ids[i]);
+        out[ids[i]] = [
+          stat(mine.statistics, "total shots"), stat(mine.statistics, "shots on goal"),
+          theirs ? stat(theirs.statistics, "total shots") : 0, theirs ? stat(theirs.statistics, "shots on goal") : 0,
+        ];
+      });
+      res.setHeader("Cache-Control", "no-store");
+      return res.status(200).json({ stats: out, failed });
+    } catch (err) {
+      res.setHeader("Cache-Control", "no-store");
+      return res.status(502).json({ error: err.message });
+    }
+  }
+
   // ── Default: team season statistics ──
   if (!teamId) return res.status(400).json({ error: "teamId required" });
 
