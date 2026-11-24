@@ -70,6 +70,8 @@ async function teamsHandler(req, res) {
       return res.status(200).json({ available: false, league: league.label });
     }
 
+    const rowById = {};
+    table.forEach(r => { if (r.team?.id) rowById[r.team.id] = r; });
     const teams = table.map(row => ({
       id: row.team?.id,
       name: row.team?.name,
@@ -127,19 +129,42 @@ async function teamsHandler(req, res) {
       });
       return { done, failed };
     };
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
     const out = [];
     let retry = [];
-    for (let i = 0; i < teams.length; i += 10) {
-      const { done, failed } = await fetchBatch(teams.slice(i, i + 10));
+    for (let i = 0; i < teams.length; i += 8) {
+      const { done, failed } = await fetchBatch(teams.slice(i, i + 8));
       out.push(...done);
       retry.push(...failed);
     }
-    let missing = [];
-    if (retry.length) {
-      const { done, failed } = await fetchBatch(retry);
-      out.push(...done);
-      missing = failed.map(t => t.name);
+    // Two more passes for anyone who failed, in small groups with a pause (rate limits usually clear in a second or two).
+    for (let pass = 0; pass < 2 && retry.length; pass++) {
+      await sleep(1000);
+      const still = [];
+      for (let i = 0; i < retry.length; i += 4) {
+        const { done, failed } = await fetchBatch(retry.slice(i, i + 4));
+        out.push(...done);
+        still.push(...failed);
+      }
+      retry = still;
     }
+    // Anyone the API still would not give full statistics for stays in the table with what the league table knows
+    // (played, goals, home and away points), marked thin so the stats we do not have are never shown as zeros.
+    const missing = retry.map(t => t.name);
+    retry.forEach(t => {
+      const row = rowById[t.id] || {};
+      out.push({
+        ...toRow(t, {}),
+        thin: true,
+        played: num(row.all?.played),
+        goalsFor: num(row.all?.goals?.for),
+        goalsAgainst: num(row.all?.goals?.against),
+        homePlayed: num(row.home?.played),
+        awayPlayed: num(row.away?.played),
+        homePoints: num(row.home?.win) * 3 + num(row.home?.draw),
+        awayPoints: num(row.away?.win) * 3 + num(row.away?.draw),
+      });
+    });
 
     res.setHeader("Cache-Control", missing.length ? "public, s-maxage=300" : "public, s-maxage=86400, stale-while-revalidate=86400");
     return res.status(200).json({
@@ -319,7 +344,7 @@ async function varHandler(req, res) {
       res.setHeader("Cache-Control", "public, s-maxage=600, stale-while-revalidate=600");
       return res.status(200).json({
         league: league.label, season: league.season, calendar: !!league.calendar,
-        fixtures: fx.map(f => ({ id: f.fixture?.id, h: f.teams?.home?.name, a: f.teams?.away?.name, hid: f.teams?.home?.id, aid: f.teams?.away?.id, ht: [f.score?.halftime?.home, f.score?.halftime?.away], ft: [f.goals?.home, f.goals?.away] })).filter(f => f.id),
+        fixtures: fx.map(f => ({ id: f.fixture?.id, h: f.teams?.home?.name, a: f.teams?.away?.name, hid: f.teams?.home?.id, aid: f.teams?.away?.id, rd: f.league?.round || "", ht: [f.score?.halftime?.home, f.score?.halftime?.away], ft: [f.goals?.home, f.goals?.away] })).filter(f => f.id),
       });
     }
     // Shots board: &kind=shots returns, per match, { teamId: [total shots, shots on target] } for both sides (max 12 matches per call).
