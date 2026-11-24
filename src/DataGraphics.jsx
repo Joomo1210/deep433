@@ -6062,8 +6062,9 @@ function aggregateVar(fixtures, events) {
 function rankTeams(teamsIn, key, n) {
   const def = SB_STATS[key];
   // Teams the API gave only table-level data for (thin) can still be ranked on boards built from the table or from matches.
-  const thinOk = def.needsVar || def.needsFx || def.needsShots || ["attack", "defence", "home", "away"].includes(key);
-  const teams = thinOk ? teamsIn : teamsIn.filter(t => !t.thin);
+  const thinOk = def.needsVar || def.needsFx || def.needsShots || ["attack", "defence", "home", "away", "clean", "blank"].includes(key);
+  // Stats the API mixes qualifying matches into cannot be corrected, so those teams are left out of such boards.
+  const teams = thinOk ? teamsIn : teamsIn.filter(t => !t.thin && !t.qualMix);
   const sorted = [...teams].sort((a, b) => (def.val(b) - def.val(a)) * def.dir || def.tie(a) - def.tie(b));
   let end = Math.min(n, sorted.length);
   // Everyone level with the last team shown is included too, so nobody tied is left off the card.
@@ -6280,7 +6281,7 @@ function StatBoardGraphic() {
       if (!lres.ok) throw new Error(list.error || "Could not load matches");
       // An old stat-board.js ignores type=var and answers with the normal team table, which has no match list.
       if (!Array.isArray(list.fixtures)) throw new Error("the server file stat-board.js is out of date, so it cannot return matches. Deploy the latest stat-board.js and reload");
-      const fixtures = list.fixtures.filter(f => !/qualif|preliminary/i.test(f.rd || ""));
+      const fixtures = list.fixtures.filter(f => !(/qualif|preliminary/i.test(f.rd || "") || /^play-offs?$/i.test((f.rd || "").trim())));
       if (!fixtures.length) throw new Error("the API returned no finished matches for this league and season");
       let cache = {};
       try { cache = JSON.parse(localStorage.getItem(lsKey) || "{}").events || {}; } catch {}
@@ -6314,7 +6315,7 @@ function StatBoardGraphic() {
       if (!lres.ok) throw new Error(list.error || "Could not load matches");
       if (!Array.isArray(list.fixtures) || (list.fixtures.length && !list.fixtures[0].ht)) throw new Error("the server file stat-board.js is out of date, so it has no half-time scores. Deploy the latest stat-board.js and reload");
       if (!list.fixtures.length) throw new Error("the API returned no finished matches for this league and season");
-      const by = aggregateHT(list.fixtures.filter(f => !/qualif|preliminary/i.test(f.rd || "")));
+      const by = aggregateHT(list.fixtures.filter(f => !(/qualif|preliminary/i.test(f.rd || "") || /^play-offs?$/i.test((f.rd || "").trim()))));
       setData(d => d && ({ ...d, fxReady: true, fxFixtures: list.fixtures.length, teams: d.teams.map(t => ({ ...t, htTrail: 0, htLed: 0, htDropPts: 0, htComebackPts: 0, ...(by[t.team] || {}) })) }));
       setVarMsg("");
     } catch (e) { setVarMsg("Could not load half-time data: " + e.message); }
@@ -6332,7 +6333,7 @@ function StatBoardGraphic() {
       const list = await lres.json();
       if (!lres.ok) throw new Error(list.error || "Could not load matches");
       if (!Array.isArray(list.fixtures)) throw new Error("the server file stat-board.js is out of date. Deploy the latest stat-board.js and reload");
-      const fixtures = list.fixtures.filter(f => !/qualif|preliminary/i.test(f.rd || ""));
+      const fixtures = list.fixtures.filter(f => !(/qualif|preliminary/i.test(f.rd || "") || /^play-offs?$/i.test((f.rd || "").trim())));
       if (!fixtures.length) throw new Error("the API returned no finished matches for this league and season");
       let cache = {};
       try { cache = JSON.parse(localStorage.getItem(lsKey) || "{}"); } catch {}
@@ -6504,7 +6505,7 @@ function StatBoardGraphic() {
         </div>
       )}
       {mode === "two" && pullMsg && <div style={{ fontSize: 12, color: "#e2e8f0" }}>{pullMsg}</div>}
-      {data?.qualMix > 0 && !(def.needsVar || def.needsFx || def.needsShots || ["attack", "defence", "home", "away"].includes(statKey)) && <div style={{ fontSize: 12, color: "#f59e0b" }}>⚠ {data.qualMix} teams have totals that include qualifying matches (the API mixes them in). Played, goals scored and conceded, home and away are corrected from the league table; this stat is not, so check it before posting.</div>}
+      {data?.qualMix > 0 && !(def.needsVar || def.needsFx || def.needsShots || ["attack", "defence", "home", "away", "clean", "blank"].includes(statKey)) && <div style={{ fontSize: 12, color: "#f59e0b" }}>⚠ {data.qualMix} teams are left out of this board because the API adds their qualifying matches to this stat. Played, goals, clean sheets, home and away, and the shot boards are rebuilt from league-stage matches and include every team.</div>}
       {data?.missing?.length > 0 && <div style={{ fontSize: 12, color: "#f59e0b" }}>⚠ {data.missing.length} team(s) could not be loaded and are missing from this table: {data.missing.join(", ")}. Press Refresh to try again before posting.</div>}
       {data && data.expected && data.teams.length < data.expected && !(data.missing?.length) && <div style={{ fontSize: 12, color: "#f59e0b" }}>⚠ Only {data.teams.length} of {data.expected} teams loaded. Press Refresh before posting.</div>}
       {loading && <div style={{ fontSize: 12, color: "#9fb0c8" }}>Loading stats…</div>}
