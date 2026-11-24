@@ -5992,6 +5992,11 @@ const SB_STATS = {
   away:     { title: "BEST AWAY RECORD", unit: "away points", dir: 1, val: t => t.awayPoints, sub: t => `from ${t.awayPlayed} away games`, tie: t => t.awayPlayed, verb: "have the best away record" },
   blank:    { title: "STRUGGLE TO SCORE", unit: "games without a goal", dir: 1, val: t => t.failedToScore, sub: t => `in ${t.played} games`, tie: t => -t.played, verb: "have failed to score in the most games" },
   streak:   { title: "LONGEST WINNING RUN", unit: "wins in a row", dir: 1, val: t => t.winStreak, sub: t => `${t.played} played`, tie: t => -t.played, verb: "have the longest winning run" },
+  // Shot boards: added up from every finished match (loaded once, then kept in the browser).
+  shotsFor:   { needsShots: true, title: "MOST SHOTS", unit: "shots taken", dir: 1, val: t => t.shotsFor || 0, sub: t => `${t.shotsOnFor || 0} on target`, tie: t => -t.played, verb: "have taken the most shots" },
+  shotsOnFor: { needsShots: true, title: "MOST SHOTS ON TARGET", unit: "shots on target", dir: 1, val: t => t.shotsOnFor || 0, sub: t => `${t.shotsFor ? Math.round(((t.shotsOnFor || 0) / t.shotsFor) * 100) : 0}% of ${t.shotsFor || 0} shots`, tie: t => -t.played, verb: "have had the most shots on target" },
+  shotsAgainst: { needsShots: true, title: "FEWEST SHOTS FACED", unit: "shots faced", dir: -1, val: t => t.shotsAgainst || 0, sub: t => `${pg(t.shotsAgainst || 0, t.played)} per game`, tie: t => t.played, verb: "have faced the fewest shots" },
+  shotsOnAgainst: { needsShots: true, title: "FEWEST SHOTS ON TARGET FACED", unit: "shots on target faced", dir: -1, val: t => t.shotsOnAgainst || 0, sub: t => `${pg(t.shotsOnAgainst || 0, t.played)} per game`, tie: t => t.played, verb: "have faced the fewest shots on target" },
   // VAR boards: built from the match events feed (loaded once, then kept in the browser).
   varGoalsOut:  { needsVar: true, title: "GOALS RULED OUT BY VAR", unit: "goals disallowed after VAR review", dir: 1, val: t => t.varDis || 0, sub: t => `in ${t.played} games`, tie: t => -t.played, verb: "have had the most goals ruled out by VAR" },
   varGoalsAgainst: { needsVar: true, title: "VAR SAVED THEM", unit: "opposition goals ruled out by VAR", dir: 1, val: t => t.varAgainst || 0, sub: t => `in ${t.played} games`, tie: t => -t.played, verb: "have seen the most opposition goals ruled out by VAR" },
@@ -6000,7 +6005,7 @@ const SB_STATS = {
 };
 // Groups and search words for the stat picker, so a board can be found in two taps or by typing.
 const SB_GROUPS = [
-  ["Attack & Defence", ["attack", "defence", "clean", "blank"]],
+  ["Attack & Defence", ["attack", "defence", "clean", "blank", "shotsFor", "shotsOnFor", "shotsAgainst", "shotsOnAgainst"]],
   ["Timing", ["late", "stoppage", "early", "lateConc", "preHt", "restart"]],
   ["Half-time", ["htTrail", "htDrop", "htComeback"]],
   ["Discipline", ["yellow", "red"]],
@@ -6010,14 +6015,14 @@ const SB_GROUPS = [
 ];
 const SB_WORDS = {
   attack: "goals scored best attack", defence: "goals conceded best defence", clean: "clean sheets shutout",
-  blank: "failed to score struggle goalless", late: "late goals 75 clutch last minute winner", early: "slow starters early conceded first 15 minutes",
+  blank: "failed to score struggle goalless", shotsFor: "shots attempts total shots most shots", shotsOnFor: "shots on target accuracy sot", shotsAgainst: "shots faced conceded fewest shots defence", shotsOnAgainst: "shots on target faced keeper tested", late: "late goals 75 clutch last minute winner", early: "slow starters early conceded first 15 minutes",
   lateConc: "late goals conceded 75 collapse last minute", stoppage: "stoppage time injury time added time 90+ last gasp", preHt: "before half time 31 45 conceded",
   restart: "after half time second half restart 46 60 conceded", htTrail: "half time losing behind trailing going behind", htDrop: "half time leads thrown away dropped points blown",
   htComeback: "comeback second half fight back recovered", yellow: "yellow cards booked bookings discipline", red: "red cards sent off dismissals",
   home: "home record points fortress", away: "away record points travel", streak: "winning run streak form", varGoalsOut: "var goals disallowed ruled out",
   varGoalsAgainst: "var saved opposition goals ruled out", varPens: "var penalties", varBusy: "var interventions decisions",
 };
-const SB_ORDER = ["attack", "defence", "clean", "late", "early", "lateConc", "stoppage", "preHt", "restart", "htTrail", "htDrop", "htComeback", "yellow", "red", "home", "away", "blank", "streak", "varGoalsOut", "varGoalsAgainst", "varPens", "varBusy"];
+const SB_ORDER = ["attack", "defence", "clean", "shotsFor", "shotsOnFor", "shotsAgainst", "shotsOnAgainst", "late", "early", "lateConc", "stoppage", "preHt", "restart", "htTrail", "htDrop", "htComeback", "yellow", "red", "home", "away", "blank", "streak", "varGoalsOut", "varGoalsAgainst", "varPens", "varBusy"];
 
 // Turn the saved VAR events into per-team counts. Goal and penalty wording is matched loosely (cancel/disallow/confirm)
 // so small differences in the feed's detail text do not matter.
@@ -6332,6 +6337,48 @@ function StatBoardGraphic() {
   };
   useEffect(() => { if (SB_STATS[statKey]?.needsFx && data?.teams?.length && !data.fxReady) loadFx(); /* eslint-disable-next-line */ }, [statKey, league, data?.generatedAt]);
 
+  const loadShotsBoard = async () => {
+    if (varBusy.current || !data?.teams?.length) return;
+    varBusy.current = true;
+    const lsKey = `d433_shotsboard_${league}_${data.season}`;
+    try {
+      setVarMsg("Loading shots data…");
+      const lres = await fetch(`/api/stat-board?type=var&leagueId=${league}`);
+      const list = await lres.json();
+      if (!lres.ok) throw new Error(list.error || "Could not load matches");
+      if (!Array.isArray(list.fixtures)) throw new Error("the server file stat-board.js is out of date. Deploy the latest stat-board.js and reload");
+      const fixtures = list.fixtures;
+      if (!fixtures.length) throw new Error("the API returned no finished matches for this league and season");
+      let cache = {};
+      try { cache = JSON.parse(localStorage.getItem(lsKey) || "{}"); } catch {}
+      const pending = fixtures.filter(f => !(f.id in cache)).map(f => f.id);
+      let failedCount = 0;
+      for (let i = 0; i < pending.length; i += 12) {
+        setVarMsg(`Loading shots data… ${Math.min(i, pending.length)} of ${pending.length} new matches`);
+        const r = await fetch(`/api/stat-board?type=var&kind=shots&leagueId=${league}&ids=${pending.slice(i, i + 12).join(",")}&t=${Date.now()}`);
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.error || "Could not load shots");
+        if (!j.shots) throw new Error("the server file stat-board.js is out of date. Deploy the latest stat-board.js and reload");
+        Object.assign(cache, j.shots);
+        failedCount += (j.failed || []).length;
+        try { localStorage.setItem(lsKey, JSON.stringify(cache)); } catch {}
+      }
+      const by = {};
+      const row = n => (by[n] = by[n] || { shotsFor: 0, shotsOnFor: 0, shotsAgainst: 0, shotsOnAgainst: 0, shotGames: 0 });
+      fixtures.forEach(f => {
+        const c = cache[f.id]; if (!c || !c[f.hid] || !c[f.aid]) return;
+        const [hs, ho] = c[f.hid], [as, ao] = c[f.aid];
+        const h = row(f.h), a = row(f.a);
+        h.shotsFor += hs; h.shotsOnFor += ho; h.shotsAgainst += as; h.shotsOnAgainst += ao; h.shotGames++;
+        a.shotsFor += as; a.shotsOnFor += ao; a.shotsAgainst += hs; a.shotsOnAgainst += ho; a.shotGames++;
+      });
+      setData(d => d && ({ ...d, shotsReady: true, shotsFailed: failedCount, teams: d.teams.map(t => ({ ...t, shotsFor: 0, shotsOnFor: 0, shotsAgainst: 0, shotsOnAgainst: 0, shotGames: 0, ...(by[t.team] || {}) })) }));
+      setVarMsg(failedCount ? `${failedCount} matches had no shots data from the API, so those teams' totals may be a little low.` : "");
+    } catch (e) { setVarMsg("Could not load shots data: " + e.message); }
+    varBusy.current = false;
+  };
+  useEffect(() => { if (SB_STATS[statKey]?.needsShots && data?.teams?.length && !data.shotsReady) loadShotsBoard(); /* eslint-disable-next-line */ }, [statKey, league, data?.generatedAt]);
+
   // Finds the fixture for the two chosen teams, then fills in kick-off and bookmaker-average odds.
   // Costs 1 request for the fixture list (cached for a few minutes) and 1 for the odds.
   const pullFixture = async () => {
@@ -6395,7 +6442,7 @@ function StatBoardGraphic() {
 
   const def = SB_STATS[statKey];
   const stale = !!def.field && !!data?.teams?.length && data.teams.every(t => t[def.field] === undefined);
-  const ready = !stale && (!def.needsVar || !!data?.varReady) && (!def.needsFx || !!data?.fxReady);
+  const ready = !stale && (!def.needsVar || !!data?.varReady) && (!def.needsFx || !!data?.fxReady) && (!def.needsShots || !!data?.shotsReady);
   const rows = ready && data?.teams?.length ? rankTeams(data.teams, statKey, count) : [];
   const note = rows.length && data
     ? (() => {
@@ -6477,7 +6524,7 @@ function StatBoardGraphic() {
       {loading && <div style={{ fontSize: 12, color: "#9fb0c8" }}>Loading stats…</div>}
       {err && <div style={{ fontSize: 12, color: "#f87171" }}>{err}</div>}
       {stale && <div style={{ fontSize: 12, color: "#f59e0b" }}>This stat is missing from the saved data. Deploy the latest stat-board.js, then press Refresh to reload this league (about 20 API requests).</div>}
-      {(SB_STATS[statKey]?.needsVar || SB_STATS[statKey]?.needsFx) && varMsg && <div style={{ fontSize: 12, color: "#f59e0b" }}>{varMsg}</div>}
+      {(SB_STATS[statKey]?.needsVar || SB_STATS[statKey]?.needsFx || SB_STATS[statKey]?.needsShots) && varMsg && <div style={{ fontSize: 12, color: "#f59e0b" }}>{varMsg}</div>}
       {SB_STATS[statKey]?.needsVar && data?.varReady && (
         <div style={{ fontSize: 11, color: "#9fb0c8" }}>
           VAR data from {data.varFixtures} finished matches. Event types seen: {Object.entries(data.varSeen || {}).map(([k, v]) => `${k} ×${v}`).join(", ") || "none"}.
