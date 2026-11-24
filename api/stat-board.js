@@ -322,6 +322,22 @@ async function varHandler(req, res) {
         fixtures: fx.map(f => ({ id: f.fixture?.id, h: f.teams?.home?.name, a: f.teams?.away?.name, hid: f.teams?.home?.id, aid: f.teams?.away?.id, ht: [f.score?.halftime?.home, f.score?.halftime?.away], ft: [f.goals?.home, f.goals?.away] })).filter(f => f.id),
       });
     }
+    // Shots board: &kind=shots returns, per match, { teamId: [total shots, shots on target] } for both sides (max 12 matches per call).
+    if (req.query.kind === "shots") {
+      const num = v => { const n = parseInt(String(v ?? "0").replace(/[^0-9]/g, ""), 10); return Number.isFinite(n) ? n : 0; };
+      const stat = (arr, type) => num((arr || []).find(x => String(x.type).toLowerCase() === type)?.value);
+      const outS = {}, failedS = [];
+      const ids12 = idsParam.slice(0, 12);
+      const rs = await Promise.allSettled(ids12.map(id => get(`fixtures/statistics?fixture=${id}`)));
+      rs.forEach((r, i) => {
+        if (r.status !== "fulfilled" || !r.value.length) return failedS.push(ids12[i]);
+        const o = {};
+        r.value.forEach(t => { if (t.team?.id) o[t.team.id] = [stat(t.statistics, "total shots"), stat(t.statistics, "shots on goal")]; });
+        outS[ids12[i]] = o;
+      });
+      res.setHeader("Cache-Control", "no-store");
+      return res.status(200).json({ shots: outS, failed: failedS });
+    }
     const out = {}, failed = [];
     for (let i = 0; i < idsParam.length; i += 10) {
       const batch = idsParam.slice(i, i + 10);
