@@ -1818,7 +1818,7 @@ function TeamStatsGraphic() {
       {data && (
         <>
           <GraphicCard cardRef={cardRef} label="Tap Download to save and share">
-            <div style={{ padding: "44px 18px 18px" }}>
+            <div style={{ padding: "52px 18px 16px" }}>
               {(() => {
                 const league = LEAGUE_OPTIONS.find(l => l.id === leagueId)?.label;
                 const yy = parseInt(data.seasonUsed);
@@ -1830,15 +1830,15 @@ function TeamStatsGraphic() {
                 const shotsOk = shots && typeof shots === "object";
                 const shotsVal = v => (shotsOk ? v : shots === "loading" ? "…" : undefined);
                 const Tile = ({ label, value, color }) => (
-                  <div style={{ background: "#13131f", border: "1px solid #22222f", borderRadius: 8, padding: "9px 4px 8px", textAlign: "center" }}>
-                    <div style={{ fontSize: 24, fontWeight: 900, color, lineHeight: 1.1 }}>{value ?? "—"}</div>
-                    <div style={{ fontSize: 11, color: "#cbd5e1", marginTop: 4, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 700 }}>{label}</div>
+                  <div style={{ background: "#13131f", border: "1px solid #22222f", borderRadius: 8, padding: "7px 2px 6px", textAlign: "center" }}>
+                    <div style={{ fontSize: 21, fontWeight: 900, color, lineHeight: 1.1 }}>{value ?? "—"}</div>
+                    <div style={{ fontSize: 10, color: "#cbd5e1", marginTop: 3, textTransform: "uppercase", letterSpacing: 0.3, fontWeight: 700, lineHeight: 1.15, minHeight: 23 }}>{label}</div>
                   </div>
                 );
                 const Section = ({ title, tiles }) => (
-                  <div style={{ marginBottom: 14 }}>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: "#fbbf24", textTransform: "uppercase", letterSpacing: 2.5, marginBottom: 8 }}>{title}</div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                  <div style={{ marginBottom: 10 }}>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: "#fbbf24", textTransform: "uppercase", letterSpacing: 2.5, marginBottom: 6 }}>{title}</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 6 }}>
                       {tiles.filter(t => t.show !== false).map(t => <Tile key={t.label} {...t} />)}
                     </div>
                   </div>
@@ -1847,18 +1847,18 @@ function TeamStatsGraphic() {
                 const penTxt = data.penalty?.total ? `${data.penalty.scored ?? 0}/${data.penalty.total}` : data.penalty ? "0" : undefined;
                 return (
                   <>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14, marginTop: 8 }}>
-                      {data.logo && <img src={data.logo} alt="" crossOrigin="anonymous" style={{ width: 48, height: 48, objectFit: "contain" }} />}
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10, marginTop: 0 }}>
+                      {data.logo && <img src={data.logo} alt="" crossOrigin="anonymous" style={{ width: 44, height: 44, objectFit: "contain" }} />}
                       <div>
                         <div style={{ fontSize: 22, fontWeight: 900, color: "#f0f0f0", lineHeight: 1.1 }}>{data.team} {data.isCurrentSeason ? "this Season" : `${seasonLbl} Season`}</div>
                         <div style={{ fontSize: 13, color: "#fbbf24", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, marginTop: 3 }}>{league} · {seasonLbl}</div>
                       </div>
                     </div>
 
-                    <div style={{ display: "flex", alignItems: "stretch", gap: 10, background: "linear-gradient(135deg,#1f1706 0%,#12121c 100%)", border: "1.5px solid #fbbf24", borderRadius: 12, padding: "12px 14px", marginBottom: 14 }}>
+                    <div style={{ display: "flex", alignItems: "stretch", gap: 10, background: "linear-gradient(135deg,#1f1706 0%,#12121c 100%)", border: "1.5px solid #fbbf24", borderRadius: 12, padding: "9px 14px", marginBottom: 10 }}>
                       {pos && (
                         <div style={{ textAlign: "center", paddingRight: 14, borderRight: "1px solid #3a2f10", minWidth: 124 }}>
-                          <div style={{ fontSize: 76, fontWeight: 900, color: "#fbbf24", lineHeight: 0.95, letterSpacing: -2 }}>{pos}<span style={{ fontSize: 28, letterSpacing: 0 }}>{ord}</span></div>
+                          <div style={{ fontSize: 68, fontWeight: 900, color: "#fbbf24", lineHeight: 0.95, letterSpacing: -2 }}>{pos}<span style={{ fontSize: 28, letterSpacing: 0 }}>{ord}</span></div>
                           <div style={{ fontSize: 11, color: "#e2e8f0", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, marginTop: 6 }}>In the league</div>
                         </div>
                       )}
@@ -1879,11 +1879,11 @@ function TeamStatsGraphic() {
                     </div>
 
                     {data.form && (
-                      <div style={{ marginBottom: 16 }}>
-                        <div style={{ fontSize: 12, fontWeight: 800, color: "#fbbf24", textTransform: "uppercase", letterSpacing: 2.5, marginBottom: 8 }}>Last {Math.min(data.form.length, 10)} matches</div>
+                      <div style={{ marginBottom: 10 }}>
+                        <div style={{ fontSize: 11, fontWeight: 800, color: "#fbbf24", textTransform: "uppercase", letterSpacing: 2.5, marginBottom: 6 }}>Last {Math.min(data.form.length, 10)} matches</div>
                         <div style={{ display: "flex", gap: 5 }}>
                           {data.form.slice(-10).split("").map((r, i) => (
-                            <div key={i} style={{ flex: 1, height: 26, borderRadius: 6, background: r === "W" ? "#16a34a" : r === "D" ? "#6d5bd0" : "#dc2626", color: "#fff", fontSize: 13, fontWeight: 900, textAlign: "center", lineHeight: "26px" }}>{r}</div>
+                            <div key={i} style={{ flex: 1, height: 22, borderRadius: 6, background: r === "W" ? "#16a34a" : r === "D" ? "#6d5bd0" : "#dc2626", color: "#fff", fontSize: 13, fontWeight: 900, textAlign: "center", lineHeight: "22px" }}>{r}</div>
                           ))}
                         </div>
                       </div>
@@ -1894,62 +1894,44 @@ function TeamStatsGraphic() {
                       { label: "Avg Scored", value: data.avgGoalsFor, color: "#4ade80" },
                       { label: "Failed to Score", value: data.failedToScore, color: "#f87171" },
                       { label: "Late Goals 75+", value: data.lateGoalsFor, color: "#4ade80" },
-                      { label: "Penalties", value: penTxt, color: "#60a5fa" },
-                      { label: "Win Streak", value: data.streaks?.wins, color: "#4ade80" },
                       { label: "Shots", value: shotsVal(shotsOk && shots.total), color: "#f0f0f0", show: shots !== "error" },
                       { label: "On Target", value: shotsVal(shotsOk && shots.on), color: "#f0f0f0", show: shots !== "error" },
                       { label: "Shot Accuracy", value: shotsOk ? acc : shotsVal(), color: "#4ade80", show: shots !== "error" },
+                      { label: "Penalties", value: penTxt, color: "#60a5fa" },
                     ]} />
 
                     <Section title="Defence" tiles={[
                       { label: "Goals Against", value: data.goalsAgainst, color: "#f87171" },
                       { label: "Avg Conceded", value: data.avgGoalsAgainst, color: "#f87171" },
                       { label: "Clean Sheets", value: data.cleanSheets, color: "#60a5fa" },
-                      { label: "Early Conceded", value: data.earlyGoalsAgainst, color: "#f87171" },
                       { label: "Late Conceded", value: data.lateGoalsAgainst, color: "#f87171" },
-                      { label: "Lose Streak", value: data.streaks?.losses, color: "#f87171" },
-                      { label: "Most Conceded", value: data.mostConcededInGame ? Math.max(data.mostConcededInGame.home || 0, data.mostConcededInGame.away || 0) : undefined, color: "#f87171" },
                       { label: "Shots Faced", value: shotsVal(shotsOk && shots.against), color: "#f0f0f0", show: shots !== "error" },
                       { label: "Faced On Target", value: shotsVal(shotsOk && shots.onAgainst), color: "#f0f0f0", show: shots !== "error" },
-                    ]} />
-
-                    <Section title="Discipline" tiles={[
                       { label: "Yellow Cards", value: data.cards?.yellow, color: "#facc15" },
                       { label: "Red Cards", value: data.cards?.red, color: "#ef4444" },
-                      { label: "Cards per Game", value: data.played ? (((data.cards?.yellow || 0) + (data.cards?.red || 0)) / data.played).toFixed(1) : undefined, color: "#f0f0f0" },
                     ]} />
 
                     {data.home && data.away && (
-                      <div style={{ marginBottom: 14 }}>
-                        <div style={{ fontSize: 12, fontWeight: 800, color: "#fbbf24", textTransform: "uppercase", letterSpacing: 2.5, marginBottom: 8 }}>Home v Away</div>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                          {[["Home", data.home], ["Away", data.away]].map(([lbl, h]) => (
-                            <div key={lbl} style={{ background: "#13131f", border: "1px solid #22222f", borderRadius: 8, padding: "10px", textAlign: "center" }}>
-                              <div style={{ fontSize: 12, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: 1.5, fontWeight: 800, marginBottom: 4 }}>{lbl}</div>
-                              <div style={{ fontSize: 19, fontWeight: 900, color: "#f0f0f0" }}>{h.wins ?? 0}W {h.draws ?? 0}D {h.losses ?? 0}L</div>
-                              <div style={{ fontSize: 12, color: "#e2e8f0", marginTop: 3 }}>{h.goalsFor ?? 0} scored · {h.goalsAgainst ?? 0} conceded · {h.cleanSheets ?? 0} clean sheets</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {data.formations?.length > 0 && (
-                      <div style={{ textAlign: "center", fontSize: 12, color: "#e2e8f0", marginBottom: 12 }}>
-                        <span style={{ color: "#fbbf24", textTransform: "uppercase", letterSpacing: 1.5, fontWeight: 800 }}>Formations </span>
-                        {data.formations.map(f => `${f.formation} (${f.played})`).join(" · ")}
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 8 }}>
+                        {[["Home", data.home], ["Away", data.away]].map(([lbl, h]) => (
+                          <div key={lbl} style={{ background: "#13131f", border: "1px solid #22222f", borderRadius: 8, padding: "7px 8px", textAlign: "center" }}>
+                            <div style={{ fontSize: 10, color: "#fbbf24", textTransform: "uppercase", letterSpacing: 1.5, fontWeight: 800 }}>{lbl}</div>
+                            <div style={{ fontSize: 17, fontWeight: 900, color: "#f0f0f0", marginTop: 2 }}>{h.wins ?? 0}W {h.draws ?? 0}D {h.losses ?? 0}L</div>
+                            <div style={{ fontSize: 11, color: "#e2e8f0", marginTop: 2 }}>{h.goalsFor ?? 0} for · {h.goalsAgainst ?? 0} against</div>
+                          </div>
+                        ))}
                       </div>
                     )}
 
                     {(data.biggestWin || data.biggestLoss) && (
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                        {data.biggestWin && <div style={{ background: "#4ade8011", border: "1px solid #4ade8033", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
-                          <div style={{ fontSize: 12, color: "#4ade80", marginBottom: 4, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 }}>Biggest Win</div>
-                          <div style={{ fontSize: 19, fontWeight: 900, color: "#4ade80" }}>{data.biggestWin}</div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                        {data.biggestWin && <div style={{ background: "#4ade8011", border: "1px solid #4ade8033", borderRadius: 8, padding: "6px 8px", textAlign: "center", display: "flex", justifyContent: "center", alignItems: "baseline", gap: 8 }}>
+                          <span style={{ fontSize: 10, color: "#4ade80", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 }}>Biggest win</span>
+                          <span style={{ fontSize: 17, fontWeight: 900, color: "#4ade80" }}>{data.biggestWin}</span>
                         </div>}
-                        {data.biggestLoss && <div style={{ background: "#f8717111", border: "1px solid #f8717133", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
-                          <div style={{ fontSize: 12, color: "#f87171", marginBottom: 4, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 }}>Biggest Loss</div>
-                          <div style={{ fontSize: 19, fontWeight: 900, color: "#f87171" }}>{data.biggestLoss}</div>
+                        {data.biggestLoss && <div style={{ background: "#f8717111", border: "1px solid #f8717133", borderRadius: 8, padding: "6px 8px", textAlign: "center", display: "flex", justifyContent: "center", alignItems: "baseline", gap: 8 }}>
+                          <span style={{ fontSize: 10, color: "#f87171", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 }}>Biggest loss</span>
+                          <span style={{ fontSize: 17, fontWeight: 900, color: "#f87171" }}>{data.biggestLoss}</span>
                         </div>}
                       </div>
                     )}
