@@ -6522,6 +6522,7 @@ function StatBoardGraphic() {
         </div>
       )}
       {mode === "two" && pullMsg && <div style={{ fontSize: 12, color: "#e2e8f0" }}>{pullMsg}</div>}
+      {data?.qualMix > 0 && !(def.needsVar || def.needsFx || def.needsShots || ["attack", "defence", "home", "away"].includes(statKey)) && <div style={{ fontSize: 12, color: "#f59e0b" }}>⚠ {data.qualMix} teams have totals that include qualifying matches (the API mixes them in). Played, goals scored and conceded, home and away are corrected from the league table; this stat is not, so check it before posting.</div>}
       {data?.missing?.length > 0 && <div style={{ fontSize: 12, color: "#f59e0b" }}>⚠ {data.missing.length} team(s) could not be loaded and are missing from this table: {data.missing.join(", ")}. Press Refresh to try again before posting.</div>}
       {data && data.expected && data.teams.length < data.expected && !(data.missing?.length) && <div style={{ fontSize: 12, color: "#f59e0b" }}>⚠ Only {data.teams.length} of {data.expected} teams loaded. Press Refresh before posting.</div>}
       {loading && <div style={{ fontSize: 12, color: "#9fb0c8" }}>Loading stats…</div>}
