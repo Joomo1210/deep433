@@ -6157,6 +6157,13 @@ function StatBoardCard({ cardRef, league, statKey, rows, season, calendar }) {
 
 const ordinal = n => { const v = n % 100; return n + (["th", "st", "nd", "rd"][(v - 20) % 10] || ["th", "st", "nd", "rd"][v] || "th"); };
 
+// Home side's home record and away side's away record for the stats that have a home/away split, shown on the two-team card.
+const VENUE = {
+  attack: { home: t => t.homeGoalsFor, away: t => t.awayGoalsFor, text: (v, n, s) => `${v} goals in ${n} ${s} games` },
+  defence: { home: t => t.homeGoalsAgainst, away: t => t.awayGoalsAgainst, text: (v, n, s) => `${v} conceded in ${n} ${s} games` },
+  clean: { home: t => t.homeCleanSheets, away: t => t.awayCleanSheets, text: (v, n, s) => `${v} clean sheets in ${n} ${s} games` },
+  blank: { home: t => t.homeFailedToScore, away: t => t.awayFailedToScore, text: (v, n, s) => `${v} without a goal in ${n} ${s} games` },
+};
 // Two teams head to head on one stat, for a match preview. Kick-off and bookmaker odds are optional.
 // Compact 1080 x 1080 card. Kept to plain colours, borders and shadows so html2canvas draws it faithfully.
 function TwoTeamStatCard({ cardRef, league, season, calendar, statKey, a, b, total, ko, odds }) {
@@ -6167,14 +6174,20 @@ function TwoTeamStatCard({ cardRef, league, season, calendar, statKey, a, b, tot
   const aWin = level || (mixed ? a.v > b.v : a.rank < b.rank), bWin = level || (mixed ? b.v > a.v : b.rank < a.rank);
   const gap = Math.abs(a.v - b.v);
   const hasOdds = odds && (odds.h || odds.d || odds.a);
-  const Panel = ({ t, win }) => (
+  const ven = mixed ? null : VENUE[statKey];
+  const venueLine = (t, side) => {
+    const v = ven && ven[side](t), n = t[side + "Played"];
+    return v == null || n == null ? null : `${side === "home" ? "At home" : "Away"}: ${ven.text(v, n, side)}`;
+  };
+  const Panel = ({ t, win, side }) => (
     <div style={{ flex: 1, minWidth: 0, textAlign: "center", padding: "26px 14px 24px", borderRadius: 28, boxSizing: "border-box", background: win ? "linear-gradient(180deg, rgba(34,197,94,0.20), rgba(34,197,94,0.06))" : "linear-gradient(180deg, rgba(148,163,184,0.10), rgba(148,163,184,0.03))", border: `1.5px solid ${win ? "rgba(34,197,94,0.75)" : "rgba(148,163,184,0.22)"}`, boxShadow: win ? "0 10px 40px rgba(34,197,94,0.18)" : "0 10px 30px rgba(0,0,0,0.25)" }}>
-      <div style={{ height: 124, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        {t.logo && <img src={t.logo} alt="" crossOrigin="anonymous" style={{ maxWidth: 124, maxHeight: 124, objectFit: "contain" }} />}
+      <div style={{ height: ven ? 104 : 124, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        {t.logo && <img src={t.logo} alt="" crossOrigin="anonymous" style={{ maxWidth: ven ? 104 : 124, maxHeight: ven ? 104 : 124, objectFit: "contain" }} />}
       </div>
       <div style={{ fontSize: 33, fontWeight: 800, letterSpacing: 0.5, marginTop: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.team}</div>
       <div style={{ fontSize: 112, lineHeight: 1, fontWeight: 900, letterSpacing: -2, marginTop: 6, color: win ? G : "#f1f5f9" }}>{t.v}</div>
       <div style={{ fontSize: 22, color: MUTED, fontWeight: 600, letterSpacing: 1, marginTop: 4 }}>{t.sub}</div>
+      {venueLine(t, side) && <div style={{ fontSize: 21, color: GOLD, fontWeight: 800, marginTop: 10, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{venueLine(t, side)}</div>}
       <div style={{ display: "inline-block", marginTop: 16, padding: "9px 22px", borderRadius: 999, fontSize: 19, fontWeight: 900, letterSpacing: 3, textTransform: "uppercase", background: win ? G : "transparent", color: win ? "#04120a" : "#cbd5e1", border: win ? "none" : "1.5px solid rgba(148,163,184,0.4)" }}>{mixed ? `${ordinal(t.rank)} ${t.side}` : `${ordinal(t.rank)} in the league`}</div>
     </div>
   );
@@ -6204,8 +6217,8 @@ function TwoTeamStatCard({ cardRef, league, season, calendar, statKey, a, b, tot
       </div>
 
       <div style={{ position: "relative", display: "flex", gap: 28, margin: "26px 64px 0" }}>
-        <Panel t={a} win={aWin} />
-        <Panel t={b} win={bWin} />
+        <Panel t={a} win={aWin} side="home" />
+        <Panel t={b} win={bWin} side="away" />
         <div style={{ position: "absolute", left: "50%", top: "50%", marginLeft: -30, marginTop: -30, width: 60, height: 60, borderRadius: "50%", background: "#0a1020", border: `2px solid ${GOLD}`, color: GOLD, fontSize: 20, fontWeight: 900, letterSpacing: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>VS</div>
       </div>
 
