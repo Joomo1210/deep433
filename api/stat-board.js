@@ -96,6 +96,10 @@ async function teamsHandler(req, res) {
         goalsAgainst: num(s.goals?.against?.total?.total),
         cleanSheets: num(s.clean_sheet?.total),
         failedToScore: num(s.failed_to_score?.total),
+        homeGoalsFor: num(s.goals?.for?.total?.home), awayGoalsFor: num(s.goals?.for?.total?.away),
+        homeGoalsAgainst: num(s.goals?.against?.total?.home), awayGoalsAgainst: num(s.goals?.against?.total?.away),
+        homeCleanSheets: num(s.clean_sheet?.home), awayCleanSheets: num(s.clean_sheet?.away),
+        homeFailedToScore: num(s.failed_to_score?.home), awayFailedToScore: num(s.failed_to_score?.away),
         lateGoalsFor: sumBuckets(s.goals?.for?.minute, ["76-90", "91-105", "106-120"]),
         earlyGoalsAgainst: num(s.goals?.against?.minute?.["0-15"]?.total),
         lateGoalsAgainst: sumBuckets(s.goals?.against?.minute, ["76-90", "91-105", "106-120"]),
@@ -163,9 +167,11 @@ async function teamsHandler(req, res) {
         fx.forEach(f => {
           const hid = f.teams?.home?.id, aid = f.teams?.away?.id, hg = num(f.goals?.home), ag = num(f.goals?.away);
           if (!inTable(hid) || !inTable(aid)) return;
-          const h = (agg[hid] = agg[hid] || { cs: 0, fts: 0 }), a = (agg[aid] = agg[aid] || { cs: 0, fts: 0 });
-          if (ag === 0) h.cs++; if (hg === 0) a.cs++;
-          if (hg === 0) h.fts++; if (ag === 0) a.fts++;
+          const z = () => ({ cs: 0, fts: 0, hcs: 0, acs: 0, hfts: 0, afts: 0, hgf: 0, hga: 0, agf: 0, aga: 0 });
+          const h = (agg[hid] = agg[hid] || z()), a = (agg[aid] = agg[aid] || z());
+          if (ag === 0) { h.cs++; h.hcs++; } if (hg === 0) { a.cs++; a.acs++; }
+          if (hg === 0) { h.fts++; h.hfts++; } if (ag === 0) { a.fts++; a.afts++; }
+          h.hgf += hg; h.hga += ag; a.agf += ag; a.aga += hg;
         });
       } catch (e) { cupFix = "table-only"; }
       out.forEach(r => {
@@ -180,7 +186,12 @@ async function teamsHandler(req, res) {
         r.awayPlayed = num(row.away?.played);
         r.homePoints = num(row.home?.win) * 3 + num(row.home?.draw);
         r.awayPoints = num(row.away?.win) * 3 + num(row.away?.draw);
-        if (agg[t.id]) { r.cleanSheets = agg[t.id].cs; r.failedToScore = agg[t.id].fts; }
+        if (agg[t.id]) {
+          const g = agg[t.id];
+          r.cleanSheets = g.cs; r.failedToScore = g.fts;
+          r.homeCleanSheets = g.hcs; r.awayCleanSheets = g.acs; r.homeFailedToScore = g.hfts; r.awayFailedToScore = g.afts;
+          r.homeGoalsFor = g.hgf; r.homeGoalsAgainst = g.hga; r.awayGoalsFor = g.agf; r.awayGoalsAgainst = g.aga;
+        }
         else if (cupFix === "table-only") { r.qualMix = true; }
       });
     }
