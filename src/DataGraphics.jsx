@@ -6077,8 +6077,11 @@ function aggregateVar(fixtures, events) {
   return { by, seen };
 }
 
-function rankTeams(teams, key, n) {
+function rankTeams(teamsIn, key, n) {
   const def = SB_STATS[key];
+  // Teams the API gave only table-level data for (thin) can still be ranked on boards built from the table or from matches.
+  const thinOk = def.needsVar || def.needsFx || def.needsShots || ["attack", "defence", "home", "away"].includes(key);
+  const teams = thinOk ? teamsIn : teamsIn.filter(t => !t.thin);
   const sorted = [...teams].sort((a, b) => (def.val(b) - def.val(a)) * def.dir || def.tie(a) - def.tie(b));
   let end = Math.min(n, sorted.length);
   // Everyone level with the last team shown is included too, so nobody tied is left off the card.
@@ -6295,7 +6298,7 @@ function StatBoardGraphic() {
       if (!lres.ok) throw new Error(list.error || "Could not load matches");
       // An old stat-board.js ignores type=var and answers with the normal team table, which has no match list.
       if (!Array.isArray(list.fixtures)) throw new Error("the server file stat-board.js is out of date, so it cannot return matches. Deploy the latest stat-board.js and reload");
-      const fixtures = list.fixtures;
+      const fixtures = list.fixtures.filter(f => !/qualif|preliminary/i.test(f.rd || ""));
       if (!fixtures.length) throw new Error("the API returned no finished matches for this league and season");
       let cache = {};
       try { cache = JSON.parse(localStorage.getItem(lsKey) || "{}").events || {}; } catch {}
@@ -6329,7 +6332,7 @@ function StatBoardGraphic() {
       if (!lres.ok) throw new Error(list.error || "Could not load matches");
       if (!Array.isArray(list.fixtures) || (list.fixtures.length && !list.fixtures[0].ht)) throw new Error("the server file stat-board.js is out of date, so it has no half-time scores. Deploy the latest stat-board.js and reload");
       if (!list.fixtures.length) throw new Error("the API returned no finished matches for this league and season");
-      const by = aggregateHT(list.fixtures);
+      const by = aggregateHT(list.fixtures.filter(f => !/qualif|preliminary/i.test(f.rd || "")));
       setData(d => d && ({ ...d, fxReady: true, fxFixtures: list.fixtures.length, teams: d.teams.map(t => ({ ...t, htTrail: 0, htLed: 0, htDropPts: 0, htComebackPts: 0, ...(by[t.team] || {}) })) }));
       setVarMsg("");
     } catch (e) { setVarMsg("Could not load half-time data: " + e.message); }
@@ -6347,7 +6350,7 @@ function StatBoardGraphic() {
       const list = await lres.json();
       if (!lres.ok) throw new Error(list.error || "Could not load matches");
       if (!Array.isArray(list.fixtures)) throw new Error("the server file stat-board.js is out of date. Deploy the latest stat-board.js and reload");
-      const fixtures = list.fixtures;
+      const fixtures = list.fixtures.filter(f => !/qualif|preliminary/i.test(f.rd || ""));
       if (!fixtures.length) throw new Error("the API returned no finished matches for this league and season");
       let cache = {};
       try { cache = JSON.parse(localStorage.getItem(lsKey) || "{}"); } catch {}
