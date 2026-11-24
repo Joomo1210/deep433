@@ -6406,7 +6406,7 @@ function StatBoardGraphic() {
 
   const load = async (force) => {
     setLoading(true); setErr("");
-    const lsKey = `d433_statboard_${league}`;
+    const lsKey = `d433_statboard_v2_${league}`;
     try {
       if (!force) {
         const c = JSON.parse(localStorage.getItem(lsKey) || "null");
@@ -9866,7 +9866,7 @@ function BestOfEuropeGraphic() {
       const [key, label] = BOE_LEAGUES[i];
       setProgress(`Loading ${label}… (${i + 1} of ${BOE_LEAGUES.length})`);
       let data = null;
-      const lsKey = `d433_statboard_${key}`;
+      const lsKey = `d433_statboard_v2_${key}`;
       try {
         const c = !force && JSON.parse(localStorage.getItem(lsKey) || "null");
         // A saved league that was missing teams is not reused, so a retry actually fetches them again.
