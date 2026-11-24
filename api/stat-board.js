@@ -148,23 +148,48 @@ async function teamsHandler(req, res) {
       }
       retry = still;
     }
-    // Cup competitions: teams/statistics can include qualifying rounds, but the league-stage table cannot.
-    // Played, goals, home and away points are taken from the table, and any team whose totals differed is flagged.
+    // Cup competitions: teams/statistics mixes in qualifying and play-off round matches, which the league stage never had.
+    // For these, played, goals, clean sheets, failed to score and home/away points are rebuilt from the league-stage and
+    // knockout matches only. Any team whose API totals differed is flagged (qualMix), because the minute-by-minute and
+    // card stats cannot be corrected for it.
     let qualMix = 0;
     if ([2, 3, 848].includes(league.id)) {
-      out.forEach(r => {
-        const t = teams.find(x => x.name === r.team);
-        const row = t && rowById[t.id];
-        if (!row) return;
-        if (num(row.all?.played) !== r.played || num(row.all?.goals?.for) !== r.goalsFor) { r.qualMix = true; qualMix++; }
-        r.played = num(row.all?.played);
-        r.goalsFor = num(row.all?.goals?.for);
-        r.goalsAgainst = num(row.all?.goals?.against);
-        r.homePlayed = num(row.home?.played);
-        r.awayPlayed = num(row.away?.played);
-        r.homePoints = num(row.home?.win) * 3 + num(row.home?.draw);
-        r.awayPoints = num(row.away?.win) * 3 + num(row.away?.draw);
-      });
+      const isQual = rd => /qualif|preliminary/i.test(rd || "") || /^play-offs?$/i.test((rd || "").trim());
+      try {
+        const fx = (await get(`fixtures?league=${league.id}&season=${league.season}&status=FT-AET-PEN`)).filter(f => !isQual(f.league?.round));
+        const z = () => ({ p: 0, gf: 0, ga: 0, cs: 0, fts: 0, hp: 0, ap: 0, hpl: 0, apl: 0 });
+        const agg = {};
+        fx.forEach(f => {
+          const hid = f.teams?.home?.id, aid = f.teams?.away?.id, hg = num(f.goals?.home), ag = num(f.goals?.away);
+          if (!hid || !aid) return;
+          const h = (agg[hid] = agg[hid] || z()), a = (agg[aid] = agg[aid] || z());
+          h.p++; a.p++; h.hpl++; a.apl++;
+          h.gf += hg; h.ga += ag; a.gf += ag; a.ga += hg;
+          if (ag === 0) h.cs++; if (hg === 0) a.cs++;
+          if (hg === 0) h.fts++; if (ag === 0) a.fts++;
+          h.hp += hg > ag ? 3 : hg === ag ? 1 : 0;
+          a.ap += ag > hg ? 3 : ag === hg ? 1 : 0;
+        });
+        if (fx.length) {
+          out.forEach(r => {
+            const t = teams.find(x => x.name === r.team);
+            const g = (t && agg[t.id]) || z();
+            if (!r.thin && r.played !== g.p) { r.qualMix = true; qualMix++; }
+            r.played = g.p; r.goalsFor = g.gf; r.goalsAgainst = g.ga; r.cleanSheets = g.cs; r.failedToScore = g.fts;
+            r.homePoints = g.hp; r.awayPoints = g.ap; r.homePlayed = g.hpl; r.awayPlayed = g.apl;
+          });
+        }
+      } catch (e) {
+        out.forEach(r => {
+          const t = teams.find(x => x.name === r.team);
+          const row = t && rowById[t.id];
+          if (!row) return;
+          if (num(row.all?.played) !== r.played || num(row.all?.goals?.for) !== r.goalsFor) { r.qualMix = true; qualMix++; }
+          r.played = num(row.all?.played); r.goalsFor = num(row.all?.goals?.for); r.goalsAgainst = num(row.all?.goals?.against);
+          r.homePlayed = num(row.home?.played); r.awayPlayed = num(row.away?.played);
+          r.homePoints = num(row.home?.win) * 3 + num(row.home?.draw); r.awayPoints = num(row.away?.win) * 3 + num(row.away?.draw);
+        });
+      }
     }
     // Anyone the API still would not give full statistics for stays in the table with what the league table knows
     // (played, goals, home and away points), marked thin so the stats we do not have are never shown as zeros.
