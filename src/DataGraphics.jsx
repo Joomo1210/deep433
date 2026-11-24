@@ -5971,6 +5971,9 @@ const SB_STATS = {
   yellow:   { title: "MOST BOOKED", unit: "yellow cards", dir: 1, val: t => t.yellow, sub: t => `${pg(t.yellow, t.played)} per game`, tie: t => -t.played, verb: "have picked up the most yellow cards" },
   red:      { title: "MOST RED CARDS", unit: "red cards", dir: 1, val: t => t.red || 0, sub: t => `in ${t.played} games`, tie: t => -t.played, verb: "have had the most players sent off" },
   home:     { title: "BEST HOME RECORD", unit: "home points", dir: 1, val: t => t.homePoints, sub: t => `from ${t.homePlayed} home games`, tie: t => t.homePlayed, verb: "have the best home record" },
+  // Per-game versions, used on the two-team preview so a side with fewer games isn't ranked behind on raw points.
+  homePpg:  { title: "HOME POINTS PER GAME", unit: "points per game", dir: 1, val: t => t.homePlayed ? Math.round(100 * t.homePoints / t.homePlayed) / 100 : 0, sub: t => `${t.homePoints} points from ${t.homePlayed} home games`, tie: t => -t.homePlayed, verb: "have the best home points per game" },
+  awayPpg:  { title: "AWAY POINTS PER GAME", unit: "points per game", dir: 1, val: t => t.awayPlayed ? Math.round(100 * t.awayPoints / t.awayPlayed) / 100 : 0, sub: t => `${t.awayPoints} points from ${t.awayPlayed} away games`, tie: t => -t.awayPlayed, verb: "have the best away points per game" },
   away:     { title: "BEST AWAY RECORD", unit: "away points", dir: 1, val: t => t.awayPoints, sub: t => `from ${t.awayPlayed} away games`, tie: t => t.awayPlayed, verb: "have the best away record" },
   blank:    { title: "STRUGGLE TO SCORE", unit: "games without a goal", dir: 1, val: t => t.failedToScore, sub: t => `in ${t.played} games`, tie: t => -t.played, verb: "have failed to score in the most games" },
   streak:   { title: "LONGEST WINNING RUN", unit: "wins in a row", dir: 1, val: t => t.winStreak, sub: t => `${t.played} played`, tie: t => -t.played, verb: "have the longest winning run" },
@@ -6064,7 +6067,7 @@ function aggregateVar(fixtures, events) {
 function rankTeams(teamsIn, key, n) {
   const def = SB_STATS[key];
   // Teams the API gave only table-level data for (thin) can still be ranked on boards built from the table or from matches.
-  const thinOk = def.needsVar || def.needsFx || def.needsShots || ["attack", "defence", "home", "away", "clean", "blank"].includes(key);
+  const thinOk = def.needsVar || def.needsFx || def.needsShots || ["attack", "defence", "home", "away", "homePpg", "awayPpg", "clean", "blank"].includes(key);
   // Stats the API mixes qualifying matches into cannot be corrected, so those teams are left out of such boards.
   const teams = thinOk ? teamsIn : teamsIn.filter(t => !t.thin && !t.qualMix);
   const sorted = [...teams].sort((a, b) => (def.val(b) - def.val(a)) * def.dir || def.tie(a) - def.tie(b));
@@ -6168,7 +6171,7 @@ const VENUE = {
 // Compact 1080 x 1080 card. Kept to plain colours, borders and shadows so html2canvas draws it faithfully.
 function TwoTeamStatCard({ cardRef, league, season, calendar, statKey, a, b, total, ko, odds }) {
   const mixed = statKey === "home" || statKey === "away"; // home side shows home record, away side shows away record
-  const def = mixed ? { ...SB_STATS.home, title: "HOME v AWAY RECORD", unit: "points" } : SB_STATS[statKey];
+  const def = mixed ? { ...SB_STATS.home, title: "HOME v AWAY RECORD", unit: "points per game" } : SB_STATS[statKey];
   const G = "#22c55e", GOLD = "#E8C766", MUTED = "#8fa3c0";
   const level = mixed ? a.v === b.v : a.rank === b.rank;
   const aWin = level || (mixed ? a.v > b.v : a.rank < b.rank), bWin = level || (mixed ? b.v > a.v : b.rank < a.rank);
@@ -6185,10 +6188,10 @@ function TwoTeamStatCard({ cardRef, league, season, calendar, statKey, a, b, tot
         {t.logo && <img src={t.logo} alt="" crossOrigin="anonymous" style={{ maxWidth: ven ? 104 : 124, maxHeight: ven ? 104 : 124, objectFit: "contain" }} />}
       </div>
       <div style={{ fontSize: 33, fontWeight: 800, letterSpacing: 0.5, marginTop: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.team}</div>
-      <div style={{ fontSize: 112, lineHeight: 1, fontWeight: 900, letterSpacing: -2, marginTop: 6, color: win ? G : "#f1f5f9" }}>{t.v}</div>
+      <div style={{ fontSize: 112, lineHeight: 1, fontWeight: 900, letterSpacing: -2, marginTop: 6, color: win ? G : "#f1f5f9" }}>{mixed ? Number(t.v).toFixed(2) : t.v}</div>
       <div style={{ fontSize: 22, color: MUTED, fontWeight: 600, letterSpacing: 1, marginTop: 4 }}>{t.sub}</div>
       {venueLine(t, side) && <div style={{ fontSize: 21, color: GOLD, fontWeight: 800, marginTop: 10, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{venueLine(t, side)}</div>}
-      <div style={{ display: "inline-block", marginTop: 16, padding: "9px 22px", borderRadius: 999, fontSize: 19, fontWeight: 900, letterSpacing: 3, textTransform: "uppercase", background: win ? G : "transparent", color: win ? "#04120a" : "#cbd5e1", border: win ? "none" : "1.5px solid rgba(148,163,184,0.4)" }}>{mixed ? `${ordinal(t.rank)} ${t.side}` : `${ordinal(t.rank)} in the league`}</div>
+      <div style={{ display: "inline-block", marginTop: 16, padding: "9px 22px", borderRadius: 999, fontSize: 19, fontWeight: 900, letterSpacing: 3, textTransform: "uppercase", background: win ? G : "transparent", color: win ? "#04120a" : "#cbd5e1", border: win ? "none" : "1.5px solid rgba(148,163,184,0.4)" }}>{mixed ? (t.side === "at home" ? "Home record" : "Away record") : `${ordinal(t.rank)} in the league`}</div>
     </div>
   );
   return (
@@ -6224,7 +6227,7 @@ function TwoTeamStatCard({ cardRef, league, season, calendar, statKey, a, b, tot
 
       <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 18, margin: "22px 64px 0" }}>
         <div style={{ flex: 1, height: 1, background: "rgba(232,199,102,0.35)" }} />
-        <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: 3, textTransform: "uppercase", color: "#e2e8f0" }}>{gap === 0 ? "Level on this stat" : `${gap} apart · ${def.unit}`}</div>
+        <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: 3, textTransform: "uppercase", color: "#e2e8f0" }}>{gap === 0 ? "Level on this stat" : `${mixed ? gap.toFixed(2) : gap} apart · ${def.unit}`}</div>
         <div style={{ flex: 1, height: 1, background: "rgba(232,199,102,0.35)" }} />
       </div>
 
@@ -6454,14 +6457,14 @@ function StatBoardGraphic() {
     : "";
   const allRanked = ready && data?.teams?.length ? rankTeams(data.teams, statKey, 99) : [];
   const mixedRank = statKey === "home" || statKey === "away";
-  const homeRanked = mixedRank && data?.teams?.length ? rankTeams(data.teams, "home", 99) : [];
-  const awayRanked = mixedRank && data?.teams?.length ? rankTeams(data.teams, "away", 99) : [];
+  const homeRanked = mixedRank && data?.teams?.length ? rankTeams(data.teams, "homePpg", 99) : [];
+  const awayRanked = mixedRank && data?.teams?.length ? rankTeams(data.teams, "awayPpg", 99) : [];
   const rowA = mixedRank ? (() => { const r = homeRanked.find(x => x.team === teamA); return r && { ...r, side: "at home" }; })() : allRanked.find(r => r.team === teamA);
   const rowB = mixedRank ? (() => { const r = awayRanked.find(x => x.team === teamB); return r && { ...r, side: "away" }; })() : allRanked.find(r => r.team === teamB);
   const twoReady = mode === "two" && rowA && rowB && rowA.team !== rowB.team;
   const twoNote = twoReady
     ? (mixedRank
-      ? `📊 Home v away record in ${inLeague(data.league)}\n\n${rowA.team} at home: ${rowA.v} points (${rowA.sub}), ${ordinal(rowA.rank)}\n${rowB.team} away: ${rowB.v} points (${rowB.sub}), ${ordinal(rowB.rank)}\n\nDoes this decide ${ko ? "tonight's game" : "the game"}? Drop your scoreline 👇`
+      ? `📊 Home v away record in ${inLeague(data.league)}\n\n${rowA.team} at home: ${rowA.v.toFixed(2)} points per game (${rowA.sub})\n${rowB.team} away: ${rowB.v.toFixed(2)} points per game (${rowB.sub})\n\nDoes this decide ${ko ? "tonight's game" : "the game"}? Drop your scoreline 👇`
       : `📊 ${def.title.charAt(0) + def.title.slice(1).toLowerCase()} in ${inLeague(data.league)}\n\n${rowA.team}: ${rowA.v} ${def.unit} (${rowA.sub}), ${ordinal(rowA.rank)}\n${rowB.team}: ${rowB.v} ${def.unit} (${rowB.sub}), ${ordinal(rowB.rank)}\n\nDoes this decide ${ko ? "tonight's game" : "the game"}? Drop your scoreline 👇`)
     : "";
   const scale = typeof window !== "undefined" ? Math.min(1, (window.innerWidth - 32) / 1080) : 0.4;
