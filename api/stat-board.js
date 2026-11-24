@@ -148,6 +148,24 @@ async function teamsHandler(req, res) {
       }
       retry = still;
     }
+    // Cup competitions: teams/statistics can include qualifying rounds, but the league-stage table cannot.
+    // Played, goals, home and away points are taken from the table, and any team whose totals differed is flagged.
+    let qualMix = 0;
+    if ([2, 3, 848].includes(league.id)) {
+      out.forEach(r => {
+        const t = teams.find(x => x.name === r.team);
+        const row = t && rowById[t.id];
+        if (!row) return;
+        if (num(row.all?.played) !== r.played || num(row.all?.goals?.for) !== r.goalsFor) { r.qualMix = true; qualMix++; }
+        r.played = num(row.all?.played);
+        r.goalsFor = num(row.all?.goals?.for);
+        r.goalsAgainst = num(row.all?.goals?.against);
+        r.homePlayed = num(row.home?.played);
+        r.awayPlayed = num(row.away?.played);
+        r.homePoints = num(row.home?.win) * 3 + num(row.home?.draw);
+        r.awayPoints = num(row.away?.win) * 3 + num(row.away?.draw);
+      });
+    }
     // Anyone the API still would not give full statistics for stays in the table with what the league table knows
     // (played, goals, home and away points), marked thin so the stats we do not have are never shown as zeros.
     const missing = retry.map(t => t.name);
@@ -175,6 +193,7 @@ async function teamsHandler(req, res) {
       generatedAt: new Date().toISOString(),
       expected: teams.length,
       missing,
+      qualMix,
       teams: out,
     });
   } catch (err) {
